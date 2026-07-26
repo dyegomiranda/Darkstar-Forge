@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
-# Clique com o botão direito → "Executar como programa"
-# (NÃO use os arquivos .desktop com "Executar como programa")
+# Web Launcher for Darkstar Forge
+# Double-click or run from terminal.
 # ============================================================
 set -euo pipefail
 DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
@@ -18,21 +18,21 @@ if ! is_up; then
     if [[ -n "${old:-}" ]] && ! kill -0 "$old" 2>/dev/null; then rm -f "$PIDFILE"; fi
   fi
   cd "$DIR"
-  # Servidor com API /api/artwork (lista a pasta artwork sem manifesto)
+  # Server with /api/artwork endpoint (lists artwork folder without manifest)
   nohup python3 "$DIR/tools/serve.py" "$PORT" >"$LOGFILE" 2>&1 &
   echo $! >"$PIDFILE"
   for _ in $(seq 1 40); do is_up && break; sleep 0.12; done
   if ! is_up; then
-    # fallback: http.server puro
+    # fallback: plain http.server
     nohup python3 -m http.server "$PORT" --bind 127.0.0.1 >"$LOGFILE" 2>&1 &
     echo $! >"$PIDFILE"
     for _ in $(seq 1 40); do is_up && break; sleep 0.12; done
   fi
   if ! is_up; then
     if command -v zenity >/dev/null 2>&1; then
-      zenity --error --text="Não foi possível iniciar o servidor em $URL\nVeja: $LOGFILE" 2>/dev/null || true
+      zenity --error --text="Failed to start server at $URL\nSee: $LOGFILE" 2>/dev/null || true
     fi
-    echo "Falha ao iniciar servidor: $URL" >&2
+    echo "Failed to start server: $URL" >&2
     exit 1
   fi
 fi

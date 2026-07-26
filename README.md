@@ -11,7 +11,7 @@ The Darkstar TCG intellectual property, including its name, logo, artwork, chara
 An offline card creation studio for the **Darkstar** trading card game.
 Create cards, decks, upload custom artwork, symbols, and export high-resolution print-ready cards — completely local, with no server dependency.
 
-### Quick Start for Players & Testers (No Terminal Required)
+### Quick Start (Desktop)
 
 1. Navigate to the [**Releases** page](../../releases) of this repository.
 2. Download the installer for your platform:
@@ -35,12 +35,21 @@ Open `http://127.0.0.1:8765/` in your web browser.
 
 ---
 
-### Desktop Build (Tauri)
+### Desktop Build (Electron)
 
 ```bash
 npm install
-npm run icon           # Generates app icons from assets/icons/set/logo.png
-npm run tauri:build
+npm run build:linux    # Linux (AppImage + deb)
+npm run build:windows  # Windows (NSIS installer)
+npm run build:all      # Both platforms
+```
+
+---
+
+### Run Electron (development)
+
+```bash
+npm run electron
 ```
 
 ---
@@ -49,5 +58,4 @@ npm run tauri:build
 
 - HTML5 / CSS3 / Vanilla JavaScript (Offline SPA)
 - IndexedDB + localStorage (Project metadata & local media storage)
-- Tauri v2 (Cross-platform native desktop wrappers for Windows & Linux)
-
+- Electron (Cross-platform native desktop wrapper)

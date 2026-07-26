@@ -1,0 +1,44 @@
+I am creating a card game inspired by Magic: The Gathering, but with significant differences. The core concept is a TCG that functions as a "tabletop RPG in card format." Instead of MTG's traditional black, red, white, blue, and green mana, the colors in this game represent different character classes commonly found in games like Dungeons & Dragons and Pathfinder. The player themselves is the main character, and their deck (or decks) represents their chosen class (or classes). The colors correspond to the following classes:
+
+- Red = Warrior/Barbarian
+- Blue = Mage/Sorcerer
+- Green = Druid/Ranger (Guardian)
+- Black = Necromancer/Warlock
+- Purple = Rogue/Assassin
+- White/Gold = Cleric/Paladin
+- Silver = Bard/Monk
+- Resources (items used by different classes, such as potions, gold pouch, etc.)
+- Equipment (equipped on the Character Sheet, not summoned directly in combat. Equipment exists for each class)
+
+As in RPGs, the player has their own "character sheet" where they can choose attributes and equipment. Equipment (gloves, chestplate, helmet, weapons, etc.) grants certain advantages/disadvantages to the player, which can affect gameplay (for example, a player equipped with heavy armor may have damage mitigation if the opponent attacks their hit points directly, but could suffer a speed penalty, while a player focused on magic who invested in intelligence could gain bonus mana. These are just hypothetical examples).
+
+Some game mechanics may require the use of other types of resources, such as gold (where a class that doesn't normally summon creatures, like melee classes, could use it to hire mercenaries, weapons, companions, etc.). Other cards may generate different resources, such as Rage (more focused on the red deck), which can be used to empower card effects. This type of mechanic should appear across all deck types, in different ways, but always following RPG game standards (as described in the attached book).
+
+The resource system will also differ from MTG. In this game, all characters start with a fixed amount of resource (mana, vigor, natural essence, souls, shadow, faith, and focus, depending on class) on the first turn (subject to change based on character build), for example, 3 mana (just an example!!), allowing them to play basic, low-cost cards. However, the game will feature a leveling system, where the player gains experience by destroying enemy cards (or even winning the battle by defeating the other player, if they choose to follow a campaign-style series of battles).
+
+Regarding resources, these won't always be generated during combat (unless a card or ability promotes it). In fact, the player starts the battle with a set amount of a specific resource (depending on the deck(s) they are playing). I haven't established how much resource each player will start with yet, but for example, a player using the black deck could start with 3 Souls. This allows them to only play lower-cost cards (keeping the early game balanced). As this player kills the opponent's creatures or deals damage to the opponent, they gain experience points and, eventually, level up (the player, not necessarily the card — although some specific cards may also have a leveling system). Upon leveling up, the player starts the next turn with more resources — for example, the necromancer I mentioned could start their turn with 5 souls, allowing them to summon more or stronger cards. This encourages the player to be active to grow stronger during the match and provides a sense of progression for their character. Resources can also be used as fuel to power certain card mechanics.
+
+Here are the resources each deck/class will use:
+
+- Red Deck: Warrior/Barbarian = Vigor
+- Blue Deck: Mage/Sorcerer = Mana
+- Green Deck: Druid/Ranger = Natural Essence
+- Black Deck: Warlock/Necromancer = Souls
+- Purple Deck: Rogue/Assassin = Shadow
+- Beige Deck: Cleric/Paladin = Faith
+- Silver Deck: Monk/Bard = Focus
+
+The game will initially feature 2 modes:
+
+- Battle Mode: Following standard 1v1, 1v2, 2v2, etc. format, where the goal is simply to defeat the opponent, as in regular MTG matches.
+- Campaign Mode: Players can form groups to start a campaign, just like in tabletop RPGs, where a Game Master guides the story. The characters (players) battle against other creatures (controlled by the GM) in a campaign, but instead of using dice as in tabletop RPGs, all battles are fought with cards. This creates a different type of game than what RPG players are used to.
+
+This is a hybrid between tabletop RPG and TCG.
+
+All characters, creatures, spells, abilities, weapons, etc., represented in card form will be based on traditional tabletop RPGs, such as D&D and Pathfinder. So my goal is to turn all of this into cards, and these cards will be included in their respective decks (for example, warrior abilities will be red deck cards, usable only by warriors). As in RPGs, players can also be a hybrid of two classes, meaning they can use decks of more than one color. Additionally, players will need to choose a race for their character, as in tabletop RPGs, where each race offers certain advantages and disadvantages in the game.
+
+Game mechanics must follow a pattern to maintain good balance. I've thought about a point attribution system for certain characteristics and mechanics, generating a score for each card based on its strength/defense and potential (with abilities). For example (keep in mind this is just an example, nothing is set in stone yet): A minion summoned by a mage with 1 attack receives +1 score. If it has 1 defense, it receives +1 score. If this minion has a simple mechanic, for example, bury/unearth, and that mechanic has a score of +1, then this card would have a total score of 3 points. We could then assign that all cards with a score of up to 3 points cost 1 mana to summon. A card with more points could still cost the same amount of mana, but that card should have a higher rarity (rarities are: common, uncommon, rare, and unique). Unique cards generally involve items that in an RPG campaign a player cannot have multiple copies of (imagine in MTG, a player couldn't summon a certain type of hero, because it wouldn't make sense to have a clone of that same hero in the real world). For minions, weapons (except unique weapons), spells, enchantments, etc., it makes sense for the player to have multiple copies in their deck (up to 4 copies maximum). The minimum and maximum deck size is 50 cards (no more, no less), with no side deck option as in MTG.
+
+Each player can start with 30 hit points, but as I mentioned, depending on the player's race and equipment on their character sheet, this may change (always emphasizing that for balance purposes, certain advantages must be accompanied by disadvantages).
+
+Considering everything I've said and the attached Pathfinder 2e book, I'd like you to read the entire book and then create several tables with all the skills, attacks, spells, creatures, companions, items, mechanics, and other relevant aspects. It is very important to create a table for each deck color, as well as a table for resources and another for equipment. Another important point is that you must adapt everything to a format that fits in a small text area on a standard Magic-sized card (attached is an EXAMPLE card with text space). Each deck color, representing the classes I mentioned, will generally have abilities and characteristics inherent to that class — these abilities will belong to that deck, not to another. We need to respect each class's characteristics so the game stays cohesive. Remember that the content must be adapted to the context of my game.
