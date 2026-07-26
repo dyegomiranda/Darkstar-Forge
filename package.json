@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Darkstar Forge — editor de cartas do jogo Darkstar",
+  "author": "Darkstar <dyegomiranda@users.noreply.github.com>",
   "main": "electron/main.js",
   "scripts": {
     "dev:web": "python3 tools/serve.py 8765",
