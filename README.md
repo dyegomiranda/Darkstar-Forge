@@ -26,7 +26,8 @@ Create cards, decks, upload custom artwork, symbols, and export high-resolution 
 ### Local Development (Web)
 
 ```bash
-./ABRIR-DARKSTAR-FORGE
+./Darkstar\ Forge
+# or double-click the Darkstar Forge.desktop file
 # or
 python3 tools/serve.py 8765
 ```

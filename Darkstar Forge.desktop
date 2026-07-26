@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Darkstar Forge
+Comment=Web launcher for Darkstar Forge (starts local server and opens browser)
+Exec=sh -c 'exec "$(dirname "%k")/Darkstar Forge"'
+Path=/home/djabo/Downloads/Darkstar Forge
+Terminal=false
+Type=Application
+Categories=Graphics;
+StartupNotify=true
