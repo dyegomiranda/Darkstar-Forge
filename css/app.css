@@ -531,7 +531,7 @@ select:-webkit-autofill {
 
 /* Grade: tiles de largura fixa, centralizadas na página */
 .card-grid {
-  --tile-w: 220px;
+  --tile-w: 320px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -626,8 +626,6 @@ select:-webkit-autofill {
   max-width: none !important;
   max-height: none !important;
 }
-
-/* Escala via JS (--thumb-scale) — mais rápido no WebKit que container queries */
 
 /* Root SEM scale próprio — o mount já escala o conjunto */
 .card-tile-preview .card-root {

@@ -704,6 +704,8 @@ var LibraryUI = {
                         CardView.thumbnail(preview, card, 750, { full: useFull, nativeSize: true });
                         const w = preview.clientWidth || 220;
                         preview.style.setProperty("--thumb-scale", String(w / 750));
+                        // Chromium: força renderização de alta qualidade no downscale
+                        preview.style.setProperty("image-rendering", "auto");
                     }
                 }
             });

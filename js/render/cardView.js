@@ -161,19 +161,10 @@ var CardView = {
         }
         root.appendChild(artLayer);
 
-        // Vinheta: radial-gradient cheio nas interativas, gradiente linear simples nas thumbs
-        if (interactive) {
-            const vignette = document.createElement("div");
-            vignette.className = "card-layer card-vignette";
-            vignette.style.pointerEvents = "none";
-            root.appendChild(vignette);
-        } else {
-            // Thumb: gradiente fixo mais leve que o radial
-            const v = document.createElement("div");
-            v.className = "card-layer";
-            v.style.cssText = "pointer-events:none;background:linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.18) 100%);";
-            root.appendChild(v);
-        }
+        const vignette = document.createElement("div");
+        vignette.className = "card-layer card-vignette";
+        vignette.style.pointerEvents = "none";
+        root.appendChild(vignette);
 
         const frameLayer = document.createElement("div");
         frameLayer.className = "card-layer card-frame";
@@ -184,11 +175,7 @@ var CardView = {
                 `<img class="card-template-overlay" src="${customTpl.overlayDataUrl}" alt="" draggable="false"
                   style="width:100%;height:100%;object-fit:fill;pointer-events:none"/>`;
         } else if (tpl.buildFrameSVG) {
-            // thumbnails (non-interactive) usam SVG simplificado
-            const thumb = !interactive && tpl.buildFrameSVGThumb
-                ? tpl.buildFrameSVGThumb(card, colors)
-                : tpl.buildFrameSVG(card, colors);
-            frameLayer.innerHTML = thumb;
+            frameLayer.innerHTML = tpl.buildFrameSVG(card, colors);
         }
         root.appendChild(frameLayer);
 
