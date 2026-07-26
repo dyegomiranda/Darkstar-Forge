@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-07-25 (A+B robustness package)  
 **Project folder:** `/home/djabo/Downloads/Darkstar Forge`  
-**How to open:** `./Darkstar\ Forge` (double-click the `.desktop` file — or `python3 tools/serve.py 8765` + open browser)  
+**How to open:** `./Darkstar\ Forge` (double-click → "Run in Terminal") — or find **Darkstar Forge** in the app grid (Super+Search). Terminal fallback: `python3 tools/serve.py 8765` + open browser.  
 
 ---
 
@@ -56,7 +56,7 @@
 - [x] Character sheet: race in white, HP aligned, print clean level/HP/stats
 
 ### Launcher
-- [x] `Darkstar Forge` / `Darkstar Forge.desktop` (web launcher)
+- [x] `Darkstar Forge` (bash script) + `Darkstar Forge.desktop` (app grid shortcut with icon)
 
 ---
 

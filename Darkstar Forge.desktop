@@ -1,8 +1,9 @@
 [Desktop Entry]
 Name=Darkstar Forge
 Comment=Web launcher for Darkstar Forge (starts local server and opens browser)
-Exec=sh -c 'exec "$(dirname "%k")/Darkstar Forge"'
-Path=/home/djabo/Downloads/Darkstar Forge
+Exec=/home/djabo/Downloads/Darkstar\ Forge/Darkstar\ Forge
+Path=/home/djabo/Downloads/Darkstar\ Forge
+Icon=/home/djabo/Downloads/Darkstar\ Forge/assets/icons/set/logo.png
 Terminal=false
 Type=Application
 Categories=Graphics;

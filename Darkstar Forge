@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # Web Launcher for Darkstar Forge
-# Double-click or run from terminal.
+# Double-click this file → "Run in Terminal"
 # ============================================================
 set -euo pipefail
 DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"

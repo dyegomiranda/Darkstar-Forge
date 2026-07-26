@@ -27,8 +27,11 @@ Create cards, decks, upload custom artwork, symbols, and export high-resolution 
 
 ```bash
 ./Darkstar\ Forge
-# or double-click the Darkstar Forge.desktop file
-# or
+# or double-click the Darkstar Forge script in the file manager → "Run in Terminal"
+# or install the app shortcut:
+cp Darkstar\ Forge.desktop ~/.local/share/applications/
+# (then find "Darkstar Forge" in the app grid, with icon)
+# Dev fallback:
 python3 tools/serve.py 8765
 ```
 
