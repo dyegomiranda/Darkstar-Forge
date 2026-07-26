@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Darkstar Forge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- Offline: se existirem .woff2 em assets/fonts, têm prioridade via local-fonts.css -->
+  <link rel="stylesheet" href="assets/fonts/local-fonts.css" />
+  <link rel="stylesheet" href="css/app.css?v=artlib1" />
+</head>
+<body>
+  <header class="app-chrome">
+    <div class="brand">
+      <div class="brand-title">Darkstar Forge</div>
+      <div class="brand-sub">Editor de cartas · Darkstar</div>
+    </div>
+    <input id="projectName" type="text" aria-label="Nome do projeto" placeholder="Nome do projeto" />
+    <div id="breadcrumb"></div>
+    <div id="saveStatus" class="save-status" aria-live="polite"></div>
+    <div class="chrome-actions">
+      <div class="lang-switch" id="langSwitch" title="Idioma / Language">
+        <button type="button" class="lang-btn active" data-lang="pt-BR" title="Português (Brasil)">
+          <span class="flag" aria-hidden="true">🇧🇷</span>
+          <span class="lang-code">PT-BR</span>
+        </button>
+        <button type="button" class="lang-btn" data-lang="en-US" title="English (US)">
+          <span class="flag" aria-hidden="true">🇺🇸</span>
+          <span class="lang-code">EN-US</span>
+        </button>
+      </div>
+      <button type="button" class="btn ghost" id="btnLibrary">Biblioteca</button>
+      <button type="button" class="btn" id="btnExportProject">Exportar JSON</button>
+      <button type="button" class="btn" id="btnExportPack" title="ZIP com JSON + artes">Exportar pack</button>
+      <button type="button" class="btn" id="btnImportProject">Importar JSON</button>
+      <button type="button" class="btn ghost" id="btnDiagnostics" title="Diagnóstico">Diagnóstico</button>
+      <button type="button" class="btn ghost" id="btnResetSeed" title="Restaura seed da 1ª edição">Reset seed</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden />
+    </div>
+  </header>
+
+  <main id="main"></main>
+
+  <!-- Core -->
+  <script defer src="js/core/id.js"></script>
+  <script defer src="js/data/catalog.js"></script>
+  <script defer src="js/data/i18n.js"></script>
+  <script defer src="js/data/races.js"></script>
+  <script defer src="js/data/fonts.js"></script>
+  <script defer src="js/data/tags.js"></script>
+  <script defer src="js/data/effects.js"></script>
+  <script defer src="js/data/scoringTable.js"></script>
+  <script defer src="js/core/scoring.js"></script>
+  <script defer src="js/core/stylePreset.js"></script>
+  <script defer src="js/core/deckTools.js"></script>
+  <script defer src="js/core/mediaStore.js?v=artlib1"></script>
+  <script defer src="js/core/zipUtil.js"></script>
+  <script defer src="js/data/seedDecks.js"></script>
+  <script defer src="js/data/seed.js"></script>
+  <script defer src="js/core/store.js"></script>
+
+  <!-- Templates -->
+  <script defer src="js/templates/registry.js"></script>
+  <script defer src="js/templates/classicFullArt.js"></script>
+
+  <!-- Render -->
+  <script defer src="js/render/colorUtils.js"></script>
+  <script defer src="js/render/icons.js"></script>
+  <script defer src="js/render/cardView.js?v=artlib1"></script>
+  <script defer src="js/render/export.js"></script>
+
+  <!-- UI -->
+  <script defer src="js/ui/modal.js"></script>
+  <script defer src="js/ui/library.js?v=artlib1"></script>
+  <script defer src="js/ui/editor.js?v=artlib1"></script>
+  <script defer src="js/ui/characterSheet.js"></script>
+  <script defer src="js/ui/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+name: Release installers (Electron)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Nome da release (ex: v1.1.0)."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'ubuntu-22.04'
+            os: 'ubuntu-22.04'
+            args: '--linux AppImage deb'
+          - platform: 'windows-latest'
+            os: 'windows-latest'
+            args: '--win nsis'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libnotify-dev libnss3 libxss1 libasound2
+
+      - name: Install npm deps
+        run: npm install
+
+      - name: Build Electron App
+        run: npx electron-builder ${{ matrix.args }} --publish=never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkstar-forge-${{ matrix.platform }}
+          path: release/*.AppImage
+          if-no-files-found: ignore
+
+      - name: Upload .exe
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkstar-forge-windows
+          path: release/*.exe
+          if-no-files-found: ignore
+
+      - name: Upload .deb
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkstar-forge-linux-deb
+          path: release/*.deb
+          if-no-files-found: ignore
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Darkstar Forge ${{ github.ref_name }}"
+          body: |
+            ## Darkstar Forge — Download Executables
+
+            **Windows:** Download `.exe` (NSIS Installer) and run to install.
+            **Linux:** Download `.AppImage` (make executable) or `.deb` package.
+
+            All your custom artwork, card designs, icons, and symbols remain saved in your local application profile!
+          files: |
+            release/*.AppImage
+            release/*.deb
+            release/*.exe
+          draft: false
+          prerelease: false

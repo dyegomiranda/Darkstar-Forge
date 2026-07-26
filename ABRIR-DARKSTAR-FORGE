@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ============================================================
+# Clique com o botão direito → "Executar como programa"
+# (NÃO use os arquivos .desktop com "Executar como programa")
+# ============================================================
+set -euo pipefail
+DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
+PORT="${DARKSTAR_FORGE_PORT:-8765}"
+URL="http://127.0.0.1:${PORT}/"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/darkstar-forge-${PORT}.pid"
+LOGFILE="${XDG_RUNTIME_DIR:-/tmp}/darkstar-forge-${PORT}.log"
+
+is_up() { curl -fsS --max-time 1 "$URL" >/dev/null 2>&1; }
+
+if ! is_up; then
+  if [[ -f "$PIDFILE" ]]; then
+    old="$(cat "$PIDFILE" 2>/dev/null || true)"
+    if [[ -n "${old:-}" ]] && ! kill -0 "$old" 2>/dev/null; then rm -f "$PIDFILE"; fi
+  fi
+  cd "$DIR"
+  # Servidor com API /api/artwork (lista a pasta artwork sem manifesto)
+  nohup python3 "$DIR/tools/serve.py" "$PORT" >"$LOGFILE" 2>&1 &
+  echo $! >"$PIDFILE"
+  for _ in $(seq 1 40); do is_up && break; sleep 0.12; done
+  if ! is_up; then
+    # fallback: http.server puro
+    nohup python3 -m http.server "$PORT" --bind 127.0.0.1 >"$LOGFILE" 2>&1 &
+    echo $! >"$PIDFILE"
+    for _ in $(seq 1 40); do is_up && break; sleep 0.12; done
+  fi
+  if ! is_up; then
+    if command -v zenity >/dev/null 2>&1; then
+      zenity --error --text="Não foi possível iniciar o servidor em $URL\nVeja: $LOGFILE" 2>/dev/null || true
+    fi
+    echo "Falha ao iniciar servidor: $URL" >&2
+    exit 1
+  fi
+fi
+
+for bin in google-chrome-stable google-chrome chromium chromium-browser brave-browser microsoft-edge microsoft-edge-stable; do
+  if command -v "$bin" >/dev/null 2>&1; then
+    exec "$bin" --app="$URL" --new-window --no-first-run >/dev/null 2>&1 &
+    exit 0
+  fi
+done
+if command -v firefox >/dev/null 2>&1; then
+  exec firefox -new-window "$URL" >/dev/null 2>&1 &
+  exit 0
+fi
+xdg-open "$URL" >/dev/null 2>&1 &
+exit 0

@@ -1,0 +1,54 @@
+{
+  "name": "darkstar-forge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Darkstar Forge — editor de cartas do jogo Darkstar",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev:web": "python3 tools/serve.py 8765",
+    "electron": "electron .",
+    "build:linux": "electron-builder --linux AppImage deb",
+    "build:windows": "electron-builder --win nsis",
+    "build:all": "electron-builder --linux AppImage deb --win nsis"
+  },
+  "build": {
+    "appId": "com.darkstar.forge",
+    "productName": "Darkstar Forge",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Graphics",
+      "icon": "assets/icons/set"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icons/set/logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "allowScripts": {
+    "electron@43.2.0": true
+  }
+}
