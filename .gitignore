@@ -8,5 +8,7 @@ Captura*.png
 *.deb
 *.exe
 squashfs-root/
+# TTFs locais opcionais (woff2 em assets/fonts são versionados)
 *.ttf
+!assets/fonts/**/*.woff2
 .claude/

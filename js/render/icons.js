@@ -18,18 +18,18 @@ var Icons = {
         focus:  "assets/icons/resources/focus.png"
     },
 
-    /** Ícones de classe (arte Imagine) + utilitários */
+    /** Ícones de classe (PNG transparente) + utilitários */
     CLASS_ASSETS: {
-        red:    "assets/icons/classes/red.jpg",
-        blue:   "assets/icons/classes/blue.jpg",
-        green:  "assets/icons/classes/green.jpg",
-        black:  "assets/icons/classes/black.jpg",
-        purple: "assets/icons/classes/purple.jpg",
-        white:  "assets/icons/classes/white.jpg",
-        silver: "assets/icons/classes/silver.jpg",
-        orange: "assets/icons/utility/resources.jpg",
-        utility:"assets/icons/utility/resources.jpg",
-        gear:   "assets/icons/utility/equipment.jpg"
+        red:    "assets/icons/classes/red.png",
+        blue:   "assets/icons/classes/blue.png",
+        green:  "assets/icons/classes/green.png",
+        black:  "assets/icons/classes/black.png",
+        purple: "assets/icons/classes/purple.png",
+        white:  "assets/icons/classes/white.png",
+        silver: "assets/icons/classes/silver.png",
+        orange: "assets/icons/utility/resources.png",
+        utility:"assets/icons/utility/resources.png",
+        gear:   "assets/icons/utility/equipment.png"
     },
 
     customResource(id) {

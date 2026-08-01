@@ -1,11 +1,13 @@
-Fontes offline (opcional)
-=========================
-Coloque arquivos .woff2 nesta pasta com os nomes:
-  Comfortaa.woff2
-  NotoSans.woff2
-  EBGaramond.woff2
-  SourceSans3.woff2
+Fontes offline (core do Darkstar Forge)
+=======================================
 
-Eles são referenciados por local-fonts.css.
-Sem esses arquivos, o navegador usa Google Fonts (se online)
-ou fontes do sistema.
+Arquivos .woff2 nesta pasta são empacotados com o app e usados sem internet
+via local-fonts.css:
+
+  Comfortaa, Noto Sans, EB Garamond, Source Sans 3, Cormorant Garamond
+
+Os .ttf (se presentes) servem de fallback local e NÃO precisam ir pro git
+(estão no .gitignore). O repositório versiona os .woff2.
+
+Fontes extras no editor (Cinzel, Orbitron, etc.) ainda usam Google Fonts
+quando houver rede — só as core do UI/cartas são 100% offline.

@@ -1,5 +1,5 @@
 /* ==========================================================
-   Darkstar Forge — Export PNG e impressão (proporção MTG)
+   Darkstar Forge — Export PNG, PDF e impressão (proporção MTG)
 ========================================================== */
 
 var Export = {
@@ -13,25 +13,122 @@ var Export = {
     CARD_H: 1050,
     /** Raio em px no canvas 750 (3.5/63.5 * 750 ≈ 41.3) */
     CARD_RADIUS_PX: 42,
+    _pdfAbort: false,
 
     async cardToPNG(card, filename) {
-        const tpl = TemplateRegistry.get(card.templateId) || TemplateRegistry.get("classic-fullart");
-        const w = tpl.width;
-        const h = tpl.height;
-
-        const holder = document.createElement("div");
-        holder.style.cssText = `position:fixed;left:-10000px;top:0;width:${w}px;height:${h}px;`;
-        document.body.appendChild(holder);
-        CardView.render(holder, card, { scale: 1 });
-
+        const canvas = await this._cardToCanvas(card);
         try {
-            const canvas = await this._domToCanvas(holder.querySelector(".card-root"), w, h);
             const a = document.createElement("a");
             a.href = canvas.toDataURL("image/png");
             a.download = filename || `${(card.name || "carta").replace(/\s+/g, "_")}.png`;
             a.click();
         } finally {
+            /* canvas discarded */
+        }
+    },
+
+    /**
+     * Rasteriza uma carta em canvas off-screen.
+     * @returns {Promise<HTMLCanvasElement>}
+     */
+    async _cardToCanvas(card) {
+        const tpl = TemplateRegistry.get(card.templateId) || TemplateRegistry.get("classic-fullart");
+        const w = tpl.width || this.CARD_W;
+        const h = tpl.height || this.CARD_H;
+
+        const holder = document.createElement("div");
+        holder.style.cssText = `position:fixed;left:-10000px;top:0;width:${w}px;height:${h}px;`;
+        document.body.appendChild(holder);
+        CardView.render(holder, card, { scale: 1 });
+        try {
+            // Aguarda fontes/imagens um frame
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+            return await this._domToCanvas(holder.querySelector(".card-root"), w, h);
+        } finally {
             holder.remove();
+        }
+    },
+
+    /**
+     * Exporta cartas em PDF (1 carta/página, tamanho poker) com barra de progresso.
+     * @param {object[]} cards
+     * @param {{ filename?: string }} [opts]
+     */
+    async cardsToPDF(cards, opts = {}) {
+        if (!cards || !cards.length) {
+            alert(I18n?.lang === "en-US" ? "No cards to export." : "Nenhuma carta para exportar.");
+            return;
+        }
+        if (typeof PdfUtil === "undefined") {
+            alert("PdfUtil não carregado.");
+            return;
+        }
+
+        this._pdfAbort = false;
+        const en = I18n?.lang === "en-US";
+        const prog = typeof UIModal !== "undefined"
+            ? UIModal.progress({
+                title: en ? "Exporting PDF" : "Exportando PDF",
+                message: en
+                    ? `Preparing ${cards.length} cards…`
+                    : `Preparando ${cards.length} cartas…`,
+                onCancel: () => { this._pdfAbort = true; }
+            })
+            : null;
+
+        const pages = [];
+        try {
+            for (let i = 0; i < cards.length; i++) {
+                if (this._pdfAbort) {
+                    prog?.close();
+                    return;
+                }
+                const card = cards[i];
+                const label = card.name || card.id || `#${i + 1}`;
+                prog?.update(
+                    i,
+                    cards.length,
+                    en ? `Rendering ${i + 1}/${cards.length}: ${label}` : `Renderizando ${i + 1}/${cards.length}: ${label}`
+                );
+
+                const canvas = await this._cardToCanvas(card);
+                const jpeg = await PdfUtil.canvasToJpeg(canvas, 0.9);
+                pages.push({
+                    jpeg,
+                    width: canvas.width,
+                    height: canvas.height
+                });
+
+                // Yield so the progress UI can paint
+                await new Promise((r) => setTimeout(r, 0));
+            }
+
+            if (this._pdfAbort) {
+                prog?.close();
+                return;
+            }
+
+            prog?.update(
+                cards.length,
+                cards.length,
+                en ? "Building PDF…" : "Montando PDF…"
+            );
+
+            const blob = PdfUtil.build(pages, {
+                pageWmm: this.PRINT_W_MM,
+                pageHmm: this.PRINT_H_MM
+            });
+            const base = opts.filename
+                || (Store.project?.meta?.name || "darkstar").replace(/\s+/g, "_")
+                    + `_${cards.length}cartas`;
+            PdfUtil.download(blob, base.endsWith(".pdf") ? base : `${base}.pdf`);
+            prog?.update(cards.length, cards.length, en ? "Done!" : "Concluído!");
+            await new Promise((r) => setTimeout(r, 350));
+        } catch (e) {
+            console.error(e);
+            alert((en ? "PDF export failed: " : "Falha ao exportar PDF: ") + (e.message || e));
+        } finally {
+            prog?.close();
         }
     },
 
@@ -69,8 +166,8 @@ var Export = {
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
 <title>Impressão — ${cards.length} cartas</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<base href="${location.href.replace(/[^/]*$/, "")}"/>
+<link rel="stylesheet" href="assets/fonts/local-fonts.css"/>
 <style>
   @page { size: A4; margin: 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }

@@ -63,13 +63,16 @@
 ## Deferred / next
 
 1. Combat engine / simulation (XP, gold, in-game keywords)
-2. Batch PDF export with progress
-3. 100% offline embedded fonts
-4. Multi-character on sheet
-5. Art pipeline by name (Imagine per card)
-6. Undo/redo · full editor i18n · automated tests
-7. Convert **class** icons JPG → transparent PNG (like resources)
-8. "Used space" UI (IndexedDB quota)
+2. Multi-character on sheet
+3. Art pipeline by name (Imagine per card)
+4. Full editor i18n · automated tests
+
+### Done recently (2026-08-01)
+- [x] Batch PDF export with progress (library → PDF deck/edição)
+- [x] Undo/redo no editor (botões + Ctrl+Z / Ctrl+Y)
+- [x] Class icons JPG → PNG transparente (+ utility)
+- [x] Used space UI (badge + diagnóstico com quota)
+- [x] Fontes core offline (woff2 + sem Google no chrome principal)
 
 ---
 

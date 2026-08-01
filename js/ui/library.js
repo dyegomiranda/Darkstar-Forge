@@ -45,7 +45,9 @@ var LibraryUI = {
                 <h3 data-i18n="lib.actions">Ações</h3>
                 <div class="actions-stack">
                   <button type="button" id="btnNewCard" class="btn primary" data-i18n="lib.newCard">+ Nova carta</button>
-                  <button type="button" id="btnPrintDeck" class="btn" data-i18n="lib.printDeck">Imprimir deck</button>
+                  <button type="button" id="btnPdfDeck" class="btn" data-i18n="lib.pdfDeck">PDF do deck</button>
+                  <button type="button" id="btnPdfEdition" class="btn ghost" data-i18n="lib.pdfEdition">PDF da edição</button>
+                  <button type="button" id="btnPrintDeck" class="btn ghost" data-i18n="lib.printDeck">Imprimir deck</button>
                   <button type="button" id="btnPrintEdition" class="btn ghost" data-i18n="lib.printEdition">Imprimir edição</button>
                 </div>
               </div>
@@ -180,6 +182,23 @@ var LibraryUI = {
             card.showCombat = deck?.kind === "equipment" || deck?.kind === "resources" ? false : true;
             Store.upsertCard(card);
             AppUI.openEditor(card.id);
+        });
+
+        root.querySelector("#btnPdfDeck")?.addEventListener("click", () => {
+            const cards = Store.listCards({
+                editionId: AppUI.state.editionId,
+                deckId: AppUI.state.deckId
+            });
+            const deck = Store.getDeck(AppUI.state.editionId, AppUI.state.deckId);
+            const name = (deck?.name || "deck").replace(/\s+/g, "_");
+            Export.cardsToPDF(cards, { filename: `${name}.pdf` });
+        });
+
+        root.querySelector("#btnPdfEdition")?.addEventListener("click", () => {
+            const cards = Store.listCards({ editionId: AppUI.state.editionId });
+            const ed = Store.getEdition(AppUI.state.editionId);
+            const name = (ed?.code || ed?.name || "edicao").replace(/\s+/g, "_");
+            Export.cardsToPDF(cards, { filename: `${name}_edicao.pdf` });
         });
 
         root.querySelector("#btnPrintDeck").addEventListener("click", () => {

@@ -1,24 +1,24 @@
-/* Fontes locais — baixadas da Google Fonts CDN para uso offline */
+/* Fontes core offline — woff2 embutidos (sem dependência de rede) */
 @font-face {
   font-family: "Comfortaa";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local("Comfortaa"), url("./Comfortaa.woff2") format("woff2"), url("./Comfortaa.ttf") format("truetype");
+  src: url("./Comfortaa.woff2") format("woff2"), url("./Comfortaa.ttf") format("truetype");
 }
 @font-face {
   font-family: "Comfortaa";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("./Comfortaa-600.ttf") format("truetype");
+  src: url("./Comfortaa-600.woff2") format("woff2"), url("./Comfortaa-600.ttf") format("truetype");
 }
 @font-face {
   font-family: "Comfortaa";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("./Comfortaa-700.ttf") format("truetype");
+  src: url("./Comfortaa-700.woff2") format("woff2"), url("./Comfortaa-700.ttf") format("truetype");
 }
 
 @font-face {
@@ -26,21 +26,21 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local("Noto Sans"), url("./NotoSans.woff2") format("woff2"), url("./NotoSans.ttf") format("truetype");
+  src: url("./NotoSans.woff2") format("woff2"), url("./NotoSans.ttf") format("truetype");
 }
 @font-face {
   font-family: "Noto Sans";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("./NotoSans-600.ttf") format("truetype");
+  src: url("./NotoSans-600.woff2") format("woff2"), url("./NotoSans-600.ttf") format("truetype");
 }
 @font-face {
   font-family: "Noto Sans";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("./NotoSans-700.ttf") format("truetype");
+  src: url("./NotoSans-700.woff2") format("woff2"), url("./NotoSans-700.ttf") format("truetype");
 }
 
 @font-face {
@@ -48,21 +48,35 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: local("EB Garamond"), url("./EBGaramond.woff2") format("woff2"), url("./EBGaramond.ttf") format("truetype");
+  src: url("./EBGaramond.woff2") format("woff2"), url("./EBGaramond.ttf") format("truetype");
+}
+@font-face {
+  font-family: "EB Garamond";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./EBGaramond.woff2") format("woff2"), url("./EBGaramond.ttf") format("truetype");
 }
 @font-face {
   font-family: "EB Garamond";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("./EBGaramond-700.ttf") format("truetype");
+  src: url("./EBGaramond-700.woff2") format("woff2"), url("./EBGaramond-700.ttf") format("truetype");
 }
 @font-face {
   font-family: "EB Garamond";
   font-style: italic;
   font-weight: 500;
   font-display: swap;
-  src: url("./EBGaramond-Italic.ttf") format("truetype");
+  src: url("./EBGaramond-Italic.woff2") format("woff2"), url("./EBGaramond-Italic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "EB Garamond";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./EBGaramond-Italic.woff2") format("woff2"), url("./EBGaramond-Italic.ttf") format("truetype");
 }
 
 @font-face {
@@ -70,21 +84,21 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local("Source Sans 3"), local("Source Sans Pro"), url("./SourceSans3.woff2") format("woff2"), url("./SourceSans3.ttf") format("truetype");
+  src: url("./SourceSans3.woff2") format("woff2"), url("./SourceSans3.ttf") format("truetype");
 }
 @font-face {
   font-family: "Source Sans 3";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("./SourceSans3-600.ttf") format("truetype");
+  src: url("./SourceSans3-600.woff2") format("woff2"), url("./SourceSans3-600.ttf") format("truetype");
 }
 @font-face {
   font-family: "Source Sans 3";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("./SourceSans3-700.ttf") format("truetype");
+  src: url("./SourceSans3-700.woff2") format("woff2"), url("./SourceSans3-700.ttf") format("truetype");
 }
 
 @font-face {
@@ -92,26 +106,26 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: local("Cormorant Garamond"), url("./CormorantGaramond.woff2") format("woff2"), url("./CormorantGaramond.ttf") format("truetype");
+  src: url("./CormorantGaramond.woff2") format("woff2"), url("./CormorantGaramond.ttf") format("truetype");
 }
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("./CormorantGaramond-600.ttf") format("truetype");
+  src: url("./CormorantGaramond-600.woff2") format("woff2"), url("./CormorantGaramond-600.ttf") format("truetype");
 }
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("./CormorantGaramond-700.ttf") format("truetype");
+  src: url("./CormorantGaramond-700.woff2") format("woff2"), url("./CormorantGaramond-700.ttf") format("truetype");
 }
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: italic;
   font-weight: 500;
   font-display: swap;
-  src: url("./CormorantGaramond-Italic.ttf") format("truetype");
+  src: url("./CormorantGaramond-Italic.woff2") format("woff2"), url("./CormorantGaramond-Italic.ttf") format("truetype");
 }

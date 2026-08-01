@@ -8,6 +8,12 @@ var EditorUI = {
     _savedJson: null,
     _editLang: "pt-BR",
     dirty: false,
+    _undoStack: [],
+    _redoStack: [],
+    _undoLock: false,
+    _histTimer: null,
+    _lastHistSnap: null,
+    MAX_UNDO: 50,
 
     mount(root, cardId) {
         const src = Store.getCard(cardId);
@@ -29,6 +35,11 @@ var EditorUI = {
         this._editLang = (typeof I18n !== "undefined" && I18n.lang) || "pt-BR";
         this._savedJson = this._snapshot(this.card);
         this.dirty = false;
+        this._undoStack = [];
+        this._redoStack = [];
+        this._undoLock = false;
+        this._lastHistSnap = this._snapshot(this.card);
+        this._undoStack.push(JSON.parse(JSON.stringify(this.card)));
 
         root.innerHTML = `
           <section class="editor" id="editorLayout">
@@ -37,6 +48,8 @@ var EditorUI = {
                 <div class="panel-actions top">
                   <button type="button" class="btn ghost" id="btnBack">← Biblioteca</button>
                   <button type="button" class="btn" id="btnDup">Duplicar</button>
+                  <button type="button" class="btn ghost" id="btnUndo" title="Ctrl+Z" disabled>↩ Desfazer</button>
+                  <button type="button" class="btn ghost" id="btnRedo" title="Ctrl+Y" disabled>↪ Refazer</button>
                   <button type="button" class="btn primary" id="btnSave">Salvar</button>
                 </div>
                 <div id="dirtyBadge" class="dirty-badge" hidden>Alterações não salvas</div>
@@ -352,6 +365,30 @@ var EditorUI = {
     },
 
     bind() {
+        document.getElementById("btnUndo")?.addEventListener("click", () => {
+            this.applyFromForm(false);
+            this._pushHistory();
+            this.undo();
+        });
+        document.getElementById("btnRedo")?.addEventListener("click", () => this.redo());
+        if (this._onKeyDown) document.removeEventListener("keydown", this._onKeyDown);
+        this._onKeyDown = (e) => {
+            if (AppUI?.state?.view !== "editor") return;
+            const mod = e.ctrlKey || e.metaKey;
+            if (!mod) return;
+            const key = e.key.toLowerCase();
+            if (key === "z" && !e.shiftKey) {
+                e.preventDefault();
+                this.applyFromForm(false);
+                this._pushHistory();
+                this.undo();
+            } else if (key === "y" || (key === "z" && e.shiftKey)) {
+                e.preventDefault();
+                this.redo();
+            }
+        };
+        document.addEventListener("keydown", this._onKeyDown);
+
         const live = [
             "fName", "fType", "fSubtype", "fRules", "fFlavor",
             "fResource", "fCost", "fShowCombat", "fAtk", "fDef",
@@ -370,6 +407,7 @@ var EditorUI = {
             const ev = el.type === "checkbox" || el.tagName === "SELECT" ? "change" : "input";
             el.addEventListener(ev, () => this.applyFromForm(true));
         });
+        this._updateUndoButtons();
 
         document.querySelectorAll("#cardLangSwitch .lang-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -965,6 +1003,76 @@ var EditorUI = {
             this.dirty = true;
         }
         this._updateDirtyBadge();
+        this._scheduleHistory();
+    },
+
+    _scheduleHistory() {
+        if (this._undoLock) return;
+        clearTimeout(this._histTimer);
+        this._histTimer = setTimeout(() => this._pushHistory(), 320);
+    },
+
+    _pushHistory() {
+        if (this._undoLock || !this.card) return;
+        let snap;
+        try {
+            snap = this._snapshot(this.card);
+        } catch (_) {
+            return;
+        }
+        if (snap === this._lastHistSnap) return;
+        this._lastHistSnap = snap;
+        this._undoStack.push(JSON.parse(JSON.stringify(this.card)));
+        if (this._undoStack.length > this.MAX_UNDO) {
+            this._undoStack.shift();
+        }
+        this._redoStack = [];
+        this._updateUndoButtons();
+    },
+
+    _updateUndoButtons() {
+        const u = document.getElementById("btnUndo");
+        const r = document.getElementById("btnRedo");
+        // Stack always keeps baseline; can undo when > 1
+        if (u) u.disabled = this._undoStack.length <= 1;
+        if (r) r.disabled = !this._redoStack.length;
+    },
+
+    undo() {
+        if (this._undoStack.length <= 1) return;
+        clearTimeout(this._histTimer);
+        // Capture current into redo, then restore previous
+        const current = this._undoStack.pop();
+        this._redoStack.push(current);
+        const prev = this._undoStack[this._undoStack.length - 1];
+        this._restoreCardState(prev);
+    },
+
+    redo() {
+        if (!this._redoStack.length) return;
+        clearTimeout(this._histTimer);
+        const next = this._redoStack.pop();
+        this._undoStack.push(next);
+        this._restoreCardState(next);
+    },
+
+    _restoreCardState(card) {
+        this._undoLock = true;
+        try {
+            this.card = JSON.parse(JSON.stringify(card));
+            this._lastHistSnap = this._snapshot(this.card);
+            this.fillForm();
+            this.refreshPreview();
+            try {
+                this.dirty = this._snapshot(this.card) !== this._savedJson;
+            } catch (_) {
+                this.dirty = true;
+            }
+            this._updateDirtyBadge();
+            this._updateUndoButtons();
+        } finally {
+            this._undoLock = false;
+        }
     },
 
     _updateDirtyBadge() {

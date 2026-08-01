@@ -60,8 +60,15 @@ var FontCatalog = {
         return this.get(id).family;
     },
 
+    /** Fontes com arquivo local em assets/fonts — não dependem de rede */
+    LOCAL_CORE: new Set(["eb-garamond", "cormorant", "noto-sans", "comfortaa", "source-sans"]),
+
     ensureGoogleLoaded() {
-        const needed = this.builtins.filter((f) => f.google && !this._loaded.has(f.id)).map((f) => f.google);
+        // Offline: só carrega Google para fontes extras e se houver rede
+        if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+        const needed = this.builtins
+            .filter((f) => f.google && !this._loaded.has(f.id) && !this.LOCAL_CORE.has(f.id))
+            .map((f) => f.google);
         if (!needed.length) return;
         let link = document.getElementById("tcg-google-fonts");
         if (!link) {

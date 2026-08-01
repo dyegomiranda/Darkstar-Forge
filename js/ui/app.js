@@ -34,6 +34,7 @@ var AppUI = {
 
         this.bindChrome();
         this.render();
+        this.refreshStorageBadge();
         Store.subscribe(() => {
             if (this.state.view === "library") {
                 clearTimeout(this._libRefreshT);
@@ -41,7 +42,44 @@ var AppUI = {
                     if (this.state.view === "library") LibraryUI.renderGrid?.();
                 }, 300);
             }
+            clearTimeout(this._storageBadgeT);
+            this._storageBadgeT = setTimeout(() => this.refreshStorageBadge(), 2000);
         });
+    },
+
+    async refreshStorageBadge() {
+        try {
+            if (typeof MediaStore === "undefined") return;
+            await MediaStore.open();
+            const usage = await MediaStore.estimateUsage();
+            this._refreshStorageBadge(usage);
+        } catch (_) {}
+    },
+
+    _refreshStorageBadge(usage) {
+        const el = document.getElementById("storageBadge");
+        if (!el) return;
+        if (!usage) {
+            el.hidden = true;
+            return;
+        }
+        el.hidden = false;
+        const q = usage.quota;
+        let text;
+        let title;
+        if (q && q.quota > 0) {
+            text = `💾 ${q.usageMB.toFixed(1)}/${Math.round(q.quotaMB)} MB`;
+            title = `Espaço usado: ${q.usageMB.toFixed(2)} MB de ~${q.quotaMB.toFixed(0)} MB` +
+                (q.pct != null ? ` (${q.pct.toFixed(1)}%)` : "") +
+                ` · IDB≈${usage.idbApproxMB.toFixed(2)} MB · clique para diagnóstico`;
+            el.classList.toggle("is-warn", q.pct != null && q.pct > 85);
+        } else {
+            text = `💾 ~${usage.idbApproxMB.toFixed(1)} MB`;
+            title = `Armazenamento estimado (IDB≈${usage.idbApproxMB.toFixed(2)} MB). Clique para diagnóstico.`;
+            el.classList.remove("is-warn");
+        }
+        el.textContent = text;
+        el.title = title;
     },
 
     bindChrome() {
@@ -106,6 +144,7 @@ var AppUI = {
         });
         document.getElementById("btnExportPack")?.addEventListener("click", () => this.exportPack());
         document.getElementById("btnDiagnostics")?.addEventListener("click", () => this.openDiagnostics());
+        document.getElementById("storageBadge")?.addEventListener("click", () => this.openDiagnostics());
         document.getElementById("btnImportProject")?.addEventListener("click", () => {
             document.getElementById("importFile").click();
         });
@@ -227,18 +266,15 @@ var AppUI = {
         const cards = Object.values(Store.project?.cards || {});
         const noArt = cards.filter((c) => !c.art?.src && !c.artData).length;
         const withArt = cards.length - noArt;
-        let lsBytes = 0;
-        try {
-            const raw = localStorage.getItem(Store.KEY) || "";
-            lsBytes = raw.length;
-        } catch (_) {}
+        let usage = null;
         let media = { count: 0, approxMB: 0 };
         let revs = [];
         let gcInfo = null;
         try {
             if (typeof MediaStore !== "undefined") {
                 await MediaStore.open();
-                media = await MediaStore.estimateBlobBytes();
+                usage = await MediaStore.estimateUsage();
+                media = usage.blobs;
                 revs = await MediaStore.listRevisions();
             }
         } catch (e) {
@@ -252,6 +288,16 @@ var AppUI = {
             });
         });
 
+        const q = usage?.quota;
+        const quotaLine = q
+            ? `~${q.usageMB.toFixed(1)} / ${q.quotaMB.toFixed(0)} MB` +
+              (q.pct != null ? ` (${q.pct.toFixed(1)}%)` : "")
+            : "indisponível";
+        const lib = usage?.library || { count: 0, approxMB: 0 };
+        const revStats = usage?.revisions || { count: 0, approxMB: 0 };
+        const lsKB = usage?.localStorage?.approxKB ?? 0;
+        const barPct = q?.pct != null ? Math.min(100, Math.max(0, q.pct)) : 0;
+
         const prev = document.getElementById("uiModalRoot");
         if (prev) prev.remove();
         const root = document.createElement("div");
@@ -263,10 +309,21 @@ var AppUI = {
             <h3>Diagnóstico do projeto</h3>
             <div class="diag-grid">
               <div><strong>Cartas</strong><br>${cards.length} total · ${withArt} com arte · ${noArt} sem arte</div>
-              <div><strong>localStorage</strong><br>${(lsBytes / 1024).toFixed(1)} KB (JSON slim)</div>
-              <div><strong>IndexedDB (artes)</strong><br>${media.count} blobs · ~${media.approxMB.toFixed(2)} MB (proxy)</div>
+              <div><strong>localStorage</strong><br>${lsKB.toFixed(1)} KB (projeto + prefs)</div>
+              <div><strong>IndexedDB — artes das cartas</strong><br>${media.count} blobs · ~${media.approxMB.toFixed(2)} MB</div>
+              <div><strong>Biblioteca de artes (upload)</strong><br>${lib.count} itens · ~${lib.approxMB.toFixed(2)} MB</div>
+              <div><strong>Revisões slim</strong><br>${revStats.count} · ~${revStats.approxMB.toFixed(2)} MB</div>
               <div><strong>Decks de classe ≠ 50</strong><br>${deckIssues.length ? deckIssues.join("<br>") : "Nenhum"}</div>
-              <div><strong>Revisões salvas</strong><br>${revs.length ? revs.slice(0, 5).map((r) => `${r.at.slice(0, 19)} · ${r.cards} cartas`).join("<br>") : "Nenhuma"}</div>
+              <div><strong>Histórico revisões</strong><br>${revs.length ? revs.slice(0, 5).map((r) => `${r.at.slice(0, 19)} · ${r.cards} cartas`).join("<br>") : "Nenhuma"}</div>
+            </div>
+            <h4 class="subhead">Espaço usado (quota do browser / app)</h4>
+            <div class="storage-usage">
+              <div class="progress-track storage-track" title="Uso estimado da origem">
+                <div class="progress-bar ${barPct > 85 ? "is-warn" : ""}" style="width:${barPct}%"></div>
+              </div>
+              <p class="hint">${quotaLine}
+                ${usage ? ` · IDB≈${usage.idbApproxMB.toFixed(2)} MB` : ""}
+              </p>
             </div>
             <div class="ui-modal-actions">
               <button type="button" class="btn" id="btnDiagGc">Limpar mídia órfã (GC)</button>
@@ -276,6 +333,7 @@ var AppUI = {
             <p class="hint" id="diagMsg"></p>
           </div>`;
         document.body.appendChild(root);
+        this._refreshStorageBadge(usage);
         const close = () => root.remove();
         root.querySelector("#diagBackdrop")?.addEventListener("click", close);
         root.querySelector("#btnDiagClose")?.addEventListener("click", close);

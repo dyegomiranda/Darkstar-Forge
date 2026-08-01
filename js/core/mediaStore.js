@@ -182,6 +182,91 @@ var MediaStore = {
         });
     },
 
+    _sizeofValue(v) {
+        if (v == null) return 0;
+        if (typeof v === "string") return v.length;
+        if (v instanceof ArrayBuffer) return v.byteLength;
+        if (v && typeof v.byteLength === "number") return v.byteLength;
+        if (v && typeof v === "object") {
+            try { return JSON.stringify(v).length; } catch (_) { return 0; }
+        }
+        return 0;
+    },
+
+    async _storeStats(storeName) {
+        const db = await this.open();
+        if (!db.objectStoreNames.contains(storeName)) {
+            return { count: 0, approxChars: 0, approxMB: 0 };
+        }
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, "readonly");
+            const req = tx.objectStore(storeName).getAll();
+            req.onsuccess = () => {
+                const vals = req.result || [];
+                let bytes = 0;
+                vals.forEach((v) => { bytes += this._sizeofValue(v); });
+                resolve({
+                    count: vals.length,
+                    approxChars: bytes,
+                    approxMB: bytes / (1024 * 1024)
+                });
+            };
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    /**
+     * Uso detalhado de armazenamento (IDB + localStorage + quota do browser).
+     */
+    async estimateUsage() {
+        const [blobs, library, revisions] = await Promise.all([
+            this._storeStats(this.STORE),
+            this._storeStats(this.ART_LIB),
+            this._storeStats(this.REV_STORE)
+        ]);
+
+        let lsBytes = 0;
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                const v = localStorage.getItem(k) || "";
+                lsBytes += (k ? k.length : 0) + v.length;
+            }
+        } catch (_) {}
+
+        let quota = null;
+        try {
+            if (navigator.storage?.estimate) {
+                const est = await navigator.storage.estimate();
+                quota = {
+                    usage: est.usage || 0,
+                    quota: est.quota || 0,
+                    usageMB: (est.usage || 0) / (1024 * 1024),
+                    quotaMB: (est.quota || 0) / (1024 * 1024),
+                    pct: est.quota ? ((est.usage || 0) / est.quota) * 100 : null
+                };
+            }
+        } catch (_) {}
+
+        const idbChars = blobs.approxChars + library.approxChars + revisions.approxChars;
+        // dataURL base64 ≈ 4/3 overhead; chars≈bytes proxy; estimate binary ≈ *0.75
+        const idbEstBytes = idbChars * 0.75;
+        const totalEstBytes = idbEstBytes + lsBytes * 2; // utf-16-ish for LS
+
+        return {
+            blobs,
+            library,
+            revisions,
+            localStorage: {
+                approxChars: lsBytes,
+                approxKB: lsBytes / 1024
+            },
+            quota,
+            totalApproxMB: totalEstBytes / (1024 * 1024),
+            idbApproxMB: idbEstBytes / (1024 * 1024)
+        };
+    },
+
     async resolve(value) {
         if (!value) return value;
         if (this.isRef(value)) {
