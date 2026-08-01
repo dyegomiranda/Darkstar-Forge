@@ -1083,7 +1083,7 @@ var EditorUI = {
 
         const items = [];
 
-        // 1) Biblioteca do usuário (upload) — sempre, funciona no Tauri e no browser
+        // 1) Biblioteca do usuário (upload) — sempre, funciona no Electron e no browser
         try {
             if (typeof MediaStore !== "undefined") {
                 const lib = await MediaStore.listLibraryArt();
