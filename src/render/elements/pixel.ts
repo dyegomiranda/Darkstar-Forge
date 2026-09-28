@@ -74,34 +74,6 @@ const txt = (color = INK): TextLook => ({ family: FONT, weight: 500, color, hard
 /** Números e rodapé: Silkscreen (algarismos mais legíveis que os da Pixelify — o 5 não vira S). */
 const num = (color = INK): TextLook => ({ family: 'Silkscreen', weight: 400, color, hard: true });
 
-const SWORD = [
-  '..........OO',
-  '.........OWO',
-  '........OWLO',
-  '.......OWLO.',
-  '......OWLO..',
-  '.O...OWLO...',
-  'OGO.OWLO....',
-  '.OGOWLO.....',
-  '..OGGO......',
-  '.OBOGGO.....',
-  'OBO..OGO....',
-  'OO....O.....',
-];
-const SHIELD = [
-  '.OOOOOOOOOO.',
-  'OSSSSSSSSSSO',
-  'OSLLLLCCCCSO',
-  'OSLLLLCCCCSO',
-  'OSLLLLCCCCSO',
-  'OSCCCCLLLLSO',
-  'OSCCCCLLLLSO',
-  '.OSCCCLLLSO.',
-  '.OSCCCLLLSO.',
-  '..OSCCLLSO..',
-  '...OSSSSO...',
-  '....OOOO....',
-];
 const GEM = ['...O...', '..OWO..', '.OWCCO.', 'OWCCCDO', '.OCCDO.', '..ODO..', '...O...'];
 const STAR = ['...O...', '..OWO..', 'OOWCWOO', 'OWCCCWO', '.OWCWO.', 'OWO.OWO', 'OO...OO'];
 
@@ -162,19 +134,7 @@ export const pixel: PieceStyle[] = [
   },
   {
     style: 'pixel', kind: 'stat', opacity: 1, metal: 'deck',
-    render(a) {
-      const { variant, pal } = a;
-      const t = tones(pal);
-      const p = windowBox(a, inset(a.box, 2, 2), (b, bd) => inset(b, bd + P, bd), num(), 2, true);
-      const c = p.content;
-      const u = P / 2; // ícone com pixel menor, 12×12
-      const s = 12 * u;
-      const colors: Record<string, string> = variant === 'atk'
-        ? { O: OUT, W: '#f4f7fb', L: '#9fb0c2', G: '#f0c040', B: '#7a4a22' }
-        : { O: OUT, S: '#c9d2dc', L: t.light, C: t.mid };
-      p.icon = pixelArt(variant === 'atk' ? SWORD : SHIELD, Math.round((c.x + 2) / u) * u, Math.round((c.y + (c.h - s) / 2) / u) * u, u, colors);
-      return p;
-    },
+    render: (a) => windowBox(a, inset(a.box, 2, 2), (b, bd) => inset(b, bd + P, bd), num(), 2, true),
   },
   {
     style: 'pixel', kind: 'footer', opacity: 1, metal: 'deck',

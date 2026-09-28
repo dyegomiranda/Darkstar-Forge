@@ -1,65 +1,57 @@
 /**
- * Desenha um símbolo (glyphs.ts) num dos estilos:
- *  - emblema: metal/esmalte com relevo, contorno escuro e sombra
- *  - traco:   só contorno fino e gravações, com brilho suave
- *  - chapado: cor sólida, furos vazados (design gráfico)
- *  - pixel:   chapado com contorno, pixelado
+ * Desenha um símbolo (game-icons, quadro 512×512) num dos acabamentos:
+ *  - emblema:  metal gravado — degradê metálico na cor, relevo, contorno escuro e sombra
+ *  - medalhao: o símbolo em metal sobre um medalhão (aro de metal + esmalte)
+ *  - chapado:  silhueta limpa numa cor só
+ *  - pixel:    silhueta com contorno, pixelada (~16 px)
  */
-import { darken, lighten, luminance, mix } from '../color';
+import { darken, lighten, mix } from '../color';
 import type { Defs } from '../defs';
-import type { Pt } from '../shapes';
-import { GLYPHS, type Glyph } from './glyphs';
+import { ICONS } from './game-icons';
 
-export type IconStyle = 'emblema' | 'traco' | 'chapado' | 'pixel';
-export const ICON_STYLES: { id: IconStyle; name: string }[] = [
-  { id: 'emblema', name: 'Emblema' },
-  { id: 'traco', name: 'Traço' },
-  { id: 'chapado', name: 'Chapado' },
-  { id: 'pixel', name: 'Pixel' },
+export type IconStyle = 'emblema' | 'medalhao' | 'chapado' | 'pixel';
+export const ICON_STYLES: { id: IconStyle; name: string; en: string }[] = [
+  { id: 'emblema', name: 'Metal gravado', en: 'Engraved metal' },
+  { id: 'medalhao', name: 'Medalhão', en: 'Medallion' },
+  { id: 'chapado', name: 'Silhueta', en: 'Silhouette' },
+  { id: 'pixel', name: 'Pixel', en: 'Pixel' },
 ];
 
-const f = (n: number) => +n.toFixed(1);
-const toD = (polys: Pt[][] | undefined, closed = true) =>
-  (polys ?? []).map((p) => p.map((q, i) => `${i ? 'L' : 'M'}${f(q[0])} ${f(q[1])}`).join('') + (closed ? 'Z' : '')).join('');
+const U = 512;
+const f = (n: number) => +n.toFixed(2);
 
-/** Contorno externo da silhueta inteira (dilatação − original), no espaço 100×100. */
-function outline(defs: Defs, color: string, r: number, opacity = 1): string {
-  return defs.url(`gl-outline:${color}:${r}:${opacity}`, (id) =>
-    `<filter id="${id}" x="-15" y="-15" width="130" height="130" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">` +
+/** Região de filtro em volta do quadro 512 (em unidades do símbolo). */
+const REGION = `x="-80" y="-80" width="672" height="672" filterUnits="userSpaceOnUse"`;
+
+function outline(defs: Defs, color: string, r: number): string {
+  return defs.url(`gi-outline:${color}:${r}`, (id) =>
+    `<filter id="${id}" ${REGION} color-interpolation-filters="sRGB">` +
     `<feMorphology in="SourceAlpha" operator="dilate" radius="${r}" result="d"/>` +
-    `<feFlood flood-color="${color}" flood-opacity="${opacity}"/><feComposite in2="d" operator="in" result="o"/>` +
+    `<feFlood flood-color="${color}"/><feComposite in2="d" operator="in" result="o"/>` +
     `<feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`);
 }
 
-function ringOnly(defs: Defs, color: string, r: number): string {
-  return defs.url(`gl-ring:${color}:${r}`, (id) =>
-    `<filter id="${id}" x="-15" y="-15" width="130" height="130" filterUnits="userSpaceOnUse">` +
-    `<feMorphology in="SourceAlpha" operator="dilate" radius="${r}" result="d"/>` +
-    `<feComposite in="d" in2="SourceAlpha" operator="out" result="o"/>` +
-    `<feFlood flood-color="${color}"/><feComposite in2="o" operator="in"/></filter>`);
-}
-
-function glyphBevel(defs: Defs): string {
-  return defs.url('gl-bevel', (id) =>
-    `<filter id="${id}" x="-10" y="-10" width="120" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">` +
-    `<feGaussianBlur in="SourceAlpha" stdDeviation="2.2" result="b"/>` +
-    `<feSpecularLighting in="b" surfaceScale="3.5" specularConstant=".9" specularExponent="20" lighting-color="#fff" result="s">` +
-    `<feDistantLight azimuth="235" elevation="45"/></feSpecularLighting>` +
+function bevel(defs: Defs): string {
+  return defs.url('gi-bevel', (id) =>
+    `<filter id="${id}" ${REGION} color-interpolation-filters="sRGB">` +
+    `<feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b"/>` +
+    `<feSpecularLighting in="b" surfaceScale="6" specularConstant=".95" specularExponent="22" lighting-color="#fff" result="s">` +
+    `<feDistantLight azimuth="235" elevation="42"/></feSpecularLighting>` +
     `<feComposite in="s" in2="SourceAlpha" operator="in" result="si"/>` +
-    `<feComposite in="SourceGraphic" in2="si" operator="arithmetic" k2="1" k3=".7"/></filter>`);
+    `<feOffset in="b" dx="-4" dy="-6" result="o"/>` +
+    `<feComposite in="SourceAlpha" in2="o" operator="arithmetic" k2="1" k3="-1" result="edge"/>` +
+    `<feFlood flood-color="#000" flood-opacity=".5"/><feComposite in2="edge" operator="in" result="dk"/>` +
+    `<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="dk"/></feMerge>` +
+    `<feComposite in2="si" operator="arithmetic" k2="1" k3=".75" result="lit"/>` +
+    `<feComposite in="lit" in2="SourceAlpha" operator="in"/></filter>`);
 }
 
-function pixelate(defs: Defs, block: number): string {
-  return defs.url(`gl-pix:${block}`, (id) =>
-    `<filter id="${id}" x="-10" y="-10" width="120" height="120" filterUnits="userSpaceOnUse">` +
-    pixelSteps(block) + `</filter>`);
+function dropShadow(defs: Defs): string {
+  return defs.url('gi-shadow', (id) =>
+    `<filter id="${id}" ${REGION} color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000" flood-opacity=".7"/></filter>`);
 }
 
-/**
- * Passos do filtro de pixelar: amostra um quadradinho no meio de cada bloco e
- * dilata até cobrir o bloco. A amostra é proporcional ao bloco (não 1 unidade),
- * senão some quando o desenho é pequeno na tela.
- */
+/** Passos do filtro de pixelar (amostra proporcional ao bloco — não some quando pequeno). */
 export function pixelSteps(block: number): string {
   const s = +(block * 0.5).toFixed(3);
   const o = +((block - s) / 2).toFixed(3);
@@ -68,75 +60,79 @@ export function pixelSteps(block: number): string {
     `<feMorphology operator="dilate" radius="${o}"/>`;
 }
 
-/** Máscara com furos e gravações vazados (para Chapado/Pixel). */
-function holeMask(defs: Defs, g: Glyph, lineW: number): string {
-  return defs.url(`gl-mask:${g.id}:${lineW}`, (id) =>
-    `<mask id="${id}" maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">` +
-    `<rect x="-10" y="-10" width="120" height="120" fill="#fff"/>` +
-    (g.holes ? `<path d="${toD(g.holes)}" fill="#000"/>` : '') +
-    (g.lines ? `<path d="${toD(g.lines, false)}" fill="none" stroke="#000" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>` : '') +
-    `</mask>`);
+function pixelate(defs: Defs, block: number): string {
+  return defs.url(`gi-pix:${block}`, (id) => `<filter id="${id}" ${REGION}>${pixelSteps(block)}</filter>`);
+}
+
+/** Degradê metálico a partir de uma cor (claro em cima, reflexo no meio, escuro embaixo). */
+function metal(defs: Defs, color: string): string {
+  return defs.linear([[0, lighten(color, 0.55)], [0.35, lighten(color, 0.12)], [0.52, darken(color, 0.18)], [0.6, lighten(color, 0.08)], [1, darken(color, 0.5)]]);
 }
 
 export interface GlyphOpts {
-  /** Cor principal (padrão: a cor do próprio símbolo). */
+  /** Cor do símbolo (metal/silhueta). */
   color?: string;
-  /** Opacidade geral. */
   opacity?: number;
-  /** Sem gravações/furos (quando um número vai por cima do símbolo). */
-  plain?: boolean;
+  /** Medalhão: cor do aro e do esmalte. */
+  ring?: string;
+  enamel?: string;
 }
 
-/** Desenha o símbolo `id` com o canto superior esquerdo em (x,y) e lado `size`. */
+/** Símbolo `id` com canto superior esquerdo em (x,y) e lado `size`. */
 export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y: number, size: number, o: GlyphOpts = {}): string {
-  const g0 = GLYPHS[id];
-  if (!g0) return '';
-  const g: Glyph = o.plain ? { ...g0, holes: undefined, lines: undefined } : g0;
-  const color = o.color ?? g.color ?? '#d6dde6';
-  const k = size / 100;
-  const body = toD(g.body);
-  const inner = toD(g.inner);
-  const holes = toD(g.holes);
-  const lines = toD(g.lines, false);
-  const dark = mix(darken(color, 0.78), '#0c0908', 0.4);
-  let inside = '';
+  const ic = ICONS[id];
+  if (!ic) return '';
+  const color = o.color ?? '#d3dae3';
+  const dark = mix(darken(color, 0.82), '#0b0807', 0.5);
+  const path = (fill: string, extra = '') => `<path d="${ic.d}" fill="${fill}"${extra}/>`;
+  let inner = '';
 
   if (style === 'emblema') {
-    const grad = defs.linear([[0, lighten(color, 0.45)], [0.45, color], [1, darken(color, 0.45)]]);
-    const innerGrad = defs.linear([[0, lighten(color, 0.7)], [1, lighten(color, 0.15)]]);
-    inside =
-      `<g filter="${defs.shadow(3, 3, 0.7)}"><g filter="${outline(defs, dark, 3.2)}">` +
-      `<g filter="${glyphBevel(defs)}"><path d="${body}" fill="${grad}"/></g></g></g>` +
-      (inner ? `<path d="${inner}" fill="${innerGrad}" opacity=".55"/>` : '') +
-      (holes ? `<path d="${holes}" fill="${dark}"/>` : '') +
-      (lines ? `<path d="${lines}" fill="none" stroke="${dark}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>` : '');
-  } else if (style === 'traco') {
-    const glowC = lighten(color, 0.2);
-    inside =
-      `<g filter="${defs.glow(glowC, 3, 0.7)}">` +
-      `<g filter="${ringOnly(defs, color, 3.4)}"><path d="${body}" fill="#000"/></g>` +
-      (inner ? `<path d="${inner}" fill="none" stroke="${color}" stroke-width="2" opacity=".75"/>` : '') +
-      (holes ? `<path d="${holes}" fill="none" stroke="${color}" stroke-width="2.6"/>` : '') +
-      (lines ? `<path d="${lines}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` : '') +
-      `</g>`;
+    inner = `<g filter="${dropShadow(defs)}"><g filter="${outline(defs, dark, 12)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
+  } else if (style === 'medalhao') {
+    const ring = o.ring ?? '#c9a45c';
+    const enamel = o.enamel ?? mix(darken(color, 0.72), '#0d0b10', 0.35);
+    const c = U / 2;
+    const disc = `M${c - 206} ${c}a206 206 0 1 0 412 0a206 206 0 1 0-412 0Z`;
+    const rim = `M${c - 252} ${c}a252 252 0 1 0 504 0a252 252 0 1 0-504 0Z` + disc;
+    inner =
+      `<g filter="${dropShadow(defs)}"><g filter="${bevel(defs)}"><path d="${rim}" fill-rule="evenodd" fill="${metal(defs, ring)}"/></g></g>` +
+      `<path d="${disc}" fill="${defs.radial([[0, lighten(enamel, 0.25)], [0.75, enamel], [1, darken(enamel, 0.5)]], 0.5, 0.4, 0.65)}"/>` +
+      `<path d="M${c - 196} ${c}a196 196 0 1 0 392 0a196 196 0 1 0-392 0Z" fill="none" stroke="${lighten(ring, 0.3)}" stroke-width="5" opacity=".55"/>` +
+      `<g transform="translate(${U * 0.19} ${U * 0.19}) scale(.62)"><g filter="${outline(defs, dark, 10)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
   } else if (style === 'chapado') {
-    const lighter = luminance(color) > 0.6 ? darken(color, 0.12) : lighten(color, 0.22);
-    inside =
-      `<g mask="${holeMask(defs, g, 5)}">` +
-      `<path d="${body}" fill="${color}"/>` +
-      (inner ? `<path d="${inner}" fill="${lighter}"/>` : '') +
-      `</g>`;
+    inner = path(color);
   } else {
-    // pixel: cores chapadas com detalhes escuros (como sprite), contorno preto e grade de ~16 px
-    const lighter = luminance(color) > 0.6 ? darken(color, 0.15) : lighten(color, 0.3);
-    const shade = darken(color, 0.45);
-    const shape =
-      `<path d="${body}" fill="${color}"/>` +
-      (inner ? `<path d="${inner}" fill="${lighter}"/>` : '') +
-      (holes ? `<path d="${holes}" fill="${shade}"/>` : '') +
-      (lines ? `<path d="${lines}" fill="none" stroke="${shade}" stroke-width="6" stroke-linecap="square"/>` : '');
-    inside = `<g filter="${pixelate(defs, 6.25)}"><g filter="${outline(defs, '#0b0a12', 5)}">${shape}</g></g>`;
+    inner = `<g filter="${pixelate(defs, 32)}"><g filter="${outline(defs, '#0b0a12', 22)}">${path(color)}</g></g>`;
   }
+  const k = size / U;
   const op = o.opacity != null && o.opacity < 1 ? ` opacity="${o.opacity}"` : '';
-  return `<g transform="translate(${f(x)} ${f(y)}) scale(${+k.toFixed(4)})"${op}>${inside}</g>`;
+  return `<g transform="translate(${f(x)} ${f(y)}) scale(${+k.toFixed(5)})"${op}>${inner}</g>`;
+}
+
+/**
+ * Placa de número (modo "número dentro do símbolo"): medalhão com o símbolo
+ * apagado ao fundo — o número vai por cima, sempre legível.
+ */
+export function drawStatBadge(defs: Defs, id: string, style: IconStyle, cx: number, cy: number, size: number, color: string, ring: string): string {
+  const x = cx - size / 2, y = cy - size / 2;
+  const ic = ICONS[id];
+  if (!ic) return '';
+  const k = size / U;
+  const c = U / 2;
+  const enamel = mix(darken(color, 0.78), '#0c0a0d', 0.4);
+  let base: string;
+  if (style === 'chapado') {
+    base = `<path d="M${c - 250} ${c}a250 250 0 1 0 500 0a250 250 0 1 0-500 0Z" fill="${enamel}"/>` +
+      `<path d="M${c - 238} ${c}a238 238 0 1 0 476 0a238 238 0 1 0-476 0Z" fill="none" stroke="${color}" stroke-width="22"/>`;
+  } else if (style === 'pixel') {
+    base = `<g filter="${pixelate(defs, 32)}"><path d="M${c - 250} ${c}a250 250 0 1 0 500 0a250 250 0 1 0-500 0Z" fill="${color}"/>` +
+      `<path d="M${c - 205} ${c}a205 205 0 1 0 410 0a205 205 0 1 0-410 0Z" fill="${enamel}"/></g>`;
+  } else {
+    const disc = `M${c - 210} ${c}a210 210 0 1 0 420 0a210 210 0 1 0-420 0Z`;
+    base = `<g filter="${dropShadow(defs)}"><g filter="${bevel(defs)}"><path d="M${c - 252} ${c}a252 252 0 1 0 504 0a252 252 0 1 0-504 0Z${disc}" fill-rule="evenodd" fill="${metal(defs, ring)}"/></g></g>` +
+      `<path d="${disc}" fill="${defs.radial([[0, lighten(enamel, 0.3)], [0.8, enamel], [1, darken(enamel, 0.5)]], 0.5, 0.4, 0.65)}"/>`;
+  }
+  const ghost = `<g transform="translate(${U * 0.16} ${U * 0.16}) scale(.68)" opacity=".38"><path d="${ic.d}" fill="${lighten(color, 0.2)}"/></g>`;
+  return `<g transform="translate(${f(x)} ${f(y)}) scale(${+k.toFixed(5)})">${base}${ghost}</g>`;
 }

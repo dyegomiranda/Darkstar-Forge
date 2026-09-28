@@ -6,10 +6,11 @@ import { compose, type ComposeInput, type IconChoice, type Look, type PieceChoic
 import { Defs } from '../render/defs';
 import { piece, PIECE_KINDS, STYLES, type PieceKind, type StyleId } from '../render/elements';
 import { CARD_FONTS, loadCardFonts } from '../render/fonts';
-import { ATK_GLYPHS, CLASS_GLYPHS, DEF_GLYPHS, GLYPHS, RESOURCE_GLYPHS } from '../render/icons/glyphs';
+import { ATK_CHOICES, classChoices, classIcon, DEF_CHOICES, ICON_NAMES, RESOURCE_COLORS, RESOURCE_IDS, resourceIcon, STEEL } from '../render/icons/glyphs';
 import { drawGlyph, ICON_STYLES, type IconStyle } from '../render/icons/render';
 import { skeleton } from '../render/layout';
-import { makePalette, type MetalKind } from '../render/palette';
+import { makePalette, vivid, type MetalKind } from '../render/palette';
+import { lighten } from '../render/color';
 import { rasterize } from '../render/raster';
 import './showcase.css';
 
@@ -26,7 +27,7 @@ const DECK = {
 } as const;
 type DeckId = keyof typeof DECK;
 
-const SET_ICON = '/assets/icons/set/logo.png';
+const SET_ICON = '/brand/logo.png';
 
 interface Sample { deck: DeckId; also?: DeckId; name: string; type: string; rules: string; flavor?: string; cost: number; stats?: [number, number]; rarity: string; n: string }
 
@@ -106,7 +107,7 @@ function glyphGallery(ids: string[], title: string, key: string, color?: (id: st
     ICON_STYLES.forEach((st, col) => {
       body += drawGlyph(defs, id, st.id, col * cell + 18, row * cell + 16, 84, { color: color?.(id) });
     });
-    body += `<text x="${ICON_STYLES.length * cell + 10}" y="${row * cell + 64}" fill="#bfb2a2" font-family="Noto Sans" font-size="17">${esc(GLYPHS[id].name)}</text>`;
+    body += `<text x="${ICON_STYLES.length * cell + 10}" y="${row * cell + 64}" fill="#bfb2a2" font-family="Noto Sans" font-size="17">${esc(ICON_NAMES[id] ?? id)}</text>`;
   });
   const top = 30;
   const heads = ICON_STYLES.map((s, i) => `<text x="${i * cell + 60}" y="20" fill="#8f8272" font-family="Noto Sans" font-size="14" text-anchor="middle">${s.name}</text>`).join('');
@@ -161,7 +162,7 @@ function benchControls(): string {
     const c = bench.icons[key];
     return `<div class="ctl-row"><span class="lbl">${label}</span>
       <select data-icon="${key}" data-f="style">${opt('', 'estilo do tema', c.style ?? '')}${ICON_STYLES.map((s) => opt(s.id, s.name, c.style ?? '')).join('')}</select>
-      ${glyphs.length ? `<select data-icon="${key}" data-f="glyph">${opt('', 'símbolo padrão', c.glyph ?? '')}${glyphs.map((g) => opt(g, GLYPHS[g].name, c.glyph ?? '')).join('')}</select>` : ''}
+      ${glyphs.length ? `<select data-icon="${key}" data-f="glyph">${opt('', 'símbolo padrão', c.glyph ?? '')}${glyphs.map((g) => opt(g, ICON_NAMES[g] ?? g, c.glyph ?? '')).join('')}</select>` : ''}
       <input type="color" data-icon="${key}" data-f="color" value="${c.color ?? '#d6dde6'}" title="Cor do símbolo">
       <button class="mini" data-icon-reset="${key}" title="Voltar à cor padrão">↺</button></div>`;
   };
@@ -194,9 +195,9 @@ function benchControls(): string {
     <table class="bench-table"><thead><tr><th></th><th>Estilo</th><th>Cor</th><th>Transparência</th><th>Metal</th><th>Cor do texto</th><th>Fonte</th></tr></thead><tbody>${pieceRows}</tbody></table>
     <h4>Símbolos</h4>
     ${iconRow('cost', 'Custo', [])}
-    ${iconRow('class', 'Classe', CLASS_GLYPHS)}
-    ${iconRow('atk', 'Ataque', ATK_GLYPHS)}
-    ${iconRow('def', 'Defesa', DEF_GLYPHS)}
+    ${iconRow('class', 'Classe', classChoices(bench.deck))}
+    ${iconRow('atk', 'Ataque', ATK_CHOICES)}
+    ${iconRow('def', 'Defesa', DEF_CHOICES)}
     <div class="ctl-row"><span class="lbl">ATK/DEF</span>
       <label><input type="radio" name="statMode" value="placa"${bench.icons.statMode === 'placa' ? ' checked' : ''}> em placas</label>
       <label><input type="radio" name="statMode" value="emblema"${bench.icons.statMode === 'emblema' ? ' checked' : ''}> número dentro do símbolo</label>
@@ -262,7 +263,6 @@ function mountBench() {
 
 // ───────────── página ─────────────
 
-const DECK_OF_GLYPH: Record<string, DeckId> = { weapons: 'red', wizard: 'blue', tree: 'green', skull: 'black', dagger: 'purple', shieldcross: 'white', lotus: 'silver', potion: 'orange', helmet: 'gear' };
 
 function render(deck: DeckId) {
   const app = document.getElementById('app')!;
@@ -277,7 +277,11 @@ function render(deck: DeckId) {
     PIECE_KINDS.filter((k) => k !== 'frame').map((k) => `<tr><th>${PIECE_NAMES[k]}</th>${styles.map((s) => `<td>${pieceEl(s.id, k, deck)}</td>`).join('')}</tr>`).join('') +
     `</tbody></table>`;
 
-  const deckColor = (id: string) => (DECK_OF_GLYPH[id] ? DECK[DECK_OF_GLYPH[id]].hex : undefined);
+  const resIds = RESOURCE_IDS.map((r) => resourceIcon(r)!);
+  const resColor = (id: string) => RESOURCE_COLORS[RESOURCE_IDS[resIds.indexOf(id)]];
+  const deckIds = (Object.keys(DECK) as DeckId[]);
+  const clsIds = deckIds.map((d) => classIcon(d));
+  const deckColor = (id: string) => DECK[deckIds[clsIds.indexOf(id)]]?.hex;
 
   const mixes: [string, Look][] = [
     ['Cabeçalho Ornado + regras Gótico + resto Arcano', { style: 'arcano', pieces: { header: { style: 'ornado' }, rules: { style: 'gotico' }, typeBar: { style: 'gotico' } } }],
@@ -288,9 +292,9 @@ function render(deck: DeckId) {
   ];
   const emblems: [string, Look][] = [
     ['Impacto + escudo (Emblema)', { style: 'ornado', icons: { statMode: 'emblema' } }],
-    ['Espadas + escudo redondo (Chapado)', { style: 'moderno', icons: { statMode: 'emblema', atk: { glyph: 'swords', style: 'chapado', color: '#f2f2f2' }, def: { glyph: 'round', style: 'chapado', color: '#3d8bff' } } }],
-    ['Impacto + coração (Traço)', { style: 'arcano', icons: { statMode: 'emblema', atk: { glyph: 'burst', style: 'traco', color: '#ffb84a' }, def: { glyph: 'heart', style: 'traco' } } }],
-    ['Pixel com número dentro', { style: 'pixel', pixelateArt: 7, icons: { statMode: 'emblema', atk: { glyph: 'burst' }, def: { glyph: 'heart' } } }],
+    ['Espadas + escudo redondo (Chapado)', { style: 'moderno', icons: { statMode: 'emblema', atk: { glyph: 'crossed-swords', style: 'chapado', color: '#f2f2f2' }, def: { glyph: 'viking-shield', style: 'chapado', color: '#3d8bff' } } }],
+    ['Garras + vida (Metal gravado)', { style: 'arcano', icons: { statMode: 'emblema', atk: { glyph: 'triple-claws', color: '#ffb84a' }, def: { glyph: 'heart-drop', color: '#e0453a' } } }],
+    ['Pixel com número dentro', { style: 'pixel', pixelateArt: 7, icons: { statMode: 'emblema', atk: { glyph: 'broadsword' }, def: { glyph: 'heart-drop', color: '#e0453a' } } }],
   ];
   const framed = styles.map((st) => cardEl(input(SAMPLES[4], { ...lookFor(st.id), pieces: { frame: { style: st.id } } }, uid()), `${st.name} — com moldura`)).join('');
 
@@ -301,7 +305,7 @@ function render(deck: DeckId) {
     </header>
     <section><h2>1. Monte sua carta</h2><div id="bench"></div></section>
     <section><h2>2. Símbolos (cada um em 4 estilos de desenho)</h2>
-      <div class="row gl">${glyphGallery(RESOURCE_GLYPHS, 'Recursos (custo)', 'res')}${glyphGallery(CLASS_GLYPHS, 'Classes e decks', 'cls', deckColor)}${glyphGallery([...ATK_GLYPHS, ...DEF_GLYPHS], 'Ataque e defesa', 'cbt')}</div>
+      <div class="row gl">${glyphGallery(resIds, 'Recursos (custo)', 'res', resColor)}${glyphGallery(clsIds, 'Classes e decks', 'cls', (id) => lighten(vivid(deckColor(id) ?? '#999999'), 0.3))}${glyphGallery([...ATK_CHOICES, ...DEF_CHOICES], 'Ataque e defesa (opções)', 'cbt', () => STEEL)}</div>
     </section>
     <section><h2>3. Peças lado a lado</h2>
       <label>Cor do deck: <select id="deck">${Object.entries(DECK).map(([id, d]) => `<option value="${id}"${id === deck ? ' selected' : ''}>${d.name}</option>`).join('')}</select></label>

@@ -1,4 +1,5 @@
 import { defineConfig, type Plugin } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -25,11 +26,11 @@ function snaps(): Plugin {
 
 export default defineConfig({
   base: './',
-  plugins: [snaps()],
+  plugins: [svelte(), snaps()],
   server: { port: 5173, strictPort: true },
   build: {
     rollupOptions: {
-      input: { mostruario: resolve(__dirname, 'mostruario.html') },
+      input: { main: resolve(__dirname, 'index.html'), mostruario: resolve(__dirname, 'mostruario.html') },
     },
   },
 });

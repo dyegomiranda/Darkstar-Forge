@@ -1,0 +1,186 @@
+[
+ {
+  "id": "human",
+  "name": {
+   "pt-BR": "Humano",
+   "en-US": "Human"
+  },
+  "boosts": {
+   "str": 2,
+   "cha": 2
+  },
+  "flaws": {},
+  "hp": 8,
+  "desc": {
+   "pt-BR": "Versáteis e ambiciosos.",
+   "en-US": "Versatile and ambitious."
+  }
+ },
+ {
+  "id": "elf",
+  "name": {
+   "pt-BR": "Elfo",
+   "en-US": "Elf"
+  },
+  "boosts": {
+   "dex": 2,
+   "int": 2
+  },
+  "flaws": {
+   "con": -2
+  },
+  "hp": 6,
+  "desc": {
+   "pt-BR": "Ágeis e longevos.",
+   "en-US": "Graceful and long-lived."
+  }
+ },
+ {
+  "id": "dwarf",
+  "name": {
+   "pt-BR": "Anão",
+   "en-US": "Dwarf"
+  },
+  "boosts": {
+   "con": 2,
+   "wis": 2
+  },
+  "flaws": {
+   "cha": -2
+  },
+  "hp": 10,
+  "desc": {
+   "pt-BR": "Resistentes e teimosos.",
+   "en-US": "Stout and steadfast."
+  }
+ },
+ {
+  "id": "halfling",
+  "name": {
+   "pt-BR": "Halfling",
+   "en-US": "Halfling"
+  },
+  "boosts": {
+   "dex": 2,
+   "wis": 2
+  },
+  "flaws": {
+   "str": -2
+  },
+  "hp": 6,
+  "desc": {
+   "pt-BR": "Pequenos e sortudos.",
+   "en-US": "Small and lucky."
+  }
+ },
+ {
+  "id": "gnome",
+  "name": {
+   "pt-BR": "Gnomo",
+   "en-US": "Gnome"
+  },
+  "boosts": {
+   "con": 2,
+   "cha": 2
+  },
+  "flaws": {
+   "str": -2
+  },
+  "hp": 8,
+  "desc": {
+   "pt-BR": "Curiosos e mágicos.",
+   "en-US": "Curious and magical."
+  }
+ },
+ {
+  "id": "orc",
+  "name": {
+   "pt-BR": "Orc",
+   "en-US": "Orc"
+  },
+  "boosts": {
+   "str": 2,
+   "con": 2
+  },
+  "flaws": {
+   "int": -2
+  },
+  "hp": 10,
+  "desc": {
+   "pt-BR": "Fortes e ferozes.",
+   "en-US": "Strong and fierce."
+  }
+ },
+ {
+  "id": "goblin",
+  "name": {
+   "pt-BR": "Goblin",
+   "en-US": "Goblin"
+  },
+  "boosts": {
+   "dex": 2,
+   "cha": 2
+  },
+  "flaws": {
+   "wis": -2
+  },
+  "hp": 6,
+  "desc": {
+   "pt-BR": "Astutos e caóticos.",
+   "en-US": "Clever and chaotic."
+  }
+ },
+ {
+  "id": "tiefling",
+  "name": {
+   "pt-BR": "Tiefling",
+   "en-US": "Tiefling"
+  },
+  "boosts": {
+   "cha": 2,
+   "int": 2
+  },
+  "flaws": {
+   "wis": -2
+  },
+  "hp": 8,
+  "desc": {
+   "pt-BR": "Herança infernal.",
+   "en-US": "Infernal heritage."
+  }
+ },
+ {
+  "id": "aasimar",
+  "name": {
+   "pt-BR": "Aasimar",
+   "en-US": "Aasimar"
+  },
+  "boosts": {
+   "wis": 2,
+   "cha": 2
+  },
+  "flaws": {},
+  "hp": 8,
+  "desc": {
+   "pt-BR": "Herança celestial.",
+   "en-US": "Celestial heritage."
+  }
+ },
+ {
+  "id": "dragonborn",
+  "name": {
+   "pt-BR": "Draconato",
+   "en-US": "Dragonborn"
+  },
+  "boosts": {
+   "str": 2,
+   "cha": 2
+  },
+  "flaws": {},
+  "hp": 10,
+  "desc": {
+   "pt-BR": "Sangue de dragão.",
+   "en-US": "Dragon blood."
+  }
+ }
+]

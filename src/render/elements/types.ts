@@ -37,8 +37,6 @@ export interface PieceOut {
   iconColor?: string;
   /** Pixelar os ícones desenhados dentro da peça (tamanho do bloco). */
   pixelIcons?: number;
-  /** Ícone próprio da peça (ex.: espada em pixel); substitui o ícone padrão. */
-  icon?: string;
 }
 
 export interface PieceStyle {

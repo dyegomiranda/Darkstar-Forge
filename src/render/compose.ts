@@ -7,8 +7,9 @@ import { lighten, luminance } from './color';
 import { Defs } from './defs';
 import { piece, styleInfo, type PieceKind, type PieceOut, type PieceStyle, type StyleId } from './elements';
 import { RARITY_COLORS, rarityGem, textShadow } from './elements/common';
-import { DECK_GLYPH, GLYPHS } from './icons/glyphs';
-import { drawGlyph, pixelSteps, type IconStyle } from './icons/render';
+import { ATK_ICON, classIcon, DEF_ICON, isResource, RESOURCE_COLORS, resourceIcon, STEEL } from './icons/glyphs';
+import { drawGlyph, drawStatBadge, pixelSteps, type IconStyle } from './icons/render';
+import type { ResourceId } from '../model/types';
 import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, skeleton } from './layout';
 import { makePalette, vivid, type MetalKind } from './palette';
 import { roundRect, type Box } from './shapes';
@@ -116,8 +117,9 @@ export function compose(inp: ComposeInput): string {
   const iconStyleFor = (kind: PieceKind, pick?: IconChoice): IconStyle =>
     pick?.style ?? styleInfo(choose(look, kind).ch.style ?? look.style).icons;
   const costIcons = iconStyleFor('cost', look.icons?.cost);
-  const iconFn: IconFn = (id, x, y, s) => drawGlyph(defs, id, costIcons, x, y, s);
-  const knownIcon = (id: string) => id in GLYPHS;
+  // {mana}, {vigor}… no texto viram o símbolo do recurso
+  const iconFn: IconFn = (id, x, y, s) => (isResource(id) ? drawGlyph(defs, resourceIcon(id)!, costIcons, x, y, s, { color: RESOURCE_COLORS[id] }) : '');
+  const knownIcon = isResource;
 
   // 1) Altura da caixa de regras: mede o texto com as margens internas do estilo escolhido.
   const rulesPick = choose(look, 'rules');
@@ -231,25 +233,25 @@ export function compose(inp: ComposeInput): string {
     const c = C.out.content;
     const { st } = styled(defs, textOf(C.out, C.ch), sz.cost * (c.h / 90));
     const num = String(inp.cost.amount);
-    const glyph = look.icons?.cost?.glyph ?? inp.cost.resource;
-    const hasIcon = glyph in GLYPHS;
-    const iconS = c.h * 0.5;
+    const glyph = look.icons?.cost?.glyph ?? resourceIcon(inp.cost.resource);
+    const iconS = c.h * 0.52;
     const f = fitLine(num, st, c.w * 0.5);
     const numW = measure(num, f);
-    const gap = c.h * 0.04;
-    const total = (hasIcon ? iconS + gap : 0) + numW;
+    const gap = c.h * 0.05;
+    const total = (glyph ? iconS + gap : 0) + numW;
     const x0 = c.x + (c.w - total) / 2;
-    if (hasIcon) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0, c.y + (c.h - iconS) / 2, iconS, { color: look.icons?.cost?.color }));
-    text += centered(defs, num, textOf(C.out, C.ch), f.size, { x: x0 + (hasIcon ? iconS + gap : 0), y: c.y, w: numW + 2, h: c.h });
+    const color = look.icons?.cost?.color ?? RESOURCE_COLORS[inp.cost.resource as ResourceId];
+    if (glyph) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0, c.y + (c.h - iconS) / 2, iconS, { color }));
+    text += centered(defs, num, textOf(C.out, C.ch), f.size, { x: x0 + (glyph ? iconS + gap : 0), y: c.y, w: numW + 2, h: c.h });
   }
 
   const K = outs.class;
   if (K) {
     const c = K.out.content;
-    const s = Math.min(c.w, c.h) * 0.9;
+    const s = Math.min(c.w, c.h) * 0.94;
     const pick = look.icons?.class;
-    const glyph = pick?.glyph ?? DECK_GLYPH[inp.colorId] ?? 'weapons';
-    const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.25);
+    const glyph = pick?.glyph ?? classIcon(inp.colorId);
+    const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
     text += pix(K.out, drawGlyph(defs, glyph, iconStyleFor('class', pick), c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, { color }));
   }
 
@@ -269,30 +271,20 @@ export function compose(inp: ComposeInput): string {
     const num = String(inp.stats[k]);
     const tl = textOf(P.out, P.ch);
     const style = iconStyleFor('stat', pick);
+    const glyph = pick?.glyph ?? (k === 'atk' ? ATK_ICON : DEF_ICON);
+    const color = pick?.color ?? STEEL;
     if (emblemStats) {
-      // número dentro do símbolo grande, sem caixa
-      const glyph = pick?.glyph ?? (k === 'atk' ? 'burst' : 'shield');
+      // número dentro de um medalhão com o símbolo apagado ao fundo, sem caixa
       const b = P.args.box;
-      const s = b.h * 1.5;
-      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-      const solid = !!GLYPHS[glyph]?.solid;
-      // símbolo vazado (espadas, garras): um disco escuro atrás dá leitura ao número
-      if (!solid) text += `<path d="${roundRect({ x: cx - s * 0.27, y: cy - s * 0.27, w: s * 0.54, h: s * 0.54 }, s * 0.27)}" fill="#0d0a09" fill-opacity=".78"/>`;
-      text += drawGlyph(defs, glyph, style, cx - s / 2, cy - s / 2, s, { color: pick?.color, plain: true });
-      const ny = glyph === 'shield' ? cy - s * 0.06 : cy;
-      // número escuro sobre símbolo claro e cheio (escudo prata, impacto dourado…), claro nos demais
-      const fill = pick?.color ?? GLYPHS[glyph]?.color ?? '#888888';
-      const light = solid && style !== 'traco' && luminance(fill) > 0.45;
-      const ink: TextLook = light ? { ...tl, color: '#17120e', glow: undefined, hard: false } : { ...tl, color: '#ffffff' };
-      text += centered(defs, num, ink, sz.stat * 1.05, { x: cx - s * 0.35, y: ny - s * 0.3, w: s * 0.7, h: s * 0.6 });
+      const s = b.h * 1.42;
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2 - 4;
+      text += drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c');
+      text += centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
       continue;
     }
     const c = P.out.content;
-    const iconS = c.h * 0.95;
-    const custom = !!pick?.glyph || !!pick?.style;
-    text += !custom && P.out.icon
-      ? P.out.icon
-      : drawGlyph(defs, pick?.glyph ?? (k === 'atk' ? 'sword' : 'shield'), style, c.x, c.y + (c.h - iconS) / 2, iconS, { color: pick?.color });
+    const iconS = c.h * 0.98;
+    text += drawGlyph(defs, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, { color });
     text += centered(defs, num, tl, sz.stat * (c.h / 56), { x: c.x + iconS, y: c.y, w: c.w - iconS, h: c.h });
   }
 
