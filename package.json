@@ -1,21 +1,18 @@
 {
   "name": "darkstar-forge",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Darkstar Forge — editor de cartas do jogo Darkstar",
   "author": "Darkstar <dyegomiranda@users.noreply.github.com>",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "scripts": {
-    "dev:web": "python3 tools/serve.py 8765",
-    "electron": "electron .",
-    "build:appimage": "electron-builder --linux AppImage --publish never",
-    "build:linux": "electron-builder --linux AppImage deb --publish never",
-    "build:windows": "electron-builder --win nsis --publish never",
-    "build:all": "electron-builder --linux AppImage deb --win nsis --publish never",
     "dev": "vite",
     "build": "vite build",
+    "app": "vite build && electron .",
     "test": "vitest run",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "dist:linux": "vite build && electron-builder --linux AppImage deb --publish never",
+    "dist:windows": "vite build && electron-builder --win nsis --publish never"
   },
   "build": {
     "appId": "com.darkstar.forge",
@@ -25,11 +22,9 @@
       "output": "release"
     },
     "files": [
+      "dist/**/*",
       "electron/**/*",
-      "index.html",
-      "css/**/*",
-      "js/**/*",
-      "assets/**/*",
+      "public/brand/**/*",
       "package.json"
     ],
     "linux": {
@@ -38,13 +33,13 @@
         "deb"
       ],
       "category": "Graphics",
-      "icon": "assets/icons/set/logo.png"
+      "icon": "public/brand/logo.png"
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "icon": "assets/icons/set/logo.png"
+      "icon": "public/brand/logo.png"
     },
     "nsis": {
       "oneClick": false,
@@ -52,6 +47,7 @@
     }
   },
   "devDependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "@fontsource/barlow-condensed": "^5.3.0",
     "@fontsource/cinzel": "^5.3.0",
     "@fontsource/cormorant-garamond": "^5.3.0",
@@ -62,9 +58,13 @@
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@fontsource/uncial-antiqua": "^5.3.0",
+    "@lucide/svelte": "^1.48.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
+    "fflate": "^0.8.3",
+    "idb": "^8.0.3",
+    "pdf-lib": "^1.17.1",
     "svelte": "^5.57.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
@@ -73,12 +73,5 @@
   "allowScripts": {
     "electron@43.2.0": true
   },
-  "type": "module",
-  "dependencies": {
-    "@fontsource-variable/inter": "^5.3.0",
-    "@lucide/svelte": "^1.48.0",
-    "fflate": "^0.8.3",
-    "idb": "^8.0.3",
-    "pdf-lib": "^1.17.1"
-  }
+  "type": "module"
 }

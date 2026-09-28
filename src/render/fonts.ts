@@ -4,7 +4,8 @@
  * URLs servem para embutir as fontes no SVG na hora de gerar a imagem.
  */
 
-const files = import.meta.glob('/node_modules/@fontsource/*/files/*-latin-*.woff2', {
+// só o subconjunto "latin" (sem latin-ext, cirílico…) — cobre todo o português
+const files = import.meta.glob('/node_modules/@fontsource/*/files/*-latin-[0-9]*.woff2', {
   query: '?url', import: 'default', eager: true,
 }) as Record<string, string>;
 

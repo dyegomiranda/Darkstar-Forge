@@ -14,7 +14,7 @@ function snaps(): Plugin {
         const chunks: Buffer[] = [];
         req.on('data', (c: Buffer) => chunks.push(c));
         req.on('end', () => {
-          const dir = resolve(__dirname, '.snaps');
+          const dir = resolve(import.meta.dirname, '.snaps');
           mkdirSync(dir, { recursive: true });
           writeFileSync(resolve(dir, name), Buffer.concat(chunks));
           res.end('ok');
@@ -30,7 +30,7 @@ export default defineConfig({
   server: { port: 5173, strictPort: true },
   build: {
     rollupOptions: {
-      input: { main: resolve(__dirname, 'index.html'), mostruario: resolve(__dirname, 'mostruario.html') },
+      input: { main: resolve(import.meta.dirname, 'index.html'), mostruario: resolve(import.meta.dirname, 'mostruario.html') },
     },
   },
 });

@@ -3,7 +3,7 @@
  * escolhido) + textos + símbolos. A mesma saída serve para o editor, a biblioteca
  * (rasterizada e guardada em cache) e a exportação.
  */
-import { lighten, luminance } from './color';
+import { darken, lighten, luminance } from './color';
 import { Defs } from './defs';
 import { piece, styleInfo, type PieceKind, type PieceOut, type PieceStyle, type StyleId } from './elements';
 import { RARITY_COLORS, rarityGem, textShadow } from './elements/common';
@@ -151,7 +151,10 @@ export function compose(inp: ComposeInput): string {
 
   // 2) Arte (cobre a carta inteira: full art)
   const clip = defs.add('cardclip', (id) => `<clipPath id="${id}"><path d="${roundRect(S.card, CARD_RADIUS)}"/></clipPath>`);
-  let art = `<rect width="${CARD_W}" height="${CARD_H}" fill="#120e0c"/>`;
+  // sem arte: fundo na cor da classe com o símbolo em marca-d'água (nunca um retângulo vazio)
+  const tint = vivid(inp.colors[0] ?? '#6b5a4a');
+  let art = `<rect width="${CARD_W}" height="${CARD_H}" fill="${defs.radial([[0, darken(tint, 0.45)], [0.6, darken(tint, 0.78)], [1, '#0b0909']], 0.5, 0.42, 0.75)}"/>` +
+    (inp.art?.src ? '' : drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 230, CARD_H * 0.36 - 230, 460, { color: lighten(tint, 0.2), opacity: 0.1 }));
   let artImg = '';
   if (inp.art?.src) {
     const z = inp.art.zoom ?? 1;

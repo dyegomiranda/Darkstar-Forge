@@ -1,65 +1,59 @@
 # Darkstar Forge
 
-**Darkstar Forge is free and open-source software licensed under the GNU General Public License v3.0 (GPL-3.0).**
+Estúdio de criação de cartas do **Darkstar**, um TCG que funciona como um RPG de mesa em cartas. Cada cor de deck é um par de classes, com base em Pathfinder 2e e D&D 5e.
 
-You are free to use, study, modify, and redistribute the software under the terms of the license. Any distributed modified versions of the software must preserve the freedoms granted by the GPL and provide the corresponding source code as required by the license.
+O programa roda totalmente no seu computador, sem servidor. Com ele você:
 
-The Darkstar TCG intellectual property, including its name, logo, artwork, characters, lore, card designs, and other original creative content, is not covered by the GPL unless explicitly stated otherwise.
+- cria e organiza as cartas por deck;
+- personaliza cada peça do visual;
+- monta a ficha dos personagens;
+- exporta PNG em alta resolução e PDF para impressão (63 × 88 mm).
 
----
+> **Licença:** software livre sob a GPL-3.0. A propriedade intelectual do Darkstar (nome, marca, artes, personagens, textos) **não** está coberta pela GPL.
 
-An offline card creation studio for the **Darkstar** trading card game.
-Create cards, decks, upload custom artwork, symbols, and export high-resolution print-ready cards — completely local, with no server dependency.
+## Como abrir
 
-### Quick Start (Desktop)
+- **Pelo menu de aplicativos:** o atalho *Darkstar Forge* abre o programa.
+- **Pela pasta:** dê dois cliques no script `Darkstar Forge`. Ele abre o AppImage mais recente de `release/`; se ainda não houver um, ele compila e abre.
+- **Instaladores:** estão em [Releases](../../releases) (Linux AppImage/deb, Windows).
 
-1. Navigate to the [**Releases** page](../../releases) of this repository.
-2. Download the installer for your platform:
-   - **Windows** → `Darkstar.Forge_*_x64-setup.exe` (double-click to install)
-   - **Linux** → `*.AppImage` or `*.deb`
-3. Launch **Darkstar Forge**.
+## O que tem dentro
 
-*Uploaded artwork, custom icons, and symbols are stored locally in the application profile and persist across sessions.*
+| Tela | O que faz |
+|---|---|
+| **Biblioteca** | Decks com contagem 50/50, busca, filtros (tipo, custo, raridade, etiqueta), curva de custo, seleção múltipla, mover entre decks, PNG (zip) e PDF. As cartas aparecem completas em alta resolução: cada uma é desenhada uma vez e guardada, então a biblioteca abre na hora. |
+| **Editor** | Abas **Texto** (PT/EN, símbolos no texto), **Jogo** (classes, custo automático ou manual, ATK/DEF, raridade, mecânicas com pontuação), **Arte** (enviar, enquadrar arrastando, zoom, espelhar, pixelar) e **Aparência**. Tem desfazer/refazer e Ctrl+S, e só grava ao salvar. |
+| **Aparência** | 6 estilos (Ornado, Gótico, Arcano, Moderno, Selvagem, Pixel) que podem ser misturados peça a peça. Cada peça aceita cor, transparência, metal, cor do texto e fonte. Os símbolos vêm em 4 acabamentos (metal gravado, medalhão, silhueta, pixel), e ATK/DEF podem ficar em placas ou com o número no medalhão. Vale só para a carta ou como **tema do deck**. |
+| **Ficha** | Vários personagens, com retrato, ancestralidade, classes, nível, pontos de vida, atributos com modificador e equipamento em "boneco" usando as cartas do deck de Equipamentos. Pode ser impressa. |
+| **Ajustes** | Edição e logo, tema de cada deck, backup (.zip), restauração, planilha (.csv), espaço usado e créditos. |
 
----
-
-### Local Development (Web)
-
-```bash
-./Darkstar\ Forge
-# or double-click the Darkstar Forge script in the file manager → "Run in Terminal"
-# or install the app shortcut:
-cp Darkstar\ Forge.desktop ~/.local/share/applications/
-# (then find "Darkstar Forge" in the app grid, with icon)
-# Dev fallback:
-python3 tools/serve.py 8765
-```
-
-Open `http://127.0.0.1:8765/` in your web browser.
-
----
-
-### Desktop Build (Electron)
+## Para desenvolver
 
 ```bash
 npm install
-npm run build:linux    # Linux (AppImage + deb)
-npm run build:windows  # Windows (NSIS installer)
-npm run build:all      # Both platforms
+npm run dev          # abre em http://localhost:5173 (mostruário de estilos em /mostruario.html)
+npm test             # testes automáticos
+npm run app          # compila e abre no Electron
+npm run dist:linux   # gera AppImage + deb em release/
+npm run dist:windows # gera o instalador do Windows
 ```
 
----
+### Organização do código
 
-### Run Electron (development)
-
-```bash
-npm run electron
+```
+src/
+  render/      motor de desenho da carta: SVG → imagem
+    elements/  os 6 estilos, peça a peça (ornado.ts, gotico.ts, …)
+    icons/     símbolos (game-icons.net) e acabamentos
+    compose.ts monta a carta; layout.ts, text.ts, palette.ts, defs.ts
+    queue.ts   fila de imagens em alta resolução com cache
+  model/       tipos, catálogo (classes, recursos, raridades), pontuação, dados iniciais
+  store/       banco local (IndexedDB), salvamento carta a carta, imagens
+  ui/          telas (Svelte 5): library, editor, sheet, settings, common
+  export/      PNG, PDF, backup, CSV
+  data/        cartas de exemplo, tabela de mecânicas, raças
+electron/      janela do programa desktop (segura: sem Node na página)
+tests/         testes (Vitest)
 ```
 
----
-
-### Tech Stack
-
-- HTML5 / CSS3 / Vanilla JavaScript (Offline SPA)
-- IndexedDB + localStorage (Project metadata & local media storage)
-- Electron (Cross-platform native desktop wrapper)
+Símbolos: [game-icons.net](https://game-icons.net), CC BY 3.0 (créditos no programa). Fontes: SIL OFL.
