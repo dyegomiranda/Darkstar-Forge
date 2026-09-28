@@ -307,6 +307,15 @@ var Export = {
             font-family: "EB Garamond", Georgia, serif; }
           .cv-flavor { margin-top: 10px; font-style: italic; opacity: .88; font-size: 0.9em; }
           .cv-footer { opacity: .95; display:flex; gap:6px; align-items:center; font-weight:600; }
+          .card-root.tpl-parchment .cv-title {
+            color:#3a1c12; text-shadow:0 1px 0 rgba(255,248,236,.55); font-weight:700;
+          }
+          .card-root.tpl-parchment .cv-type { color:#f7ebe0; text-shadow:0 1px 2px rgba(0,0,0,.65); }
+          .card-root.tpl-parchment .cv-rules { color:#2c1810; text-shadow:none; }
+          .card-root.tpl-parchment .cv-flavor { color:#4a3024; border-top-color:rgba(120,40,28,.28); }
+          .card-root.tpl-parchment .cv-footer { color:#f4e6d6; }
+          .card-root.tpl-parchment .cv-cost-num,
+          .card-root.tpl-parchment .cv-stat-num { color:#f8f0e4; text-shadow:0 1px 3px #000; }
           .cv-cost { display:flex; align-items:center; justify-content:center; font-weight:800; overflow:visible; }
           .cv-cost-cluster { display:inline-flex; flex-direction:row; align-items:center; justify-content:center; gap:calc(var(--cost-icon,34px)*0.06); max-width:96%; transform-origin:center center; line-height:0; }
           .cv-flavor { margin-top:8px; font-style:italic; opacity:.9; border-top:1px solid rgba(255,255,255,.12); padding-top:6px; }

@@ -132,7 +132,7 @@ var CardView = {
             `width:${outW}px;height:${outH}px;overflow:hidden;position:relative;flex-shrink:0;background:transparent;`;
 
         const root = document.createElement("div");
-        root.className = "card-root";
+        root.className = "card-root" + (tpl.contentTheme ? ` tpl-${tpl.contentTheme}` : ` tpl-${tpl.id}`);
         root.style.cssText = [
             `width:${tpl.width}px`,
             `height:${tpl.height}px`,
@@ -144,6 +144,7 @@ var CardView = {
             `background:transparent`
         ].join(";");
         root.dataset.cardId = card.id;
+        root.dataset.template = tpl.id || "";
 
         // Arte
         const artLayer = document.createElement("div");
@@ -220,7 +221,7 @@ var CardView = {
           <div class="cv-rarity" style="left:${L.typeBar.x + L.typeBar.w - 48}px;top:${L.typeBar.y + (L.typeBar.h - raritySize) / 2}px;width:${raritySize}px;height:${raritySize}px">
             ${Icons.raritySymbol(card.rarity, raritySize)}
           </div>
-          <div class="cv-rules" style="left:${L.rulesBox.x + 24}px;top:${L.rulesBox.y + 16}px;width:${L.rulesBox.w - 48}px;height:${L.rulesBox.h - 36}px;font-size:${fonts.rules}px;font-family:${ff.rules} !important">
+          <div class="cv-rules" style="left:${L.rulesBox.x + 22}px;top:${L.rulesBox.y + 14}px;width:${L.rulesBox.w - 44}px;height:${L.rulesBox.h - 32}px;font-size:${fonts.rules}px;font-family:${ff.rules} !important">
             <div class="cv-rules-text">${rulesText}</div>
             ${flavorHtml}
           </div>
@@ -267,7 +268,10 @@ var CardView = {
 
     _customTemplate(card) {
         const id = card.templateId;
-        if (!id || id === "classic-fullart") return null;
+        if (!id) return null;
+        // Templates built-in com SVG próprio não usam overlay custom
+        const builtIn = typeof TemplateRegistry !== "undefined" ? TemplateRegistry.map[id] : null;
+        if (builtIn && typeof builtIn.buildFrameSVG === "function") return null;
         const list = Store.project?.meta?.customTemplates || [];
         return list.find((t) => t.id === id) || null;
     },
@@ -282,7 +286,12 @@ var CardView = {
         if (!auto) {
             return { ...card, style };
         }
-        const boxInnerW = 658 - 48; // rulesBox.w - padding
+        // Largura interna padrão (~classic/ornate); templates raros herdam bem o suficiente
+        const tpl = typeof TemplateRegistry !== "undefined"
+            ? TemplateRegistry.get(card.templateId)
+            : null;
+        const rulesW = tpl?.layout?.(card)?.rulesBox?.w || 658;
+        const boxInnerW = rulesW - 48;
         const rulesFs = fonts.rules || 23;
         const flavorFs = fonts.flavor || 26;
         const lineH = 1.38;

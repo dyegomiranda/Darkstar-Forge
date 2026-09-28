@@ -41,9 +41,14 @@ var ColorUtils = {
         return `rgba(${r},${g},${b},${a})`;
     },
 
-    strokeFor(colors) {
+    /**
+     * Contorno do frame. Mono = hex da cor; híbrido = gradiente SVG.
+     * @param {string[]} colors
+     * @param {string} [gradId="frameGrad"] id do <linearGradient> no SVG do template
+     */
+    strokeFor(colors, gradId = "frameGrad") {
         if (!colors || !colors.length) return "#b92d20";
         if (colors.length === 1) return colors[0];
-        return "url(#frameGrad)";
+        return `url(#${gradId})`;
     }
 };

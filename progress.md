@@ -68,6 +68,7 @@
 4. Full editor i18n · automated tests
 
 ### Done recently (2026-08-01)
+- [x] Template **Ornato Pergaminho** (`ornate-parchment`) inspirado em `assets/card1.png`
 - [x] Batch PDF export with progress (library → PDF deck/edição)
 - [x] Undo/redo no editor (botões + Ctrl+Z / Ctrl+Y)
 - [x] Class icons JPG → PNG transparente (+ utility)

@@ -1400,6 +1400,65 @@ select:-webkit-autofill {
   line-height: 1.25;
 }
 
+/* ----- Template: Ornato Pergaminho -----
+   Texto SEM caixas de fundo: assenta nos painéis do frame (trace).
+   Só legibilidade via cor + sombra suave nos glifos. */
+.card-root.tpl-parchment .cv-title {
+  color: #3a1c12;
+  background: transparent !important;
+  text-shadow: 0 1px 0 rgba(255, 248, 236, 0.8), 0 0 6px rgba(255, 248, 236, 0.35);
+  font-weight: 700;
+  letter-spacing: 0.015em;
+}
+.card-root.tpl-parchment .cv-type {
+  color: #f7ebe0;
+  background: transparent !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  font-weight: 600;
+}
+.card-root.tpl-parchment .cv-rules {
+  color: #2a1810;
+  background: transparent !important;
+  text-shadow: none;
+  line-height: 1.42;
+}
+.card-root.tpl-parchment .cv-flavor {
+  color: #4a3228;
+  background: transparent !important;
+  opacity: 0.95;
+  border-top: none; /* divisória já está no frame traçado */
+  margin-top: 20px;
+  padding-top: 6px;
+}
+.card-root.tpl-parchment .cv-footer {
+  color: #f4e6d6;
+  background: transparent !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+.card-root.tpl-parchment .cv-cost,
+.card-root.tpl-parchment .cv-class,
+.card-root.tpl-parchment .cv-rarity,
+.card-root.tpl-parchment .cv-stat,
+.card-root.tpl-parchment .cv-set {
+  background: transparent !important;
+}
+.card-root.tpl-parchment .cv-cost-num,
+.card-root.tpl-parchment .cv-stat-num {
+  color: #fff8f0;
+  text-shadow: 0 1px 3px #000, 0 0 8px rgba(0, 0, 0, 0.5);
+  font-weight: 800;
+}
+.card-root.tpl-parchment .card-vignette {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.12) 100%);
+}
+.card-root.tpl-parchment .card-art--empty {
+  color: #8a7a68;
+}
+.card-root.tpl-parchment .card-frame-svg {
+  /* frame em opacidade total para não “lavar” o stack do multicolor */
+  opacity: 1;
+}
+
 .cv-cost, .cv-class, .cv-title, .cv-type, .cv-rules,
 .cv-footer, .cv-set, .cv-stat, .cv-rarity {
   position: absolute;

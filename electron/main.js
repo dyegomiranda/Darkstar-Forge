@@ -10,8 +10,11 @@ app.commandLine.appendSwitch("enable-features", "UseSkiaRenderer");
 app.commandLine.appendSwitch("disable-software-rasterizer");
 
 let mainWindow = null;
+/** Quando true, o próximo close não pergunta (usuário já confirmou). */
+let allowClose = false;
 
 function createWindow() {
+  allowClose = false;
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 900,
@@ -28,24 +31,57 @@ function createWindow() {
     }
   });
 
-  // Só mostra quando terminar de carregar (evita flash branco)
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
   });
 
-  // Carrega o index.html local
   const index = path.join(__dirname, "..", "index.html");
   mainWindow.loadFile(index);
 
-  // Ctrl+Shift+I para DevTools
   mainWindow.webContents.on("before-input-event", (e, input) => {
     if (input.control && input.shift && input.key.toLowerCase() === "i") {
       mainWindow.webContents.toggleDevTools();
     }
   });
 
+  /**
+   * Fechar janela com alterações não salvas:
+   * intercepta close → pergunta ao renderer → modal Sair/Salvar/Cancelar.
+   */
+  mainWindow.on("close", (e) => {
+    if (allowClose || !mainWindow || mainWindow.isDestroyed()) {
+      return;
+    }
+    e.preventDefault();
+
+    mainWindow.webContents
+      .executeJavaScript(
+        `typeof AppUI !== "undefined" && AppUI.handleAppClose
+          ? AppUI.handleAppClose()
+          : true`,
+        true
+      )
+      .then((ok) => {
+        if (ok) {
+          allowClose = true;
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.close();
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("handleAppClose failed:", err);
+        // Em caso de erro no renderer, permite fechar para não prender o app
+        allowClose = true;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.close();
+        }
+      });
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
+    allowClose = false;
   });
 }
 

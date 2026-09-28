@@ -23,6 +23,14 @@ var AppUI = {
             console.error(e);
             alert("Falha ao carregar o projeto: " + (e.message || e));
         }
+        // Template Ornato (SVG traçado Inkscape) — carrega em paralelo seguro
+        try {
+            if (typeof OrnateParchment !== "undefined" && OrnateParchment.load) {
+                await OrnateParchment.load();
+            }
+        } catch (e) {
+            console.warn("Ornate frame load:", e);
+        }
         if (typeof TagSystem !== "undefined") TagSystem.ensure();
         if (typeof FontCatalog !== "undefined") {
             FontCatalog.ensureGoogleLoaded();
@@ -127,10 +135,9 @@ var AppUI = {
             this.openLibrary();
         });
 
+        // Browser/web: aviso nativo ao fechar aba (Electron usa handleAppClose via main.js)
         window.addEventListener("beforeunload", (e) => {
-            const dirtyEditor = this.state.view === "editor" && typeof EditorUI !== "undefined" && EditorUI.dirty;
-            const dirtySheet = this.state.view === "sheet" && typeof CharacterSheetUI !== "undefined" && CharacterSheetUI.dirty;
-            if (dirtyEditor || dirtySheet) {
+            if (this._hasUnsavedChanges()) {
                 e.preventDefault();
                 e.returnValue = "";
             }
@@ -260,6 +267,79 @@ var AppUI = {
             Store._setSaveStatus?.("error");
             alert("Falha no pack: " + (e.message || e));
         }
+    },
+
+    /** Há alterações não salvas no editor ou na ficha? */
+    _hasUnsavedChanges() {
+        try {
+            if (this.state.view === "editor" && typeof EditorUI !== "undefined") {
+                if (typeof EditorUI._isDirty === "function") return !!EditorUI._isDirty();
+                return !!EditorUI.dirty;
+            }
+            if (this.state.view === "sheet" && typeof CharacterSheetUI !== "undefined") {
+                if (typeof CharacterSheetUI._isDirty === "function") return !!CharacterSheetUI._isDirty();
+                return !!CharacterSheetUI.dirty;
+            }
+        } catch (_) {}
+        return false;
+    },
+
+    /**
+     * Chamado pelo Electron (main process) ao clicar em fechar a janela.
+     * @returns {Promise<boolean>} true = pode fechar; false = cancelou
+     */
+    async handleAppClose() {
+        if (!this._hasUnsavedChanges()) {
+            return true;
+        }
+
+        // Garante estado do formulário no dirty check do editor
+        try {
+            if (this.state.view === "editor" && typeof EditorUI !== "undefined") {
+                EditorUI.applyFromForm?.(false);
+            }
+        } catch (_) {}
+
+        if (!this._hasUnsavedChanges()) {
+            return true;
+        }
+
+        const en = typeof I18n !== "undefined" && I18n.lang === "en-US";
+        const choice = await UIModal.unsavedChanges({
+            title: en ? "Unsaved changes" : "Alterações não salvas",
+            message: en
+                ? "You have unsaved changes. What do you want to do before quitting?"
+                : "Há alterações que ainda não foram salvas. O que deseja fazer antes de sair?"
+        });
+
+        if (choice === "cancel") {
+            return false;
+        }
+
+        if (choice === "save") {
+            try {
+                if (this.state.view === "editor" && typeof EditorUI !== "undefined") {
+                    const r = await EditorUI._commitSave();
+                    if (!r?.ok) {
+                        alert(r?.error?.message || (en ? "Save failed" : "Falha ao salvar"));
+                        return false;
+                    }
+                } else if (this.state.view === "sheet" && typeof CharacterSheetUI !== "undefined") {
+                    let r = CharacterSheetUI._commitSave?.();
+                    if (r && typeof r.then === "function") r = await r;
+                    if (r && r.ok === false) {
+                        alert(r?.error?.message || (en ? "Save failed" : "Falha ao salvar"));
+                        return false;
+                    }
+                }
+            } catch (e) {
+                alert((en ? "Save failed: " : "Falha ao salvar: ") + (e.message || e));
+                return false;
+            }
+        }
+
+        // "discard" ou save ok → permite fechar
+        return true;
     },
 
     async openDiagnostics() {

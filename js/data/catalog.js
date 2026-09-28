@@ -202,7 +202,8 @@ var Catalog = {
     ],
 
     templates: [
-        { id: "classic-fullart", name: "Clássico Full Art" }
+        { id: "classic-fullart", name: "Clássico Full Art" },
+        { id: "ornate-parchment", name: "Ornato Pergaminho" }
     ],
 
     /** Resolve lista de cores hex a partir de colorIds */
