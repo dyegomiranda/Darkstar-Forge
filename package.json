@@ -11,7 +11,11 @@
     "build:appimage": "electron-builder --linux AppImage --publish never",
     "build:linux": "electron-builder --linux AppImage deb --publish never",
     "build:windows": "electron-builder --win nsis --publish never",
-    "build:all": "electron-builder --linux AppImage deb --win nsis --publish never"
+    "build:all": "electron-builder --linux AppImage deb --win nsis --publish never",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc -p ."
   },
   "build": {
     "appId": "com.darkstar.forge",
@@ -48,10 +52,19 @@
     }
   },
   "devDependencies": {
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/eb-garamond": "^5.3.0",
+    "@fontsource/marcellus": "^5.3.0",
+    "@fontsource/noto-sans": "^5.3.0",
     "electron": "^43.2.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "allowScripts": {
     "electron@43.2.0": true
-  }
+  },
+  "type": "module"
 }

@@ -12,3 +12,4 @@ squashfs-root/
 *.ttf
 !assets/fonts/**/*.woff2
 .claude/
+.snaps/
