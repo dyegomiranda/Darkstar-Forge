@@ -62,4 +62,18 @@ export const textShadow = (defs: Defs, color = '#000', opacity = 0.85, blur = 1.
 
 export const center = (b: Box) => ({ cx: b.x + b.w / 2, cy: b.y + b.h / 2 });
 
+/** Rebites (cabeças de prego) de metal com brilho. */
+export function rivets(defs: Defs, pts: [number, number][], r: number, tone = '#8d9096'): string {
+  const fill = defs.radial([[0, lighten(tone, 0.7)], [0.35, tone], [1, darken(tone, 0.7)]], 0.35, 0.3, 0.75);
+  return pts.map(([x, y]) =>
+    `<path d="${circle(x, y + r * 0.35, r)}" fill="#000" opacity=".5"/><path d="${circle(x, y, r)}" fill="${fill}"/>`).join('');
+}
+
+/** Pedra escura (ardósia) levemente tingida pela cor do deck. */
+export function stone(defs: Defs, pal: Palette, d: string, opacity = 1): string {
+  const base = mix(darken(pal.base, 0.82), '#1b1a1d', 0.55);
+  return `<path d="${d}" fill="${base}" fill-opacity="${opacity}" filter="${defs.grain(lighten(base, 0.35), 0.6, 0.35, 11)}"/>` +
+    `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.08], [0.3, '#fff', 0], [1, '#000', 0.35]])}"/>`;
+}
+
 export { mix };

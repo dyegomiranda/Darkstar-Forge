@@ -16,6 +16,11 @@ const FAMILIES: Record<string, string> = {
   'cormorant-garamond': 'Cormorant Garamond',
   marcellus: 'Marcellus',
   'noto-sans': 'Noto Sans',
+  'pixelify-sans': 'Pixelify Sans',
+  silkscreen: 'Silkscreen',
+  'grenze-gotisch': 'Grenze Gotisch',
+  'barlow-condensed': 'Barlow Condensed',
+  'uncial-antiqua': 'Uncial Antiqua',
 };
 
 const USED: Record<string, string[]> = {
@@ -24,6 +29,11 @@ const USED: Record<string, string[]> = {
   'cormorant-garamond': ['500-normal', '600-normal', '600-italic', '700-normal'],
   marcellus: ['400-normal'],
   'noto-sans': ['400-normal', '400-italic', '600-normal', '700-normal'],
+  'pixelify-sans': ['400-normal', '500-normal', '700-normal'],
+  silkscreen: ['400-normal'],
+  'grenze-gotisch': ['500-normal', '600-normal', '700-normal'],
+  'barlow-condensed': ['500-normal', '500-italic', '600-normal', '700-normal'],
+  'uncial-antiqua': ['400-normal'],
 };
 
 export const CARD_FONTS: CardFont[] = Object.entries(USED).flatMap(([pkg, variants]) =>

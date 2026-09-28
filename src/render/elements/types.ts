@@ -8,7 +8,7 @@ export type PieceKind = 'frame' | 'header' | 'cost' | 'class' | 'typeBar' | 'rul
 
 export const PIECE_KINDS: PieceKind[] = ['frame', 'header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set'];
 
-export type StyleId = 'ornado' | 'sombrio' | 'arcano' | 'classico';
+export type StyleId = 'ornado' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel';
 
 export interface PieceArgs {
   /** Área que o esqueleto reservou para a peça. */
@@ -32,6 +32,10 @@ export interface PieceOut {
   glass?: string;
   /** Lugar da joia de raridade (barra de tipo). */
   gem?: Box;
+  /** Pixelar os ícones desenhados dentro da peça (tamanho do bloco). */
+  pixelIcons?: number;
+  /** Ícone próprio da peça (ex.: espada em pixel); substitui o ícone padrão. */
+  icon?: string;
 }
 
 export interface PieceStyle {
@@ -44,6 +48,8 @@ export interface PieceStyle {
   render(a: PieceArgs): PieceOut;
   /** Caixa de regras: divisor entre regras e texto de ambientação. */
   divider?(a: PieceArgs, x: number, y: number, w: number): string;
+  /** Barra de tipo: joia de raridade no estilo da peça (senão, joia lapidada). */
+  gemRender?(box: Box, color: string): string;
   /** Caixa de regras: aparência do texto de ambientação. */
   flavor?: (pal: Palette) => TextLook;
 }

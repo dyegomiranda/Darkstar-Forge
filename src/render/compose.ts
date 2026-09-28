@@ -6,7 +6,7 @@
 import { luminance } from './color';
 import { Defs } from './defs';
 import { piece, type PieceKind, type PieceOut, type PieceStyle, type StyleId } from './elements';
-import { rarityGem, textShadow } from './elements/common';
+import { RARITY_COLORS, rarityGem, textShadow } from './elements/common';
 import { CARD_H, CARD_RADIUS, CARD_W, RULES_BOTTOM, RULES_MAX_H, RULES_MIN_H, skeleton } from './layout';
 import { makePalette, type MetalKind } from './palette';
 import { roundRect, type Box } from './shapes';
@@ -25,6 +25,8 @@ export interface Look {
   /** Estilo usado nas peças sem escolha própria. */
   style: StyleId;
   pieces?: Partial<Record<PieceKind, PieceChoice>>;
+  /** Pixelar a arte (tamanho do bloco, em px da carta). Combina com o estilo Pixel. */
+  pixelateArt?: number;
 }
 
 export interface CardAssets {
@@ -75,9 +77,20 @@ function run(inp: ComposeInput, defs: Defs, kind: PieceKind, box: Box, variant?:
 function styled(defs: Defs, look: TextLook, size: number): { st: TextStyle; filter?: string } {
   const st: TextStyle = { ...look, size };
   let filter: string | undefined;
-  if (look.glow) filter = defs.glow(look.glow, 3, 0.85);
+  if (look.hard) filter = defs.url('hardshadow', (id) =>
+    `<filter id="${id}" x="-10%" y="-20%" width="130%" height="160%"><feDropShadow dx="3" dy="3" stdDeviation="0" flood-color="#000" flood-opacity="1"/></filter>`);
+  else if (look.glow) filter = defs.glow(look.glow, 3, 0.85);
   else if (luminance(look.color) > 0.45) filter = textShadow(defs, '#000', 0.9, 1.8, 1.6);
   return { st, filter };
+}
+
+/** Pixelar: amostra 1 ponto por bloco e dilata até cobrir o bloco inteiro. */
+function pixelate(defs: Defs, px: number): string {
+  return defs.url(`pixelate:${px}`, (id) =>
+    `<filter id="${id}" x="0" y="0" width="${CARD_W}" height="${CARD_H}" filterUnits="userSpaceOnUse">` +
+    `<feFlood x="${px / 2}" y="${px / 2}" width="1" height="1"/><feComposite width="${px}" height="${px}"/>` +
+    `<feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/>` +
+    `<feMorphology operator="dilate" radius="${px / 2}"/></filter>`);
 }
 
 const image = (href: string | undefined, x: number, y: number, w: number, h: number, extra = '') =>
@@ -126,7 +139,10 @@ export function compose(inp: ComposeInput): string {
     const w = CARD_W * z, h = CARD_H * z;
     const x = (CARD_W - w) / 2 + (inp.art.x ?? 0), y = (CARD_H - h) / 2 + (inp.art.y ?? 0);
     const mir = inp.art.mirror ? ` transform="translate(${CARD_W} 0) scale(-1 1)"` : '';
-    artImg = `<g${mir}><image href="${inp.art.src}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/></g>`;
+    const px = inp.look.pixelateArt;
+    // pixelar: amostra 1 ponto por bloco e dilata até cobrir o bloco inteiro
+    const pixFilter = px && px > 1 ? ` filter="${pixelate(defs, px)}"` : '';
+    artImg = `<g${mir}${pixFilter}><image href="${inp.art.src}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/></g>`;
     art += artImg;
   }
 
@@ -156,6 +172,7 @@ export function compose(inp: ComposeInput): string {
 
   // 4) Textos e ícones
   let text = '';
+  const pix = (o: PieceOut, svg: string) => (o.pixelIcons ? `<g filter="${pixelate(defs, o.pixelIcons)}">${svg}</g>` : svg);
   const H = outs.header;
   if (H) {
     const { st, filter } = styled(defs, H.text, sz.title);
@@ -167,7 +184,10 @@ export function compose(inp: ComposeInput): string {
     const { st, filter } = styled(defs, TB.text, sz.type);
     const f = fitLine(inp.typeLine, st, TB.content.w);
     text += drawLines(wrap(inp.typeLine, f, 1e9), f, TB.content, { align: 'left', valign: 'middle', filter });
-    if (TB.gem) text += rarityGem(TB.gem, inp.rarity);
+    if (TB.gem) {
+      const gemFn = choose(inp.look, 'typeBar').ps.gemRender;
+      text += gemFn ? gemFn(TB.gem, RARITY_COLORS[inp.rarity] ?? RARITY_COLORS.common) : rarityGem(TB.gem, inp.rarity);
+    }
   }
   const R = outs.rules;
   if (R) {
@@ -199,14 +219,14 @@ export function compose(inp: ComposeInput): string {
     const numW = measure(num, f);
     const total = (icon ? iconS + 4 : 0) + numW;
     const x0 = c.x + (c.w - total) / 2;
-    text += image(icon, x0, c.y + (c.h - iconS) / 2, iconS, iconS);
+    text += pix(C, image(icon, x0, c.y + (c.h - iconS) / 2, iconS, iconS));
     text += drawLines(wrap(num, f, 1e9), f, { x: x0 + (icon ? iconS + 4 : 0), y: c.y, w: numW, h: c.h }, { align: 'center', valign: 'middle', filter });
   }
   const K = outs.class;
   if (K) {
     const c = K.content;
     const s = c.w * 0.92;
-    text += image(inp.assets.classIcon(inp.colorId), c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, s);
+    text += pix(K, image(inp.assets.classIcon(inp.colorId), c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, s));
   }
   const SET = outs.set;
   if (SET && inp.assets.setIcon) {
@@ -226,7 +246,7 @@ export function compose(inp: ComposeInput): string {
     const { st, filter } = styled(defs, P.text, sz.stat * (c.h / 56));
     const num = String(inp.stats[k]);
     const iconS = c.h * 0.92;
-    text += image(k === 'atk' ? inp.assets.sword : inp.assets.shield, c.x + 2, c.y + (c.h - iconS) / 2, iconS, iconS);
+    text += P.icon ?? image(k === 'atk' ? inp.assets.sword : inp.assets.shield, c.x + 2, c.y + (c.h - iconS) / 2, iconS, iconS);
     const f = fitLine(num, st, c.w - iconS - 6);
     text += drawLines(wrap(num, f, 1e9), f, { x: c.x + iconS + 4, y: c.y, w: c.w - iconS - 6, h: c.h }, { align: 'center', valign: 'middle', filter });
   }

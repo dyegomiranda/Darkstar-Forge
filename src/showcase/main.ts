@@ -71,6 +71,9 @@ function input(s: Sample, look: Look, uid: string, over: Partial<ComposeInput> =
   };
 }
 
+/** O estilo Pixel vem com a arte pixelada (dá para desligar). */
+const lookFor = (style: StyleId): Look => (style === 'pixel' ? { style, pixelateArt: 7 } : { style });
+
 let uidN = 0;
 const uid = () => `c${++uidN}`;
 
@@ -105,18 +108,20 @@ function render(deck: DeckId) {
 
   const full = styles.map((st) => `
     <h3>${st.name} <small>${st.description}</small></h3>
-    <div class="row">${SAMPLES.slice(0, 5).map((s) => cardEl(input(s, { style: st.id }, uid()))).join('')}</div>`).join('');
+    <div class="row">${SAMPLES.slice(0, 5).map((s) => cardEl(input(s, lookFor(st.id), uid()))).join('')}</div>`).join('');
 
   const table = `<table class="pieces"><thead><tr><th></th>${styles.map((s) => `<th>${s.name}</th>`).join('')}</tr></thead><tbody>` +
     PIECE_KINDS.filter((k) => k !== 'frame').map((k) => `<tr><th>${PIECE_NAMES[k]}</th>${styles.map((s) => `<td>${pieceEl(s.id, k, deck)}</td>`).join('')}</tr>`).join('') +
     `</tbody></table>`;
 
   const mixes: [string, Look][] = [
-    ['Cabeçalho Ornado + regras Sombrio + resto Arcano', { style: 'arcano', pieces: { header: { style: 'ornado' }, rules: { style: 'sombrio' }, typeBar: { style: 'sombrio' } } }],
-    ['Clássico com selos Ornado', { style: 'classico', pieces: { cost: { style: 'ornado' }, class: { style: 'ornado' }, set: { style: 'ornado' } } }],
-    ['Sombrio com metal dourado', { style: 'sombrio', pieces: Object.fromEntries(PIECE_KINDS.filter((k) => k !== 'frame').map((k) => [k, { style: 'sombrio', metal: 'gold' }])) }],
+    ['Cabeçalho Ornado + regras Gótico + resto Arcano', { style: 'arcano', pieces: { header: { style: 'ornado' }, rules: { style: 'gotico' }, typeBar: { style: 'gotico' } } }],
+    ['Moderno com selos de cristal (Arcano)', { style: 'moderno', pieces: { cost: { style: 'arcano' }, class: { style: 'arcano' }, set: { style: 'arcano' } } }],
+    ['Selvagem com selos e ATK/DEF Góticos', { style: 'selvagem', pieces: { cost: { style: 'gotico' }, class: { style: 'gotico' }, stat: { style: 'gotico' } } }],
+    ['Pixel com a arte original (sem pixelar)', { style: 'pixel' }],
+    ['Gótico com metal dourado', { style: 'gotico', pieces: Object.fromEntries(PIECE_KINDS.filter((k) => k !== 'frame').map((k) => [k, { style: 'gotico', metal: 'gold' }])) }],
   ];
-  const framed = styles.map((st) => cardEl(input(SAMPLES[4], { style: st.id, pieces: { frame: { style: st.id } } }, uid()), `${st.name} — com moldura`)).join('');
+  const framed = styles.map((st) => cardEl(input(SAMPLES[4], { ...lookFor(st.id), pieces: { frame: { style: st.id } } }, uid()), `${st.name} — com moldura`)).join('');
 
   app.innerHTML = `
     <header class="top">
@@ -128,11 +133,11 @@ function render(deck: DeckId) {
     </header>
     <section><h2>1. Peças lado a lado</h2>${table}</section>
     <section><h2>2. Cartas completas, um estilo por vez</h2>${full}</section>
-    <section><h2>3. Misturando estilos</h2><div class="row">${mixes.map(([cap, look], i) => cardEl(input(SAMPLES[i % 3], look, uid()), cap)).join('')}</div></section>
+    <section><h2>3. Misturando estilos</h2><div class="row">${mixes.map(([cap, look], i) => cardEl(input(SAMPLES[i % 5], look, uid()), cap)).join('')}</div></section>
     <section><h2>4. Texto curto e texto longo (a caixa cresce para cima)</h2><div class="row">${styles.map((st) =>
-      cardEl(input(sampleFor, { style: st.id }, uid(), { rules: 'Investida.', flavor: undefined }), `${st.name} — curto`) +
-      cardEl(input(sampleFor, { style: st.id }, uid(), { rules: LONG_RULES }), `${st.name} — longo`)).join('')}</div></section>
-    <section><h2>5. Carta híbrida (duas classes)</h2><div class="row">${styles.map((st) => cardEl(input(SAMPLES[5], { style: st.id }, uid()), st.name)).join('')}</div></section>
+      cardEl(input(sampleFor, lookFor(st.id), uid(), { rules: 'Investida.', flavor: undefined }), `${st.name} — curto`) +
+      cardEl(input(sampleFor, lookFor(st.id), uid(), { rules: LONG_RULES }), `${st.name} — longo`)).join('')}</div></section>
+    <section><h2>5. Carta híbrida (duas classes)</h2><div class="row">${styles.map((st) => cardEl(input(SAMPLES[5], lookFor(st.id), uid()), st.name)).join('')}</div></section>
     <section><h2>6. Moldura em volta da carta (opcional — o padrão é sem moldura)</h2><div class="row">${framed}</div></section>
   `;
   (document.getElementById('deck') as HTMLSelectElement).onchange = (e) => render((e.target as HTMLSelectElement).value as DeckId);
@@ -142,7 +147,7 @@ loadCardFonts().then(() => render('red'));
 
 /** Desenvolvimento: grava cartas em .snaps/ para conferência em alta resolução. */
 (window as any).__snap = async (style: StyleId, idx: number, name: string, over: Partial<ComposeInput> = {}, look?: Look) => {
-  const svg = compose(input(SAMPLES[idx], look ?? { style }, uid(), over));
+  const svg = compose(input(SAMPLES[idx], look ?? lookFor(style), uid(), over));
   const blob = await rasterize(svg, 750);
   await fetch(`/__snap?name=${name}`, { method: 'POST', body: blob });
   return name;

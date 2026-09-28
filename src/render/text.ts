@@ -17,6 +17,8 @@ export interface TextLook {
   shadow?: string;
   /** brilho colorido (estilo arcano) */
   glow?: string;
+  /** sombra dura, sem desfoque (estilo pixel) */
+  hard?: boolean;
 }
 
 export interface TextStyle extends TextLook { size: number; lineHeight?: number }
