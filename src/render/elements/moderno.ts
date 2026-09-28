@@ -63,7 +63,7 @@ export const moderno: PieceStyle[] = [
       const svg = slab(a, circle(cx, cy, r), '#101010', 6, 6) +
         `<path d="${circle(cx, cy, r)}" fill="none" stroke="${flat(a.defs, a.pal)}" stroke-width="7"/>`;
       const ci = r * 0.72;
-      return { svg, content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 }, text: { family: FONT, weight: 700, color: INK } };
+      return { svg, content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 }, text: { family: FONT, weight: 700, color: INK }, iconColor: '#ffffff' };
     },
   },
   {

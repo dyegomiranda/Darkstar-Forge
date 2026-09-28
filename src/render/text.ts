@@ -57,6 +57,21 @@ export function measure(text: string, s: TextStyle): number {
   return w;
 }
 
+const capCache = new Map<string, number>();
+/** Altura das maiúsculas/algarismos da fonte, em px, no tamanho do estilo. */
+export function capHeight(s: TextStyle): number {
+  const key = `${s.italic ? 'i' : ''}${s.weight ?? 400}|${s.family}`;
+  let ratio = capCache.get(key);
+  if (ratio == null) {
+    const c = context();
+    c.font = fontCss({ ...s, size: 100 });
+    const m = c.measureText('HNE0');
+    ratio = m.actualBoundingBoxAscent > 0 ? m.actualBoundingBoxAscent / 100 : 0.68;
+    capCache.set(key, ratio);
+  }
+  return ratio * s.size;
+}
+
 const TOKEN = /\{([a-z0-9_-]+)\}/gi;
 
 /** Quebra o texto em linhas que cabem em `maxW`. Ícones valem ~1,05em. */
@@ -122,11 +137,13 @@ export function drawLines(lines: Line[], s: TextStyle, box: Box, o: DrawOpts = {
   let y0 = box.y;
   if (o.valign === 'middle') y0 = box.y + (box.h - total) / 2;
   else if (o.valign === 'bottom') y0 = box.y + box.h - total;
-  // linha de base: centro da linha + ~0,35em (fontes serifadas latinas)
+  // linha de base: o centro óptico da linha é o meio da altura das maiúsculas
+  // (medida na própria fonte) — números e títulos ficam centrados de verdade
+  const half = capHeight(s) / 2;
   let out = '';
   lines.forEach((ln, i) => {
     const cy = y0 + lh * i + lh / 2;
-    const base = cy + s.size * 0.34;
+    const base = cy + half;
     let x = box.x;
     if (o.align === 'center') x = box.x + (box.w - ln.w) / 2;
     else if (o.align === 'right') x = box.x + box.w - ln.w;

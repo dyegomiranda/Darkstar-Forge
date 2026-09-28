@@ -1,13 +1,15 @@
 /**
- * Mostruário de estilos: peças lado a lado, cartas completas e misturas.
- * Página de aprovação do visual antes da reescrita do app.
+ * Mostruário de estilos: bancada para montar uma carta peça a peça, galeria de
+ * símbolos, peças lado a lado e cartas prontas. Página de aprovação do visual.
  */
-import { compose, type ComposeInput, type Look } from '../render/compose';
+import { compose, type ComposeInput, type IconChoice, type Look, type PieceChoice } from '../render/compose';
 import { Defs } from '../render/defs';
 import { piece, PIECE_KINDS, STYLES, type PieceKind, type StyleId } from '../render/elements';
-import { loadCardFonts } from '../render/fonts';
+import { CARD_FONTS, loadCardFonts } from '../render/fonts';
+import { ATK_GLYPHS, CLASS_GLYPHS, DEF_GLYPHS, GLYPHS, RESOURCE_GLYPHS } from '../render/icons/glyphs';
+import { drawGlyph, ICON_STYLES, type IconStyle } from '../render/icons/render';
 import { skeleton } from '../render/layout';
-import { makePalette } from '../render/palette';
+import { makePalette, type MetalKind } from '../render/palette';
 import { rasterize } from '../render/raster';
 import './showcase.css';
 
@@ -19,18 +21,12 @@ const DECK = {
   purple: { hex: '#6b3eb6', name: 'Roxo — Ladino/Assassino', res: 'shadow', art: 'deck-roxo' },
   white: { hex: '#c3a15a', name: 'Bege — Clérigo/Paladino', res: 'faith', art: 'deck-preto' },
   silver: { hex: '#97a1af', name: 'Prata — Monge/Bardo', res: 'focus', art: 'druida-deck-verde' },
+  orange: { hex: '#e07a2a', name: 'Recursos', res: 'gold', art: 'deck-vermelho' },
+  gear: { hex: '#8a9098', name: 'Equipamentos', res: 'gold', art: 'deck-preto' },
 } as const;
 type DeckId = keyof typeof DECK;
 
-const assets: ComposeInput['assets'] = {
-  resource: (id) => ({
-    vigor: 'vigor', mana: 'mana', nature: 'nature', souls: 'souls', shadow: 'shadow', faith: 'faith', focus: 'focus', fury: 'fury', gold: 'gold',
-  } as Record<string, string>)[id] && `/assets/icons/resources/${id}.png`,
-  classIcon: (c) => `/assets/icons/classes/${c}.png`,
-  setIcon: '/assets/icons/set/logo.png',
-  sword: '/assets/icons/ui/sword.png',
-  shield: '/assets/icons/ui/shield.png',
-};
+const SET_ICON = '/assets/icons/set/logo.png';
 
 interface Sample { deck: DeckId; also?: DeckId; name: string; type: string; rules: string; flavor?: string; cost: number; stats?: [number, number]; rarity: string; n: string }
 
@@ -57,6 +53,9 @@ const LONG_RULES = 'Ao entrar em campo, escolha um: cause 3 de dano a uma criatu
   'Fúria 3 — enquanto você tiver 3 ou mais {fury}, esta criatura tem Atropelar e não pode ser alvo de habilidades de Mago.\n' +
   'No fim do seu turno, se ela não atacou, cause 2 de dano a você.';
 
+/** O estilo Pixel vem com a arte pixelada (dá para desligar). */
+const lookFor = (style: StyleId): Look => (style === 'pixel' ? { style, pixelateArt: 7 } : { style });
+
 function input(s: Sample, look: Look, uid: string, over: Partial<ComposeInput> = {}): ComposeInput {
   const d = DECK[s.deck];
   const colors = s.also ? [d.hex, DECK[s.also].hex] : [d.hex];
@@ -67,12 +66,9 @@ function input(s: Sample, look: Look, uid: string, over: Partial<ComposeInput> =
     footer: `${s.n} · PT-BR · 1ª Ed.`,
     cost: { resource: d.res, amount: s.cost },
     stats: s.stats ? { atk: s.stats[0], def: s.stats[1] } : null,
-    rarity: s.rarity, look, assets, ...over,
+    rarity: s.rarity, look, setIcon: SET_ICON, ...over,
   };
 }
-
-/** O estilo Pixel vem com a arte pixelada (dá para desligar). */
-const lookFor = (style: StyleId): Look => (style === 'pixel' ? { style, pixelateArt: 7 } : { style });
 
 let uidN = 0;
 const uid = () => `c${++uidN}`;
@@ -82,24 +78,191 @@ function cardEl(inp: ComposeInput, caption?: string): string {
 }
 
 const PIECE_NAMES: Record<PieceKind, string> = {
-  frame: 'Moldura', header: 'Cabeçalho (nome)', cost: 'Selo de custo', class: 'Selo de classe', typeBar: 'Barra de tipo',
-  rules: 'Caixa de regras', stat: 'Placa ATK/DEF', footer: 'Rodapé', set: 'Selo da edição',
+  frame: 'Moldura (opcional)', header: 'Cabeçalho (nome)', cost: 'Selo de custo', class: 'Selo de classe', typeBar: 'Barra de tipo',
+  rules: 'Caixa de regras', stat: 'Placas ATK/DEF', footer: 'Rodapé', set: 'Selo da edição',
 };
+
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
 /** Uma peça sozinha, sobre um recorte escurecido da arte. */
 function pieceEl(style: StyleId, kind: PieceKind, deck: DeckId): string {
   const S = skeleton(260);
-  const box = kind === 'stat' ? S.atk : kind === 'frame' ? S.card : (S as any)[kind];
+  const box = kind === 'stat' ? S.atk : kind === 'frame' ? S.card : (S as unknown as Record<string, typeof S.card>)[kind];
   const defs = new Defs(uid());
   const ps = piece(style, kind);
   const out = ps.render({ box, pal: makePalette([DECK[deck].hex], ps.metal), defs, opacity: ps.opacity });
-  const pad = kind === 'frame' ? 0 : 40;
-  const vb = kind === 'frame'
-    ? `0 0 750 1050`
-    : `${box.x - pad} ${box.y - pad} ${box.w + pad * 2} ${box.h + pad * 2}`;
+  const pad = 40;
+  const vb = `${box.x - pad} ${box.y - pad} ${box.w + pad * 2} ${box.h + pad * 2}`;
   const art = `<image href="/amostras/${DECK[deck].art}.jpg" x="0" y="0" width="750" height="1050" preserveAspectRatio="xMidYMid slice" opacity=".55"/>`;
   return `<svg viewBox="${vb}" class="piece piece-${kind}">${defs}<rect x="-100" y="-100" width="950" height="1250" fill="#0d0b0a"/>${art}${out.svg}</svg>`;
 }
+
+/** Grade de símbolos: linhas = símbolos, colunas = estilos de desenho. */
+function glyphGallery(ids: string[], title: string, key: string, color?: (id: string) => string | undefined): string {
+  const defs = new Defs(uid());
+  const cell = 120;
+  let body = '';
+  ids.forEach((id, row) => {
+    ICON_STYLES.forEach((st, col) => {
+      body += drawGlyph(defs, id, st.id, col * cell + 18, row * cell + 16, 84, { color: color?.(id) });
+    });
+    body += `<text x="${ICON_STYLES.length * cell + 10}" y="${row * cell + 64}" fill="#bfb2a2" font-family="Noto Sans" font-size="17">${esc(GLYPHS[id].name)}</text>`;
+  });
+  const top = 30;
+  const heads = ICON_STYLES.map((s, i) => `<text x="${i * cell + 60}" y="20" fill="#8f8272" font-family="Noto Sans" font-size="14" text-anchor="middle">${s.name}</text>`).join('');
+  const w = ICON_STYLES.length * cell + 330, h = ids.length * cell + top;
+  return `<div><h3>${title}</h3><svg viewBox="0 0 ${w} ${h}" width="${w}" class="glyphs" id="gl-${key}">${defs}${heads}<g transform="translate(0 ${top})">${body}</g></svg></div>`;
+}
+
+// ───────────── bancada "Monte sua carta" ─────────────
+
+interface Bench {
+  sample: number; deck: DeckId; deck2: DeckId | ''; style: StyleId;
+  pieces: Partial<Record<PieceKind, Partial<PieceChoice>>>;
+  icons: { cost: IconChoice; class: IconChoice; atk: IconChoice; def: IconChoice; statMode: 'placa' | 'emblema' };
+  pixelArt: boolean; frame: boolean;
+}
+
+const bench: Bench = {
+  sample: 0, deck: 'red', deck2: '', style: 'ornado', pieces: {},
+  icons: { cost: {}, class: {}, atk: {}, def: {}, statMode: 'placa' }, pixelArt: false, frame: false,
+};
+
+const FONT_FAMILIES = [...new Set(CARD_FONTS.map((f) => f.family))];
+const METALS: [MetalKind | '', string][] = [['', 'padrão do estilo'], ['deck', 'cor do deck'], ['gold', 'ouro'], ['silver', 'prata'], ['bronze', 'bronze'], ['iron', 'ferro']];
+const EDIT_KINDS: PieceKind[] = ['header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set', 'frame'];
+
+function benchLook(): Look {
+  const pieces: Look['pieces'] = {};
+  for (const k of EDIT_KINDS) {
+    if (k === 'frame' && !bench.frame) continue;
+    pieces[k] = { style: bench.style, ...bench.pieces[k] } as PieceChoice;
+  }
+  const clean = (c: IconChoice) => Object.fromEntries(Object.entries(c).filter(([, v]) => v)) as IconChoice;
+  return {
+    style: bench.style, pieces,
+    icons: { cost: clean(bench.icons.cost), class: clean(bench.icons.class), atk: clean(bench.icons.atk), def: clean(bench.icons.def), statMode: bench.icons.statMode },
+    pixelateArt: bench.pixelArt ? 7 : undefined,
+  };
+}
+
+function benchCard(): string {
+  const s = SAMPLES[bench.sample];
+  const d = DECK[bench.deck];
+  const colors = bench.deck2 ? [d.hex, DECK[bench.deck2].hex] : [d.hex];
+  return compose(input({ ...s, deck: bench.deck }, benchLook(), 'bench', { colors, colorId: bench.deck, cost: { resource: d.res, amount: s.cost } }));
+}
+
+const opt = (v: string, label: string, cur: string) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(label)}</option>`;
+
+function benchControls(): string {
+  const styleOpts = (cur: string, blank = true) => (blank ? opt('', '(estilo geral)', cur) : '') + STYLES.map((s) => opt(s.id, s.name, cur)).join('');
+  const iconRow = (key: 'cost' | 'class' | 'atk' | 'def', label: string, glyphs: string[]) => {
+    const c = bench.icons[key];
+    return `<div class="ctl-row"><span class="lbl">${label}</span>
+      <select data-icon="${key}" data-f="style">${opt('', 'estilo do tema', c.style ?? '')}${ICON_STYLES.map((s) => opt(s.id, s.name, c.style ?? '')).join('')}</select>
+      ${glyphs.length ? `<select data-icon="${key}" data-f="glyph">${opt('', 'símbolo padrão', c.glyph ?? '')}${glyphs.map((g) => opt(g, GLYPHS[g].name, c.glyph ?? '')).join('')}</select>` : ''}
+      <input type="color" data-icon="${key}" data-f="color" value="${c.color ?? '#d6dde6'}" title="Cor do símbolo">
+      <button class="mini" data-icon-reset="${key}" title="Voltar à cor padrão">↺</button></div>`;
+  };
+  const pieceRows = EDIT_KINDS.map((k) => {
+    const p = bench.pieces[k] ?? {};
+    const dis = k === 'frame' && !bench.frame ? ' disabled' : '';
+    return `<tr${dis ? ' class="off"' : ''}>
+      <th>${PIECE_NAMES[k]}</th>
+      <td><select data-p="${k}" data-f="style"${dis}>${styleOpts(p.style ?? '')}</select></td>
+      <td><input type="color" data-p="${k}" data-f="color" value="${p.colors?.[0] ?? DECK[bench.deck].hex}"${dis}><button class="mini" data-reset="${k}" title="Voltar à cor do deck">↺</button></td>
+      <td><input type="range" min="0" max="100" data-p="${k}" data-f="opacity" value="${Math.round((p.opacity ?? piece(p.style ?? bench.style, k).opacity) * 100)}"${dis}></td>
+      <td><select data-p="${k}" data-f="metal"${dis}>${METALS.map(([v, l]) => opt(v, l, p.metal ?? '')).join('')}</select></td>
+      <td><input type="color" data-p="${k}" data-f="ink" value="${p.ink ?? '#ffffff'}"${dis}><button class="mini" data-ink-reset="${k}" title="Cor de texto padrão">↺</button></td>
+      <td><select data-p="${k}" data-f="font"${dis}>${opt('', 'padrão', p.font ?? '')}${FONT_FAMILIES.map((f) => opt(f, f, p.font ?? '')).join('')}</select></td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="ctl-row">
+      <label>Carta <select id="b-sample">${SAMPLES.map((s, i) => opt(String(i), s.name, String(bench.sample))).join('')}</select></label>
+      <label>Deck <select id="b-deck">${Object.entries(DECK).map(([id, d]) => opt(id, d.name, bench.deck)).join('')}</select></label>
+      <label>+ 2ª classe <select id="b-deck2">${opt('', '(nenhuma)', bench.deck2)}${Object.entries(DECK).map(([id, d]) => opt(id, d.name, bench.deck2)).join('')}</select></label>
+    </div>
+    <div class="ctl-row">
+      <label>Estilo geral <select id="b-style">${styleOpts(bench.style, false)}</select></label>
+      <label><input type="checkbox" id="b-frame"${bench.frame ? ' checked' : ''}> Moldura em volta</label>
+      <label><input type="checkbox" id="b-pixel"${bench.pixelArt ? ' checked' : ''}> Pixelar a arte</label>
+      <button id="b-reset">Limpar ajustes</button>
+    </div>
+    <h4>Peças</h4>
+    <table class="bench-table"><thead><tr><th></th><th>Estilo</th><th>Cor</th><th>Transparência</th><th>Metal</th><th>Cor do texto</th><th>Fonte</th></tr></thead><tbody>${pieceRows}</tbody></table>
+    <h4>Símbolos</h4>
+    ${iconRow('cost', 'Custo', [])}
+    ${iconRow('class', 'Classe', CLASS_GLYPHS)}
+    ${iconRow('atk', 'Ataque', ATK_GLYPHS)}
+    ${iconRow('def', 'Defesa', DEF_GLYPHS)}
+    <div class="ctl-row"><span class="lbl">ATK/DEF</span>
+      <label><input type="radio" name="statMode" value="placa"${bench.icons.statMode === 'placa' ? ' checked' : ''}> em placas</label>
+      <label><input type="radio" name="statMode" value="emblema"${bench.icons.statMode === 'emblema' ? ' checked' : ''}> número dentro do símbolo</label>
+    </div>`;
+}
+
+function mountBench() {
+  const host = document.getElementById('bench')!;
+  const draw = () => { (document.getElementById('bench-card') as HTMLElement).innerHTML = benchCard(); };
+  const rebuild = () => {
+    host.innerHTML = `<div class="bench"><div class="bench-ctl">${benchControls()}</div><div class="bench-view"><div id="bench-card" class="card-svg big"></div></div></div>`;
+    draw();
+  };
+  const onEdit = (e: Event) => {
+    const t = e.target as HTMLInputElement;
+    const k = t.dataset.p as PieceKind | undefined;
+    const f = t.dataset.f;
+    if (k && f) {
+      const p = (bench.pieces[k] ??= {});
+      if (f === 'style') { if (t.value) p.style = t.value as StyleId; else delete p.style; rebuild(); return; }
+      if (f === 'color') p.colors = [t.value];
+      if (f === 'opacity') p.opacity = +t.value / 100;
+      if (f === 'metal') { if (t.value) p.metal = t.value as MetalKind; else delete p.metal; }
+      if (f === 'ink') p.ink = t.value;
+      if (f === 'font') { if (t.value) p.font = t.value; else delete p.font; }
+      draw();
+      return;
+    }
+    const ik = t.dataset.icon as 'cost' | 'class' | 'atk' | 'def' | undefined;
+    if (ik && f) {
+      const c = bench.icons[ik];
+      if (f === 'style') c.style = (t.value || undefined) as IconStyle | undefined;
+      if (f === 'glyph') c.glyph = t.value || undefined;
+      if (f === 'color') c.color = t.value;
+      draw();
+      return;
+    }
+    if (t.name === 'statMode') { bench.icons.statMode = t.value as 'placa' | 'emblema'; draw(); return; }
+    if (e.type !== 'change') return;
+    if (t.id === 'b-sample') bench.sample = +t.value;
+    if (t.id === 'b-deck') bench.deck = t.value as DeckId;
+    if (t.id === 'b-deck2') bench.deck2 = t.value as DeckId | '';
+    if (t.id === 'b-style') { bench.style = t.value as StyleId; bench.pixelArt = bench.style === 'pixel'; bench.pieces = {}; }
+    if (t.id === 'b-frame') bench.frame = t.checked;
+    if (t.id === 'b-pixel') bench.pixelArt = t.checked;
+    rebuild();
+  };
+  host.addEventListener('input', onEdit);
+  host.addEventListener('change', (e) => {
+    const t = e.target as HTMLElement;
+    // selects/checkboxes só disparam 'change'; cores e sliders já tratados no 'input'
+    if (t.tagName === 'SELECT' || (t as HTMLInputElement).type === 'checkbox' || (t as HTMLInputElement).type === 'radio') onEdit(e);
+  });
+  host.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (t.dataset.reset) { delete bench.pieces[t.dataset.reset as PieceKind]?.colors; rebuild(); }
+    if (t.dataset.inkReset) { delete bench.pieces[t.dataset.inkReset as PieceKind]?.ink; rebuild(); }
+    if (t.dataset.iconReset) { delete bench.icons[t.dataset.iconReset as 'cost'].color; rebuild(); }
+    if (t.id === 'b-reset') { bench.pieces = {}; bench.icons = { cost: {}, class: {}, atk: {}, def: {}, statMode: 'placa' }; rebuild(); }
+  });
+  rebuild();
+}
+
+// ───────────── página ─────────────
+
+const DECK_OF_GLYPH: Record<string, DeckId> = { weapons: 'red', wizard: 'blue', tree: 'green', skull: 'black', dagger: 'purple', shieldcross: 'white', lotus: 'silver', potion: 'orange', helmet: 'gear' };
 
 function render(deck: DeckId) {
   const app = document.getElementById('app')!;
@@ -114,50 +277,71 @@ function render(deck: DeckId) {
     PIECE_KINDS.filter((k) => k !== 'frame').map((k) => `<tr><th>${PIECE_NAMES[k]}</th>${styles.map((s) => `<td>${pieceEl(s.id, k, deck)}</td>`).join('')}</tr>`).join('') +
     `</tbody></table>`;
 
+  const deckColor = (id: string) => (DECK_OF_GLYPH[id] ? DECK[DECK_OF_GLYPH[id]].hex : undefined);
+
   const mixes: [string, Look][] = [
     ['Cabeçalho Ornado + regras Gótico + resto Arcano', { style: 'arcano', pieces: { header: { style: 'ornado' }, rules: { style: 'gotico' }, typeBar: { style: 'gotico' } } }],
-    ['Moderno com selos de cristal (Arcano)', { style: 'moderno', pieces: { cost: { style: 'arcano' }, class: { style: 'arcano' }, set: { style: 'arcano' } } }],
+    ['Moderno com selos de astrolábio (Arcano)', { style: 'moderno', pieces: { cost: { style: 'arcano' }, class: { style: 'arcano' }, set: { style: 'arcano' } } }],
     ['Selvagem com selos e ATK/DEF Góticos', { style: 'selvagem', pieces: { cost: { style: 'gotico' }, class: { style: 'gotico' }, stat: { style: 'gotico' } } }],
-    ['Pixel com a arte original (sem pixelar)', { style: 'pixel' }],
     ['Gótico com metal dourado', { style: 'gotico', pieces: Object.fromEntries(PIECE_KINDS.filter((k) => k !== 'frame').map((k) => [k, { style: 'gotico', metal: 'gold' }])) }],
+    ['Ornado com regras 50% transparentes e texto claro', { style: 'ornado', pieces: { rules: { style: 'ornado', opacity: 0.5, ink: '#fff6ea' } } }],
+  ];
+  const emblems: [string, Look][] = [
+    ['Impacto + escudo (Emblema)', { style: 'ornado', icons: { statMode: 'emblema' } }],
+    ['Espadas + escudo redondo (Chapado)', { style: 'moderno', icons: { statMode: 'emblema', atk: { glyph: 'swords', style: 'chapado', color: '#f2f2f2' }, def: { glyph: 'round', style: 'chapado', color: '#3d8bff' } } }],
+    ['Impacto + coração (Traço)', { style: 'arcano', icons: { statMode: 'emblema', atk: { glyph: 'burst', style: 'traco', color: '#ffb84a' }, def: { glyph: 'heart', style: 'traco' } } }],
+    ['Pixel com número dentro', { style: 'pixel', pixelateArt: 7, icons: { statMode: 'emblema', atk: { glyph: 'burst' }, def: { glyph: 'heart' } } }],
   ];
   const framed = styles.map((st) => cardEl(input(SAMPLES[4], { ...lookFor(st.id), pieces: { frame: { style: st.id } } }, uid()), `${st.name} — com moldura`)).join('');
 
   app.innerHTML = `
     <header class="top">
       <h1>Darkstar Forge — Mostruário de estilos</h1>
-      <p>Cada peça da carta existe em vários estilos e pode ser trocada sozinha. As cores vêm do deck; o metal, a opacidade e a cor de cada peça podem ser ajustados.</p>
-      <label>Cor do deck para as peças:
-        <select id="deck">${Object.entries(DECK).map(([id, d]) => `<option value="${id}"${id === deck ? ' selected' : ''}>${d.name}</option>`).join('')}</select>
-      </label>
+      <p>Cada peça da carta existe em vários estilos e pode ser trocada sozinha. Cor, transparência, metal, cor do texto e fonte de cada peça são ajustáveis; os símbolos têm 4 estilos de desenho.</p>
     </header>
-    <section><h2>1. Peças lado a lado</h2>${table}</section>
-    <section><h2>2. Cartas completas, um estilo por vez</h2>${full}</section>
-    <section><h2>3. Misturando estilos</h2><div class="row">${mixes.map(([cap, look], i) => cardEl(input(SAMPLES[i % 5], look, uid()), cap)).join('')}</div></section>
-    <section><h2>4. Texto curto e texto longo (a caixa cresce para cima)</h2><div class="row">${styles.map((st) =>
+    <section><h2>1. Monte sua carta</h2><div id="bench"></div></section>
+    <section><h2>2. Símbolos (cada um em 4 estilos de desenho)</h2>
+      <div class="row gl">${glyphGallery(RESOURCE_GLYPHS, 'Recursos (custo)', 'res')}${glyphGallery(CLASS_GLYPHS, 'Classes e decks', 'cls', deckColor)}${glyphGallery([...ATK_GLYPHS, ...DEF_GLYPHS], 'Ataque e defesa', 'cbt')}</div>
+    </section>
+    <section><h2>3. Peças lado a lado</h2>
+      <label>Cor do deck: <select id="deck">${Object.entries(DECK).map(([id, d]) => `<option value="${id}"${id === deck ? ' selected' : ''}>${d.name}</option>`).join('')}</select></label>
+      ${table}</section>
+    <section><h2>4. Cartas completas, um estilo por vez</h2>${full}</section>
+    <section><h2>5. ATK/DEF com o número dentro do símbolo</h2><div class="row">${emblems.map(([cap, look], i) => cardEl(input(SAMPLES[[0, 1, 4, 2][i]], look, uid()), cap)).join('')}</div></section>
+    <section><h2>6. Misturando estilos e ajustes</h2><div class="row">${mixes.map(([cap, look], i) => cardEl(input(SAMPLES[i % 5], look, uid()), cap)).join('')}</div></section>
+    <section><h2>7. Texto curto e texto longo (a caixa cresce para cima)</h2><div class="row">${styles.map((st) =>
       cardEl(input(sampleFor, lookFor(st.id), uid(), { rules: 'Investida.', flavor: undefined }), `${st.name} — curto`) +
       cardEl(input(sampleFor, lookFor(st.id), uid(), { rules: LONG_RULES }), `${st.name} — longo`)).join('')}</div></section>
-    <section><h2>5. Carta híbrida (duas classes)</h2><div class="row">${styles.map((st) => cardEl(input(SAMPLES[5], lookFor(st.id), uid()), st.name)).join('')}</div></section>
-    <section><h2>6. Moldura em volta da carta (opcional — o padrão é sem moldura)</h2><div class="row">${framed}</div></section>
+    <section><h2>8. Carta híbrida (duas classes)</h2><div class="row">${styles.map((st) => cardEl(input(SAMPLES[5], lookFor(st.id), uid()), st.name)).join('')}</div></section>
+    <section><h2>9. Moldura em volta da carta (opcional — o padrão é sem moldura)</h2><div class="row">${framed}</div></section>
   `;
   (document.getElementById('deck') as HTMLSelectElement).onchange = (e) => render((e.target as HTMLSelectElement).value as DeckId);
+  mountBench();
 }
 
 loadCardFonts().then(() => render('red'));
 
-/** Desenvolvimento: grava cartas em .snaps/ para conferência em alta resolução. */
-(window as any).__snap = async (style: StyleId, idx: number, name: string, over: Partial<ComposeInput> = {}, look?: Look) => {
+/** Desenvolvimento: grava imagens em .snaps/ para conferência em alta resolução. */
+const dev = window as unknown as Record<string, unknown>;
+dev.__snap = async (style: StyleId, idx: number, name: string, over: Partial<ComposeInput> = {}, look?: Look) => {
   const svg = compose(input(SAMPLES[idx], look ?? lookFor(style), uid(), over));
-  const blob = await rasterize(svg, 750);
-  await fetch(`/__snap?name=${name}`, { method: 'POST', body: blob });
+  await fetch(`/__snap?name=${name}`, { method: 'POST', body: await rasterize(svg, 750) });
   return name;
 };
-(window as any).__snapPiece = async (style: StyleId, kind: PieceKind, deck: DeckId, name: string) => {
-  const html = pieceEl(style, kind, deck).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="900" ');
+dev.__snapBench = async (name: string) => {
+  await fetch(`/__snap?name=${name}`, { method: 'POST', body: await rasterize(benchCard(), 750) });
+  return name;
+};
+dev.__snapSvg = async (selector: string, name: string, width = 1200) => {
+  const el = document.querySelector(selector) as SVGSVGElement;
   const { selfContained } = await import('../render/raster');
-  const full = await selfContained(html);
+  const vb = el.viewBox.baseVal;
+  const height = Math.round((width * vb.height) / vb.width);
+  const src = el.outerHTML.replace('<svg ', `<svg xmlns="http://www.w3.org/2000/svg" `).replace(/ width="\d+"/, ` width="${width}" height="${height}"`);
+  const full = await selfContained(src);
   const img = new Image(); img.src = URL.createObjectURL(new Blob([full], { type: 'image/svg+xml' })); await img.decode();
-  const c = new OffscreenCanvas(900, Math.round(900 * img.naturalHeight / img.naturalWidth)); c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+  const c = new OffscreenCanvas(width, height);
+  const ctx = c.getContext('2d')!; ctx.fillStyle = '#16120f'; ctx.fillRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
   await fetch(`/__snap?name=${name}`, { method: 'POST', body: await c.convertToBlob() });
   return name;
 };

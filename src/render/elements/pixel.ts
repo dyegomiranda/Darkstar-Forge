@@ -1,10 +1,9 @@
 /**
  * Estilo PIXEL — janelas de RPG 16-bit: tudo numa grade de pixels, borda em
- * degraus com luz e sombra, pontilhado (dithering), sombra dura, fonte pixelada
+ * degraus com luz e sombra, miolo em faixas de tom, sombra dura, fonte pixelada
  * e ícones desenhados pixel a pixel.
  */
 import { darken, lighten } from '../color';
-import type { Defs } from '../defs';
 import { vivid, type Palette } from '../palette';
 import { inset, pixelArt, pixelRect, type Box } from '../shapes';
 import type { TextLook } from '../text';
@@ -23,45 +22,52 @@ const snap = (b: Box): Box => ({
 
 const crisp = (d: string, fill: string, extra = '') => `<path d="${d}" fill="${fill}" shape-rendering="crispEdges"${extra}/>`;
 
-/** Pontilhado xadrez (1 pixel sim, 1 não). */
-function dither(defs: Defs, color: string): string {
-  return defs.url(`dither:${color}`, (id) =>
-    `<pattern id="${id}" width="${P * 2}" height="${P * 2}" patternUnits="userSpaceOnUse">` +
-    `<rect width="${P}" height="${P}" fill="${color}"/><rect x="${P}" y="${P}" width="${P}" height="${P}" fill="${color}"/></pattern>`);
-}
-
 /** Cores da janela a partir do deck (em híbrida, usa a 1ª cor na moldura). */
 function tones(pal: Palette) {
   const v = vivid(pal.base);
   return { light: lighten(v, 0.55), mid: v, dark: darken(v, 0.35), deep: darken(v, 0.62), deeper: darken(v, 0.75) };
 }
 
-/** Janela: contorno preto, borda clara/escura em degrau, miolo com pontilhado em cima. */
-function windowBox(a: PieceArgs, b0: Box, content: (b: Box) => Box, text: TextLook, steps = 2): PieceOut {
+/**
+ * Janela de RPG: contorno preto, borda clara com sombra em degrau e miolo em
+ * faixas sólidas (o "degradê" de 16-bit: 4 tons, sem mistura).
+ * `thin` = borda de 2 pixels (caixas pequenas: tipo, rodapé, ATK/DEF).
+ */
+function windowBox(a: PieceArgs, b0: Box, content: (b: Box, border: number) => Box, text: TextLook, steps = 2, thin = false): PieceOut {
   const { defs, pal } = a;
   const b = snap(b0);
   const t = tones(pal);
-  const fillB = inset(b, P * 3);
+  const border = thin ? P * 2 : P * 3;
+  const fillB = inset(b, border);
   const fillD = pixelRect(fillB, P, Math.max(1, steps - 1));
-  // híbrida: miolo dividido em blocos de cor (sem degradê — pixel não tem degradê)
-  let fill = crisp(fillD, t.deep, ` fill-opacity="${a.opacity}"`);
-  if (pal.hybrid) {
-    const n = pal.colors.length;
-    const cid = defs.add(`pxclip:${b.x}:${b.y}`, (id) => `<clipPath id="${id}"><path d="${fillD}"/></clipPath>`);
-    const colW = Math.round(fillB.w / n / P) * P;
-    fill = `<g clip-path="url(#${cid})" opacity="${a.opacity}">` + pal.colors.map((c, i) =>
-      crisp(`M${fillB.x + i * colW} ${fillB.y}h${i === n - 1 ? fillB.w - i * colW : colW}v${fillB.h}h${-(i === n - 1 ? fillB.w - i * colW : colW)}Z`, darken(vivid(c), 0.62))).join('') + `</g>`;
-  }
-  const band = { ...fillB, h: Math.max(P * 2, Math.round((fillB.h * 0.35) / P) * P) };
+  const cid = defs.add(`pxclip:${b.x}:${b.y}:${b.w}`, (id) => `<clipPath id="${id}"><path d="${fillD}"/></clipPath>`);
+  // colunas por cor (híbrida) × faixas horizontais de tom
+  const n = pal.colors.length;
+  const colW = Math.round(fillB.w / n / P) * P;
+  const rows = [0.28, 0.24, 0.24, 0.24];
+  let bands = '';
+  pal.colors.forEach((c, i) => {
+    const v = vivid(c);
+    const shades = [darken(v, 0.48), darken(v, 0.56), darken(v, 0.62), darken(v, 0.68)];
+    const x = fillB.x + i * colW;
+    const w = i === n - 1 ? fillB.w - i * colW : colW;
+    let y = fillB.y;
+    rows.forEach((r, k) => {
+      const h = k === rows.length - 1 ? fillB.y + fillB.h - y : Math.max(P, Math.round((fillB.h * r) / P) * P);
+      bands += crisp(`M${x} ${y}h${w}v${h}h${-w}Z`, shades[k]);
+      y += h;
+    });
+  });
   const svg =
     crisp(pixelRect(b, P, steps), '#000', ` opacity=".55" transform="translate(${P} ${P})"`) +
     crisp(pixelRect(b, P, steps), OUT) +
     crisp(pixelRect(inset(b, P), P, steps), t.light) +
-    crisp(pixelRect({ ...inset(b, P), x: b.x + P * 2, y: b.y + P * 2 }, P, steps), t.dark) +
-    crisp(pixelRect(inset(b, P * 2), P, Math.max(1, steps - 1)), t.mid) +
-    fill +
-    crisp(`M${band.x} ${band.y}h${band.w}v${band.h}h${-band.w}Z`, dither(defs, t.dark), ` opacity="${a.opacity}"`);
-  return { svg, content: content(b), text };
+    (thin ? '' : crisp(pixelRect({ ...inset(b, P), x: b.x + P * 2, y: b.y + P * 2 }, P, steps), t.dark) +
+      crisp(pixelRect(inset(b, P * 2), P, Math.max(1, steps - 1)), t.mid)) +
+    `<g clip-path="url(#${cid})" opacity="${a.opacity}">${bands}</g>` +
+    // brilho de 1 pixel no topo do miolo
+    crisp(`M${fillB.x + P} ${fillB.y}h${fillB.w - 2 * P}v${P}h${-(fillB.w - 2 * P)}Z`, lighten(t.deep, 0.12), ` opacity="${a.opacity}"`);
+  return { svg, content: content(b, border), text };
 }
 
 const txt = (color = INK): TextLook => ({ family: FONT, weight: 500, color, hard: true });
@@ -112,7 +118,7 @@ function badge(a: PieceArgs, small = false): PieceOut {
     crisp(pixelRect(inset(b, P * 2), P, steps - 1), t.mid) +
     crisp(pixelRect(inset(b, P * 3), P, Math.max(1, steps - 2)), t.deep);
   const c = inset(b, P * 3.5);
-  return { svg, content: c, text: num(), pixelIcons: 4 };
+  return { svg, content: c, text: num() };
 }
 
 export const pixel: PieceStyle[] = [
@@ -135,8 +141,8 @@ export const pixel: PieceStyle[] = [
   {
     style: 'pixel', kind: 'typeBar', opacity: 1, metal: 'deck',
     render(a) {
-      const p = windowBox(a, inset(a.box, 12, 4), (b) => ({ x: b.x + P * 5, y: b.y + P * 3, w: b.w - P * 16, h: b.h - P * 6 }), txt());
-      const b = snap(inset(a.box, 12, 4));
+      const p = windowBox(a, inset(a.box, 12, 0), (b, bd) => ({ x: b.x + bd + P * 2, y: b.y + bd, w: b.w - 2 * bd - P * 11, h: b.h - 2 * bd }), txt(), 2, true);
+      const b = snap(inset(a.box, 12, 0));
       p.gem = { x: b.x + b.w - P * 10, y: b.y + b.h / 2 - 3.5 * P, w: 7 * P, h: 7 * P };
       return p;
     },
@@ -159,7 +165,7 @@ export const pixel: PieceStyle[] = [
     render(a) {
       const { variant, pal } = a;
       const t = tones(pal);
-      const p = windowBox(a, inset(a.box, 2, 2), (b) => inset(b, P * 2, P * 2), num(), 2);
+      const p = windowBox(a, inset(a.box, 2, 2), (b, bd) => inset(b, bd + P, bd), num(), 2, true);
       const c = p.content;
       const u = P / 2; // ícone com pixel menor, 12×12
       const s = 12 * u;
@@ -172,7 +178,7 @@ export const pixel: PieceStyle[] = [
   },
   {
     style: 'pixel', kind: 'footer', opacity: 1, metal: 'deck',
-    render: (a) => windowBox(a, inset(a.box, 0, -2), (b) => inset(b, P * 3, P * 2), num('#e8e8e8'), 1),
+    render: (a) => windowBox(a, inset(a.box, 0, -2), (b, bd) => inset(b, bd + P, bd), num('#e8e8e8'), 1, true),
   },
   {
     style: 'pixel', kind: 'frame', opacity: 1, metal: 'deck',

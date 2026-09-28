@@ -1,4 +1,5 @@
 import type { Defs } from '../defs';
+import type { IconStyle } from '../icons/render';
 import type { Palette, MetalKind } from '../palette';
 import type { Box } from '../shapes';
 import type { TextLook } from '../text';
@@ -32,6 +33,8 @@ export interface PieceOut {
   glass?: string;
   /** Lugar da joia de raridade (barra de tipo). */
   gem?: Box;
+  /** Cor sugerida para o símbolo desenhado dentro da peça. */
+  iconColor?: string;
   /** Pixelar os ícones desenhados dentro da peça (tamanho do bloco). */
   pixelIcons?: number;
   /** Ícone próprio da peça (ex.: espada em pixel); substitui o ícone padrão. */
@@ -54,4 +57,10 @@ export interface PieceStyle {
   flavor?: (pal: Palette) => TextLook;
 }
 
-export interface StyleInfo { id: StyleId; name: string; description: string }
+export interface StyleInfo {
+  id: StyleId;
+  name: string;
+  description: string;
+  /** Estilo de símbolo que combina com o estilo (o usuário pode trocar). */
+  icons: IconStyle;
+}

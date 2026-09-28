@@ -21,3 +21,25 @@ svg.piece { display: block; width: 100%; border-radius: 10px; }
 svg.piece-header, svg.piece-typeBar, svg.piece-rules { width: 340px; }
 svg.piece-cost, svg.piece-class, svg.piece-set, svg.piece-stat, svg.piece-footer { width: 170px; margin: auto; }
 section:has(table.pieces) { overflow-x: auto; }
+h4 { font: 600 15px "Cinzel", serif; color: #e8c98a; margin: 16px 0 8px; }
+.bench { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+.bench-ctl { flex: 1 1 560px; min-width: 0; }
+.bench-view { position: sticky; top: 12px; }
+.card-svg.big svg { width: 420px; height: auto; display: block; border-radius: 18px; box-shadow: 0 14px 40px rgb(0 0 0 / .7); }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 8px 0; }
+.ctl-row .lbl { width: 70px; color: var(--muted); }
+.ctl-row label { display: inline-flex; gap: 6px; align-items: center; }
+.ctl-row select { margin-left: 0; }
+button, .mini { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: inherit; cursor: pointer; }
+.mini { padding: 2px 7px; margin-left: 4px; }
+.bench-table { border-collapse: collapse; font-size: 13px; }
+.bench-table th, .bench-table td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.bench-table thead th { color: var(--muted); font-weight: 600; }
+.bench-table tr.off { opacity: .45; }
+.bench-table select { margin: 0; padding: 4px 6px; max-width: 150px; }
+input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: none; vertical-align: middle; }
+input[type=range] { width: 110px; vertical-align: middle; }
+.row.gl { gap: 40px; }
+.glyph-head { border-collapse: collapse; margin-left: 12px; }
+.glyph-head th { font: 600 13px "Noto Sans", sans-serif; color: var(--muted); text-align: center; }
+svg.glyphs { display: block; background: #16120f; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; height: auto; }
