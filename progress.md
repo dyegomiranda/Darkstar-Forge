@@ -61,8 +61,8 @@
 
 ## Próximos passos
 1. Gerar e testar o executável (AppImage) no computador Linux do usuário
-3. Artes das cartas de exemplo
-4. Motor de regras e simulação (futuro)
+2. Artes das cartas de exemplo
+3. Motor de regras e simulação (futuro)
 
 ## Arquivos-chave
 | Arquivo | Papel |
