@@ -23,6 +23,22 @@ export function mergeLook(base: Look, over?: Partial<Look>): Look {
   return { ...base, ...over, style: over.style ?? base.style, pieces, icons };
 }
 
+/** Ids das imagens usadas pelas peças do tema (para carregar antes de desenhar). */
+export function lookMediaIds(look?: Partial<Look>): string[] {
+  return Object.values(look?.pieces ?? {}).map((p) => p?.image?.mediaId).filter(Boolean) as string[];
+}
+
+/** Põe a URL (ou, para a chave de cache, o id) em cada peça feita de imagem. */
+function withImageSrc(look: Look, mediaUrl: (id: string) => string | undefined, forKey: boolean): Look {
+  if (!lookMediaIds(look).length) return look;
+  const pieces = { ...look.pieces };
+  for (const [k, p] of Object.entries(pieces)) {
+    const id = p?.image?.mediaId;
+    if (p && id) pieces[k as keyof typeof pieces] = { ...p, image: { ...p.image!, src: forKey ? id : mediaUrl(id) } };
+  }
+  return { ...look, pieces };
+}
+
 export interface CardContext {
   deck: Deck;
   edition?: Edition;
@@ -63,7 +79,7 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     cost: card.cost.map((p) => ({ resource: p.resource, amount: p.amount, show: p.show ?? 'number' })),
     stats: card.stats ? { atk: card.stats.atk, def: card.stats.def } : null,
     rarity: card.rarity,
-    look: mergeLook(ctx.deck.look, card.look),
+    look: withImageSrc(mergeLook(ctx.deck.look, card.look), ctx.mediaUrl, forKey),
     setIcon: set ? (forKey ? set : ctx.mediaUrl(set)) : '/brand/logo.png',
   };
 }

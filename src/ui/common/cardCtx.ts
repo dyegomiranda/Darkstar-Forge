@@ -2,7 +2,7 @@
 import { app } from '../../store/project.svelte';
 import { mediaUrl, ensureAll } from '../../store/media';
 import type { Card } from '../../model/types';
-import { cardInput, renderKey, type CardContext } from '../../render/card';
+import { cardInput, lookMediaIds, mergeLook, renderKey, type CardContext } from '../../render/card';
 import { compose } from '../../render/compose';
 import { cachedUrl, requestImage } from '../../render/queue';
 
@@ -26,9 +26,9 @@ export function warmCache(cards: Card[]): void {
   });
 }
 
-/** Garante que as imagens usadas pela carta (arte, logo da edição) estejam prontas. */
+/** Garante que as imagens usadas pela carta (arte, logo da edição, peças de imagem) estejam prontas. */
 export async function ensureCardMedia(card: Card): Promise<void> {
   const deck = app.deck(card.deckId);
-  const ids = [card.art.mediaId, app.edition(deck?.editionId)?.setMediaId].filter(Boolean) as string[];
+  const ids = [card.art.mediaId, app.edition(deck?.editionId)?.setMediaId, ...(deck ? lookMediaIds(mergeLook(deck.look, card.look)) : [])].filter(Boolean) as string[];
   if (ids.length) await ensureAll(ids);
 }
