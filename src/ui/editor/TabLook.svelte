@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X } from '@lucide/svelte';
+  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2 } from '@lucide/svelte';
+  import { ensureAll, importImage, mediaUrl } from '../../store/media';
+  import { ui } from '../../app/ui.svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { colorHex } from '../../model/catalog';
@@ -77,6 +79,29 @@
   function setAllIconStyles(s: IconStyle) {
     for (const slot of ['cost', 'class', 'atk', 'def'] as const) ed.setIcon(slot, { style: s });
   }
+  // ── símbolos próprios (imagem enviada pelo usuário) ──
+  type Slot = 'cost' | 'class' | 'atk' | 'def';
+  let symInput: HTMLInputElement;
+  let symSlot: Slot = 'cost';
+  let symTick = $state(0);
+  $effect(() => {
+    const ids = (['cost', 'class', 'atk', 'def'] as const).map((k) => look.icons?.[k]?.image?.mediaId).filter(Boolean) as string[];
+    if (ids.some((id) => !mediaUrl(id))) void ensureAll(ids).then(() => symTick++);
+  });
+  const symUrl = (id: string) => { void symTick; return mediaUrl(id); };
+  function pickSymbol(slot: Slot) { symSlot = slot; symInput.click(); }
+  async function uploadSymbol(files: FileList | null) {
+    const f = files?.[0];
+    if (!f) return;
+    try {
+      const id = await importImage(f, f.name);
+      ed.setIcon(symSlot, { image: { mediaId: id, recolor: false } });
+      symTick++;
+    } catch (e) {
+      ui.toast(L('Não consegui abrir essa imagem.', 'Could not open that image.'), 'error', 5000);
+    } finally { symInput.value = ''; }
+  }
+
   function setTint(i: number, v: string) { const t = [...tint]; t[i] = v; ed.setLook({ tint: t }); }
 </script>
 
@@ -224,6 +249,7 @@
 
     {#snippet picker(slot: 'cost' | 'class' | 'atk' | 'def', title: string, ids: string[], color: string)}
       {@const cur = look.icons?.[slot]?.glyph ?? ids[0]}
+      {@const im = look.icons?.[slot]?.image}
       <div class="field">
         <div class="row"><span class="grow label">{title}</span>
           <button class="btn sm ghost" disabled={!ed.iconChanged(slot)} onclick={() => ed.revertIcon(slot)}><Undo2 size={13} /> {L('Voltar ao que estava', 'Back to how it was')}</button></div>
@@ -234,13 +260,29 @@
           <input type="color" title={L('Cor do símbolo', 'Symbol color')} value={look.icons?.[slot]?.color ?? color} oninput={(e) => ed.setIcon(slot, { color: (e.currentTarget as HTMLInputElement).value })} />
           <button class="btn sm ghost icon" title={L('Cor padrão', 'Default color')} disabled={!look.icons?.[slot]?.color} onclick={() => ed.setIcon(slot, {}, ['color'])}><RotateCcw size={14} /></button>
         </div>
+        <div class="row wrap symrow">
+          {#if im}
+            <span class="symimg">{#if symUrl(im.mediaId)}<img src={symUrl(im.mediaId)} alt="" />{/if}</span>
+            <label class="toggle"><input type="checkbox" checked={!!im.recolor} onchange={(e) => ed.setIcon(slot, { image: { ...im, recolor: (e.currentTarget as HTMLInputElement).checked } })} />
+              {L('Pintar na cor escolhida', 'Paint with the chosen color')}</label>
+            <button class="btn sm ghost" onclick={() => pickSymbol(slot)}><ImagePlus size={14} /> {L('Trocar', 'Change')}</button>
+            <button class="btn sm ghost" onclick={() => ed.setIcon(slot, {}, ['image'])}><Trash2 size={14} /> {L('Usar os símbolos acima', 'Use the symbols above')}</button>
+          {:else}
+            <button class="btn sm ghost" onclick={() => pickSymbol(slot)} title={L('PNG/SVG com fundo transparente; colorido ou de uma cor só', 'PNG/SVG with transparent background; full color or single color')}><ImagePlus size={14} /> {L('Enviar meu símbolo (PNG)', 'Upload my symbol (PNG)')}</button>
+          {/if}
+        </div>
       </div>
     {/snippet}
 
+    <input type="file" accept="image/png,image/webp,image/svg+xml" hidden bind:this={symInput} onchange={(e) => uploadSymbol((e.currentTarget as HTMLInputElement).files)} />
     {#if ed.draft.cost.length}
       {@render picker('cost', L('Custo', 'Cost') + (ed.draft.cost.length > 1 ? L(' (1º recurso)', ' (1st resource)') : ''), resourceChoices(ed.draft.cost[0].resource), RESOURCE_COLORS[ed.draft.cost[0].resource])}
     {/if}
-    {@render picker('class', L('Classe', 'Class'), classChoices(ed.draft.colors[0]), '#e8dcc4')}
+    {@render picker('class', L('Classe', 'Class') + (ed.draft.colors.length > 1 && look.icons?.classMode !== 'primeira' ? L(' (1ª classe)', ' (1st class)') : ''), classChoices(ed.draft.colors[0]), '#e8dcc4')}
+    {#if ed.draft.colors.length > 1}
+      <label class="toggle"><input type="checkbox" checked={look.icons?.classMode !== 'primeira'} onchange={(e) => ed.setLook({ icons: { ...look.icons, classMode: (e.currentTarget as HTMLInputElement).checked ? 'todas' : 'primeira' } })} />
+        {L('Mostrar o símbolo de cada classe da carta (o selo se alarga)', 'Show a symbol for each of the card\'s classes (the seal widens)')}</label>
+    {/if}
     {#if ed.draft.stats}
       {@render picker('atk', L('Ataque', 'Attack'), ATK_CHOICES, '#d3dae3')}
       {@render picker('def', L('Defesa', 'Defense'), DEF_CHOICES, '#d3dae3')}
@@ -255,6 +297,9 @@
 </div>
 
 <style>
+  .symrow { gap: 8px; align-items: center; margin-top: 4px; }
+  .symimg { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; overflow: hidden; background: repeating-conic-gradient(#3a3a3a 0 25%, #2a2a2a 0 50%) 0 0 / 10px 10px; }
+  .symimg img { max-width: 100%; max-height: 100%; }
   .thumbs.dim { opacity: .45; }
   .scope { display: flex; flex-direction: column; gap: 8px; }
   .full { display: flex; width: 100%; }

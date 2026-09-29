@@ -5,7 +5,7 @@
 import { darken, lighten, luminance } from '../color';
 import type { Defs } from '../defs';
 import { vivid, type Palette } from '../palette';
-import { circle, diamond, inset, parallelogram, poly, rect } from '../shapes';
+import { circle, diamond, inset, parallelogram, pill, poly, rect } from '../shapes';
 import { center } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
@@ -67,11 +67,13 @@ export const moderno: PieceStyle[] = [
     style: 'moderno', kind: 'class', opacity: 1, metal: 'deck',
     render(a) {
       const { cx, cy } = center(a.box);
-      const r = a.box.w / 2 - 2;
-      const svg = slab(a, circle(cx, cy, r), '#101010', 6, 6) +
-        `<path d="${circle(cx, cy, r)}" fill="none" stroke="${flat(a.defs, a.pal)}" stroke-width="7"/>`;
+      // caixa larga (várias classes): o círculo vira cápsula
+      const r = Math.min(a.box.w, a.box.h) / 2 - 2;
+      const ext = Math.max(0, (a.box.w - a.box.h) / 2);
+      const svg = slab(a, pill(cx, cy, r, ext), '#101010', 6, 6) +
+        `<path d="${pill(cx, cy, r, ext)}" fill="none" stroke="${flat(a.defs, a.pal)}" stroke-width="7"/>`;
       const ci = r * 0.72;
-      return { svg, content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 }, text: { family: FONT, weight: 700, color: INK }, iconColor: '#ffffff' };
+      return { svg, content: { x: cx - ci - ext, y: cy - ci, w: 2 * (ci + ext), h: ci * 2 }, text: { family: FONT, weight: 700, color: INK }, iconColor: '#ffffff' };
     },
   },
   {

@@ -1,6 +1,6 @@
 # Darkstar Forge — progresso
 
-**Atualizado:** 29/09/2026 (versão 2.2: peças feitas de imagem)
+**Atualizado:** 29/09/2026 (versão 2.2: peças e símbolos de imagem, vários símbolos de classe, artes pelo ComfyUI)
 **Como abrir:** atalho *Darkstar Forge* no menu de aplicativos, ou o script `Darkstar Forge` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`.
 
@@ -14,6 +14,13 @@ Os estilos desenhados por código não reproduzem modelos pintados à mão; por 
 - [x] "Só o texto, sem fundo": útil quando a moldura inteira já é uma imagem (modelo com a janela da arte transparente)
 - [x] Funciona no editor, na biblioteca, no PNG/PDF exportado, no backup e como tema do deck
 - [x] Correção: carta com ajustes próprios de aparência não abria de novo no editor
+
+### Símbolos, versão e artes
+- [x] Versão do programa (e commit/data da compilação) na barra lateral, abaixo do PT/EN
+- [x] Carta de várias classes mostra um símbolo por classe no selo, que se alarga (como o de custo); opção em Aparência para mostrar só o da 1ª classe
+- [x] Símbolos próprios: custo, classe, ATK e DEF aceitam uma imagem (PNG/SVG), com as cores originais ou pintada na cor escolhida
+- [x] Biblioteca → **Importar artes**: várias imagens de uma vez, cada uma na carta do mesmo nome (`pf-red_001.png` ou `corte-duplo.png`)
+- [x] 81 prompts detalhados no estilo MTG (`tools/comfyui/prompts-pf.json` e `docs/prompts-pf.md`) e script que gera tudo no ComfyUI (`tools/comfyui/gerar_artes.py`, guia em `docs/artes.md`)
 
 ## Versão 2.1 (29/09/2026)
 
@@ -72,7 +79,7 @@ Os estilos desenhados por código não reproduzem modelos pintados à mão; por 
 
 ## Próximos passos
 1. Gerar e testar o executável (AppImage) no computador Linux do usuário
-2. Artes das cartas de exemplo
+2. Gerar as artes das 81 cartas no ComfyUI (guia em `docs/artes.md`) e importar
 3. Motor de regras e simulação (futuro)
 
 ## Arquivos-chave

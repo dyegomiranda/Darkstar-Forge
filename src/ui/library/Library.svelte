@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Search, X, FileDown, Images, Trash2, FolderInput, Paintbrush, SlidersHorizontal, TriangleAlert, CircleCheck } from '@lucide/svelte';
+  import { Plus, Search, X, FileDown, Images, Trash2, FolderInput, Paintbrush, SlidersHorizontal, TriangleAlert, CircleCheck, ImageUp } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { router } from '../../app/router.svelte';
   import { ui } from '../../app/ui.svelte';
@@ -14,6 +14,7 @@
   import CardGrid from './CardGrid.svelte';
   import CardImage from '../common/CardImage.svelte';
   import { exportPdf, exportPngZip } from '../../export/exporters.svelte';
+  import { importArtBatch } from '../../export/artImport';
   import { warmCache } from '../common/cardCtx';
 
   let { deckId }: { deckId?: string } = $props();
@@ -106,6 +107,18 @@
     clearTimeout(hoverTimer);
     if (!c || !el) { hover = null; return; }
     hoverTimer = setTimeout(() => { hover = { card: c, rect: el.getBoundingClientRect() }; }, 550);
+  }
+
+  // ── artes em lote ──
+  let artInput: HTMLInputElement;
+  async function importArts(files: FileList | null) {
+    if (!files?.length) return;
+    const list = [...files];
+    artInput.value = '';
+    ui.toast(L(`Importando ${list.length} imagens…`, `Importing ${list.length} images…`));
+    const r = await importArtBatch(list);
+    const miss = r.unmatched.length ? L(` · sem carta correspondente: ${r.unmatched.slice(0, 6).join(', ')}${r.unmatched.length > 6 ? '…' : ''}`, ` · no matching card: ${r.unmatched.slice(0, 6).join(', ')}${r.unmatched.length > 6 ? '…' : ''}`) : '';
+    ui.toast(L(`${r.matched.length} artes colocadas nas cartas`, `${r.matched.length} artworks placed on cards`) + miss, r.unmatched.length ? 'error' : undefined, r.unmatched.length ? 9000 : 4000);
   }
 
   function newCard() {
@@ -212,6 +225,8 @@
           <div class="bar-col"><div class="bar" style="height:{(v / maxCurve) * 100}%"></div><span>{i === 7 ? '7+' : i}</span></div>
         {/each}
       </div>
+      <button class="btn" onclick={() => artInput.click()} title={L('Escolha várias imagens: cada uma vai para a carta com o mesmo nome (ex.: pf-red_003.png ou corte-duplo.png)', 'Pick several images: each goes to the card with the same name (e.g. pf-red_003.png or corte-duplo.png)')}><ImageUp size={17} /> {L('Importar artes', 'Import art')}</button>
+      <input type="file" accept="image/*" multiple hidden bind:this={artInput} onchange={(e) => importArts((e.currentTarget as HTMLInputElement).files)} />
       <button class="btn primary" onclick={newCard}><Plus size={17} /> {L('Nova carta', 'New card')}</button>
     </header>
 

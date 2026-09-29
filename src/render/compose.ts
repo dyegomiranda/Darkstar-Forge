@@ -34,8 +34,34 @@ export interface PieceChoice {
   image?: PieceImage;
 }
 
-/** Escolha de um símbolo: estilo de desenho, qual símbolo e cor. */
-export interface IconChoice { style?: IconStyle; glyph?: string; color?: string }
+/** Símbolo enviado pelo usuário (PNG/SVG). */
+export interface IconImage {
+  mediaId: string;
+  /** Preenchido na hora de desenhar (URL); não é salvo. */
+  src?: string;
+  /** Pintar a imagem toda na cor do símbolo (para ícones de uma cor só). Senão, cores originais. */
+  recolor?: boolean;
+}
+
+/** Escolha de um símbolo: estilo de desenho, qual símbolo e cor (ou uma imagem própria). */
+export interface IconChoice { style?: IconStyle; glyph?: string; color?: string; image?: IconImage }
+
+/** Filtro que pinta a imagem inteira numa cor (mantém só o formato/transparência). */
+function recolorFilter(defs: Defs, color: string): string {
+  return defs.url(`recolor:${color}`, (id) =>
+    `<filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">` +
+    `<feFlood flood-color="${color}"/><feComposite in2="SourceAlpha" operator="in"/></filter>`);
+}
+
+/** Desenha o símbolo: a imagem do usuário, se houver; senão, o símbolo da biblioteca. */
+function symbol(defs: Defs, pick: IconChoice | undefined, glyph: string, style: IconStyle, x: number, y: number, s: number, color: string): string {
+  const im = pick?.image;
+  if (im?.src) {
+    const f = im.recolor ? ` filter="${recolorFilter(defs, color)}"` : '';
+    return `<image href="${im.src}" x="${+x.toFixed(2)}" y="${+y.toFixed(2)}" width="${+s.toFixed(2)}" height="${+s.toFixed(2)}" preserveAspectRatio="xMidYMid meet"${f}/>`;
+  }
+  return drawGlyph(defs, glyph, style, x, y, s, { color });
+}
 
 export interface Look {
   /** Estilo usado nas peças sem escolha própria. */
@@ -46,6 +72,8 @@ export interface Look {
     class?: IconChoice;
     atk?: IconChoice;
     def?: IconChoice;
+    /** 'todas' = um símbolo por classe da carta (padrão); 'primeira' = só o da 1ª classe. */
+    classMode?: 'todas' | 'primeira';
     /** 'placa' = símbolo + número numa caixinha; 'emblema' = número dentro do símbolo, sem caixa. */
     statMode?: 'placa' | 'emblema';
   };
@@ -89,6 +117,8 @@ export interface ComposeInput {
   footer?: string;
   /** Custos (vazio = sem custo). */
   cost?: CostItem[] | null;
+  /** Todas as classes (cores) da carta; o selo de classe mostra um símbolo por classe. */
+  classIds?: string[];
   stats?: { atk: number; def: number } | null;
   rarity: string;
   look: Look;
@@ -154,9 +184,9 @@ function pixelate(defs: Defs, px: number): string {
 }
 
 /** Uma linha de texto centrada (ajustada para caber na largura). */
-export function centered(defs: Defs, text: string, look: TextLook, size: number, box: Box, align: 'left' | 'center' = 'center'): string {
+export function centered(defs: Defs, text: string, look: TextLook, size: number, box: Box, align: 'left' | 'center' = 'center', minScale = 0.6): string {
   const { st, filter } = styled(defs, look, size);
-  const f = fitLine(text, st, box.w);
+  const f = fitLine(text, st, box.w, size * minScale);
   return drawLines(wrap(text, f, 1e9), f, box, { align, valign: 'middle', filter });
 }
 
@@ -253,6 +283,20 @@ export function compose(inp: ComposeInput): string {
       if (shift > 0) S.header = { ...S.header, x: S.header.x + shift, w: S.header.w - shift };
     }
   }
+  // Selo de classe: um símbolo por classe (carta de várias cores); o selo se alarga para a esquerda
+  const classIds = look.icons?.classMode === 'primeira' || !inp.classIds?.length ? [inp.colorId] : inp.classIds;
+  let classPlan: CostPlan | undefined;
+  const classPick = choose(look, 'class');
+  if (classIds.length > 1 && !classPick.ch.hidden) {
+    const c0 = renderPiece('class', classPick.ps, classPick.ch, { box: S.class, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 }).content;
+    classPlan = planCost(classIds.map((id) => ({ resource: id, amount: 1, show: 'repeat' as const })), c0.h, () => 0, 0, c0.w + COST_MAX_W - S.class.w, 0.8);
+    const need = classPlan.width + c0.h * 0.08 - c0.w;
+    if (need > 0) {
+      S.class = { ...S.class, x: S.class.x - need, w: S.class.w + need };
+      const over = S.header.x + S.header.w - (S.class.x + 34);
+      if (over > 0) S.header = { ...S.header, w: S.header.w - over };
+    }
+  }
   add('rules', S.rules);
   add('typeBar', S.typeBar);
   add('header', S.header);
@@ -268,7 +312,8 @@ export function compose(inp: ComposeInput): string {
   const pix = (o: PieceOut, svg: string) => (o.pixelIcons ? `<g filter="${pixelate(defs, o.pixelIcons)}">${svg}</g>` : svg);
 
   const H = outs.header;
-  if (H) text += centered(defs, inp.name, textOf(H.out, H.ch), sz.title, H.out.content);
+  // o nome pode encolher mais: com vários custos/classes os selos largos estreitam a barra
+  if (H) text += centered(defs, inp.name, textOf(H.out, H.ch), sz.title, H.out.content, 'center', 0.4);
 
   const TB = outs.typeBar;
   if (TB) {
@@ -313,8 +358,8 @@ export function compose(inp: ComposeInput): string {
         const r = u.s * 0.56, ox = x0 + u.x + u.s / 2, oy = c.y + u.y + u.s / 2;
         text += `<circle cx="${ox}" cy="${oy}" r="${r + 1.5}" fill="#0c0c0e"/>` +
           `<circle cx="${ox}" cy="${oy}" r="${r}" fill="${defs.radial([[0, lighten(color, 0.55)], [0.55, color], [1, darken(color, 0.35)]], 0.38, 0.3, 0.8)}"/>` +
-          drawGlyph(defs, glyph, costIcons, ox - r * 0.72, oy - r * 0.72, r * 1.44, { color: '#141416' });
-      } else if (glyph) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, { color }));
+          symbol(defs, pick, glyph, costIcons, ox - r * 0.72, oy - r * 0.72, r * 1.44, '#141416');
+      } else if (glyph) text += pix(C.out, symbol(defs, pick, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, color));
       if (u.num) text += centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 });
     }
   }
@@ -322,11 +367,23 @@ export function compose(inp: ComposeInput): string {
   const K = outs.class;
   if (K) {
     const c = K.out.content;
-    const s = Math.min(c.w, c.h) * 0.94;
     const pick = look.icons?.class;
-    const glyph = pick?.glyph ?? classIcon(inp.colorId);
-    const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
-    text += pix(K.out, drawGlyph(defs, glyph, iconStyleFor('class', pick), c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, { color }));
+    const style = iconStyleFor('class', pick);
+    if (classPlan) {
+      // várias classes: cada símbolo na cor da sua classe (a escolha da Aparência vale para a 1ª)
+      const x0 = c.x + (c.w - classPlan.width) / 2;
+      for (const u of classPlan.units) {
+        const id = classIds[u.part];
+        const glyph = (u.part === 0 && pick?.glyph) || classIcon(id);
+        const color = (u.part === 0 && pick?.color) || K.out.iconColor || lighten(vivid(inp.colors[u.part] ?? K.args.pal.base), 0.3);
+        text += pix(K.out, symbol(defs, u.part === 0 ? pick : undefined, glyph, style, x0 + u.x, c.y + u.y, u.s, color));
+      }
+    } else {
+      const s = Math.min(c.w, c.h) * 0.94;
+      const glyph = pick?.glyph ?? classIcon(inp.colorId);
+      const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
+      text += pix(K.out, symbol(defs, pick, glyph, style, c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, color));
+    }
   }
 
   const SET = outs.set;
@@ -352,13 +409,15 @@ export function compose(inp: ComposeInput): string {
       const b = P.args.box;
       const s = b.h * 1.42;
       const cx = b.x + b.w / 2, cy = b.y + b.h / 2 - 4;
-      text += drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c');
+      text += pick?.image?.src
+        ? symbol(defs, pick, glyph, style, cx - s / 2, cy - s / 2, s, color)
+        : drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c');
       text += centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
       continue;
     }
     const c = P.out.content;
     const iconS = c.h * 0.98;
-    text += drawGlyph(defs, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, { color });
+    text += symbol(defs, pick, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, color);
     text += centered(defs, num, tl, sz.stat * (c.h / 56), { x: c.x + iconS, y: c.y, w: c.w - iconS, h: c.h });
   }
 

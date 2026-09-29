@@ -25,10 +25,11 @@ export function mergeLook(base: Look, over?: Partial<Look>): Look {
 
 /** Ids das imagens usadas pelas peças do tema (para carregar antes de desenhar). */
 export function lookMediaIds(look?: Partial<Look>): string[] {
-  return Object.values(look?.pieces ?? {}).map((p) => p?.image?.mediaId).filter(Boolean) as string[];
+  const icons = (['cost', 'class', 'atk', 'def'] as const).map((k) => look?.icons?.[k]?.image?.mediaId);
+  return [...Object.values(look?.pieces ?? {}).map((p) => p?.image?.mediaId), ...icons].filter(Boolean) as string[];
 }
 
-/** Põe a URL (ou, para a chave de cache, o id) em cada peça feita de imagem. */
+/** Põe a URL (ou, para a chave de cache, o id) em cada peça e símbolo feitos de imagem. */
 function withImageSrc(look: Look, mediaUrl: (id: string) => string | undefined, forKey: boolean): Look {
   if (!lookMediaIds(look).length) return look;
   const pieces = { ...look.pieces };
@@ -36,7 +37,12 @@ function withImageSrc(look: Look, mediaUrl: (id: string) => string | undefined, 
     const id = p?.image?.mediaId;
     if (p && id) pieces[k as keyof typeof pieces] = { ...p, image: { ...p.image!, src: forKey ? id : mediaUrl(id) } };
   }
-  return { ...look, pieces };
+  const icons = { ...look.icons };
+  for (const k of ['cost', 'class', 'atk', 'def'] as const) {
+    const ic = icons[k];
+    if (ic?.image?.mediaId) icons[k] = { ...ic, image: { ...ic.image, src: forKey ? ic.image.mediaId : mediaUrl(ic.image.mediaId) } };
+  }
+  return { ...look, pieces, icons };
 }
 
 export interface CardContext {
@@ -68,6 +74,7 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     uid: `k${card.id.slice(-8)}`,
     colors: card.colors.map(colorHex),
     colorId: card.colors[0] ?? ctx.deck.colors[0],
+    classIds: card.colors.length ? [...card.colors] : [ctx.deck.colors[0]],
     art: src ? { src, zoom: card.art.zoom, x: card.art.x, y: card.art.y, mirror: card.art.mirror } : undefined,
     name: t.name,
     typeLine: typeLine(card, ctx.lang),
