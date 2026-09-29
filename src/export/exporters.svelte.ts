@@ -4,12 +4,13 @@
  * backup completo (ZIP com projeto + cartas + imagens) e planilha CSV.
  */
 import { strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
-import { degrees, PDFDocument, rgb, type PDFPage } from 'pdf-lib';
+import { degrees, PDFDocument, rgb, type PDFImage, type PDFPage } from 'pdf-lib';
 import { composeBack } from '../render/back';
 import { backInput, ensureBackMedia } from '../ui/back/backCtx';
 import { L } from '../app/i18n.svelte';
 import { ui } from '../app/ui.svelte';
 import { COLORS, RARITIES } from '../model/catalog';
+import { costTotal } from '../model/cost';
 import { PROJECT_VERSION, type Card, type Project } from '../model/types';
 import { cardInput } from '../render/card';
 import { compose } from '../render/compose';
@@ -91,8 +92,8 @@ export interface PdfOptions {
 const A4 = { w: 210 * MM, h: 297 * MM };
 const GAP = 2 * MM;
 
-async function backJpg(): Promise<Uint8Array> {
-  const ed = app.edition();
+async function backJpg(editionId?: string): Promise<Uint8Array> {
+  const ed = app.edition(editionId);
   await ensureBackMedia(ed);
   return new Uint8Array(await (await rasterize(composeBack(backInput(ed, 'bkpdf')), 1500, 'image/jpeg', 0.93)).arrayBuffer());
 }
@@ -114,16 +115,22 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
   const fronts = o.backs === 'only' ? [] : await withProgress(L('Preparando o PDF…', 'Preparing PDF…'), cards as Card[],
     async (c) => new Uint8Array(await (await cardBlob(c, 1500, 'image/jpeg', 0.93)).arrayBuffer()));
   if (!fronts) return;
-  const back = o.backs === 'none' ? null : await backJpg();
   const pdf = await PDFDocument.create();
   const cw = CARD_MM.w * MM, ch = CARD_MM.h * MM;
-  const backImg = back ? await pdf.embedJpg(back) : null;
+  // cada carta leva o verso da SUA coleção (sem carta = coleção aberta); cada verso é desenhado uma vez só
+  const edOf = (c: Card | null) => (c ? app.deck(c.deckId)?.editionId : undefined) ?? app.editionId;
+  const backs = new Map<string, PDFImage>();
+  if (o.backs !== 'none') {
+    for (const id of new Set(cards.map(edOf))) backs.set(id, await pdf.embedJpg(await backJpg(id)));
+  }
+  const backImg = (i: number) => backs.get(edOf(cards[i]));
   const n = cards.length;
 
   if (o.layout === 'single') {
     for (let i = 0; i < n; i++) {
       if (o.backs !== 'only') pdf.addPage([cw, ch]).drawImage(await pdf.embedJpg(fronts[i]), { x: 0, y: 0, width: cw, height: ch });
-      if (backImg) pdf.addPage([cw, ch]).drawImage(backImg, { x: 0, y: 0, width: cw, height: ch });
+      const bk = backImg(i);
+      if (bk) pdf.addPage([cw, ch]).drawImage(bk, { x: 0, y: 0, width: cw, height: ch });
     }
   } else {
     const ox = (A4.w - (3 * cw + 2 * GAP)) / 2, oy = (A4.h - (3 * ch + 2 * GAP)) / 2;
@@ -135,7 +142,7 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
         for (let k = 0; k < count; k++) page.drawImage(await pdf.embedJpg(fronts[i + k]), { ...at(k % 3, Math.floor(k / 3)), width: cw, height: ch });
         cropMarks(page, ox, oy, cw, ch);
       }
-      if (backImg) {
+      if (backs.size) {
         // o verso de cada carta tem de cair exatamente atrás dela quando a folha é virada:
         // virar pela borda longa espelha as colunas; pela curta, espelha as linhas (e gira 180°)
         const page = pdf.addPage([A4.w, A4.h]);
@@ -144,8 +151,9 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
           if (o.flip === 'long') col = 2 - col;
           else row = 2 - row;
           const p = at(col, row);
-          if (o.flip === 'short') page.drawImage(backImg, { x: p.x + cw, y: p.y + ch, width: cw, height: ch, rotate: degrees(180) });
-          else page.drawImage(backImg, { ...p, width: cw, height: ch });
+          const bk = backImg(i + k)!;
+          if (o.flip === 'short') page.drawImage(bk, { x: p.x + cw, y: p.y + ch, width: cw, height: ch, rotate: degrees(180) });
+          else page.drawImage(bk, { ...p, width: cw, height: ch });
         }
         cropMarks(page, ox, oy, cw, ch);
       }
@@ -227,7 +235,7 @@ export async function exportCsv(cards: Card[]): Promise<void> {
   const rows = cards.map((c) => {
     const t = c.text[lang];
     const d = app.deck(c.deckId);
-    return [c.n, d ? COLORS[d.colors[0]].classes[lang] : '', t.name, t.type, t.subtype, c.cost?.amount ?? '', c.cost?.resource ?? '', c.stats?.atk ?? '', c.stats?.def ?? '', RARITIES[c.rarity].name[lang], t.rules, t.flavor].map(q).join(';');
+    return [c.n, d ? COLORS[d.colors[0]].classes[lang] : '', t.name, t.type, t.subtype, c.cost.length ? costTotal(c) : '', c.cost.map((p) => `${p.amount} ${p.resource}`).join(' + '), c.stats?.atk ?? '', c.stats?.def ?? '', RARITIES[c.rarity].name[lang], t.rules, t.flavor].map(q).join(';');
   });
   download(new Blob(['﻿' + [head.map(q).join(';'), ...rows].join('\r\n')], { type: 'text/csv' }), 'darkstar-cartas.csv');
 }

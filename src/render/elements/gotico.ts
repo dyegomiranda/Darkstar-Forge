@@ -5,7 +5,7 @@
 import { darken, lighten } from '../color';
 import { layers, type Defs } from '../defs';
 import { vivid, type Palette } from '../palette';
-import { arch, circle, heater, inset, quatrefoil, rect, type Box, type Pt } from '../shapes';
+import { arch, circle, heater, inset, pill, quatrefoil, rect, type Box, type Pt } from '../shapes';
 import type { TextLook } from '../text';
 import { center, fadeLine, metalBand, rivets, stone } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
@@ -46,17 +46,23 @@ function vitral(defs: Defs, pal: Palette, cx: number, cy: number, r: number, cli
 function rosette(a: PieceArgs, small = false): PieceOut {
   const { box: b, defs, pal } = a;
   const { cx, cy } = center(b);
-  const r = b.w / 2 + (small ? 2 : 10);
-  const outer = quatrefoil(cx, cy, r);
-  const inner = quatrefoil(cx, cy, r - 9);
+  const r = Math.min(b.w, b.h) / 2 + (small ? 2 : 10);
+  // caixa larga (vários custos): uma fileira de rosáceas unidas por uma barra de ferro
+  const ext = Math.max(0, (b.w - b.h) / 2);
+  const n = ext ? Math.max(2, Math.ceil((2 * ext) / r) + 1) : 1;
   const disc = r * (small ? 0.42 : 0.5);
-  const svg =
-    `<g filter="${defs.shadow(4, 6, 0.65)}">${iron(defs, pal, outer + inner, 2.4)}</g>` +
-    vitral(defs, pal, cx, cy, r - 9, inner, a.box.x + '') +
-    `<path d="${circle(cx, cy, disc + 5)}" fill="#1a1718"/>` +
-    iron(defs, pal, circle(cx, cy, disc + 5) + circle(cx, cy, disc), 1.4) +
-    `<path d="${circle(cx, cy, disc)}" fill="${defs.radial([[0, '#2b2426'], [1, '#0b090a']])}"/>`;
-  return { svg, content: { x: cx - disc, y: cy - disc, w: disc * 2, h: disc * 2 }, text: { family: TITLE, weight: 700, color: INK } };
+  let roses = '';
+  for (let i = 0; i < n; i++) {
+    const x = n === 1 ? cx : cx - ext + (2 * ext * i) / (n - 1);
+    const inner = quatrefoil(x, cy, r - 9);
+    roses += `<g filter="${defs.shadow(4, 6, 0.65)}">${iron(defs, pal, quatrefoil(x, cy, r) + inner, 2.4)}</g>` +
+      vitral(defs, pal, x, cy, r - 9, inner, a.box.x + '');
+  }
+  const svg = roses +
+    `<path d="${pill(cx, cy, disc + 5, ext)}" fill="#1a1718"/>` +
+    iron(defs, pal, pill(cx, cy, disc + 5, ext) + pill(cx, cy, disc, ext), 1.4) +
+    `<path d="${pill(cx, cy, disc, ext)}" fill="${defs.radial([[0, '#2b2426'], [1, '#0b090a']])}"/>`;
+  return { svg, content: { x: cx - disc - ext, y: cy - disc, w: disc * 2 + ext * 2, h: disc * 2 }, text: { family: TITLE, weight: 700, color: INK } };
 }
 
 /** Cantoneiras de ferro em L com rebites (caixa de regras, rodapé). */

@@ -53,11 +53,14 @@ export const moderno: PieceStyle[] = [
     style: 'moderno', kind: 'cost', opacity: 1, metal: 'deck',
     render(a) {
       const { cx, cy } = center(a.box);
-      const r = a.box.w / 2 + 6;
-      const svg = slab(a, diamond(cx, cy, r, r), '#101010', 6, 6) +
-        `<path d="${diamond(cx, cy, r - 7, r - 7)}" fill="${flat(a.defs, a.pal)}"/>`;
+      // caixa larga (vários custos): losango esticado em hexágono
+      const ext = Math.max(0, (a.box.w - a.box.h) / 2);
+      const r = Math.min(a.box.w, a.box.h) / 2 + 6;
+      const long = (k: number) => ext ? poly([[cx - ext - k, cy], [cx - ext, cy - k], [cx + ext, cy - k], [cx + ext + k, cy], [cx + ext, cy + k], [cx - ext, cy + k]]) : diamond(cx, cy, k, k);
+      const svg = slab(a, long(r), '#101010', 6, 6) +
+        `<path d="${long(r - 7)}" fill="${flat(a.defs, a.pal)}"/>`;
       const ci = r * 0.62;
-      return { svg, content: { x: cx - ci, y: cy - ci * 0.8, w: ci * 2, h: ci * 1.6 }, text: { family: FONT, weight: 700, color: inkOn(a.pal.base) } };
+      return { svg, content: { x: cx - ci - ext, y: cy - ci * 0.8, w: ci * 2 + ext * 2, h: ci * 1.6 }, text: { family: FONT, weight: 700, color: inkOn(a.pal.base) } };
     },
   },
   {

@@ -6,7 +6,7 @@
 import { darken, lighten, mix, tone } from '../color';
 import type { Defs } from '../defs';
 import { vivid, type Palette } from '../palette';
-import { circle, inset, rng, roundRect, star, type Box } from '../shapes';
+import { circle, inset, pill, rng, roundRect, star, type Box } from '../shapes';
 import type { TextLook } from '../text';
 import { center, fadeLine, metalBand, metalSolid } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
@@ -36,12 +36,20 @@ function enamel(a: PieceArgs, d: string, b: Box, seed: number, stars = 1): strin
 }
 
 /** Marcas de graus gravadas num anel (raio externo `r`). */
-function dialTicks(cx: number, cy: number, r: number, n: number, len: number, color: string, w = 1): string {
+function dialTicks(cx: number, cy: number, r: number, n: number, len: number, color: string, w = 1, ext = 0): string {
   let d = '';
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
     const l = i % 6 === 0 ? len * 1.8 : len;
-    d += `M${(cx + Math.cos(a) * r).toFixed(1)} ${(cy + Math.sin(a) * r).toFixed(1)}L${(cx + Math.cos(a) * (r - l)).toFixed(1)} ${(cy + Math.sin(a) * (r - l)).toFixed(1)}`;
+    // cápsula: cada metade gira em torno do seu próprio centro
+    const x = cx + (Math.cos(a) > 1e-9 ? ext : Math.cos(a) < -1e-9 ? -ext : 0);
+    d += `M${(x + Math.cos(a) * r).toFixed(1)} ${(cy + Math.sin(a) * r).toFixed(1)}L${(x + Math.cos(a) * (r - l)).toFixed(1)} ${(cy + Math.sin(a) * (r - l)).toFixed(1)}`;
+  }
+  // trechos retos da cápsula: marcas no mesmo passo do arco
+  const step = (2 * Math.PI * r) / n;
+  for (let k = 0, x = cx - ext + step; x < cx + ext - step / 2; x += step, k++) {
+    const l = k % 6 === 5 ? len * 1.8 : len;
+    d += `M${x.toFixed(1)} ${(cy - r).toFixed(1)}v${l.toFixed(1)}M${x.toFixed(1)} ${(cy + r).toFixed(1)}v${(-l).toFixed(1)}`;
   }
   return `<path d="${d}" stroke="${color}" stroke-width="${w}" fill="none" opacity=".85"/>`;
 }
@@ -101,26 +109,29 @@ function astrolabe(a: PieceArgs, small = false): PieceOut {
   const { box: b, defs } = a;
   const pal = brass(a);
   const { cx, cy } = center(b);
-  const r = b.w / 2 + (small ? -2 : 6);
+  // caixa larga (vários custos) = astrolábio esticado em cápsula
+  const ext = Math.max(0, (b.w - b.h) / 2);
+  const r = Math.min(b.w, b.h) / 2 + (small ? -2 : 6);
   const rim = small ? 6 : 11;
   const ri = r - rim;
-  const disc = circle(cx, cy, ri);
+  const disc = pill(cx, cy, ri, ext);
   // miolo LISO (só um degradê suave): nada de desenho atrás do número/símbolo
   const { pal: p0 } = a;
   const deep = night(p0.base);
   const points = small ? '' : [0, 90, 180, 270].map((ang) => {
     const t = (ang - 90) * (Math.PI / 180);
-    const x = cx + Math.cos(t) * (r + 4), y = cy + Math.sin(t) * (r + 4);
+    const dx = ang === 90 ? ext : ang === 270 ? -ext : 0;
+    const x = cx + dx + Math.cos(t) * (r + 4), y = cy + Math.sin(t) * (r + 4);
     return star(x, y, 9, 2.6, 4);
   }).join('');
   const svg =
     (points ? `<g filter="${defs.shadow(2, 2, 0.55)}">${metalSolid(defs, pal, points, 1)}</g>` : '') +
-    `<g filter="${defs.shadow(4, 6, 0.65)}">${metalBand(defs, pal, circle(cx, cy, r) + disc, 2.4)}</g>` +
-    dialTicks(cx, cy, r - 1.5, small ? 36 : 72, small ? 2.5 : 4, ENGRAVE, 1) +
+    `<g filter="${defs.shadow(4, 6, 0.65)}">${metalBand(defs, pal, pill(cx, cy, r, ext) + disc, 2.4)}</g>` +
+    dialTicks(cx, cy, r - 1.5, small ? 36 : 72, small ? 2.5 : 4, ENGRAVE, 1, ext) +
     `<path d="${disc}" fill="${defs.radial([[0, lighten(deep, 0.16)], [0.75, deep], [1, darken(deep, 0.45)]], 0.5, 0.42, 0.62)}" fill-opacity="${a.opacity}"/>` +
-    `<path d="${circle(cx, cy, ri - 4)}" fill="none" stroke="${defs.metal(pal)[0]}" stroke-width="1.2" opacity=".7"/>`;
+    `<path d="${pill(cx, cy, ri - 4, ext)}" fill="none" stroke="${defs.metal(pal)[0]}" stroke-width="1.2" opacity=".7"/>`;
   const ci = ri * 0.78;
-  return { svg, content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 }, text: { family: TITLE, weight: 600, color: IVORY, glow: '#b8913a' }, iconColor: '#ecd28f' };
+  return { svg, content: { x: cx - ci - ext, y: cy - ci, w: ci * 2 + ext * 2, h: ci * 2 }, text: { family: TITLE, weight: 600, color: IVORY, glow: '#b8913a' }, iconColor: '#ecd28f' };
 }
 
 export const arcano: PieceStyle[] = [

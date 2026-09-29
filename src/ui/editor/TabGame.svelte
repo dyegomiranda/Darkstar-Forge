@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { Minus, Plus, Sparkles, Search, X } from '@lucide/svelte';
+  import { Hash, Minus, Plus, Repeat, Sparkles, Search, Trash2, X } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { COLORS, RARITIES, RARITY_ORDER, RESOURCES, colorHex } from '../../model/catalog';
   import { evaluate, FREE_POINTS, MECHANICS, POINTS_PER_COST, rarityFor } from '../../model/scoring';
-  import type { ColorId, ResourceId } from '../../model/types';
+  import type { ColorId, CostPart, ResourceId } from '../../model/types';
+  import { costTotal, MAX_COST_PARTS, setTotal } from '../../model/cost';
+  import { MAX_REPEAT } from '../../render/costSeal';
   import { classIcon, RESOURCE_COLORS, RESOURCE_IDS, resourceIcon } from '../../render/icons/glyphs';
   import { lighten } from '../../render/color';
   import { vivid } from '../../render/palette';
@@ -29,17 +31,47 @@
     ed.touch();
   }
 
-  function step(field: 'cost' | 'atk' | 'def', delta: number) {
-    if (field === 'cost' && d.cost) { d.cost.amount = Math.max(0, d.cost.amount + delta); d.costMode = 'manual'; }
-    if ((field === 'atk' || field === 'def') && d.stats) d.stats[field] = Math.max(0, d.stats[field] + delta);
+  function step(field: 'atk' | 'def', delta: number) {
+    if (d.stats) d.stats[field] = Math.max(0, d.stats[field] + delta);
+    sync();
+  }
+
+  // ── custos (vários por carta) ──
+  /** Qual linha de custo está com a grade de recursos aberta. */
+  let resOpen = $state(-1);
+
+  /** Recurso sugerido para um custo novo: o da classe da carta ainda não usado. */
+  function nextResource(): ResourceId {
+    const used = new Set(d.cost.map((p) => p.resource));
+    const mine = d.colors.flatMap((c) => COLORS[c].resources);
+    return mine.find((r) => !used.has(r)) ?? (RESOURCE_IDS as ResourceId[]).find((r) => !used.has(r)) ?? 'vigor';
+  }
+
+  function addCost() {
+    if (d.cost.length >= MAX_COST_PARTS) return;
+    const part: CostPart = { resource: nextResource(), amount: d.cost.length ? 1 : ev.suggestedCost, show: 'number' };
+    d.cost = [...d.cost, part];
+    if (d.cost.length > 1) d.costMode = 'manual';
+    sync();
+  }
+
+  function removeCost(i: number) {
+    d.cost = d.cost.filter((_, k) => k !== i);
+    resOpen = -1;
+    sync();
+  }
+
+  function setAmount(i: number, v: number) {
+    d.cost[i].amount = Math.max(0, Math.round(v) || 0);
+    d.costMode = 'manual';
     sync();
   }
 
   /** Mantém custo/raridade automáticos coerentes enquanto edita. */
   function sync() {
     const e = evaluate(d);
-    if (d.cost && d.costMode === 'auto') d.cost.amount = e.suggestedCost;
-    if (d.rarityMode === 'auto') d.rarity = rarityFor(e.suggestedCost, d.cost?.amount ?? e.suggestedCost);
+    if (d.cost.length && d.costMode === 'auto') d.cost = setTotal(d.cost, e.suggestedCost);
+    if (d.rarityMode === 'auto') d.rarity = rarityFor(e.suggestedCost, d.cost.length ? costTotal(d) : e.suggestedCost);
     ed.touch();
   }
 
@@ -81,30 +113,52 @@
   </section>
 
   <section class="stack s">
-    <span class="section-title">{L('Custo', 'Cost')}</span>
-    <div class="row wrap">
-      <label class="toggle"><input type="checkbox" checked={!!d.cost} onchange={(e) => { d.cost = (e.currentTarget as HTMLInputElement).checked ? { resource: 'vigor', amount: ev.suggestedCost } : null; sync(); }} /> {L('Tem custo', 'Has a cost')}</label>
+    <div class="row between">
+      <span class="section-title">{L('Custo', 'Cost')}{#if d.cost.length > 1} · {L('total', 'total')} {costTotal(d)}{/if}</span>
+      <label class="toggle"><input type="checkbox" checked={d.cost.length > 0} onchange={(e) => { if ((e.currentTarget as HTMLInputElement).checked) addCost(); else { d.cost = []; resOpen = -1; sync(); } }} /> {L('Tem custo', 'Has a cost')}</label>
     </div>
-    {#if d.cost}
-      <div class="res">
-        {#each RESOURCE_IDS as r}
-          <button class="resb" class:on={d.cost.resource === r} title={RESOURCES[r].name[app.lang]} onclick={() => { d.cost!.resource = r as ResourceId; ed.touch(); }}>
-            <Glyph id={resourceIcon(r)!} size={20} color={RESOURCE_COLORS[r]} />
+    {#each d.cost as part, i}
+      <div class="cpart">
+        <div class="row wrap cp-row">
+          <button class="resb pick" class:on={resOpen === i} title={L('Trocar recurso', 'Change resource')} onclick={() => (resOpen = resOpen === i ? -1 : i)}>
+            <Glyph id={resourceIcon(part.resource)!} size={22} color={RESOURCE_COLORS[part.resource]} />
           </button>
-        {/each}
-      </div>
-      <div class="row wrap">
-        <div class="stepper">
-          <button onclick={() => step('cost', -1)}><Minus size={15} /></button>
-          <input type="number" min="0" bind:value={d.cost.amount} oninput={() => { d.costMode = 'manual'; sync(); }} />
-          <button onclick={() => step('cost', 1)}><Plus size={15} /></button>
+          <div class="stepper">
+            <button onclick={() => setAmount(i, part.amount - 1)}><Minus size={15} /></button>
+            <input type="number" min="0" value={part.amount} oninput={(e) => setAmount(i, +(e.currentTarget as HTMLInputElement).value)} />
+            <button onclick={() => setAmount(i, part.amount + 1)}><Plus size={15} /></button>
+          </div>
+          <div class="seg" title={L('Como aparece na carta', 'How it shows on the card')}>
+            <button class:on={part.show !== 'repeat'} onclick={() => { part.show = 'number'; ed.touch(); }}><Hash size={13} /> {L('Número', 'Number')}</button>
+            <button class:on={part.show === 'repeat'} onclick={() => { part.show = 'repeat'; ed.touch(); }}><Repeat size={13} /> {L('Repetir símbolo', 'Repeat symbol')}</button>
+          </div>
+          <button class="btn ghost sm icon" title={L('Tirar este custo', 'Remove this cost')} onclick={() => removeCost(i)}><Trash2 size={15} /></button>
         </div>
+        {#if part.show === 'repeat' && (part.amount < 1 || part.amount > MAX_REPEAT)}
+          <p class="muted small">{L(`Repete até ${MAX_REPEAT} símbolos; acima disso (ou 0) aparece o número.`, `Repeats up to ${MAX_REPEAT} symbols; above that (or 0) the number shows.`)}</p>
+        {/if}
+        {#if resOpen === i}
+          <div class="res">
+            {#each RESOURCE_IDS as r}
+              <button class="resb" class:on={part.resource === r} title={RESOURCES[r].name[app.lang]} onclick={() => { part.resource = r as ResourceId; resOpen = -1; ed.touch(); }}>
+                <Glyph id={resourceIcon(r)!} size={20} color={RESOURCE_COLORS[r]} />
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/each}
+    {#if d.cost.length}
+      <div class="row wrap">
+        {#if d.cost.length < MAX_COST_PARTS}
+          <button class="btn sm" onclick={addCost}><Plus size={14} /> {L('Outro recurso', 'Another resource')}</button>
+        {/if}
         <div class="seg">
           <button class:on={d.costMode === 'auto'} onclick={() => { d.costMode = 'auto'; sync(); }}><Sparkles size={13} /> {L('Automático', 'Automatic')}</button>
           <button class:on={d.costMode === 'manual'} onclick={() => { d.costMode = 'manual'; sync(); }}>{L('Manual', 'Manual')}</button>
         </div>
       </div>
-      <p class="muted small">{L('Sugerido pela pontuação', 'Suggested by score')}: <b>{ev.suggestedCost}</b> {RESOURCES[d.cost.resource].name[app.lang]}</p>
+      <p class="muted small">{L('Sugerido pela pontuação', 'Suggested by score')}: <b>{ev.suggestedCost}</b> {L('no total', 'in total')}{#if d.cost.length > 1 && d.costMode === 'auto'} · {L('no automático, o primeiro recurso completa a diferença', 'in automatic, the first resource makes up the difference')}{/if}</p>
     {/if}
   </section>
 
@@ -189,6 +243,9 @@
   .res { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; }
   .resb { aspect-ratio: 1; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface); display: grid; place-items: center; cursor: pointer; opacity: .6; }
   .resb.on { opacity: 1; border-color: var(--accent); background: var(--surface-3); }
+  .resb.pick { width: 38px; height: 38px; opacity: 1; }
+  .cpart { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-2); }
+  .cp-row { gap: 8px; align-items: center; }
   .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 8px; background: var(--bg-2); overflow: hidden; }
   .stepper button { width: 34px; height: 36px; border: 0; background: none; color: var(--text-2); cursor: pointer; display: grid; place-items: center; }
   .stepper button:hover { background: var(--surface-2); color: var(--text); }

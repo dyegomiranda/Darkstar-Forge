@@ -28,6 +28,9 @@ export interface CardArt {
   mirror: boolean;
 }
 
+/** Uma parte do custo. `show`: número ao lado do símbolo ou o símbolo repetido (como no MTG). */
+export interface CostPart { resource: ResourceId; amount: number; show?: 'number' | 'repeat' }
+
 export interface Card {
   id: string;
   deckId: string;
@@ -36,7 +39,8 @@ export interface Card {
   text: Record<Lang, CardText>;
   /** 1 cor = mono; 2 = híbrida (duas classes). */
   colors: ColorId[];
-  cost: { resource: ResourceId; amount: number } | null;
+  /** Custos (recurso + quantidade). Lista vazia = sem custo. Total = soma. */
+  cost: CostPart[];
   stats: { atk: number; def: number } | null;
   rarity: RarityId;
   /** Mecânicas da tabela de pontuação (definem o custo sugerido). */
@@ -130,4 +134,5 @@ export interface Project {
   seeded?: string[];
 }
 
-export const PROJECT_VERSION = 1;
+/** 2 = custo como lista (vários recursos por carta). */
+export const PROJECT_VERSION = 2;

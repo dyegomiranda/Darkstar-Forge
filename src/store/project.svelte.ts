@@ -8,7 +8,8 @@
 import { applyScoring } from '../model/scoring';
 import { PF_ID, pfCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
-import type { Card, ColorId, Deck, Lang, Project } from '../model/types';
+import { normalizeCard } from '../model/cost';
+import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -34,7 +35,8 @@ class ProjectState {
     const { project, cards } = await store.loadAll();
     if (project) {
       this.project = project;
-      this.cards = Object.fromEntries(cards.map((c) => [c.id, c]));
+      this.cards = Object.fromEntries(cards.map((c) => [c.id, normalizeCard(c)]));
+      this.#upgrade(cards);
       this.#addMissingCollections();
     } else {
       const s = seedProject();
@@ -45,6 +47,16 @@ class ProjectState {
     }
     this.editionId = this.project!.editions[0]?.id ?? '';
     this.ready = true;
+  }
+
+  /** Projeto de versão antiga: regrava as cartas já convertidas (custo em lista). */
+  #upgrade(cards: Card[]): void {
+    const p = this.project!;
+    if ((p.version ?? 0) >= PROJECT_VERSION) return;
+    p.version = PROJECT_VERSION;
+    for (const c of cards) this.#dirtyCards.add(c.id);
+    this.#projectDirty = true;
+    this.#schedule();
   }
 
   /**
@@ -103,13 +115,13 @@ class ProjectState {
     const deck = this.deck(deckId)!;
     const n = Math.max(0, ...this.cardsOf(deckId).map((c) => c.n)) + 1;
     const colors: ColorId[] = [...deck.colors];
-    const res = { red: 'vigor', blue: 'mana', green: 'nature', black: 'souls', purple: 'shadow', white: 'faith', silver: 'focus', orange: 'gold', gear: 'gold' }[colors[0]] as NonNullable<Card['cost']>['resource'];
+    const res = { red: 'vigor', blue: 'mana', green: 'nature', black: 'souls', purple: 'shadow', white: 'faith', silver: 'focus', orange: 'gold', gear: 'gold' }[colors[0]] as ResourceId;
     const now = Date.now();
     const blank = { name: '', type: '', subtype: '', rules: '', flavor: '' };
     return {
       id: newId('card'), deckId, n,
       text: { 'pt-BR': { ...blank, name: 'Nova carta', type: 'Criatura' }, 'en-US': { ...blank, name: 'New card', type: 'Creature' } },
-      colors, cost: { resource: res, amount: 1 }, stats: { atk: 1, def: 1 }, rarity: 'common',
+      colors, cost: [{ resource: res, amount: 1, show: 'number' }], stats: { atk: 1, def: 1 }, rarity: 'common',
       mechanics: [], tags: [], costMode: 'auto', rarityMode: 'auto',
       art: { zoom: 1, x: 0, y: 0, mirror: false }, createdAt: now, updatedAt: now,
     };
@@ -141,6 +153,8 @@ class ProjectState {
   }
 
   async replaceAll(project: Project, cards: Card[]): Promise<void> {
+    cards = cards.map(normalizeCard);
+    project.version = PROJECT_VERSION;
     await this.flush();
     await store.wipe();
     await store.saveProject(project);

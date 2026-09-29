@@ -5,7 +5,7 @@
 import { darken, lighten, mix } from '../color';
 import { layers } from '../defs';
 import { inkOnPaper, paper, vivid, type Palette } from '../palette';
-import { banner, bezier, chamfer, circle, inset, spike, tapered, type Box, type Pt } from '../shapes';
+import { banner, bezier, chamfer, inset, pill, spike, tapered, type Box, type Pt } from '../shapes';
 import { center, fadeLine, gem, metalBand, metalSolid } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
@@ -55,28 +55,31 @@ function wisps(pal: Palette, x: number, top: number, h: number, dir: 1 | -1): st
 function medallion(a: PieceArgs, size: 'big' | 'small'): PieceOut {
   const { box: b, defs, pal } = a;
   const { cx, cy } = center(b);
-  const r = b.w / 2;
+  // caixa mais larga que alta = selo esticado (vários custos)
+  const r = Math.min(b.w, b.h) / 2;
+  const ext = Math.max(0, (b.w - b.h) / 2);
   const big = size === 'big';
   const ri = r * 0.8;
   let sp = '';
-  const S = (ang: number, len: number, wid: number) => { sp += spike(cx, cy, ang, r * len, r * wid, r * 0.2); };
+  const S = (ang: number, len: number, wid: number, dx = 0) => { sp += spike(cx + dx, cy, ang, r * len, r * wid, r * 0.2); };
   S(0, 1.55, 0.2); S(180, 1.55, 0.2);
-  if (big) { S(90, 1.2, 0.16); S(270, 1.2, 0.16); [45, 135, 225, 315].forEach((g) => S(g, 1.13, 0.12)); }
-  else { S(90, 1.28, 0.18); S(270, 1.28, 0.18); }
+  if (ext) { S(0, 1.3, 0.16, -ext * 0.62); S(0, 1.3, 0.16, ext * 0.62); S(180, 1.3, 0.16, -ext * 0.62); S(180, 1.3, 0.16, ext * 0.62); }
+  if (big) { S(90, 1.2, 0.16, ext); S(270, 1.2, 0.16, -ext); [45, 135].forEach((g) => S(g, 1.13, 0.12, ext)); [225, 315].forEach((g) => S(g, 1.13, 0.12, -ext)); }
+  else { S(90, 1.28, 0.18, ext); S(270, 1.28, 0.18, -ext); }
   const disc = defs.radial([[0, darken(vivid(pal.base), 0.3)], [0.65, darken(pal.base, 0.72)], [1, '#0c0506']], 0.5, 0.42, 0.62);
   const svg =
     `<g filter="${defs.shadow(3, 4, 0.55)}">` +
     metalSolid(defs, pal, sp, 1.4) +
-    metalBand(defs, pal, circle(cx, cy, r) + circle(cx, cy, ri), big ? 3 : 2) +
+    metalBand(defs, pal, pill(cx, cy, r, ext) + pill(cx, cy, ri, ext), big ? 3 : 2) +
     `</g>` +
-    `<path d="${circle(cx, cy, ri)}" fill="${disc}" fill-opacity="${a.opacity}" filter="${defs.innerShadow(r * 0.12, 0.7)}"/>` +
-    `<path d="${circle(cx, cy, ri - 2)}" fill="none" stroke="${lighten(vivid(pal.base), 0.25)}" stroke-width="1.3" opacity=".45"/>` +
-    `<path d="${circle(cx, cy, r + 0.5)}" fill="none" stroke="${darken(pal.base, 0.8)}" stroke-width="1.4" opacity=".7"/>` +
+    `<path d="${pill(cx, cy, ri, ext)}" fill="${disc}" fill-opacity="${a.opacity}" filter="${defs.innerShadow(r * 0.12, 0.7)}"/>` +
+    `<path d="${pill(cx, cy, ri - 2, ext)}" fill="none" stroke="${lighten(vivid(pal.base), 0.25)}" stroke-width="1.3" opacity=".45"/>` +
+    `<path d="${pill(cx, cy, r + 0.5, ext)}" fill="none" stroke="${darken(pal.base, 0.8)}" stroke-width="1.4" opacity=".7"/>` +
     (big ? gem(cx, cy - r * 1.08, r * 0.1, r * 0.13, lighten(vivid(pal.base), 0.1)) + gem(cx, cy + r * 1.08, r * 0.1, r * 0.13, lighten(vivid(pal.base), 0.1)) : '');
   const ci = ri * 0.86;
   return {
     svg,
-    content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 },
+    content: { x: cx - ci - ext, y: cy - ci, w: ci * 2 + ext * 2, h: ci * 2 },
     text: { family: SERIF, weight: 700, color: LIGHT_INK },
   };
 }

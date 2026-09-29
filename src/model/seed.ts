@@ -7,6 +7,7 @@ import seedCards from '../data/seed-cards.json';
 import pfCards from '../data/pf-cards.json';
 import type { Look } from '../render/compose';
 import { CLASS_COLORS, COLORS } from './catalog';
+import { normalizeCost } from './cost';
 import { applyScoring } from './scoring';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Edition, type Lang, type Project, type RarityId, type ResourceId } from './types';
 import { newId } from './id';
@@ -46,7 +47,7 @@ function toCards(list: SeedCard[], prefix: string, mode: Card['rarityMode']): Ca
     n: s.n,
     text: s.text,
     colors: s.colors,
-    cost: s.cost ? { resource: s.cost.resource as ResourceId, amount: s.cost.amount } : null,
+    cost: normalizeCost(s.cost),
     stats: s.stats,
     rarity: s.rarity as RarityId,
     mechanics: s.mechanics,

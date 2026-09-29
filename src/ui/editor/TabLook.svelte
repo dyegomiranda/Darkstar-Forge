@@ -235,8 +235,8 @@
       </div>
     {/snippet}
 
-    {#if ed.draft.cost}
-      {@render picker('cost', L('Custo', 'Cost'), resourceChoices(ed.draft.cost.resource), RESOURCE_COLORS[ed.draft.cost.resource])}
+    {#if ed.draft.cost.length}
+      {@render picker('cost', L('Custo', 'Cost') + (ed.draft.cost.length > 1 ? L(' (1º recurso)', ' (1st resource)') : ''), resourceChoices(ed.draft.cost[0].resource), RESOURCE_COLORS[ed.draft.cost[0].resource])}
     {/if}
     {@render picker('class', L('Classe', 'Class'), classChoices(ed.draft.colors[0]), '#e8dcc4')}
     {#if ed.draft.stats}

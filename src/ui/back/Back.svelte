@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { untrack } from 'svelte';
   import { Upload, Trash2, ImageDown, Plus, X, RotateCcw, Printer } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { importImage } from '../../store/media';
@@ -14,6 +14,7 @@
   import type { BlendMode } from '../../render/palette';
   import type { CardBack } from '../../model/types';
   import Glyph from '../common/Glyph.svelte';
+  import EditionPicker from '../common/EditionPicker.svelte';
   import { backInput, backOf, ensureBackMedia } from './backCtx';
   import { download, exportBacksPdf } from '../../export/exporters.svelte';
 
@@ -23,7 +24,12 @@
   const ed = $derived(app.edition());
   const b = $derived(backOf(ed));
 
-  onMount(() => { void ensureBackMedia(ed).then(() => ready++); });
+  // ao trocar de coleção, carrega o logo e a arte do verso dela
+  $effect(() => {
+    const e = ed;
+    void e?.id; void e?.setMediaId; void e?.back?.art?.mediaId;
+    untrack(() => ensureBackMedia(e)).then(() => ready++);
+  });
 
   // desenha no máximo uma vez por quadro (seletor de cor fluido)
   let svg = $state('');
@@ -66,6 +72,7 @@
   <aside class="side">
     <header>
       <h1>{L('Verso das cartas', 'Card back')}</h1>
+      <EditionPicker />
       <p class="muted">{L(`Igual para todas as cartas de “${ed?.name}”. Salvo automaticamente.`, `Shared by every card in “${ed?.name}”. Saved automatically.`)}</p>
     </header>
 

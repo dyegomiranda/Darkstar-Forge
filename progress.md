@@ -1,8 +1,26 @@
 # Darkstar Forge — progresso
 
-**Atualizado:** 28/09/2026 (versão 2.0: programa reescrito do zero)
+**Atualizado:** 29/09/2026 (versão 2.1: vários custos por carta, verso por coleção)
 **Como abrir:** atalho *Darkstar Forge* no menu de aplicativos, ou o script `Darkstar Forge` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`.
+
+## Versão 2.1 (29/09/2026)
+
+### Correções
+- [x] Mudar o custo, o ATK, a DEF ou o recurso do custo no editor agora atualiza a carta na hora (antes a pré-visualização não percebia a mudança do número)
+- [x] Símbolos no acabamento **Pixel** não somem mais quando ficam pequenos na tela (os "pixels" crescem conforme o símbolo diminui)
+
+### Vários custos por carta
+- [x] Cada carta pode ter até 4 custos, cada um com recurso e quantidade (ex.: 2 Vigor + 1 Mana)
+- [x] Cada custo mostra o número ao lado do símbolo **ou** repete o símbolo (como no MTG, até 6 vezes)
+- [x] O selo de custo se alarga nos 6 estilos; os símbolos diminuem e, se forem muitos, passam para duas fileiras; o nome da carta encolhe para dar espaço
+- [x] Custo total = soma: vale na pontuação, na raridade automática, no filtro e na ordenação da biblioteca, na curva de custo e na planilha CSV
+- [x] No modo automático, o primeiro recurso completa a diferença para o total sugerido
+- [x] Cartas e backups antigos (um custo só) são convertidos sozinhos ao abrir
+
+### Coleções
+- [x] Seletor de coleção nas telas **Verso** e **Ajustes** (cada coleção tem seu verso, nome, sigla e logo)
+- [x] No PDF frente e verso, cada carta leva o verso da **sua** coleção
 
 ## Versão 2.0 (28/09/2026)
 
@@ -28,9 +46,13 @@
 - [x] Símbolos de game-icons.net em 4 acabamentos (metal gravado, medalhão, silhueta, pixel), com opções por recurso, classe, ATK e DEF
 - [x] ATK/DEF em placas ou com o número no medalhão
 
+### Depois da 2.0
+- [x] Coleção **Classes (Pathfinder)**: 81 cartas (9 por deck) com a tabela de pontuação revisada
+- [x] Verso das cartas e PDF frente e verso; até 5 cores por carta com modos de mistura
+
 ## Próximos passos
-1. Criar cartas de exemplo fiéis ao Pathfinder 2e (algumas por deck), com a tabela de pontuação revisada
-2. Revisar a tabela de mecânicas (pontos) e o recurso de cada deck (ex.: vigor × fúria no vermelho)
+1. **Fase C:** estilos novos customizáveis (referências: molduras pixel art de TCG, template "Void" escuro, TCG Creator pixel, cartas tipo Pokémon)
+2. Gerar e testar o executável (AppImage) no computador Linux do usuário
 3. Artes das cartas de exemplo
 4. Motor de regras e simulação (futuro)
 
@@ -38,6 +60,7 @@
 | Arquivo | Papel |
 |---|---|
 | `src/render/compose.ts` | Monta a carta (peças + textos + símbolos) |
+| `src/render/costSeal.ts` + `src/model/cost.ts` | Selo com vários custos; soma e conversão das cartas antigas |
 | `src/render/elements/*.ts` | Os estilos, peça a peça |
 | `src/render/icons/` | Símbolos e acabamentos |
 | `src/model/scoring.ts` + `src/data/mechanics.json` | Balanceamento (pontos → custo → raridade) |

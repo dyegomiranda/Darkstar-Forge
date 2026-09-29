@@ -52,8 +52,8 @@ function dropShadow(defs: Defs): string {
 }
 
 /** Passos do filtro de pixelar (amostra proporcional ao bloco — não some quando pequeno). */
-export function pixelSteps(block: number): string {
-  const s = +(block * 0.5).toFixed(3);
+export function pixelSteps(block: number, sample = 0.5): string {
+  const s = +(block * sample).toFixed(3);
   const o = +((block - s) / 2).toFixed(3);
   return `<feFlood x="${o}" y="${o}" width="${s}" height="${s}"/><feComposite width="${block}" height="${block}"/>` +
     `<feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/>` +
@@ -61,7 +61,16 @@ export function pixelSteps(block: number): string {
 }
 
 function pixelate(defs: Defs, block: number): string {
-  return defs.url(`gi-pix:${block}`, (id) => `<filter id="${id}" ${REGION}>${pixelSteps(block)}</filter>`);
+  return defs.url(`gi-pix:${block}`, (id) => `<filter id="${id}" ${REGION}>${pixelSteps(block, block > 32 ? 0.7 : 0.5)}</filter>`);
+}
+
+/**
+ * Bloco do pixelado em unidades do símbolo (512). Símbolo pequeno → blocos
+ * maiores: o ponto de amostra precisa ter ~2 px da carta, senão o navegador o
+ * arredonda para zero na tela e o símbolo inteiro some.
+ */
+function pixBlock(size: number): number {
+  return Math.min(128, Math.max(32, Math.round(2.8 / ((size / U) * 0.7))));
 }
 
 /** Degradê metálico a partir de uma cor (claro em cima, reflexo no meio, escuro embaixo). */
@@ -103,7 +112,7 @@ export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y
   } else if (style === 'chapado') {
     inner = path(color);
   } else {
-    inner = `<g filter="${pixelate(defs, 32)}"><g filter="${outline(defs, '#0b0a12', 22)}">${path(color)}</g></g>`;
+    inner = `<g filter="${pixelate(defs, pixBlock(size))}"><g filter="${outline(defs, '#0b0a12', 22)}">${path(color)}</g></g>`;
   }
   const k = size / U;
   const op = o.opacity != null && o.opacity < 1 ? ` opacity="${o.opacity}"` : '';
@@ -126,7 +135,7 @@ export function drawStatBadge(defs: Defs, id: string, style: IconStyle, cx: numb
     base = `<path d="M${c - 250} ${c}a250 250 0 1 0 500 0a250 250 0 1 0-500 0Z" fill="${enamel}"/>` +
       `<path d="M${c - 238} ${c}a238 238 0 1 0 476 0a238 238 0 1 0-476 0Z" fill="none" stroke="${color}" stroke-width="22"/>`;
   } else if (style === 'pixel') {
-    base = `<g filter="${pixelate(defs, 32)}"><path d="M${c - 250} ${c}a250 250 0 1 0 500 0a250 250 0 1 0-500 0Z" fill="${color}"/>` +
+    base = `<g filter="${pixelate(defs, pixBlock(size))}"><path d="M${c - 250} ${c}a250 250 0 1 0 500 0a250 250 0 1 0-500 0Z" fill="${color}"/>` +
       `<path d="M${c - 205} ${c}a205 205 0 1 0 410 0a205 205 0 1 0-410 0Z" fill="${enamel}"/></g>`;
   } else {
     const disc = `M${c - 210} ${c}a210 210 0 1 0 420 0a210 210 0 1 0-420 0Z`;

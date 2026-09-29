@@ -7,7 +7,7 @@ import type { Card, Deck, Edition, Lang } from '../model/types';
 import type { ComposeInput, Look } from './compose';
 
 /** Muda quando o desenho muda (invalida o cache de imagens). */
-export const RENDER_VERSION = 'r3';
+export const RENDER_VERSION = 'r4';
 
 /** Tema final = tema do deck + ajustes da carta (a carta ganha). */
 export function mergeLook(base: Look, over?: Partial<Look>): Look {
@@ -58,8 +58,10 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     rules: t.rules,
     flavor: t.flavor,
     footer: footerText(card, ctx),
-    cost: card.cost,
-    stats: card.stats,
+    // Cópias: o $state do Svelte muda os números dentro do mesmo objeto, e a
+    // pré-visualização só percebe a mudança se receber valores novos.
+    cost: card.cost.map((p) => ({ resource: p.resource, amount: p.amount, show: p.show ?? 'number' })),
+    stats: card.stats ? { atk: card.stats.atk, def: card.stats.def } : null,
     rarity: card.rarity,
     look: mergeLook(ctx.deck.look, card.look),
     setIcon: set ? (forKey ? set : ctx.mediaUrl(set)) : '/brand/logo.png',

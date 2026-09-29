@@ -70,6 +70,19 @@ export function circle(cx: number, cy: number, r: number): string {
   return `M${f(cx - r)} ${f(cy)}A${r} ${r} 0 1 0 ${f(cx + r)} ${f(cy)}A${r} ${r} 0 1 0 ${f(cx - r)} ${f(cy)}Z`;
 }
 
+/** Cápsula: círculo de raio r esticado `ext` para cada lado (ext = 0 → círculo). */
+export function pill(cx: number, cy: number, r: number, ext: number): string {
+  if (ext <= 0.01) return circle(cx, cy, r);
+  return `M${f(cx - ext)} ${f(cy - r)}H${f(cx + ext)}A${r} ${r} 0 0 1 ${f(cx + ext)} ${f(cy + r)}` +
+    `H${f(cx - ext)}A${r} ${r} 0 0 1 ${f(cx - ext)} ${f(cy - r)}Z`;
+}
+
+/** Pontos ao longo do contorno de uma cápsula (ângulo 0 = direita), para contornos irregulares e marcas. */
+export function pillPoint(cx: number, cy: number, r: number, ext: number, ang: number): Pt {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  return [cx + (c >= 0 ? ext : -ext) + c * r, cy + s * r];
+}
+
 /** Estrela de n pontas. `rot` em graus (0 = ponta para cima). */
 export function star(cx: number, cy: number, rOut: number, rIn: number, n: number, rot = 0): string {
   const pts: Pt[] = [];

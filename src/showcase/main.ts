@@ -57,6 +57,14 @@ const LONG_RULES = 'Ao entrar em campo, escolha um: cause 3 de dano a uma criatu
 /** O estilo Pixel vem com a arte pixelada (dá para desligar). */
 const lookFor = (style: StyleId): Look => (style === 'pixel' ? { style, pixelateArt: 7 } : { style });
 
+/** Carta híbrida: o custo se divide entre os recursos das duas classes (mostra o selo largo). */
+function sampleCost(s: Sample): ComposeInput['cost'] {
+  const d = DECK[s.deck];
+  if (!s.also) return [{ resource: d.res, amount: s.cost }];
+  const half = Math.ceil(s.cost / 2);
+  return [{ resource: d.res, amount: half, show: 'repeat' }, { resource: DECK[s.also].res, amount: s.cost - half, show: 'repeat' }];
+}
+
 function input(s: Sample, look: Look, uid: string, over: Partial<ComposeInput> = {}): ComposeInput {
   const d = DECK[s.deck];
   const colors = s.also ? [d.hex, DECK[s.also].hex] : [d.hex];
@@ -65,7 +73,7 @@ function input(s: Sample, look: Look, uid: string, over: Partial<ComposeInput> =
     art: { src: `/amostras/${d.art}.jpg` },
     name: s.name, typeLine: s.type, rules: s.rules, flavor: s.flavor,
     footer: `${s.n} · PT-BR · 1ª Ed.`,
-    cost: { resource: d.res, amount: s.cost },
+    cost: sampleCost(s),
     stats: s.stats ? { atk: s.stats[0], def: s.stats[1] } : null,
     rarity: s.rarity, look, setIcon: SET_ICON, ...over,
   };
@@ -151,7 +159,7 @@ function benchCard(): string {
   const s = SAMPLES[bench.sample];
   const d = DECK[bench.deck];
   const colors = bench.deck2 ? [d.hex, DECK[bench.deck2].hex] : [d.hex];
-  return compose(input({ ...s, deck: bench.deck }, benchLook(), 'bench', { colors, colorId: bench.deck, cost: { resource: d.res, amount: s.cost } }));
+  return compose(input({ ...s, deck: bench.deck }, benchLook(), 'bench', { colors, colorId: bench.deck, cost: sampleCost({ ...s, deck: bench.deck }) }));
 }
 
 const opt = (v: string, label: string, cur: string) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(label)}</option>`;

@@ -16,6 +16,7 @@
   import { exportBackup, exportCsv, importBackup } from '../../export/exporters.svelte';
   import { ctxFor } from '../common/cardCtx';
   import Glyph from '../common/Glyph.svelte';
+  import EditionPicker from '../common/EditionPicker.svelte';
 
   let usage = $state({ used: 0, quota: 0 });
   let renders = $state(0);
@@ -30,7 +31,9 @@
     usage = await storageEstimate();
     renders = (await (await db()).count('renders'));
   }
-  onMount(() => { void refresh(); if (ed?.setMediaId) void ensureMedia(ed.setMediaId).then(() => logoTick++); });
+  onMount(() => { void refresh(); });
+  // logo da coleção escolhida (muda ao trocar de coleção)
+  $effect(() => { const id = ed?.setMediaId; if (id) void ensureMedia(id).then(() => logoTick++); });
 
   async function setLogo(files: FileList | null) {
     const f = files?.[0];
@@ -69,7 +72,7 @@
     <h1>{L('Ajustes', 'Settings')}</h1>
 
     <section class="panel sec">
-      <header><BookOpen size={18} /><h2>{L('Projeto e edição', 'Project & edition')}</h2></header>
+      <header><BookOpen size={18} /><h2>{L('Projeto e edição', 'Project & edition')}</h2><span class="grow"></span><EditionPicker /></header>
       <div class="cols">
         <div class="stack">
           <label class="field"><span>{L('Nome do jogo / projeto', 'Game / project name')}</span>

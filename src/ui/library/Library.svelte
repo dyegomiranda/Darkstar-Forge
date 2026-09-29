@@ -9,6 +9,7 @@
   import { lighten } from '../../render/color';
   import { vivid } from '../../render/palette';
   import type { Card, RarityId } from '../../model/types';
+  import { costTotal, hasCost } from '../../model/cost';
   import Glyph from '../common/Glyph.svelte';
   import CardGrid from './CardGrid.svelte';
   import CardImage from '../common/CardImage.svelte';
@@ -50,14 +51,17 @@
     router.library();
   }
 
+  /** Custo total para o filtro (-1 = sem custo). */
+  const costKey = (c: Card) => (hasCost(c) ? costTotal(c) : -1);
+
   const types = $derived([...new Set(base.map((c) => c.text[lang].type).filter(Boolean))].sort());
   const tags = $derived([...new Set(base.flatMap((c) => c.tags))].sort());
-  const costs = $derived([...new Set(base.map((c) => c.cost?.amount ?? -1))].sort((a, b) => a - b));
+  const costs = $derived([...new Set(base.map(costKey))].sort((a, b) => a - b));
 
   const filtered = $derived.by(() => {
     let list = base.filter((c) => {
       if (fType && c.text[lang].type !== fType) return false;
-      if (fCost !== '' && String(c.cost?.amount ?? -1) !== fCost) return false;
+      if (fCost !== '' && String(costKey(c)) !== fCost) return false;
       if (fRarity && c.rarity !== fRarity) return false;
       if (fTag && !c.tags.includes(fTag)) return false;
       if (q) {
@@ -67,7 +71,7 @@
       }
       return true;
     });
-    if (sort === 'cost') list = [...list].sort((a, b) => (a.cost?.amount ?? 0) - (b.cost?.amount ?? 0) || a.n - b.n);
+    if (sort === 'cost') list = [...list].sort((a, b) => costTotal(a) - costTotal(b) || a.n - b.n);
     if (sort === 'name') list = [...list].sort((a, b) => a.text[lang].name.localeCompare(b.text[lang].name));
     if (sort === 'rarity') list = [...list].sort((a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || a.n - b.n);
     return list;
@@ -79,7 +83,7 @@
   // curva de custo do deck atual
   const curve = $derived.by(() => {
     const b = Array(8).fill(0) as number[];
-    for (const c of base) b[Math.min(7, Math.max(0, c.cost?.amount ?? 0))]++;
+    for (const c of base) b[Math.min(7, Math.max(0, costTotal(c)))]++;
     return b;
   });
   const maxCurve = $derived(Math.max(1, ...curve));

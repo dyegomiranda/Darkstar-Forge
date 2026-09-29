@@ -92,14 +92,23 @@ function barkPanel(a: PieceArgs, b: Box, seed: number, inner: (d: string) => str
 function slice(a: PieceArgs, small = false): PieceOut {
   const { box: b, defs, pal } = a;
   const { cx, cy } = center(b);
-  const r = b.w / 2 + (small ? -2 : 2);
+  const r = Math.min(b.w, b.h) / 2 + (small ? -2 : 2);
+  // caixa larga (vários custos): tora cortada no comprido (anéis em cápsula)
+  const ext = Math.max(0, (b.w - b.h) / 2);
   const rnd = rng(Math.round(cx));
   const ring = (rr: number) => {
     const pts: Pt[] = [];
+    const e = ext * (rr / r);
     for (let i = 0; i < 18; i++) {
       const ang = (i / 18) * Math.PI * 2;
       const j = rr * (1 + (rnd() - 0.5) * 0.06);
-      pts.push([cx + Math.cos(ang) * j, cy + Math.sin(ang) * j]);
+      const c = Math.cos(ang);
+      pts.push([cx + (c > 1e-9 ? e : c < -1e-9 ? -e : 0) + c * j, cy + Math.sin(ang) * j]);
+      // trecho reto de cima/baixo: pontos extras para o contorno continuar irregular
+      if (e > 8 && (i === 4 || i === 13)) {
+        const top = i === 13 ? -1 : 1;
+        for (let k = 1; k < 4; k++) pts.push([cx + (top > 0 ? e : -e) * (1 - k / 2), cy + top * rr * (1 + (rnd() - 0.5) * 0.05)]);
+      }
     }
     return pts;
   };
@@ -116,9 +125,9 @@ function slice(a: PieceArgs, small = false): PieceOut {
     `<path d="${toD(ring(r * 0.88))}" fill="${defs.radial([[0, lighten(light, 0.15)], [0.8, light], [1, darken(light, 0.3)]])}"/>` +
     rings +
     `<path d="M${cx} ${cy}L${(cx + r * 0.2).toFixed(1)} ${(cy - r * 0.8).toFixed(1)}" stroke="${darken(light, 0.5)}" stroke-width="1.2" opacity=".6"/>` +
-    (small ? '' : vine(pal, [cx - r * 0.9, cy + r * 0.6], [cx - r * 1.3, cy + r * 1.2], [cx - r * 0.2, cy + r * 1.4], [cx + r * 0.4, cy + r * 1.05], 3, Math.round(cy), 14));
+    (small ? '' : vine(pal, [cx - ext - r * 0.9, cy + r * 0.6], [cx - ext - r * 1.3, cy + r * 1.2], [cx - ext - r * 0.2, cy + r * 1.4], [cx - ext + r * 0.4, cy + r * 1.05], 3, Math.round(cy), 14));
   const ci = r * 0.62;
-  return { svg, content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 }, text: { family: TITLE, weight: 400, color: DARK } };
+  return { svg, content: { x: cx - ci - ext, y: cy - ci, w: ci * 2 + ext * 2, h: ci * 2 }, text: { family: TITLE, weight: 400, color: DARK } };
 }
 
 export const selvagem: PieceStyle[] = [

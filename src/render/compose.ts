@@ -12,6 +12,7 @@ import { drawGlyph, drawStatBadge, pixelSteps, type IconStyle } from './icons/re
 import type { ResourceId } from '../model/types';
 import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, skeleton } from './layout';
 import { makePalette, MULTICOLOR_GOLD, vivid, type BlendMode, type MetalKind } from './palette';
+import { COST_MAX_W, planCost, type CostItem, type CostPlan } from './costSeal';
 import { roundRect, type Box } from './shapes';
 import { blockHeight, drawLines, fitLine, measure, wrap, type IconFn, type TextLook, type TextStyle } from './text';
 
@@ -83,7 +84,8 @@ export interface ComposeInput {
   rules: string;
   flavor?: string;
   footer?: string;
-  cost?: { resource: string; amount: number } | null;
+  /** Custos (vazio = sem custo). */
+  cost?: CostItem[] | null;
   stats?: { atk: number; def: number } | null;
   rarity: string;
   look: Look;
@@ -211,10 +213,25 @@ export function compose(inp: ComposeInput): string {
   };
   // Moldura em volta da carta é opcional: por padrão a carta é full art, sem borda.
   if (look.pieces?.frame && !look.pieces.frame.hidden) add('frame', S.card);
+  // Selo de custo: arranja os símbolos e alarga o selo (e encurta o cabeçalho) se precisar
+  let costPlan: CostPlan | undefined;
+  const costPick = choose(look, 'cost');
+  if (inp.cost?.length && !costPick.ch.hidden) {
+    const probeOut = costPick.ps.render({ box: S.cost, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 });
+    const c0 = probeOut.content;
+    const tl = textOf(probeOut, costPick.ch);
+    costPlan = planCost(inp.cost, c0.h, (t, size) => measure(t, { ...tl, size }), sz.cost * (c0.h / 90), c0.w + COST_MAX_W - S.cost.w);
+    const need = costPlan.width + c0.h * 0.08 - c0.w;
+    if (need > 0) {
+      S.cost = { ...S.cost, w: S.cost.w + need };
+      const shift = S.cost.x + S.cost.w - 34 - S.header.x;
+      if (shift > 0) S.header = { ...S.header, x: S.header.x + shift, w: S.header.w - shift };
+    }
+  }
   add('rules', S.rules);
   add('typeBar', S.typeBar);
   add('header', S.header);
-  if (inp.cost) add('cost', S.cost);
+  if (costPlan) add('cost', S.cost);
   add('class', S.class);
   add('footer', S.footer);
   add('set', S.set);
@@ -256,20 +273,19 @@ export function compose(inp: ComposeInput): string {
   }
 
   const C = outs.cost;
-  if (C && inp.cost) {
+  if (C && costPlan && inp.cost) {
     const c = C.out.content;
-    const { st } = styled(defs, textOf(C.out, C.ch), sz.cost * (c.h / 90));
-    const num = String(inp.cost.amount);
-    const glyph = look.icons?.cost?.glyph ?? resourceIcon(inp.cost.resource);
-    const iconS = c.h * 0.52;
-    const f = fitLine(num, st, c.w * 0.5);
-    const numW = measure(num, f);
-    const gap = c.h * 0.05;
-    const total = (glyph ? iconS + gap : 0) + numW;
-    const x0 = c.x + (c.w - total) / 2;
-    const color = look.icons?.cost?.color ?? RESOURCE_COLORS[inp.cost.resource as ResourceId];
-    if (glyph) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0, c.y + (c.h - iconS) / 2, iconS, { color }));
-    text += centered(defs, num, textOf(C.out, C.ch), f.size, { x: x0 + (glyph ? iconS + gap : 0), y: c.y, w: numW + 2, h: c.h });
+    const x0 = c.x + (c.w - costPlan.width) / 2;
+    const first = inp.cost[0].resource;
+    for (const u of costPlan.units) {
+      const res = inp.cost[u.part].resource;
+      // o símbolo/cor escolhidos na Aparência valem para o recurso principal (o primeiro)
+      const pick = res === first ? look.icons?.cost : undefined;
+      const glyph = pick?.glyph ?? resourceIcon(res);
+      const color = pick?.color ?? RESOURCE_COLORS[res as ResourceId];
+      if (glyph) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, { color }));
+      if (u.num) text += centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 });
+    }
   }
 
   const K = outs.class;

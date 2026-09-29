@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyScoring, costForScore, evaluate, rarityFor } from '../src/model/scoring';
+import { costTotal } from '../src/model/cost';
 import { card } from './fixtures';
 
 describe('pontuação', () => {
@@ -15,12 +16,12 @@ describe('pontuação', () => {
 
   it('custo automático segue a pontuação', () => {
     const c = applyScoring(card({ stats: { atk: 4, def: 4 }, costMode: 'auto' }));
-    expect(c.cost?.amount).toBe(4);
+    expect(costTotal(c)).toBe(4);
   });
 
   it('custo digitado à mão (manual) nunca é sobrescrito', () => {
-    const c = applyScoring(card({ stats: { atk: 4, def: 4 }, cost: { resource: 'vigor', amount: 1 }, costMode: 'manual' }));
-    expect(c.cost?.amount).toBe(1);
+    const c = applyScoring(card({ stats: { atk: 4, def: 4 }, cost: [{ resource: 'vigor', amount: 1 }], costMode: 'manual' }));
+    expect(costTotal(c)).toBe(1);
   });
 
   it('quanto mais barata que o sugerido, mais rara (raridade automática)', () => {
@@ -28,7 +29,7 @@ describe('pontuação', () => {
     expect(rarityFor(3, 2)).toBe('uncommon');
     expect(rarityFor(3, 1)).toBe('rare');
     expect(rarityFor(4, 1)).toBe('unique');
-    const c = applyScoring(card({ stats: { atk: 4, def: 4 }, cost: { resource: 'vigor', amount: 2 }, costMode: 'manual', rarityMode: 'auto' }));
+    const c = applyScoring(card({ stats: { atk: 4, def: 4 }, cost: [{ resource: 'vigor', amount: 1 }, { resource: 'mana', amount: 1 }], costMode: 'manual', rarityMode: 'auto' }));
     expect(c.rarity).toBe('rare');
   });
 

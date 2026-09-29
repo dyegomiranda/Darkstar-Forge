@@ -8,6 +8,7 @@
  */
 import mechanicsData from '../data/mechanics.json';
 import type { Card, RarityId } from './types';
+import { costTotal, hasCost, setTotal } from './cost';
 
 export interface Mechanic { id: string; name: string; en: string; points: number; tags: string[]; desc: string }
 
@@ -45,7 +46,7 @@ export function evaluate(card: Scorable, labels = { atk: 'Ataque', def: 'Defesa'
   }
   score = Math.max(0, score);
   const suggestedCost = costForScore(score);
-  const actual = card.cost?.amount ?? suggestedCost;
+  const actual = hasCost(card) ? costTotal(card) : suggestedCost;
   return { score, breakdown, suggestedCost, suggestedRarity: rarityFor(suggestedCost, actual) };
 }
 
@@ -68,7 +69,7 @@ export function rarityFor(suggested: number, actual: number): RarityId {
  */
 export function applyScoring<T extends Card>(card: T): T {
   const ev = evaluate(card);
-  if (card.cost && card.costMode === 'auto') card.cost = { ...card.cost, amount: ev.suggestedCost };
-  if (card.rarityMode === 'auto') card.rarity = rarityFor(ev.suggestedCost, card.cost?.amount ?? ev.suggestedCost);
+  if (hasCost(card) && card.costMode === 'auto') card.cost = setTotal(card.cost, ev.suggestedCost);
+  if (card.rarityMode === 'auto') card.rarity = rarityFor(ev.suggestedCost, hasCost(card) ? costTotal(card) : ev.suggestedCost);
   return card;
 }
