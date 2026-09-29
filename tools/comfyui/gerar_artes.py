@@ -29,6 +29,21 @@ import uuid
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
+# Início comum dos prompts (prompts-pf.json). Para o Flux ele é trocado: citar "cartas de Magic"
+# e "pintura a óleo" faz o Flux imitar carta impressa/quadro assinado e desenhar letras e
+# assinaturas falsas nos cantos; e ele não entende "sem texto" (a negação só lembra o texto).
+ESTILO_PADRAO = ("fantasy trading card game illustration in the style of Magic: The Gathering card art, "
+                 "painterly digital oil painting, dramatic cinematic lighting, rich detailed textures, "
+                 "epic composition, highly detailed, masterpiece")
+ESTILO_FLUX = ("epic high fantasy concept art, painterly digital painting with visible brushstrokes, "
+               "dramatic cinematic lighting, rich saturated colors, detailed textures, heroic composition, "
+               "the scene fills the entire picture edge to edge")
+
+
+def prompt_flux(prompt):
+    """Prompt adaptado ao Flux (ver ESTILO_FLUX)."""
+    return ESTILO_FLUX + prompt[len(ESTILO_PADRAO):] if prompt.startswith(ESTILO_PADRAO) else prompt
+
 
 def pedir(url, dados=None, tempo=60):
     req = urllib.request.Request(url, data=json.dumps(dados).encode() if dados is not None else None,
@@ -242,8 +257,8 @@ def main():
             print(f"[{feito}/{total}] {c['nome']} ({nome}) …", end="", flush=True)
             t0 = time.time()
             try:
-                # Flux não usa prompt negativo: a lista do que evitar vai no fim do prompt, em linguagem natural
-                wf = fluxo_flux(m, c["prompt"] + ", no text, no letters, no card frame, no border", a) if usar_flux \
+                # Flux não usa prompt negativo: usa o estilo adaptado (sem citar cartas/texto)
+                wf = fluxo_flux(m, prompt_flux(c["prompt"]), a) if usar_flux \
                     else fluxo_ckpt(ckpt, c["prompt"], c["negative"], a)
                 png = gerar(a.servidor, wf, a.tempo_max)
             except Exception as e:  # segue para a próxima carta
