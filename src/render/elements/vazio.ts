@@ -7,7 +7,7 @@
 import { darken, lighten, mix } from '../color';
 import { CARD_RADIUS } from '../layout';
 import { vivid, type Palette } from '../palette';
-import { bannerSwallow, chamfer, circle, diamond, inset, pillPoint, poly, roundRect, type Box, type Pt } from '../shapes';
+import { bannerSwallow, chamfer, diamond, inset, pill, pillPoint, poly, roundRect, type Box, type Pt } from '../shapes';
 import type { TextLook } from '../text';
 import { center, gem, metalBand } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
@@ -72,13 +72,15 @@ function facetGem(a: PieceArgs, box: Box): PieceOut {
 function socket(a: PieceArgs, box: Box, small = false): PieceOut {
   const { cx, cy } = center(box);
   const R = Math.min(box.w, box.h) / 2 - (small ? 4 : 0);
+  // caixa larga (várias classes): soquete em cápsula
+  const ext = Math.max(0, (box.w - box.h) / 2);
   const ri = R - (small ? 6 : 10);
   const svg =
-    chrome(a, circle(cx, cy, R) + circle(cx, cy, ri), small ? 1.6 : 2.4) +
-    voidFill(a, circle(cx, cy, ri)) +
-    glowLine(a, circle(cx, cy, ri - 3), 1.2, 0.7);
+    chrome(a, pill(cx, cy, R, ext) + pill(cx, cy, ri, ext), small ? 1.6 : 2.4) +
+    voidFill(a, pill(cx, cy, ri, ext)) +
+    glowLine(a, pill(cx, cy, ri - 3, ext), 1.2, 0.7);
   const ci = ri * 0.8;
-  return { svg, content: { x: cx - ci, y: cy - ci, w: 2 * ci, h: 2 * ci }, text: { family: SERIF, weight: 400, color: INK }, iconColor: '#ece6ff' };
+  return { svg, content: { x: cx - ci - ext, y: cy - ci, w: 2 * (ci + ext), h: 2 * ci }, text: { family: SERIF, weight: 400, color: INK }, iconColor: '#ece6ff' };
 }
 
 /** Placa do nome: topo reto, cantos de baixo chanfrados e abas nas pontas. */

@@ -39,13 +39,14 @@ export function repeats(p: CostItem): boolean {
  * @param numW mede a largura de um número num tamanho de fonte
  * @param font tamanho de fonte do número com um só custo
  * @param maxW largura máxima disponível para o conteúdo
+ * @param icon lado do símbolo ÷ altura do conteúdo (selo de classe usa símbolos maiores)
  */
-export function planCost(parts: CostItem[], h: number, numW: (text: string, size: number) => number, font: number, maxW: number): CostPlan {
+export function planCost(parts: CostItem[], h: number, numW: (text: string, size: number) => number, font: number, maxW: number, icon = ICON): CostPlan {
   const units: Unit[] = parts.flatMap((p, part) =>
     repeats(p) ? Array.from({ length: p.amount }, () => ({ part })) : [{ part, num: String(p.amount) }]);
   if (!units.length) return { units: [], width: 0, rows: 0, scale: 1 };
 
-  const unitW = (u: Unit, k: number) => h * ICON * k + (u.num ? h * NUM_GAP * k + numW(u.num, font * k) : 0);
+  const unitW = (u: Unit, k: number) => h * icon * k + (u.num ? h * NUM_GAP * k + numW(u.num, font * k) : 0);
   const gap = (a: Unit, b: Unit, k: number) => h * (a.part === b.part ? SAME_GAP : PART_GAP) * k;
   const rowW = (row: Unit[], k: number) => row.reduce((s, u, i) => s + unitW(u, k) + (i ? gap(row[i - 1], u, k) : 0), 0);
 
@@ -69,7 +70,7 @@ export function planCost(parts: CostItem[], h: number, numW: (text: string, size
   return k1 && k1 >= k2 - 0.1 ? place([units], k1) : place(rows, k2);
 
   function place(rows: Unit[][], k: number): CostPlan {
-    const s = h * ICON * k;
+    const s = h * icon * k;
     const width = Math.max(...rows.map((r) => rowW(r, k)));
     const rowGap = h * 0.06;
     const top = h / 2 - (rows.length * s + (rows.length - 1) * rowGap) / 2;

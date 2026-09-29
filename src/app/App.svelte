@@ -63,6 +63,7 @@
       <button class:on={app.lang === 'pt-BR'} onclick={() => setLang('pt-BR')}>PT</button>
       <button class:on={app.lang === 'en-US'} onclick={() => setLang('en-US')}>EN</button>
     </div>
+    <div class="ver" title={`Darkstar Forge ${__APP_VERSION__} · ${__APP_BUILD__}`}>v{__APP_VERSION__}<small>{__APP_BUILD__.split(' · ')[0]}</small></div>
   </nav>
 
   <main>
@@ -114,6 +115,8 @@
   .lang { display: flex; flex-direction: column; gap: 2px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
   .lang button { width: 40px; height: 24px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: 600 11px var(--ui); cursor: pointer; }
   .lang button.on { background: var(--surface-3); color: var(--text); }
+  .ver { margin-top: 8px; display: flex; flex-direction: column; align-items: center; font: 500 10px var(--ui); color: var(--muted); opacity: .75; user-select: text; }
+  .ver small { font-size: 9px; opacity: .8; }
 
   .loading, .fatal { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--muted); }
   .loading img { width: 88px; opacity: .9; animation: pulse 1.6s ease-in-out infinite; }
@@ -124,7 +127,7 @@
     .shell { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
     main { grid-row: 1; }
     .rail { grid-row: 2; flex-direction: row; justify-content: space-around; padding: 6px 8px; border-right: 0; border-top: 1px solid var(--line); }
-    .brand, .spacer, .save { display: none; }
+    .brand, .spacer, .save, .ver { display: none; }
     .lang { flex-direction: row; }
     .nav { width: auto; flex: 1; }
   }

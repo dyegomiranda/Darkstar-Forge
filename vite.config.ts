@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /** Só em desenvolvimento: POST /__snap?name=x.png grava a imagem em .snaps/ (conferência visual). */
@@ -24,8 +25,19 @@ function snaps(): Plugin {
   };
 }
 
+/** Versão do programa (package.json) + commit e data da compilação, mostrados na barra lateral. */
+function buildInfo(): { version: string; build: string } {
+  const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as { version: string };
+  let commit = '';
+  try { commit = execSync('git rev-parse --short HEAD', { cwd: import.meta.dirname, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch { /* sem git */ }
+  const date = new Date().toISOString().slice(0, 10);
+  return { version: pkg.version, build: [commit, date].filter(Boolean).join(' · ') };
+}
+const info = buildInfo();
+
 export default defineConfig({
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(info.version), __APP_BUILD__: JSON.stringify(info.build) },
   plugins: [svelte(), snaps()],
   server: { port: 5173, strictPort: true },
   build: {
