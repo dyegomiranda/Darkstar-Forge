@@ -33,7 +33,8 @@ export class EditorState {
     this.draft = structuredClone($state.snapshot(card) as Card);
     this.lang = app.lang;
     this.#saved = this.#last = JSON.stringify(this.draft);
-    this.#openCard = this.draft.look ? structuredClone(this.draft.look) : undefined;
+    // draft é reativo ($state): copiar o snapshot, senão structuredClone falha (carta com ajustes próprios não abria)
+    this.#openCard = this.draft.look ? structuredClone($state.snapshot(this.draft.look) as Partial<Look>) : undefined;
     this.#openDeck = structuredClone($state.snapshot(app.deck(card.deckId)!.look) as Look);
   }
 

@@ -52,3 +52,23 @@ export async function importImage(file: Blob, name = ''): Promise<string> {
   await ensureMedia(id);
   return id;
 }
+
+/** Tamanho real (px) de uma imagem do banco; undefined se não der para ler. */
+export async function imageSize(id: string): Promise<{ w: number; h: number } | undefined> {
+  const row = await getMedia(id);
+  if (!row) return undefined;
+  try {
+    const bmp = await createImageBitmap(row.blob);
+    const size = { w: bmp.width, h: bmp.height };
+    bmp.close();
+    return size;
+  } catch {
+    // SVG sem tamanho fixo e afins: mede pelo elemento <img>
+    const url = await ensureMedia(id);
+    if (!url) return undefined;
+    const img = new Image();
+    img.src = url;
+    try { await img.decode(); } catch { return undefined; }
+    return img.naturalWidth ? { w: img.naturalWidth, h: img.naturalHeight } : undefined;
+  }
+}

@@ -15,6 +15,7 @@
   import { ctxFor } from '../common/cardCtx';
   import Glyph from '../common/Glyph.svelte';
   import { pieceThumb } from './thumbs';
+  import PieceImagePanel from './PieceImagePanel.svelte';
   import type { EditorState } from './editor.svelte';
 
   let { ed }: { ed: EditorState } = $props();
@@ -148,14 +149,14 @@
             <span class="sw" style="background:{pc[0]}"></span>
             <b>{L(p.pt, p.en)}</b>
             {#if changed}<span class="dot-ch" title={L('Alterada desde que abriu', 'Changed since opened')}></span>{/if}
-            <span class="muted">{isFrame && !frameOn ? L('desligada', 'off') : STYLES.find((x) => x.id === st)?.name}</span>
+            <span class="muted">{isFrame && !frameOn ? L('desligada', 'off') : ch.image ? (ch.image.mediaId ? L('imagem', 'image') : L('só texto', 'text only')) : STYLES.find((x) => x.id === st)?.name}</span>
             <ChevronDown size={16} />
           </button>
           {#if open === p.kind}
             <div class="pc-body">
               <div class="row wrap">
                 <button class="btn sm" disabled={!changed} onclick={() => ed.revertPiece(p.kind)} title={L('Desfaz só as mudanças desta peça', 'Undo only this piece')}><Undo2 size={14} /> {L('Voltar ao que estava', 'Back to how it was')}</button>
-                <button class="btn sm ghost" onclick={() => ed.setPiece(p.kind, { style: st }, ['colors', 'opacity', 'metal', 'ink', 'font', 'hidden'])}><RotateCcw size={14} /> {L('Padrão do estilo', 'Style default')}</button>
+                <button class="btn sm ghost" onclick={() => ed.setPiece(p.kind, { style: st }, ['colors', 'opacity', 'metal', 'ink', 'font', 'hidden', 'image'])}><RotateCcw size={14} /> {L('Padrão do estilo', 'Style default')}</button>
               </div>
               {#if isFrame}
                 <label class="toggle"><input type="checkbox" checked={frameOn}
@@ -165,7 +166,8 @@
                 <label class="toggle"><input type="checkbox" checked={!ch.hidden} onchange={(e) => ed.setPiece(p.kind, { hidden: !(e.currentTarget as HTMLInputElement).checked })} />
                   {#if ch.hidden}<EyeOff size={14} />{:else}<Eye size={14} />{/if} {L('Mostrar esta peça', 'Show this piece')}</label>
               {/if}
-              <div class="thumbs">
+              <PieceImagePanel {ed} kind={p.kind} />
+              <div class="thumbs" class:dim={!!ch.image}>
                 {#each STYLES as s (s.id)}
                   <button class="th" class:on={st === s.id} title={s.name} onclick={() => ed.setPiece(p.kind, { style: s.id })}>
                     {@html pieceThumb(s.id, p.kind, pc)}
@@ -253,6 +255,7 @@
 </div>
 
 <style>
+  .thumbs.dim { opacity: .45; }
   .scope { display: flex; flex-direction: column; gap: 8px; }
   .full { display: flex; width: 100%; }
   .full button { flex: 1; justify-content: center; }

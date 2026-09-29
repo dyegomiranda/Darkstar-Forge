@@ -13,6 +13,7 @@ import type { ResourceId } from '../model/types';
 import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, skeleton } from './layout';
 import { makePalette, MULTICOLOR_GOLD, vivid, type BlendMode, type MetalKind } from './palette';
 import { COST_MAX_W, planCost, type CostItem, type CostPlan } from './costSeal';
+import { DEFAULT_PAD, drawPieceImage, imageBox, imageContent, type PieceImage } from './pieceImage';
 import { roundRect, type Box } from './shapes';
 import { blockHeight, drawLines, fitLine, measure, wrap, type IconFn, type TextLook, type TextStyle } from './text';
 
@@ -29,6 +30,8 @@ export interface PieceChoice {
   /** Fonte do texto dentro da peça. */
   font?: string;
   hidden?: boolean;
+  /** Imagem do usuário no lugar do desenho do estilo (ver pieceImage.ts). */
+  image?: PieceImage;
 }
 
 /** Escolha de um símbolo: estilo de desenho, qual símbolo e cor. */
@@ -98,6 +101,29 @@ export interface ComposeInput {
 export const SIZES = { title: 42, type: 29, rules: 27, flavor: 25, footer: 17, stat: 50, cost: 52 };
 
 const RULES_MIN_FONT = 17;
+
+/**
+ * Desenha uma peça: pelo estilo ou, se o usuário escolheu, pela imagem dele.
+ * A aparência do texto (fonte, cor) continua vindo do estilo da peça.
+ */
+function renderPiece(kind: PieceKind, ps: PieceStyle, ch: PieceChoice, args: Parameters<PieceStyle['render']>[0]): PieceOut {
+  const base = ps.render(args);
+  const img = ch.image;
+  if (!img) return base;
+  const out: PieceOut = {
+    svg: drawPieceImage(args.defs, args.box, img, vivid(args.pal.base), ch.opacity ?? 1),
+    content: imageContent(kind, args.box, img),
+    text: base.text,
+  };
+  // barra de tipo: a joia de raridade fica no meio da margem direita (se couber)
+  const padR = (img.pad ?? DEFAULT_PAD[kind])[1];
+  if (kind === 'typeBar' && padR >= 40) {
+    const b = imageBox(args.box, img);
+    const s = Math.min(30, b.h * 0.55);
+    out.gem = { x: b.x + b.w - padR / 2 - s / 2, y: b.y + b.h / 2 - s / 2, w: s, h: s };
+  }
+  return out;
+}
 const RULES_X = 48, RULES_W = 654;
 
 function choose(look: Look, kind: PieceKind): { ps: PieceStyle; ch: PieceChoice } {
@@ -149,12 +175,11 @@ export function compose(inp: ComposeInput): string {
 
   // 1) Altura da caixa de regras: mede o texto com as margens internas do estilo escolhido.
   const rulesPick = choose(look, 'rules');
-  const probe = rulesPick.ps.render({
+  const probe = renderPiece('rules', rulesPick.ps, rulesPick.ch, {
     box: { x: RULES_X, y: 0, w: RULES_W, h: 400 }, pal: makePalette(colors, undefined, blend), defs: new Defs("probe"), opacity: 1,
   });
-  const padL = probe.content.x - RULES_X, padR = RULES_X + RULES_W - (probe.content.x + probe.content.w);
   const padT = probe.content.y, padB = 400 - (probe.content.y + probe.content.h);
-  const innerW = RULES_W - padL - padR;
+  const innerW = probe.content.w;
   const rulesLook = textOf(probe, rulesPick.ch);
   const flavorLook = { ...(rulesPick.ps.flavor?.(makePalette(colors, undefined, blend)) ?? { ...rulesLook, italic: true }), ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}) };
 
@@ -202,7 +227,7 @@ export function compose(inp: ComposeInput): string {
     if (ch.hidden) return;
     const pal = makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, blend);
     const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant };
-    const out = ps.render(args);
+    const out = renderPiece(kind, ps, ch, args);
     outs[slot] = { out, ch, ps, args };
     if (!draw) return;
     if (out.glass && artImg) {
@@ -217,7 +242,7 @@ export function compose(inp: ComposeInput): string {
   let costPlan: CostPlan | undefined;
   const costPick = choose(look, 'cost');
   if (inp.cost?.length && !costPick.ch.hidden) {
-    const probeOut = costPick.ps.render({ box: S.cost, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 });
+    const probeOut = renderPiece('cost', costPick.ps, costPick.ch, { box: S.cost, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 });
     const c0 = probeOut.content;
     const tl = textOf(probeOut, costPick.ch);
     costPlan = planCost(inp.cost, c0.h, (t, size) => measure(t, { ...tl, size }), sz.cost * (c0.h / 90), c0.w + COST_MAX_W - S.cost.w);

@@ -1,8 +1,19 @@
 # Darkstar Forge — progresso
 
-**Atualizado:** 29/09/2026 (versão 2.1: vários custos por carta, verso por coleção)
+**Atualizado:** 29/09/2026 (versão 2.2: peças feitas de imagem)
 **Como abrir:** atalho *Darkstar Forge* no menu de aplicativos, ou o script `Darkstar Forge` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`.
+
+## Versão 2.2 (29/09/2026)
+
+### Peças feitas de imagem
+Os estilos desenhados por código não reproduzem modelos pintados à mão; por isso agora dá para usar as próprias imagens.
+- [x] Em Aparência, cada peça (e a moldura inteira) aceita um PNG/WebP/SVG no lugar do desenho do estilo
+- [x] Encaixe: esticar, 9 partes (cantos fixos, para barras e caixa de regras que mudam de tamanho) ou manter proporção
+- [x] Ajuste fino de posição e tamanho, margens do texto, tamanho das bordas e tingir com a cor da carta
+- [x] "Só o texto, sem fundo": útil quando a moldura inteira já é uma imagem (modelo com a janela da arte transparente)
+- [x] Funciona no editor, na biblioteca, no PNG/PDF exportado, no backup e como tema do deck
+- [x] Correção: carta com ajustes próprios de aparência não abria de novo no editor
 
 ## Versão 2.1 (29/09/2026)
 

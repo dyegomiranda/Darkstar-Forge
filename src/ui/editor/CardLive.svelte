@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
   import { compose } from '../../render/compose';
-  import { cardInput } from '../../render/card';
+  import { cardInput, lookMediaIds, mergeLook } from '../../render/card';
   import { CARD_W } from '../../render/layout';
   import { ensureCardMedia, ctxFor } from '../common/cardCtx';
   import type { EditorState } from './editor.svelte';
@@ -17,6 +17,8 @@
   // quando a arte muda, espera a imagem ficar pronta e redesenha
   $effect(() => {
     void ed.draft.art.mediaId;
+    // imagens das peças (Aparência) também precisam estar carregadas
+    void lookMediaIds(mergeLook(ed.deck.look, ed.draft.look)).join();
     void ensureCardMedia(ed.draft).then(() => { mediaReady++; });
   });
 
