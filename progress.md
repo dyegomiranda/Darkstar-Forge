@@ -18,6 +18,12 @@
 - [x] No modo automático, o primeiro recurso completa a diferença para o total sugerido
 - [x] Cartas e backups antigos (um custo só) são convertidos sozinhos ao abrir
 
+### Estilos novos (fase C)
+- [x] **Pixel Sombrio** (ref.: "Dark Elf TCG Cards"): ferro escuro, arremates e chifres de osso, faixa do nome na cor da classe, selos redondos e pergaminho rasgado — desenhado pixel a pixel
+- [x] **Vazio** (ref.: Pixarts "Void" Vol. 2): cromo com brilho na cor da classe, cantos em degrau, custo em gema facetada, soquetes redondos, faixa com pontas de andorinha
+- [x] **Espectral** (ref.: Pixarts Vol. 5): prata com filigrana de espinhos, plaquinhas claras de pontas escuras, painel de texto claro e orbes vítreos
+- [x] Os três funcionam com vários custos, verso, miniaturas da Aparência e mistura peça a peça; cor, metal, transparência, texto e fonte ajustáveis
+
 ### Coleções
 - [x] Seletor de coleção nas telas **Verso** e **Ajustes** (cada coleção tem seu verso, nome, sigla e logo)
 - [x] No PDF frente e verso, cada carta leva o verso da **sua** coleção
@@ -51,7 +57,7 @@
 - [x] Verso das cartas e PDF frente e verso; até 5 cores por carta com modos de mistura
 
 ## Próximos passos
-1. **Fase C:** estilos novos customizáveis (referências: molduras pixel art de TCG, template "Void" escuro, TCG Creator pixel, cartas tipo Pokémon)
+1. **Fase C (restante):** estilo tipo Pokémon V (modelo da Etsy) e pixel "TCG Creator vol. 18" (Behance)
 2. Gerar e testar o executável (AppImage) no computador Linux do usuário
 3. Artes das cartas de exemplo
 4. Motor de regras e simulação (futuro)

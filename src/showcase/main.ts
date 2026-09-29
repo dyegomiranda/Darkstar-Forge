@@ -4,7 +4,7 @@
  */
 import { compose, type ComposeInput, type IconChoice, type Look, type PieceChoice } from '../render/compose';
 import { Defs } from '../render/defs';
-import { piece, PIECE_KINDS, STYLES, type PieceKind, type StyleId } from '../render/elements';
+import { piece, PIECE_KINDS, STYLES, styleInfo, type PieceKind, type StyleId } from '../render/elements';
 import { CARD_FONTS, loadCardFonts } from '../render/fonts';
 import { ATK_CHOICES, classChoices, classIcon, DEF_CHOICES, ICON_NAMES, RESOURCE_COLORS, RESOURCE_IDS, resourceIcon, STEEL } from '../render/icons/glyphs';
 import { drawGlyph, ICON_STYLES, type IconStyle } from '../render/icons/render';
@@ -55,7 +55,7 @@ const LONG_RULES = 'Ao entrar em campo, escolha um: cause 3 de dano a uma criatu
   'No fim do seu turno, se ela não atacou, cause 2 de dano a você.';
 
 /** O estilo Pixel vem com a arte pixelada (dá para desligar). */
-const lookFor = (style: StyleId): Look => (style === 'pixel' ? { style, pixelateArt: 7 } : { style });
+const lookFor = (style: StyleId): Look => (styleInfo(style).pixelArt ? { style, pixelateArt: 7 } : { style });
 
 /** Carta híbrida: o custo se divide entre os recursos das duas classes (mostra o selo largo). */
 function sampleCost(s: Sample): ComposeInput['cost'] {
@@ -248,7 +248,7 @@ function mountBench() {
     if (t.id === 'b-sample') bench.sample = +t.value;
     if (t.id === 'b-deck') bench.deck = t.value as DeckId;
     if (t.id === 'b-deck2') bench.deck2 = t.value as DeckId | '';
-    if (t.id === 'b-style') { bench.style = t.value as StyleId; bench.pixelArt = bench.style === 'pixel'; bench.pieces = {}; }
+    if (t.id === 'b-style') { bench.style = t.value as StyleId; bench.pixelArt = !!styleInfo(bench.style).pixelArt; bench.pieces = {}; }
     if (t.id === 'b-frame') bench.frame = t.checked;
     if (t.id === 'b-pixel') bench.pixelArt = t.checked;
     rebuild();

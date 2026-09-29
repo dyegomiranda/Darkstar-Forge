@@ -9,7 +9,7 @@ export type PieceKind = 'frame' | 'header' | 'cost' | 'class' | 'typeBar' | 'rul
 
 export const PIECE_KINDS: PieceKind[] = ['frame', 'header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set'];
 
-export type StyleId = 'ornado' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel';
+export type StyleId = 'ornado' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral';
 
 export interface PieceArgs {
   /** Área que o esqueleto reservou para a peça. */
@@ -61,4 +61,6 @@ export interface StyleInfo {
   description: string;
   /** Estilo de símbolo que combina com o estilo (o usuário pode trocar). */
   icons: IconStyle;
+  /** Estilo de pixel art: ao escolhê-lo, a arte também é pixelada (dá para desligar). */
+  pixelArt?: boolean;
 }

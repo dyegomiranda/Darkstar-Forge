@@ -51,7 +51,7 @@
       if (!ctx) return;
       const base = mergeLook(ed.deck.look, ed.draft.look);
       styleThumbs = Object.fromEntries(STYLES.map((s) => {
-        const inp = cardInput({ ...ed.draft, look: undefined }, { ...ctx, lang: ed.lang, deck: { ...ctx.deck, look: { ...base, style: s.id, pieces: {}, pixelateArt: s.id === 'pixel' ? 7 : undefined } } });
+        const inp = cardInput({ ...ed.draft, look: undefined }, { ...ctx, lang: ed.lang, deck: { ...ctx.deck, look: { ...base, style: s.id, pieces: {}, pixelateArt: s.pixelArt ? 7 : undefined } } });
         inp.uid = `sc-${s.id}`;
         return [s.id, compose(inp)];
       }));

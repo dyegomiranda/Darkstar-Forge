@@ -4,6 +4,9 @@ import { moderno } from './moderno';
 import { ornado } from './ornado';
 import { pixel } from './pixel';
 import { selvagem } from './selvagem';
+import { sombrio } from './sombrio';
+import { vazio } from './vazio';
+import { espectral } from './espectral';
 import type { PieceKind, PieceStyle, StyleId, StyleInfo } from './types';
 
 export * from './types';
@@ -14,10 +17,13 @@ export const STYLES: StyleInfo[] = [
   { id: 'arcano', name: 'Arcano', icons: 'emblema', description: 'Astrolábio: latão gravado, esmalte azul-noite, mapas de estrelas e luas.' },
   { id: 'moderno', name: 'Moderno', icons: 'chapado', description: 'Blocos de cor chapada, cortes diagonais, sombra dura e letra condensada.' },
   { id: 'selvagem', name: 'Selvagem', icons: 'emblema', description: 'Madeira e casca, couro costurado, cipós com folhas e fatias de tronco.' },
-  { id: 'pixel', name: 'Pixel', icons: 'pixel', description: 'Janelas de RPG 16-bit, fonte pixelada e ícones em pixel.' },
+  { id: 'pixel', name: 'Pixel', icons: 'pixel', pixelArt: true, description: 'Janelas de RPG 16-bit, fonte pixelada e ícones em pixel.' },
+  { id: 'sombrio', name: 'Pixel Sombrio', icons: 'pixel', pixelArt: true, description: 'Pixel art de fantasia sombria: ferro escuro, arremates e chifres de osso, faixa do nome na cor da classe e pergaminho rasgado.' },
+  { id: 'vazio', name: 'Vazio', icons: 'emblema', description: 'Cromo polido com brilho na cor da classe: cantos em degrau, custo em gema facetada, soquetes redondos e painéis escuros com filete luminoso.' },
+  { id: 'espectral', name: 'Espectral', icons: 'emblema', description: 'Prata com filigrana de espinhos: moldura escura fina, plaquinhas claras de pontas escuras, painel de texto claro e orbes vítreos.' },
 ];
 
-const ALL: PieceStyle[] = [...ornado, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel];
+const ALL: PieceStyle[] = [...ornado, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral];
 
 const index = new Map<string, PieceStyle>(ALL.map((p) => [`${p.style}:${p.kind}`, p]));
 

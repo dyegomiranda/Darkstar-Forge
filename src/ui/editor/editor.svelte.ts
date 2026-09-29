@@ -8,7 +8,7 @@ import { applyScoring } from '../../model/scoring';
 import type { Card, Lang } from '../../model/types';
 import type { IconChoice, Look, PieceChoice } from '../../render/compose';
 import { mergeLook } from '../../render/card';
-import type { PieceKind, StyleId } from '../../render/elements';
+import { styleInfo, type PieceKind, type StyleId } from '../../render/elements';
 
 export type LookScope = 'card' | 'deck';
 
@@ -112,7 +112,7 @@ export class EditorState {
       l.style = style;
       // trocar o estilo geral limpa escolhas de estilo por peça (mantém cores/ajustes)
       for (const p of Object.values(l.pieces ?? {})) if (p) delete (p as Partial<PieceChoice>).style;
-      if (style === 'pixel') l.pixelateArt ??= 7; else if (l.pixelateArt === 7) delete l.pixelateArt;
+      if (styleInfo(style).pixelArt) l.pixelateArt ??= 7; else if (l.pixelateArt === 7) delete l.pixelateArt;
     });
   }
 
