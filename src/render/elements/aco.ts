@@ -159,7 +159,7 @@ export const aco: PieceStyle[] = [
     style: 'aco', kind: 'stat', opacity: 1, metal: 'silver',
     render: (a) => {
       const b = inset(a.box, 2, 2);
-      return { svg: slot(a, b, 2 * P, true), content: inset(b, 2 * P, 2 * P), text: num('#e6ebf0') };
+      return { svg: slot(a, b, 2 * P, true), content: inset(b, 2 * P, P), text: num('#e6ebf0') };
     },
   },
   {

@@ -70,7 +70,7 @@ function pixelate(defs: Defs, block: number): string {
  * arredonda para zero na tela e o símbolo inteiro some.
  */
 function pixBlock(size: number): number {
-  return Math.min(128, Math.max(32, Math.round(2.8 / ((size / U) * 0.7))));
+  return Math.min(128, Math.max(32, Math.round(3.4 / ((size / U) * 0.7))));
 }
 
 /** Degradê metálico a partir de uma cor (claro em cima, reflexo no meio, escuro embaixo). */
