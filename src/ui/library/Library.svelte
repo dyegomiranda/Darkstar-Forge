@@ -14,7 +14,8 @@
   import CardGrid from './CardGrid.svelte';
   import CardImage from '../common/CardImage.svelte';
   import { exportPdf, exportPngZip } from '../../export/exporters.svelte';
-  import { importArtBatch } from '../../export/artImport';
+  import { applyArt, groupArtFiles, type ArtGroup } from '../../export/artImport';
+  import ArtPicker from './ArtPicker.svelte';
   import { warmCache } from '../common/cardCtx';
 
   let { deckId }: { deckId?: string } = $props();
@@ -111,14 +112,31 @@
 
   // ── artes em lote ──
   let artInput: HTMLInputElement;
+  /** Cartas com variações esperando a escolha (janela aberta). */
+  let picking = $state<ArtGroup[] | null>(null);
+  let pickMissing: string[] = [];
+
   async function importArts(files: FileList | null) {
     if (!files?.length) return;
     const list = [...files];
     artInput.value = '';
-    ui.toast(L(`Importando ${list.length} imagens…`, `Importing ${list.length} images…`));
-    const r = await importArtBatch(list);
-    const miss = r.unmatched.length ? L(` · sem carta correspondente: ${r.unmatched.slice(0, 6).join(', ')}${r.unmatched.length > 6 ? '…' : ''}`, ` · no matching card: ${r.unmatched.slice(0, 6).join(', ')}${r.unmatched.length > 6 ? '…' : ''}`) : '';
-    ui.toast(L(`${r.matched.length} artes colocadas nas cartas`, `${r.matched.length} artworks placed on cards`) + miss, r.unmatched.length ? 'error' : undefined, r.unmatched.length ? 9000 : 4000);
+    const { groups, unmatched } = groupArtFiles(list);
+    pickMissing = unmatched;
+    if (!groups.length) { reportArt(0, unmatched); return; }
+    // alguma carta com mais de uma versão → deixa escolher; senão, aplica direto
+    if (groups.some((g) => g.files.length > 1)) { picking = groups; return; }
+    await finishArt(groups.map((g) => ({ card: g.card, file: g.files[0] })));
+  }
+
+  async function finishArt(choices: { card: Card; file: File }[]) {
+    picking = null;
+    ui.toast(L(`Importando ${choices.length} imagens…`, `Importing ${choices.length} images…`));
+    reportArt(await applyArt(choices), pickMissing);
+  }
+
+  function reportArt(n: number, unmatched: string[]) {
+    const miss = unmatched.length ? L(` · sem carta correspondente: ${unmatched.slice(0, 6).join(', ')}${unmatched.length > 6 ? '…' : ''}`, ` · no matching card: ${unmatched.slice(0, 6).join(', ')}${unmatched.length > 6 ? '…' : ''}`) : '';
+    ui.toast(L(`${n} artes colocadas nas cartas`, `${n} artworks placed on cards`) + miss, unmatched.length ? 'error' : undefined, unmatched.length ? 9000 : 4000);
   }
 
   function newCard() {
@@ -299,6 +317,10 @@
 
 {#if hover}
   <div class="zoom" style={zoomStyle}><CardImage card={hover.card} eager /></div>
+{/if}
+
+{#if picking}
+  <ArtPicker groups={picking} onconfirm={finishArt} oncancel={() => (picking = null)} />
 {/if}
 
 <style>

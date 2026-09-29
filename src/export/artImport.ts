@@ -5,6 +5,8 @@
  *    (é o nome que o script do ComfyUI gera — ver docs/artes.md)
  *  - `<nome da carta>.png`  → ex.: `corte-duplo.png` ou `Corte Duplo.jpg`
  *    (sem acentos/maiúsculas; procura na coleção aberta primeiro)
+ *  - variações: `pf-red_001__v2.png`, `pf-red_001__v3.png`… são versões da mesma carta;
+ *    quando uma carta tem mais de uma, a Biblioteca pede para escolher a melhor.
  */
 import { app } from '../store/project.svelte';
 import { importImage } from '../store/media';
@@ -12,12 +14,12 @@ import type { Card } from '../model/types';
 
 /** "Corte Duplo!" → "corte-duplo" (sem acentos, só letras e números). */
 export function slug(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 /** Acha a carta de um arquivo (ou undefined). `editionId` = coleção aberta, que tem prioridade no nome. */
 export function matchCard(fileName: string, cards: Card[], deckEdition: (deckId: string) => string | undefined, editionId?: string): Card | undefined {
-  const base = fileName.replace(/\.[a-z0-9]+$/i, '');
+  const base = fileName.replace(/\.[a-z0-9]+$/i, '').replace(/__v\d+$/i, '');
   const m = base.match(/^(.+)_(\d{1,3})$/);
   if (m) {
     const n = +m[2];
@@ -29,21 +31,39 @@ export function matchCard(fileName: string, cards: Card[], deckEdition: (deckId:
   return same.find((c) => deckEdition(c.deckId) === editionId) ?? same[0];
 }
 
-export interface ArtImportResult { matched: { file: string; card: string }[]; unmatched: string[] }
+/** Imagens que correspondem a uma carta (várias = variações para escolher). */
+export interface ArtGroup { card: Card; files: File[] }
 
-export async function importArtBatch(files: File[]): Promise<ArtImportResult> {
+/** Agrupa os arquivos por carta; a versão sem `__vN` vem primeiro. */
+export function groupArtFiles(files: File[]): { groups: ArtGroup[]; unmatched: string[] } {
   const cards = Object.values(app.cards);
   const edOf = (deckId: string) => app.deck(deckId)?.editionId;
-  const out: ArtImportResult = { matched: [], unmatched: [] };
-  const changed: Card[] = [];
+  const byCard = new Map<string, ArtGroup>();
+  const unmatched: string[] = [];
   for (const f of files) {
     if (!f.type.startsWith('image/')) continue;
     const card = matchCard(f.name, cards, edOf, app.editionId);
-    if (!card) { out.unmatched.push(f.name); continue; }
-    const mediaId = await importImage(f, f.name);
-    changed.push({ ...card, art: { mediaId, zoom: 1, x: 0, y: 0, mirror: false } });
-    out.matched.push({ file: f.name, card: card.text[app.lang]?.name ?? card.text['pt-BR'].name });
+    if (!card) { unmatched.push(f.name); continue; }
+    const g = byCard.get(card.id) ?? { card, files: [] };
+    g.files.push(f);
+    byCard.set(card.id, g);
+  }
+  const variant = (f: File) => +(f.name.match(/__v(\d+)\.[a-z0-9]+$/i)?.[1] ?? 1);
+  const groups = [...byCard.values()];
+  for (const g of groups) g.files.sort((a, b) => variant(a) - variant(b));
+  // mesma ordem da barra lateral (deck), depois o número da carta
+  const order = (deckId: string) => app.deck(deckId)?.order ?? 99;
+  groups.sort((a, b) => order(a.card.deckId) - order(b.card.deckId) || a.card.n - b.card.n);
+  return { groups, unmatched };
+}
+
+/** Coloca a imagem escolhida em cada carta. */
+export async function applyArt(choices: { card: Card; file: File }[]): Promise<number> {
+  const changed: Card[] = [];
+  for (const { card, file } of choices) {
+    const mediaId = await importImage(file, file.name);
+    changed.push({ ...(app.cards[card.id] ?? card), art: { mediaId, zoom: 1, x: 0, y: 0, mirror: false } });
   }
   if (changed.length) app.putCards(changed);
-  return out;
+  return changed.length;
 }
