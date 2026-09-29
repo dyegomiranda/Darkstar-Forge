@@ -7,3 +7,4 @@ Captura*.png
 .claude/
 # imagens de conferência geradas pelo mostruário em desenvolvimento
 .snaps/
+__pycache__/
