@@ -20,9 +20,12 @@
 
   const COLOR_IDS = Object.keys(COLORS) as ColorId[];
 
+  const MAX_COLORS = 5;
+
+  /** Clique acrescenta a cor (até 5, na ordem dos cliques); clicar de novo tira. */
   function toggleColor(c: ColorId) {
     if (d.colors.includes(c)) { if (d.colors.length > 1) d.colors = d.colors.filter((x) => x !== c); }
-    else d.colors = d.colors.length >= 2 ? [d.colors[0], c] : [...d.colors, c];
+    else if (d.colors.length < MAX_COLORS) d.colors = [...d.colors, c];
     ed.touch();
   }
 
@@ -63,15 +66,17 @@
       </select>
     </label>
     <div class="field">
-      <span>{L('Cor / classe da carta (até 2 = híbrida)', 'Card color / class (up to 2 = hybrid)')}</span>
+      <span>{L('Cores / classes da carta (até 5, na ordem dos cliques)', 'Card colors / classes (up to 5, in click order)')}</span>
       <div class="colors">
         {#each COLOR_IDS as c}
-          <button class="col" class:on={d.colors.includes(c)} style="--c:{colorHex(c)}" title={COLORS[c].classes[app.lang]} onclick={() => toggleColor(c)}>
+          {@const pos = d.colors.indexOf(c)}
+          <button class="col" class:on={pos >= 0} style="--c:{colorHex(c)}" title={COLORS[c].classes[app.lang]} onclick={() => toggleColor(c)}>
             <Glyph id={classIcon(c)} size={20} color={lighten(vivid(colorHex(c)), 0.4)} />
-            {#if d.colors[0] === c && d.colors.length > 1}<i>1</i>{:else if d.colors[1] === c}<i>2</i>{/if}
+            {#if pos >= 0 && d.colors.length > 1}<i>{pos + 1}</i>{/if}
           </button>
         {/each}
       </div>
+      <span class="muted small">{L('Como as cores aparecem (mistura, dourado multicor, cor livre): aba Aparência.', 'How colors show (blend, multicolor gold, free color): Look tab.')}</span>
     </div>
   </section>
 

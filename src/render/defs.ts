@@ -31,10 +31,10 @@ export class Defs {
 
   // ───────────── gradientes ─────────────
 
-  /** Gradiente linear. `stops` = [offset 0..1, cor, opacidade?]. `dir` 'v' (cima→baixo) ou 'h'. */
-  linear(stops: [number, string, number?][], dir: 'v' | 'h' = 'v'): string {
+  /** Gradiente linear. `stops` = [offset 0..1, cor, opacidade?]. `dir` 'v' (cima→baixo), 'h' ou 'd' (diagonal). */
+  linear(stops: [number, string, number?][], dir: 'v' | 'h' | 'd' = 'v'): string {
     const key = `lin:${dir}:${JSON.stringify(stops)}`;
-    const [x2, y2] = dir === 'v' ? ['0', '1'] : ['1', '0'];
+    const [x2, y2] = dir === 'v' ? ['0', '1'] : dir === 'h' ? ['1', '0'] : ['1', '1'];
     return this.url(key, (id) =>
       `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">` +
       stops.map(([o, c, a]) => `<stop offset="${o}" stop-color="${c}"${a != null ? ` stop-opacity="${a}"` : ''}/>`).join('') +
@@ -49,18 +49,24 @@ export class Defs {
       `</radialGradient>`);
   }
 
-  /** Cor do deck transformada por `t`. Mono → cor sólida; híbrida → gradiente horizontal. */
+  /** Cor da carta transformada por `t`. Mono → cor sólida; multicolor → gradiente no modo de mistura. */
   hue(pal: Palette, t: (c: string) => string = (c) => c, opacity?: number): string {
     if (!pal.hybrid) return t(pal.base);
     const n = pal.colors.length;
     const stops: [number, string, number?][] = [];
-    pal.colors.forEach((c, i) => {
-      // faixas com transição curta no meio: lê como "duas cores", não como arco-íris
-      const a = i / n, b = (i + 1) / n;
-      stops.push([+(a + (i ? 0.14 : 0)).toFixed(3), t(c), opacity]);
-      stops.push([+(b - (i < n - 1 ? 0.14 : 0)).toFixed(3), t(c), opacity]);
-    });
-    return this.linear(stops, 'h');
+    const mode = pal.blend ?? 'faixas';
+    if (mode === 'degrade' || mode === 'diagonal') {
+      pal.colors.forEach((c, i) => stops.push([+(i / (n - 1)).toFixed(3), t(c), opacity]));
+    } else {
+      // faixas: transição curta entre blocos; divisão: sem transição nenhuma
+      const soft = mode === 'divisao' ? 0 : Math.min(0.14, 0.35 / n);
+      pal.colors.forEach((c, i) => {
+        const a = i / n, b = (i + 1) / n;
+        stops.push([+(a + (i ? soft : 0)).toFixed(3), t(c), opacity]);
+        stops.push([+(b - (i < n - 1 ? soft : 0)).toFixed(3), t(c), opacity]);
+      });
+    }
+    return this.linear(stops, mode === 'vertical' ? 'v' : mode === 'diagonal' ? 'd' : 'h');
   }
 
   /** Camadas de preenchimento de metal (a primeira é a base, as seguintes vão por cima). */

@@ -20,12 +20,22 @@
     void ensureCardMedia(ed.draft).then(() => { mediaReady++; });
   });
 
-  const svg = $derived.by(() => {
+  // a entrada muda a cada movimento do seletor de cor; o desenho acontece no
+  // máximo uma vez por quadro de tela (sem fila de trabalho atrasado)
+  const input = $derived.by(() => {
     void mediaReady;
     const ctx = ctxFor(ed.draft);
-    if (!ctx) return '';
     // idioma do texto = idioma escolhido no editor
-    return compose(cardInput(ed.draft, { ...ctx, lang: ed.lang }));
+    return ctx ? cardInput(ed.draft, { ...ctx, lang: ed.lang }) : null;
+  });
+  let svg = $state('');
+  let frame = 0;
+  $effect(() => {
+    const inp = input;
+    cancelAnimationFrame(frame);
+    if (!svg) { svg = inp ? compose(inp) : ''; return; }
+    frame = requestAnimationFrame(() => { svg = inp ? compose(inp) : ''; });
+    return () => cancelAnimationFrame(frame);
   });
 
   let drag: { x: number; y: number; ax: number; ay: number; k: number } | null = null;

@@ -72,6 +72,32 @@ export interface Edition {
   code: string;
   /** Logo da edição (mídia). */
   setMediaId?: string;
+  /** Verso das cartas desta edição (igual para todas). */
+  back?: CardBack;
+}
+
+/** Verso (costas) das cartas de uma edição. */
+export interface CardBack {
+  /** Estilo da moldura, do medalhão e da faixa do título (os mesmos das frentes). */
+  style: import('../render/elements').StyleId;
+  /** 1 a 3 cores. */
+  colors: string[];
+  blend: import('../render/palette').BlendMode;
+  metal?: import('../render/palette').MetalKind;
+  /** Arte de fundo (opcional). */
+  art?: { mediaId: string; zoom: number; x: number; y: number; opacity: number };
+  pattern: 'nenhum' | 'raios' | 'losangos' | 'estrelas' | 'circulos';
+  frame: boolean;
+  /** O que vai no centro. */
+  emblem: 'logo' | 'simbolo' | 'nenhum';
+  icon: string;
+  iconStyle: import('../render/icons/render').IconStyle;
+  /** Tamanho do emblema (fração da largura da carta). */
+  emblemSize: number;
+  /** Medalhão atrás do emblema. */
+  medallion: boolean;
+  showTitle: boolean;
+  title: string;
 }
 
 export type Stat = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';

@@ -72,8 +72,8 @@ export function rivets(defs: Defs, pts: [number, number][], r: number, tone = '#
 /** Pedra escura (ardósia) levemente tingida pela cor do deck. */
 export function stone(defs: Defs, pal: Palette, d: string, opacity = 1): string {
   const base = mix(darken(pal.base, 0.82), '#1b1a1d', 0.55);
-  return `<path d="${d}" fill="${base}" fill-opacity="${opacity}" filter="${defs.grain(lighten(base, 0.35), 0.6, 0.35, 11)}"/>` +
-    `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.08], [0.3, '#fff', 0], [1, '#000', 0.35]])}"/>`;
+  return `<g opacity="${opacity}"><path d="${d}" fill="${base}" filter="${defs.grain(lighten(base, 0.35), 0.6, 0.35, 11)}"/>` +
+    `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.08], [0.3, '#fff', 0], [1, '#000', 0.35]])}"/></g>`;
 }
 
 export { mix };

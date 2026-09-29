@@ -19,6 +19,15 @@ class UI {
   confirm(o: Omit<Ask, 'resolve'>): Promise<'ok' | 'cancel' | 'third'> {
     return new Promise((resolve) => { this.ask = { ...o, resolve: (v) => { this.ask = null; resolve(v); } }; });
   }
+
+  /** Janela de opções do PDF (layout, versos, virada da folha). null = cancelou. */
+  pdf = $state<PdfAsk | null>(null);
+  askPdf(count: number, backsOnly = false): Promise<PdfChoice | null> {
+    return new Promise((resolve) => { this.pdf = { count, backsOnly, resolve: (v) => { this.pdf = null; resolve(v); } }; });
+  }
 }
+
+export interface PdfChoice { layout: 'a4' | 'single'; backs: 'none' | 'with' | 'only'; flip: 'long' | 'short' }
+export interface PdfAsk { count: number; backsOnly: boolean; resolve: (v: PdfChoice | null) => void }
 
 export const ui = new UI();

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { LibraryBig, ScrollText, Settings2, PenTool, Check, CloudAlert, LoaderCircle } from '@lucide/svelte';
+  import { LibraryBig, ScrollText, Settings2, PenTool, Check, CloudAlert, LoaderCircle, SquareStack } from '@lucide/svelte';
+  import Back from '../ui/back/Back.svelte';
+  import PdfDialog from '../ui/common/PdfDialog.svelte';
   import { app } from '../store/project.svelte';
   import { loadCardFonts } from '../render/fonts';
   import { router } from './router.svelte';
@@ -29,6 +31,7 @@
   const nav = $derived([
     { id: 'library', icon: LibraryBig, label: L('Biblioteca', 'Library'), go: () => router.library() },
     ...(lastCard && app.cards[lastCard] ? [{ id: 'editor', icon: PenTool, label: L('Editor', 'Editor'), go: () => router.editor(lastCard!) }] : []),
+    { id: 'back', icon: SquareStack, label: L('Verso', 'Back'), go: () => router.go('/verso') },
     { id: 'sheet', icon: ScrollText, label: L('Ficha', 'Sheet'), go: () => router.go('/ficha') },
     { id: 'settings', icon: Settings2, label: L('Ajustes', 'Settings'), go: () => router.go('/ajustes') },
   ]);
@@ -71,6 +74,8 @@
       <Library deckId={router.route.deck} />
     {:else if router.route.name === 'editor'}
       {#key router.route.id}<Editor id={router.route.id} />{/key}
+    {:else if router.route.name === 'back'}
+      <Back />
     {:else if router.route.name === 'sheet'}
       <Sheet />
     {:else}
@@ -82,6 +87,7 @@
 <Toasts />
 <Dialog />
 <ProgressBar />
+<PdfDialog />
 
 <style>
   .shell { display: grid; grid-template-columns: var(--rail) 1fr; height: 100%; }

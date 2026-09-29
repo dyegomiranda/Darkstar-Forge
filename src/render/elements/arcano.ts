@@ -30,9 +30,9 @@ function enamel(a: PieceArgs, d: string, b: Box, seed: number, stars = 1): strin
     const x = b.x + rnd() * b.w, y = b.y + rnd() * b.h, r = rnd() < 0.08 ? 1.6 : 0.5 + rnd() * 0.7;
     dots += `<path d="${circle(x, y, r)}" fill="#fff" opacity="${(0.25 + rnd() * 0.6).toFixed(2)}"/>`;
   }
-  return `<path d="${d}" fill="${defs.hue(pal, night)}" fill-opacity="${a.opacity}"/>` +
+  return `<g opacity="${a.opacity}"><path d="${d}" fill="${defs.hue(pal, night)}"/>` +
     `<path d="${d}" fill="${defs.radial([[0, lighten(vivid(pal.base), 0.1), 0.35], [0.7, pal.base, 0.05], [1, '#000', 0.4]], 0.5, 0.45, 0.7)}"/>` +
-    `<g clip-path="url(#${cid})">${dots}</g>`;
+    `<g clip-path="url(#${cid})">${dots}</g></g>`;
 }
 
 /** Marcas de graus gravadas num anel (raio externo `r`). */
@@ -105,18 +105,21 @@ function astrolabe(a: PieceArgs, small = false): PieceOut {
   const rim = small ? 6 : 11;
   const ri = r - rim;
   const disc = circle(cx, cy, ri);
-  let svg =
-    (small ? '' : `<g filter="${defs.shadow(2, 3, 0.5)}">${metalBand(defs, pal, circle(cx, cy - r - 6, 7) + circle(cx, cy - r - 6, 3.5), 1.2)}</g>`) +
+  // miolo LISO (só um degradê suave): nada de desenho atrás do número/símbolo
+  const { pal: p0 } = a;
+  const deep = night(p0.base);
+  const points = small ? '' : [0, 90, 180, 270].map((ang) => {
+    const t = (ang - 90) * (Math.PI / 180);
+    const x = cx + Math.cos(t) * (r + 4), y = cy + Math.sin(t) * (r + 4);
+    return star(x, y, 9, 2.6, 4);
+  }).join('');
+  const svg =
+    (points ? `<g filter="${defs.shadow(2, 2, 0.55)}">${metalSolid(defs, pal, points, 1)}</g>` : '') +
     `<g filter="${defs.shadow(4, 6, 0.65)}">${metalBand(defs, pal, circle(cx, cy, r) + disc, 2.4)}</g>` +
     dialTicks(cx, cy, r - 1.5, small ? 36 : 72, small ? 2.5 : 4, ENGRAVE, 1) +
-    enamel(a, disc, { x: cx - ri, y: cy - ri, w: ri * 2, h: ri * 2 }, Math.round(cx + cy), 2.2);
-  if (!small) {
-    const orbit = defs.metal(pal)[0];
-    svg += `<ellipse cx="${cx}" cy="${cy}" rx="${ri * 0.86}" ry="${ri * 0.36}" transform="rotate(-24 ${cx} ${cy})" fill="none" stroke="${orbit}" stroke-width="1.3" opacity=".75"/>` +
-      `<path d="${circle(cx, cy, ri * 0.62)}" fill="none" stroke="${orbit}" stroke-width="1" opacity=".6" stroke-dasharray="2 4"/>` +
-      `<g filter="${defs.shadow(1, 1, 0.6)}">${metalSolid(defs, pal, circle(cx + ri * 0.78, cy - ri * 0.36, 4.5), 0.8)}</g>`;
-  }
-  const ci = ri * 0.74;
+    `<path d="${disc}" fill="${defs.radial([[0, lighten(deep, 0.16)], [0.75, deep], [1, darken(deep, 0.45)]], 0.5, 0.42, 0.62)}" fill-opacity="${a.opacity}"/>` +
+    `<path d="${circle(cx, cy, ri - 4)}" fill="none" stroke="${defs.metal(pal)[0]}" stroke-width="1.2" opacity=".7"/>`;
+  const ci = ri * 0.78;
   return { svg, content: { x: cx - ci, y: cy - ci, w: ci * 2, h: ci * 2 }, text: { family: TITLE, weight: 600, color: IVORY, glow: '#b8913a' }, iconColor: '#ecd28f' };
 }
 

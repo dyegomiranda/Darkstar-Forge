@@ -12,16 +12,21 @@ import type { PieceArgs, PieceOut, PieceStyle } from './types';
 const FONT = 'Barlow Condensed';
 const INK = '#ffffff';
 
-/** Cor chapada (em híbrida, divisão reta e nítida — sem degradê). */
+/** Cor chapada. Multicolor: no modo padrão (faixas) vira divisão reta e nítida; nos outros, segue a mistura escolhida. */
 function flat(defs: Defs, pal: Palette, t: (c: string) => string = vivid): string {
   if (!pal.hybrid) return t(pal.base);
+  if (pal.blend !== 'faixas') return defs.hue(pal, t);
   const n = pal.colors.length;
   return defs.linear(pal.colors.flatMap((c, i) => [[i / n, t(c)], [(i + 1) / n, t(c)]] as [number, string][]), 'h');
 }
 
-/** Forma com sombra dura (cópia escura deslocada) + forma na cor. */
+/**
+ * Forma com sombra dura (cópia escura deslocada) + forma na cor.
+ * A sombra acompanha a transparência — senão, com o bloco transparente, ela
+ * apareceria como uma segunda camada escura por baixo.
+ */
 function slab(a: PieceArgs, d: string, fill: string, dx = 7, dy = 7): string {
-  return `<path d="${d}" fill="#000" opacity=".55" transform="translate(${dx} ${dy})"/>` +
+  return `<path d="${d}" fill="#000" opacity="${+(0.55 * a.opacity).toFixed(3)}" transform="translate(${dx} ${dy})"/>` +
     `<path d="${d}" fill="${fill}" fill-opacity="${a.opacity}"/>`;
 }
 

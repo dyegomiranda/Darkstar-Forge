@@ -1,13 +1,15 @@
-/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/ficha, #/ajustes. */
+/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/verso, #/ficha, #/ajustes. */
 export type Route =
   | { name: 'library'; deck?: string }
   | { name: 'editor'; id: string }
+  | { name: 'back' }
   | { name: 'sheet' }
   | { name: 'settings' };
 
 function parse(hash: string): Route {
   const [, a, b] = hash.replace(/^#/, '').split('/');
   if (a === 'carta' && b) return { name: 'editor', id: decodeURIComponent(b) };
+  if (a === 'verso') return { name: 'back' };
   if (a === 'ficha') return { name: 'sheet' };
   if (a === 'ajustes') return { name: 'settings' };
   return { name: 'library', deck: b ? decodeURIComponent(b) : undefined };

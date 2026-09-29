@@ -33,15 +33,16 @@ function grain(defs: Defs, color: string, amount = 0.55, seed = 5): string {
 function wood(a: PieceArgs, d: string, seed = 5): string {
   const { defs, pal } = a;
   const w = woodTone(pal);
-  return `<path d="${d}" fill="${w}" fill-opacity="${a.opacity}" filter="${grain(defs, darken(w, 0.55), 0.6, seed)}"/>` +
-    `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.14], [0.3, '#fff', 0], [1, '#000', 0.35]])}"/>`;
+  // a opacidade vale para a textura inteira (veios e sombreado também), não só para a cor de base
+  return `<g opacity="${a.opacity}"><path d="${d}" fill="${w}" filter="${grain(defs, darken(w, 0.55), 0.6, seed)}"/>` +
+    `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.14], [0.3, '#fff', 0], [1, '#000', 0.35]])}"/></g>`;
 }
 
 function leather(a: PieceArgs, d: string): string {
   const { defs, pal } = a;
   const base = mix('#dcc29b', lighten(pal.base, 0.55), 0.12);
-  return `<path d="${d}" fill="${base}" fill-opacity="${a.opacity}" filter="${defs.paper(darken(base, 0.45), 0.5, 13)}"/>` +
-    `<path d="${d}" fill="${defs.radial([[0.55, '#000', 0], [1, '#3b2412', 0.4]], 0.5, 0.5, 0.75)}"/>`;
+  return `<g opacity="${a.opacity}"><path d="${d}" fill="${base}" filter="${defs.paper(darken(base, 0.45), 0.5, 13)}"/>` +
+    `<path d="${d}" fill="${defs.radial([[0.55, '#000', 0], [1, '#3b2412', 0.4]], 0.5, 0.5, 0.75)}"/></g>`;
 }
 
 /** Folha (lente com nervura). */
@@ -74,12 +75,15 @@ function vine(pal: Palette, p0: Pt, p1: Pt, p2: Pt, p3: Pt, leaves: number, seed
   return out;
 }
 
-/** Placa de casca: borda escura irregular + miolo. */
+/**
+ * Placa de casca: aro escuro irregular + miolo. O aro é um ANEL (não uma placa
+ * inteira por baixo), então deixar o miolo transparente mostra a arte, não a casca.
+ */
 function barkPanel(a: PieceArgs, b: Box, seed: number, inner: (d: string) => string, rim = 9): string {
   const { defs } = a;
   const outer = organic(b, 3.5, seed, 22);
   const innerD = organic(inset(b, rim), 2.5, seed + 1, 22);
-  return `<g filter="${defs.shadow(5, 6, 0.6)}"><path d="${outer}" fill="${BARK}" filter="${grain(defs, '#000', 0.9, seed)}"/></g>` +
+  return `<g filter="${defs.shadow(5, 6, 0.6)}"><path d="${outer}${innerD}" fill-rule="evenodd" fill="${BARK}" filter="${grain(defs, '#000', 0.9, seed)}"/></g>` +
     inner(innerD) +
     `<path d="${innerD}" fill="none" stroke="#000" stroke-width="2" opacity=".55"/>`;
 }

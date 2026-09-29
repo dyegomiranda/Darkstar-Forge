@@ -107,9 +107,12 @@ export const gotico: PieceStyle[] = [
       // barra com "dobradiças" redondas nas pontas
       const bar = rect(b) + circle(b.x, cy, r) + circle(b.x + b.w, cy, r);
       const innerBar = rect(inset(b, 0, 7));
+      // o ferro tem um "furo" onde fica a pedra: pedra transparente mostra a arte, não o ferro
+      const hole = defs.add(`gt-hole:${b.x}:${b.y}`, (id) =>
+        `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="750" height="1050"><rect width="750" height="1050" fill="#fff"/><path d="${innerBar}" fill="#000"/></mask>`);
       const svg =
-        `<g filter="${defs.shadow(5, 6, 0.6)}">${layers(bar, defs.metal(pal))}` +
-        `<path d="${bar}" fill="${defs.hue(pal, vivid)}" opacity=".2"/></g>` +
+        `<g filter="${defs.shadow(5, 6, 0.6)}"><g mask="url(#${hole})">${layers(bar, defs.metal(pal))}` +
+        `<path d="${bar}" fill="${defs.hue(pal, vivid)}" opacity=".2"/></g></g>` +
         stone(defs, pal, innerBar, a.opacity) +
         vitral(defs, pal, b.x, cy, r - 6, circle(b.x, cy, r - 6), 'tl') + vitral(defs, pal, b.x + b.w, cy, r - 6, circle(b.x + b.w, cy, r - 6), 'tr') +
         `<path d="${circle(b.x, cy, r - 6)}${circle(b.x + b.w, cy, r - 6)}" fill="none" stroke="#141112" stroke-width="2.5"/>` +
@@ -149,8 +152,8 @@ export const gotico: PieceStyle[] = [
       const outer = heater(b);
       const inner = heater(inset(b, 6, 6));
       const field = variant === 'atk'
-        ? `<path d="${inner}" fill="${defs.hue(pal, (c) => darken(vivid(c), 0.35))}"/>`
-        : stone(defs, pal, inner);
+        ? `<path d="${inner}" fill="${defs.hue(pal, (c) => darken(vivid(c), 0.35))}" fill-opacity="${a.opacity}"/>`
+        : stone(defs, pal, inner, a.opacity);
       const svg = `<g filter="${defs.shadow(4, 5, 0.6)}">${iron(defs, pal, outer + inner, 2.2)}</g>` + field +
         `<path d="${inner}" fill="${defs.linear([[0, '#fff', 0.18], [0.4, '#fff', 0], [1, '#000', 0.3]])}"/>`;
       return { svg, content: { x: b.x + 4, y: b.y + 8, w: b.w - 8, h: b.h * 0.62 }, text: { family: TITLE, weight: 700, color: INK } };

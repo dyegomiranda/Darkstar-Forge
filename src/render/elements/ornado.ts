@@ -16,9 +16,9 @@ const LIGHT_INK = '#fbf3ea';
 function parchment(a: PieceArgs, d: string): string {
   const { defs, pal } = a;
   const base = paper(pal.base);
-  return `<g filter="${defs.innerShadow(9, 0.35, darken(pal.base, 0.55))}">` +
-    `<path d="${d}" fill="${base}" fill-opacity="${a.opacity}" filter="${defs.paper(mix(darken(pal.base, 0.2), '#8a6a50', 0.5), 0.32)}"/></g>` +
-    `<path d="${d}" fill="${defs.radial([[0.5, pal.base, 0], [1, darken(pal.base, 0.2), 0.28]], 0.5, 0.5, 0.72)}"/>`;
+  return `<g opacity="${a.opacity}"><g filter="${defs.innerShadow(9, 0.35, darken(pal.base, 0.55))}">` +
+    `<path d="${d}" fill="${base}" filter="${defs.paper(mix(darken(pal.base, 0.2), '#8a6a50', 0.5), 0.32)}"/></g>` +
+    `<path d="${d}" fill="${defs.radial([[0.5, pal.base, 0], [1, darken(pal.base, 0.2), 0.28]], 0.5, 0.5, 0.72)}"/></g>`;
 }
 
 /** Miolo de laca escura na cor do deck (barra de tipo, ATK/DEF, rodapé). */
@@ -69,7 +69,7 @@ function medallion(a: PieceArgs, size: 'big' | 'small'): PieceOut {
     metalSolid(defs, pal, sp, 1.4) +
     metalBand(defs, pal, circle(cx, cy, r) + circle(cx, cy, ri), big ? 3 : 2) +
     `</g>` +
-    `<path d="${circle(cx, cy, ri)}" fill="${disc}" filter="${defs.innerShadow(r * 0.12, 0.7)}"/>` +
+    `<path d="${circle(cx, cy, ri)}" fill="${disc}" fill-opacity="${a.opacity}" filter="${defs.innerShadow(r * 0.12, 0.7)}"/>` +
     `<path d="${circle(cx, cy, ri - 2)}" fill="none" stroke="${lighten(vivid(pal.base), 0.25)}" stroke-width="1.3" opacity=".45"/>` +
     `<path d="${circle(cx, cy, r + 0.5)}" fill="none" stroke="${darken(pal.base, 0.8)}" stroke-width="1.4" opacity=".7"/>` +
     (big ? gem(cx, cy - r * 1.08, r * 0.1, r * 0.13, lighten(vivid(pal.base), 0.1)) + gem(cx, cy + r * 1.08, r * 0.1, r * 0.13, lighten(vivid(pal.base), 0.1)) : '');

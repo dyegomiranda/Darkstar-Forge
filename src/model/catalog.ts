@@ -16,7 +16,7 @@ export const COLORS: Record<ColorId, ColorInfo> = {
   red: { id: 'red', name: { 'pt-BR': 'Vermelho', 'en-US': 'Red' }, classes: { 'pt-BR': 'Guerreiro / Bárbaro', 'en-US': 'Fighter / Barbarian' }, hex: '#b92d20', resources: ['vigor', 'fury', 'gold'] },
   blue: { id: 'blue', name: { 'pt-BR': 'Azul', 'en-US': 'Blue' }, classes: { 'pt-BR': 'Mago / Feiticeiro', 'en-US': 'Wizard / Sorcerer' }, hex: '#2f7cff', resources: ['mana'] },
   green: { id: 'green', name: { 'pt-BR': 'Verde', 'en-US': 'Green' }, classes: { 'pt-BR': 'Druida / Patrulheiro', 'en-US': 'Druid / Ranger' }, hex: '#4d8b34', resources: ['nature'] },
-  black: { id: 'black', name: { 'pt-BR': 'Preto', 'en-US': 'Black' }, classes: { 'pt-BR': 'Necromante / Bruxo', 'en-US': 'Necromancer / Witch' }, hex: '#3a3a3a', resources: ['souls'] },
+  black: { id: 'black', name: { 'pt-BR': 'Preto', 'en-US': 'Black' }, classes: { 'pt-BR': 'Necromante / Bruxo', 'en-US': 'Necromancer / Witch' }, hex: '#56545c', resources: ['souls'] },
   purple: { id: 'purple', name: { 'pt-BR': 'Roxo', 'en-US': 'Purple' }, classes: { 'pt-BR': 'Ladino / Assassino', 'en-US': 'Rogue / Assassin' }, hex: '#6b3eb6', resources: ['shadow'] },
   white: { id: 'white', name: { 'pt-BR': 'Bege', 'en-US': 'Beige' }, classes: { 'pt-BR': 'Clérigo / Paladino', 'en-US': 'Cleric / Champion' }, hex: '#c3a15a', resources: ['faith'] },
   silver: { id: 'silver', name: { 'pt-BR': 'Prata', 'en-US': 'Silver' }, classes: { 'pt-BR': 'Monge / Bardo', 'en-US': 'Monk / Bard' }, hex: '#97a1af', resources: ['focus'] },

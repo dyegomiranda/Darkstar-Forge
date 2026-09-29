@@ -58,12 +58,14 @@ function windowBox(a: PieceArgs, b0: Box, content: (b: Box, border: number) => B
       y += h;
     });
   });
+  // bordas são ANÉIS (furo no lugar do miolo): com o miolo transparente aparece a arte, não outra camada
+  const ring = (d: string, fill: string, extra = '') => crisp(d + fillD, fill, ` fill-rule="evenodd"${extra}`);
   const svg =
-    crisp(pixelRect(b, P, steps), '#000', ` opacity=".55" transform="translate(${P} ${P})"`) +
-    crisp(pixelRect(b, P, steps), OUT) +
-    crisp(pixelRect(inset(b, P), P, steps), t.light) +
-    (thin ? '' : crisp(pixelRect({ ...inset(b, P), x: b.x + P * 2, y: b.y + P * 2 }, P, steps), t.dark) +
-      crisp(pixelRect(inset(b, P * 2), P, Math.max(1, steps - 1)), t.mid)) +
+    ring(pixelRect(b, P, steps), '#000', ` opacity="${+(0.55 * a.opacity).toFixed(3)}" transform="translate(${P} ${P})"`) +
+    ring(pixelRect(b, P, steps), OUT) +
+    ring(pixelRect(inset(b, P), P, steps), t.light) +
+    (thin ? '' : ring(pixelRect({ ...inset(b, P), x: b.x + P * 2, y: b.y + P * 2 }, P, steps), t.dark) +
+      ring(pixelRect(inset(b, P * 2), P, Math.max(1, steps - 1)), t.mid)) +
     `<g clip-path="url(#${cid})" opacity="${a.opacity}">${bands}</g>` +
     // brilho de 1 pixel no topo do miolo
     crisp(`M${fillB.x + P} ${fillB.y}h${fillB.w - 2 * P}v${P}h${-(fillB.w - 2 * P)}Z`, lighten(t.deep, 0.12), ` opacity="${a.opacity}"`);
@@ -82,13 +84,15 @@ function badge(a: PieceArgs, small = false): PieceOut {
   const b = snap(inset(a.box, small ? 6 : 0));
   const t = tones(pal);
   const steps = small ? 2 : 4;
+  const core = pixelRect(inset(b, P * 3), P, Math.max(1, steps - 2));
+  const ring = (d: string, fill: string, extra = '') => crisp(d + core, fill, ` fill-rule="evenodd"${extra}`);
   const svg =
-    crisp(pixelRect(b, P, steps), '#000', ` opacity=".55" transform="translate(${P} ${P})"`) +
-    crisp(pixelRect(b, P, steps), OUT) +
-    crisp(pixelRect(inset(b, P), P, steps - 1), t.light) +
-    crisp(pixelRect({ ...inset(b, P), x: b.x + 2 * P, y: b.y + 2 * P }, P, steps - 1), t.dark) +
-    crisp(pixelRect(inset(b, P * 2), P, steps - 1), t.mid) +
-    crisp(pixelRect(inset(b, P * 3), P, Math.max(1, steps - 2)), t.deep);
+    ring(pixelRect(b, P, steps), '#000', ` opacity="${+(0.55 * a.opacity).toFixed(3)}" transform="translate(${P} ${P})"`) +
+    ring(pixelRect(b, P, steps), OUT) +
+    ring(pixelRect(inset(b, P), P, steps - 1), t.light) +
+    ring(pixelRect({ ...inset(b, P), x: b.x + 2 * P, y: b.y + 2 * P }, P, steps - 1), t.dark) +
+    ring(pixelRect(inset(b, P * 2), P, steps - 1), t.mid) +
+    crisp(core, t.deep, ` fill-opacity="${a.opacity}"`);
   const c = inset(b, P * 3.5);
   return { svg, content: c, text: num() };
 }

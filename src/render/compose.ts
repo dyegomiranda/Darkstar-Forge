@@ -11,7 +11,7 @@ import { ATK_ICON, classIcon, DEF_ICON, isResource, RESOURCE_COLORS, resourceIco
 import { drawGlyph, drawStatBadge, pixelSteps, type IconStyle } from './icons/render';
 import type { ResourceId } from '../model/types';
 import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, skeleton } from './layout';
-import { makePalette, vivid, type MetalKind } from './palette';
+import { makePalette, MULTICOLOR_GOLD, vivid, type BlendMode, type MetalKind } from './palette';
 import { roundRect, type Box } from './shapes';
 import { blockHeight, drawLines, fitLine, measure, wrap, type IconFn, type TextLook, type TextStyle } from './text';
 
@@ -47,6 +47,28 @@ export interface Look {
   };
   /** Pixelar a arte (tamanho do bloco, em px da carta). Combina com o estilo Pixel. */
   pixelateArt?: number;
+  /**
+   * De onde vêm as cores da carta:
+   *  classes  — as cores das classes/decks da carta (padrão)
+   *  ouro     — cartas de 2+ cores ficam douradas (como o multicolor do MTG)
+   *  primeira — só a primeira cor
+   *  livre    — as cores de `tint`, escolhidas à mão
+   */
+  colorMode?: 'classes' | 'ouro' | 'primeira' | 'livre';
+  /** Cores livres (1 a 5) quando colorMode = 'livre'. */
+  tint?: string[];
+  /** Como as cores se misturam nas peças. */
+  blend?: BlendMode;
+}
+
+/** Cores efetivas da carta segundo o modo de cor escolhido. */
+export function cardColors(colors: string[], look: Look): string[] {
+  switch (look.colorMode) {
+    case 'ouro': return colors.length > 1 ? [MULTICOLOR_GOLD] : colors;
+    case 'primeira': return colors.slice(0, 1);
+    case 'livre': return look.tint?.length ? look.tint.slice(0, 5) : colors;
+    default: return colors.slice(0, 5);
+  }
 }
 
 export interface ComposeInput {
@@ -104,7 +126,7 @@ function pixelate(defs: Defs, px: number): string {
 }
 
 /** Uma linha de texto centrada (ajustada para caber na largura). */
-function centered(defs: Defs, text: string, look: TextLook, size: number, box: Box, align: 'left' | 'center' = 'center'): string {
+export function centered(defs: Defs, text: string, look: TextLook, size: number, box: Box, align: 'left' | 'center' = 'center'): string {
   const { st, filter } = styled(defs, look, size);
   const f = fitLine(text, st, box.w);
   return drawLines(wrap(text, f, 1e9), f, box, { align, valign: 'middle', filter });
@@ -114,6 +136,8 @@ export function compose(inp: ComposeInput): string {
   const defs = new Defs(inp.uid);
   const sz = { ...SIZES, ...inp.sizes };
   const look = inp.look;
+  const colors = cardColors(inp.colors, look);
+  const blend = look.blend ?? 'faixas';
   const iconStyleFor = (kind: PieceKind, pick?: IconChoice): IconStyle =>
     pick?.style ?? styleInfo(choose(look, kind).ch.style ?? look.style).icons;
   const costIcons = iconStyleFor('cost', look.icons?.cost);
@@ -124,13 +148,13 @@ export function compose(inp: ComposeInput): string {
   // 1) Altura da caixa de regras: mede o texto com as margens internas do estilo escolhido.
   const rulesPick = choose(look, 'rules');
   const probe = rulesPick.ps.render({
-    box: { x: RULES_X, y: 0, w: RULES_W, h: 400 }, pal: makePalette(inp.colors), defs: new Defs('probe'), opacity: 1,
+    box: { x: RULES_X, y: 0, w: RULES_W, h: 400 }, pal: makePalette(colors, undefined, blend), defs: new Defs("probe"), opacity: 1,
   });
   const padL = probe.content.x - RULES_X, padR = RULES_X + RULES_W - (probe.content.x + probe.content.w);
   const padT = probe.content.y, padB = 400 - (probe.content.y + probe.content.h);
   const innerW = RULES_W - padL - padR;
   const rulesLook = textOf(probe, rulesPick.ch);
-  const flavorLook = { ...(rulesPick.ps.flavor?.(makePalette(inp.colors)) ?? { ...rulesLook, italic: true }), ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}) };
+  const flavorLook = { ...(rulesPick.ps.flavor?.(makePalette(colors, undefined, blend)) ?? { ...rulesLook, italic: true }), ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}) };
 
   let rulesSize = sz.rules, flavorSize = sz.flavor;
   const layoutText = () => {
@@ -152,7 +176,7 @@ export function compose(inp: ComposeInput): string {
   // 2) Arte (cobre a carta inteira: full art)
   const clip = defs.add('cardclip', (id) => `<clipPath id="${id}"><path d="${roundRect(S.card, CARD_RADIUS)}"/></clipPath>`);
   // sem arte: fundo na cor da classe com o símbolo em marca-d'água (nunca um retângulo vazio)
-  const tint = vivid(inp.colors[0] ?? '#6b5a4a');
+  const tint = vivid(colors[0] ?? "#6b5a4a");
   let art = `<rect width="${CARD_W}" height="${CARD_H}" fill="${defs.radial([[0, darken(tint, 0.45)], [0.6, darken(tint, 0.78)], [1, '#0b0909']], 0.5, 0.42, 0.75)}"/>` +
     (inp.art?.src ? '' : drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 230, CARD_H * 0.36 - 230, 460, { color: lighten(tint, 0.2), opacity: 0.1 }));
   let artImg = '';
@@ -174,7 +198,7 @@ export function compose(inp: ComposeInput): string {
   const add = (kind: PieceKind, box: Box, slot: Slot = kind, variant?: 'atk' | 'def', draw = true) => {
     const { ps, ch } = choose(look, kind);
     if (ch.hidden) return;
-    const pal = makePalette(ch.colors?.length ? ch.colors : inp.colors, ch.metal ?? ps.metal);
+    const pal = makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, blend);
     const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant };
     const out = ps.render(args);
     outs[slot] = { out, ch, ps, args };

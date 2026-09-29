@@ -25,10 +25,16 @@ export class EditorState {
   #timer: ReturnType<typeof setTimeout> | undefined;
   #last = '';
 
+  /** Aparência no momento em que a carta foi aberta (para "voltar ao que estava" por peça). */
+  #openCard: Partial<Look> | undefined;
+  #openDeck: Look;
+
   constructor(card: Card) {
     this.draft = structuredClone($state.snapshot(card) as Card);
     this.lang = app.lang;
     this.#saved = this.#last = JSON.stringify(this.draft);
+    this.#openCard = this.draft.look ? structuredClone(this.draft.look) : undefined;
+    this.#openDeck = structuredClone($state.snapshot(app.deck(card.deckId)!.look) as Look);
   }
 
   get dirty(): boolean { return JSON.stringify(this.draft) !== this.#saved; }
@@ -134,6 +140,39 @@ export class EditorState {
 
   setLook(patch: Partial<Look>): void {
     this.#write((l) => Object.assign(l, patch));
+  }
+
+  // ───────────── voltar ao que estava (por peça / símbolo) ─────────────
+
+  #current(): Partial<Look> | undefined { return this.scope === 'deck' ? this.deck.look : this.draft.look; }
+  #opened(): Partial<Look> | undefined { return this.scope === 'deck' ? this.#openDeck : this.#openCard; }
+
+  /** A peça mudou desde que a carta foi aberta? */
+  pieceChanged(kind: PieceKind): boolean {
+    return JSON.stringify(this.#current()?.pieces?.[kind] ?? null) !== JSON.stringify(this.#opened()?.pieces?.[kind] ?? null);
+  }
+
+  /** Volta só esta peça ao que estava quando a carta foi aberta. */
+  revertPiece(kind: PieceKind): void {
+    const before = this.#opened()?.pieces?.[kind];
+    this.#write((l) => {
+      l.pieces ??= {};
+      if (before) l.pieces[kind] = structuredClone($state.snapshot(before) as PieceChoice);
+      else delete l.pieces[kind];
+    });
+  }
+
+  iconChanged(slot: 'cost' | 'class' | 'atk' | 'def'): boolean {
+    return JSON.stringify(this.#current()?.icons?.[slot] ?? null) !== JSON.stringify(this.#opened()?.icons?.[slot] ?? null);
+  }
+
+  revertIcon(slot: 'cost' | 'class' | 'atk' | 'def'): void {
+    const before = this.#opened()?.icons?.[slot];
+    this.#write((l) => {
+      l.icons ??= {};
+      if (before) l.icons[slot] = structuredClone($state.snapshot(before) as IconChoice);
+      else delete l.icons[slot];
+    });
   }
 
   /** Remove todos os ajustes desta carta (volta ao tema do deck). */

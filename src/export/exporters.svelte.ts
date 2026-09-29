@@ -4,7 +4,9 @@
  * backup completo (ZIP com projeto + cartas + imagens) e planilha CSV.
  */
 import { strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { degrees, PDFDocument, rgb, type PDFPage } from 'pdf-lib';
+import { composeBack } from '../render/back';
+import { backInput, ensureBackMedia } from '../ui/back/backCtx';
 import { L } from '../app/i18n.svelte';
 import { ui } from '../app/ui.svelte';
 import { COLORS, RARITIES } from '../model/catalog';
@@ -77,57 +79,101 @@ export async function exportPngZip(cards: Card[]): Promise<void> {
   ui.toast(L(`${cards.length} imagens exportadas`, `${cards.length} images exported`));
 }
 
+export interface PdfOptions {
+  /** 'a4' = 9 cartas por folha A4 com marcas de corte; 'single' = uma carta por página (63×88 mm). */
+  layout: 'a4' | 'single';
+  /** 'none' = só frentes; 'with' = frente e verso; 'only' = só versos. */
+  backs: 'none' | 'with' | 'only';
+  /** Como a folha é virada para imprimir o verso (define o espelhamento). */
+  flip: 'long' | 'short';
+}
+
+const A4 = { w: 210 * MM, h: 297 * MM };
+const GAP = 2 * MM;
+
+async function backJpg(): Promise<Uint8Array> {
+  const ed = app.edition();
+  await ensureBackMedia(ed);
+  return new Uint8Array(await (await rasterize(composeBack(backInput(ed, 'bkpdf')), 1500, 'image/jpeg', 0.93)).arrayBuffer());
+}
+
+/** Pergunta as opções do PDF (janela própria) e gera. */
 export async function exportPdf(cards: Card[]): Promise<void> {
   if (!cards.length) return;
-  const mode = await ui.confirm({
-    title: L('PDF para impressão', 'Print PDF'),
-    text: L(`${cards.length} cartas no tamanho real (63 × 88 mm).\nFolha A4: 9 cartas por página, com marcas de corte.\nUma por página: para gráficas que pedem arquivo por carta.`,
-      `${cards.length} cards at real size (63 × 88 mm).\nA4 sheet: 9 cards per page with crop marks.\nOne per page: for print shops that want one card per page.`),
-    ok: L('Folha A4 (3 × 3)', 'A4 sheet (3 × 3)'), third: L('Uma por página', 'One per page'),
-  });
-  if (mode === 'cancel') return;
-  const images = await withProgress(L('Preparando o PDF…', 'Preparing PDF…'), cards, async (c) => new Uint8Array(await (await cardBlob(c, 1500, 'image/jpeg', 0.93)).arrayBuffer()));
-  if (!images) return;
+  const opts = await ui.askPdf(cards.length);
+  if (opts) await buildPdf(cards, opts);
+}
+
+/** Só os versos (ex.: para imprimir numa folha à parte). */
+export async function exportBacksPdf(): Promise<void> {
+  const opts = await ui.askPdf(9, true);
+  if (opts) await buildPdf(Array(opts.layout === 'a4' ? 9 : 1).fill(null), { ...opts, backs: 'only' });
+}
+
+async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
+  const fronts = o.backs === 'only' ? [] : await withProgress(L('Preparando o PDF…', 'Preparing PDF…'), cards as Card[],
+    async (c) => new Uint8Array(await (await cardBlob(c, 1500, 'image/jpeg', 0.93)).arrayBuffer()));
+  if (!fronts) return;
+  const back = o.backs === 'none' ? null : await backJpg();
   const pdf = await PDFDocument.create();
   const cw = CARD_MM.w * MM, ch = CARD_MM.h * MM;
-  if (mode === 'third') {
-    for (const bytes of images) {
-      const img = await pdf.embedJpg(bytes);
-      pdf.addPage([cw, ch]).drawImage(img, { x: 0, y: 0, width: cw, height: ch });
+  const backImg = back ? await pdf.embedJpg(back) : null;
+  const n = cards.length;
+
+  if (o.layout === 'single') {
+    for (let i = 0; i < n; i++) {
+      if (o.backs !== 'only') pdf.addPage([cw, ch]).drawImage(await pdf.embedJpg(fronts[i]), { x: 0, y: 0, width: cw, height: ch });
+      if (backImg) pdf.addPage([cw, ch]).drawImage(backImg, { x: 0, y: 0, width: cw, height: ch });
     }
   } else {
-    const A4 = { w: 210 * MM, h: 297 * MM };
-    const gap = 2 * MM;
-    const ox = (A4.w - (3 * cw + 2 * gap)) / 2, oy = (A4.h - (3 * ch + 2 * gap)) / 2;
-    for (let i = 0; i < images.length; i += 9) {
-      const page = pdf.addPage([A4.w, A4.h]);
-      for (let k = 0; k < 9 && i + k < images.length; k++) {
-        const img = await pdf.embedJpg(images[i + k]);
-        const col = k % 3, row = Math.floor(k / 3);
-        const x = ox + col * (cw + gap), y = A4.h - oy - (row + 1) * ch - row * gap;
-        page.drawImage(img, { x, y, width: cw, height: ch });
+    const ox = (A4.w - (3 * cw + 2 * GAP)) / 2, oy = (A4.h - (3 * ch + 2 * GAP)) / 2;
+    const at = (col: number, row: number) => ({ x: ox + col * (cw + GAP), y: A4.h - oy - (row + 1) * ch - row * GAP });
+    for (let i = 0; i < n; i += 9) {
+      const count = Math.min(9, n - i);
+      if (o.backs !== 'only') {
+        const page = pdf.addPage([A4.w, A4.h]);
+        for (let k = 0; k < count; k++) page.drawImage(await pdf.embedJpg(fronts[i + k]), { ...at(k % 3, Math.floor(k / 3)), width: cw, height: ch });
+        cropMarks(page, ox, oy, cw, ch);
       }
-      // marcas de corte: prolongam as bordas de cada carta para fora da grade
-      const mark = (x1: number, y1: number, x2: number, y2: number) =>
-        page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 0.4, color: rgb(0.35, 0.35, 0.35) });
-      const len = 5 * MM, off = 1.5 * MM;
-      const top = A4.h - oy, bottom = oy;
-      for (let col = 0; col < 3; col++) {
-        for (const x of [ox + col * (cw + gap), ox + col * (cw + gap) + cw]) {
-          mark(x, top + off, x, top + off + len);
-          mark(x, bottom - off, x, bottom - off - len);
+      if (backImg) {
+        // o verso de cada carta tem de cair exatamente atrás dela quando a folha é virada:
+        // virar pela borda longa espelha as colunas; pela curta, espelha as linhas (e gira 180°)
+        const page = pdf.addPage([A4.w, A4.h]);
+        for (let k = 0; k < count; k++) {
+          let col = k % 3, row = Math.floor(k / 3);
+          if (o.flip === 'long') col = 2 - col;
+          else row = 2 - row;
+          const p = at(col, row);
+          if (o.flip === 'short') page.drawImage(backImg, { x: p.x + cw, y: p.y + ch, width: cw, height: ch, rotate: degrees(180) });
+          else page.drawImage(backImg, { ...p, width: cw, height: ch });
         }
-      }
-      for (let row = 0; row < 3; row++) {
-        for (const y of [top - row * (ch + gap), top - row * (ch + gap) - ch]) {
-          mark(ox - off, y, ox - off - len, y);
-          mark(A4.w - ox + off, y, A4.w - ox + off + len, y);
-        }
+        cropMarks(page, ox, oy, cw, ch);
       }
     }
   }
-  download(new Blob([(await pdf.save()) as Uint8Array<ArrayBuffer>], { type: 'application/pdf' }), `darkstar-${cards.length}-cartas.pdf`);
+  const name = o.backs === 'only' ? 'darkstar-versos.pdf' : `darkstar-${n}-cartas${o.backs === 'with' ? '-frente-verso' : ''}.pdf`;
+  download(new Blob([(await pdf.save()) as Uint8Array<ArrayBuffer>], { type: 'application/pdf' }), name);
   ui.toast(L('PDF pronto', 'PDF ready'));
+}
+
+/** Marcas de corte: prolongam as bordas de cada carta para fora da grade. */
+function cropMarks(page: PDFPage, ox: number, oy: number, cw: number, ch: number): void {
+  const mark = (x1: number, y1: number, x2: number, y2: number) =>
+    page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 0.4, color: rgb(0.35, 0.35, 0.35) });
+  const len = 5 * MM, off = 1.5 * MM;
+  const top = A4.h - oy, bottom = oy;
+  for (let col = 0; col < 3; col++) {
+    for (const x of [ox + col * (cw + GAP), ox + col * (cw + GAP) + cw]) {
+      mark(x, top + off, x, top + off + len);
+      mark(x, bottom - off, x, bottom - off - len);
+    }
+  }
+  for (let row = 0; row < 3; row++) {
+    for (const y of [top - row * (ch + GAP), top - row * (ch + GAP) - ch]) {
+      mark(ox - off, y, ox - off - len, y);
+      mark(A4.w - ox + off, y, A4.w - ox + off + len, y);
+    }
+  }
 }
 
 // ───────────── backup ─────────────
