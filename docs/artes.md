@@ -6,40 +6,51 @@ ComfyUI e salva cada imagem com o nome que o Darkstar Forge entende.
 
 ## 1. Abra o ComfyUI
 
-No terminal:
+No terminal (fish), **com o venv ativado**. Sem ele, o Python pega outro pacote `comfy` e dá o
+erro `No module named 'comfy.options'`:
 
 ```
 cd ~/ComfyUI
-python3 main.py
+source venv/bin/activate.fish
+python main.py
 ```
 
-Deixe essa janela aberta. Você precisa de pelo menos um modelo em `ComfyUI/models/checkpoints`.
-Modelos **SDXL** voltados a fantasia/ilustração costumam dar resultados melhores que os SD 1.5.
+Espere aparecer `To see the GUI go to: http://127.0.0.1:8188` e deixe essa janela aberta.
+Não precisa abrir o navegador nem montar o fluxo: o script faz isso sozinho.
 
 ## 2. Veja os modelos e faça um teste com 3 cartas
 
-Em **outro** terminal, na pasta do projeto:
+Em **outro** terminal (aqui não precisa do venv):
 
 ```
 cd ~/Downloads/"Darkstar Forge"
 python3 tools/comfyui/gerar_artes.py --listar
-python3 tools/comfyui/gerar_artes.py --modelo NOME_DO_MODELO --so pf-red_001,pf-blue_002,pf-equipment_001
+python3 tools/comfyui/gerar_artes.py --so pf-red_001,pf-blue_002,pf-equipment_001
 ```
+
+O script reconhece sozinho o **Flux em arquivos separados**, que é o mesmo fluxo do exemplo
+"Flux Dev" do ComfyUI:
+- modelo em `models/diffusion_models` ou `unet`;
+- codificadores de texto `t5xxl` e `clip_l` em `models/text_encoders` ou `clip`;
+- VAE `ae` em `models/vae`.
+
+Com o Flux, ele usa 832×1152, 20 passos, guidance 3.5 e euler/simple. Se você tiver mais de um
+arquivo de cada tipo, escolha com `--modelo`, `--t5`, `--clip-l` e `--vae` (os nomes aparecem no
+`--listar`). Modelos de arquivo único (SDXL etc., em `models/checkpoints`) também funcionam.
 
 As imagens vão para a pasta `artes-pf/`. Se gostar, gere todas (as que já existem são puladas):
 
 ```
-python3 tools/comfyui/gerar_artes.py --modelo NOME_DO_MODELO
+python3 tools/comfyui/gerar_artes.py
 ```
 
 Dicas:
 
 - `--variacoes 3` gera 3 versões de cada carta (`pf-red_001.png`, `pf-red_001__v2.png`, `pf-red_001__v3.png`).
   Fique com a melhor e renomeie para `pf-red_001.png`.
-- `--refazer --so pf-red_004` gera de novo uma carta que não ficou boa (mude também `--semente 123`
-  para sair uma imagem diferente).
-- Modelo **Flux**: o script ajusta sozinho (cfg 1, sampler euler).
-- Placa de vídeo com pouca memória: use `--largura 640 --altura 896`.
+- `--refazer --so pf-red_004 --semente 123` gera de novo uma carta que não ficou boa (outra semente = outra imagem).
+- Pouca memória na placa de vídeo: `--peso fp8_e4m3fn` (Flux) ou `--largura 640 --altura 896`.
+- Se as 3 primeiras cartas derem erro, o script para e mostra o motivo. Mande o print.
 
 ## 3. Coloque as artes nas cartas
 
