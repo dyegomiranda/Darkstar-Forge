@@ -3,7 +3,7 @@
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { COLORS, RARITIES, RARITY_ORDER, RESOURCES, colorHex } from '../../model/catalog';
-  import { evaluate, MECHANICS, POINTS_PER_COST, rarityFor } from '../../model/scoring';
+  import { evaluate, FREE_POINTS, MECHANICS, POINTS_PER_COST, rarityFor } from '../../model/scoring';
   import type { ColorId, ResourceId } from '../../model/types';
   import { classIcon, RESOURCE_COLORS, RESOURCE_IDS, resourceIcon } from '../../render/icons/glyphs';
   import { lighten } from '../../render/color';
@@ -48,7 +48,7 @@
     sync();
   }
 
-  const mechList = $derived(MECHANICS.filter((m) => !mq || `${m.name} ${m.desc} ${m.tags.join(' ')}`.toLowerCase().includes(mq.toLowerCase())));
+  const mechList = $derived(MECHANICS.filter((m) => !mq || `${m.name} ${m.en} ${m.desc} ${m.tags.join(' ')}`.toLowerCase().includes(mq.toLowerCase())));
 
   function addTag() {
     const t = tagInput.trim().toLowerCase();
@@ -145,7 +145,7 @@
     <div class="score">
       <div class="big"><b>{ev.score}</b><span>{L('pontos', 'points')}</span></div>
       <div class="grow">
-        <p class="small muted">{L(`A cada ${POINTS_PER_COST} pontos, +1 de custo.`, `Every ${POINTS_PER_COST} points = +1 cost.`)} {L('Sugestão', 'Suggestion')}: <b>{ev.suggestedCost}</b>
+        <p class="small muted">{L(`${FREE_POINTS} ponto é grátis; depois, a cada ${POINTS_PER_COST} pontos, +1 de custo.`, `${FREE_POINTS} point is free; then every ${POINTS_PER_COST} points = +1 cost.`)} {L('Sugestão', 'Suggestion')}: <b>{ev.suggestedCost}</b>
           · {L('raridade pelo custo atual', 'rarity for current cost')}: <b style="color:{RARITIES[ev.suggestedRarity].color}">{RARITIES[ev.suggestedRarity].name[app.lang]}</b></p>
         <div class="bd">{#each ev.breakdown as b}<span class="chip">{b.label} <b>{b.points > 0 ? '+' : ''}{b.points}</b></span>{/each}</div>
       </div>
@@ -159,7 +159,7 @@
       {#each mechList as m (m.id)}
         <label class="mech" class:on={d.mechanics.includes(m.id)} title={m.desc}>
           <input type="checkbox" checked={d.mechanics.includes(m.id)} onchange={() => toggleMech(m.id)} />
-          <span class="grow"><b>{m.name}</b><small>{m.desc}</small></span>
+          <span class="grow"><b>{L(m.name, m.en)}</b><small>{m.desc}</small></span>
           <span class="pts">{m.points > 0 ? '+' : ''}{m.points}</span>
         </label>
       {/each}

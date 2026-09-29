@@ -1,18 +1,24 @@
 /**
  * Pontuação de balanceamento: ATK + DEF + mecânicas → custo sugerido.
- * Carta mais barata que o sugerido está "acima da curva" e sobe de raridade.
+ *
+ * Toda carta já vale FREE_POINTS só por ser uma carta na mão; cada
+ * POINTS_PER_COST pontos acima disso custam +1. Ex.: criatura 2/2 = 4 pontos → custo 2;
+ * 3 de dano = 5 pontos → custo 2. Carta mais barata que o sugerido está
+ * "acima da curva" e sobe de raridade.
  */
 import mechanicsData from '../data/mechanics.json';
 import type { Card, RarityId } from './types';
 
-export interface Mechanic { id: string; name: string; points: number; tags: string[]; desc: string }
+export interface Mechanic { id: string; name: string; en: string; points: number; tags: string[]; desc: string }
 
 export const MECHANICS: Mechanic[] = mechanicsData as Mechanic[];
 const byId = new Map(MECHANICS.map((m) => [m.id, m]));
 export const mechanic = (id: string) => byId.get(id);
 
 /** Quantos pontos valem 1 de custo. */
-export const POINTS_PER_COST = 3;
+export const POINTS_PER_COST = 2;
+/** Pontos que a carta tem "de graça" (custo 0). */
+export const FREE_POINTS = 1;
 
 export interface Evaluation {
   score: number;
@@ -44,7 +50,7 @@ export function evaluate(card: Scorable, labels = { atk: 'Ataque', def: 'Defesa'
 }
 
 export function costForScore(score: number): number {
-  return score <= 0 ? 0 : Math.max(1, Math.ceil(score / POINTS_PER_COST));
+  return score <= FREE_POINTS ? 0 : Math.ceil((score - FREE_POINTS) / POINTS_PER_COST);
 }
 
 /** Quanto mais barata que o sugerido, mais rara. */

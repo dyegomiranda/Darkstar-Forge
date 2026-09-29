@@ -126,6 +126,8 @@ export interface Project {
   characters: Character[];
   /** Temas salvos pelo usuário. */
   themes: { id: string; name: string; look: Look }[];
+  /** Coleções de exemplo já adicionadas (não são readicionadas se o usuário apagar). */
+  seeded?: string[];
 }
 
 export const PROJECT_VERSION = 1;

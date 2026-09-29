@@ -38,7 +38,17 @@
 
   const lang = $derived(app.lang);
   const deck = $derived(deckId ? app.deck(deckId) : undefined);
-  const base = $derived(deck ? app.cardsOf(deck.id) : app.decks.flatMap((d) => app.cardsOf(d.id)));
+  // abrir um deck de outra coleção troca a coleção aberta
+  $effect(() => { if (deck && deck.editionId !== app.editionId) app.editionId = deck.editionId; });
+  const decks = $derived(app.decksOf(app.editionId));
+  const base = $derived(deck ? app.cardsOf(deck.id) : decks.flatMap((d) => app.cardsOf(d.id)));
+  const editionCount = $derived(decks.reduce((n, d) => n + app.cardsOf(d.id).length, 0));
+
+  function openEdition(id: string) {
+    selected = new Set();
+    app.editionId = id;
+    router.library();
+  }
 
   const types = $derived([...new Set(base.map((c) => c.text[lang].type).filter(Boolean))].sort());
   const tags = $derived([...new Set(base.flatMap((c) => c.tags))].sort());
@@ -95,7 +105,7 @@
   }
 
   function newCard() {
-    const target = deck ?? app.decks[0];
+    const target = deck ?? decks[0];
     const c = app.newCard(target.id);
     app.putCard(c);
     router.editor(c.id);
@@ -157,14 +167,21 @@
 <div class="lib">
   <aside class="decks">
     <div class="side-head">
-      <span class="section-title">{app.edition()?.name ?? 'Edição'}</span>
+      {#if (app.project?.editions.length ?? 0) > 1}
+        <span class="section-title">{L('Coleção', 'Collection')}</span>
+        <select class="select edsel" value={app.editionId} onchange={(e) => openEdition((e.currentTarget as HTMLSelectElement).value)}>
+          {#each app.project?.editions ?? [] as ed (ed.id)}<option value={ed.id}>{ed.name}</option>{/each}
+        </select>
+      {:else}
+        <span class="section-title">{app.edition()?.name ?? 'Edição'}</span>
+      {/if}
     </div>
     <button class="deck" class:on={!deck} onclick={() => { selected = new Set(); router.library(); }}>
       <span class="emb all"><Images size={17} /></span>
       <span class="dn">{L('Todas as cartas', 'All cards')}</span>
-      <span class="cnt">{Object.keys(app.cards).length}</span>
+      <span class="cnt">{editionCount}</span>
     </button>
-    {#each app.decks as d (d.id)}
+    {#each decks as d (d.id)}
       {@const n = count(d.id)}
       <button class="deck" class:on={deck?.id === d.id} onclick={() => { selected = new Set(); router.library(d.id); }}>
         <span class="emb" style="--c:{colorHex(d.colors[0])}"><Glyph id={classIcon(d.colors[0])} size={19} color={lighten(vivid(colorHex(d.colors[0])), 0.35)} /></span>
@@ -245,7 +262,9 @@
         <div class="grow"></div>
         <select class="select chipsel" onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value; if (v) moveTo(v); (e.currentTarget as HTMLSelectElement).value = ''; }}>
           <option value="">{L('Mover para…', 'Move to…')}</option>
-          {#each app.decks as d}<option value={d.id}>{d.name[lang]}</option>{/each}
+          {#each app.project?.editions ?? [] as ed (ed.id)}
+            <optgroup label={ed.name}>{#each app.decksOf(ed.id) as d (d.id)}<option value={d.id}>{d.name[lang]}</option>{/each}</optgroup>
+          {/each}
         </select>
         <button class="btn sm" onclick={resetLooks} title={L('Remove ajustes individuais e usa o tema do deck', 'Remove per-card tweaks and use the deck theme')}><Paintbrush size={15} /> {L('Usar tema do deck', 'Use deck theme')}</button>
         <button class="btn sm danger" onclick={() => remove([...selected])}><Trash2 size={15} /> {L('Excluir', 'Delete')}</button>
@@ -266,7 +285,8 @@
 <style>
   .lib { display: grid; grid-template-columns: 268px 1fr; height: 100%; }
   .decks { border-right: 1px solid var(--line); background: var(--bg-2); padding: 18px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
-  .side-head { padding: 0 10px 10px; }
+  .side-head { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .edsel { width: 100%; font-weight: 600; }
   .deck { display: flex; align-items: center; gap: 11px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: none; color: var(--text-2);
     text-align: left; cursor: pointer; transition: background var(--t); font: inherit; }
   .deck:hover { background: var(--surface-2); color: var(--text); }
@@ -316,7 +336,9 @@
   @media (max-width: 760px) {
     .lib { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     .decks { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px; }
-    .side-head { display: none; }
+    .side-head { padding: 0 4px 0 0; flex: none; justify-content: center; }
+    .side-head .section-title { display: none; }
+    .edsel { width: 150px; }
     .deck { width: auto; flex: none; }
     .dn small, .cnt { display: none; }
     .top, .filters, .bulk { padding-left: 14px; padding-right: 14px; }

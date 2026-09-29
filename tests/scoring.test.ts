@@ -3,17 +3,19 @@ import { applyScoring, costForScore, evaluate, rarityFor } from '../src/model/sc
 import { card } from './fixtures';
 
 describe('pontuação', () => {
-  it('ATK + DEF + mecânicas somam pontos; a cada 3 pontos, +1 de custo', () => {
-    const ev = evaluate(card({ stats: { atk: 3, def: 2 }, mechanics: ['haste'] })); // 3 + 2 + 2
-    expect(ev.score).toBe(7);
+  it('ATK + DEF + mecânicas somam pontos; 1 ponto grátis, depois +1 de custo a cada 2', () => {
+    const ev = evaluate(card({ stats: { atk: 3, def: 2 }, mechanics: ['haste'] })); // 3 + 2 + 1
+    expect(ev.score).toBe(6);
     expect(ev.suggestedCost).toBe(3);
     expect(costForScore(0)).toBe(0);
-    expect(costForScore(1)).toBe(1);
+    expect(costForScore(1)).toBe(0);
+    expect(costForScore(2)).toBe(1);
+    expect(costForScore(4)).toBe(2); // criatura 2/2 custa 2
   });
 
   it('custo automático segue a pontuação', () => {
     const c = applyScoring(card({ stats: { atk: 4, def: 4 }, costMode: 'auto' }));
-    expect(c.cost?.amount).toBe(3);
+    expect(c.cost?.amount).toBe(4);
   });
 
   it('custo digitado à mão (manual) nunca é sobrescrito', () => {
@@ -26,7 +28,7 @@ describe('pontuação', () => {
     expect(rarityFor(3, 2)).toBe('uncommon');
     expect(rarityFor(3, 1)).toBe('rare');
     expect(rarityFor(4, 1)).toBe('unique');
-    const c = applyScoring(card({ stats: { atk: 4, def: 4 }, cost: { resource: 'vigor', amount: 1 }, costMode: 'manual', rarityMode: 'auto' }));
+    const c = applyScoring(card({ stats: { atk: 4, def: 4 }, cost: { resource: 'vigor', amount: 2 }, costMode: 'manual', rarityMode: 'auto' }));
     expect(c.rarity).toBe('rare');
   });
 

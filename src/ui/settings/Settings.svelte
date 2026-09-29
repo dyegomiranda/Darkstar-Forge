@@ -36,7 +36,7 @@
     const f = files?.[0];
     if (!f) return;
     const id = await importImage(f, f.name);
-    app.updateProject((p) => { p.editions[0].setMediaId = id; });
+    app.updateProject((p) => { (p.editions.find((e) => e.id === app.editionId) ?? p.editions[0]).setMediaId = id; });
     logoTick++;
     ui.toast(L('Logo da edição atualizado', 'Set logo updated'));
   }
@@ -76,9 +76,9 @@
             <input class="input" value={app.project?.name} oninput={(e) => app.updateProject((p) => { p.name = (e.currentTarget as HTMLInputElement).value; })} /></label>
           <div class="grid2">
             <label class="field"><span>{L('Nome da edição', 'Edition name')}</span>
-              <input class="input" value={ed?.name} oninput={(e) => app.updateProject((p) => { p.editions[0].name = (e.currentTarget as HTMLInputElement).value; })} /></label>
+              <input class="input" value={ed?.name} oninput={(e) => app.updateProject((p) => { (p.editions.find((x) => x.id === app.editionId) ?? p.editions[0]).name = (e.currentTarget as HTMLInputElement).value; })} /></label>
             <label class="field"><span>{L('Sigla no rodapé', 'Footer code')}</span>
-              <input class="input" value={ed?.code} oninput={(e) => app.updateProject((p) => { p.editions[0].code = (e.currentTarget as HTMLInputElement).value; })} /></label>
+              <input class="input" value={ed?.code} oninput={(e) => app.updateProject((p) => { (p.editions.find((x) => x.id === app.editionId) ?? p.editions[0]).code = (e.currentTarget as HTMLInputElement).value; })} /></label>
           </div>
         </div>
         <div class="logo">

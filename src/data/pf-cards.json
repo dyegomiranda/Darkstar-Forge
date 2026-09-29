@@ -1,0 +1,3021 @@
+[
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Corte Duplo",
+    "type": "Ação",
+    "subtype": "Guerreiro · Ataque",
+    "rules": "Ataque com as duas armas: cause 2 de dano a um alvo e 1 de dano a um alvo (pode ser o mesmo).",
+    "flavor": "Uma lâmina abre a guarda. A outra entra."
+   },
+   "en-US": {
+    "name": "Double Slice",
+    "type": "Action",
+    "subtype": "Fighter · Strike",
+    "rules": "Strike with both weapons: deal 2 damage to a target and 1 damage to a target (it may be the same one).",
+    "flavor": "One blade opens the guard. The other goes in."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "flurry"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Golpe Feroz",
+    "type": "Ação",
+    "subtype": "Guerreiro · Ataque",
+    "rules": "Cause 4 de dano a uma criatura. Depois disso, você não pode atacar de novo neste turno.",
+    "flavor": "Todo o peso do corpo num único arco."
+   },
+   "en-US": {
+    "name": "Vicious Swing",
+    "type": "Action",
+    "subtype": "Fighter · Strike",
+    "rules": "Deal 4 damage to a creature. After that, you can’t attack again this turn.",
+    "flavor": "The whole body’s weight in a single arc."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "power_attack"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Investida Súbita",
+    "type": "Ação",
+    "subtype": "Bárbaro · Movimento",
+    "rules": "Uma criatura sua ganha Ímpeto e +1 ATK e ataca agora. Se ela destruir quem a bloqueou, ganhe 1 {fury}.",
+    "flavor": "Duas passadas e o choque."
+   },
+   "en-US": {
+    "name": "Sudden Charge",
+    "type": "Action",
+    "subtype": "Barbarian · Move",
+    "rules": "A creature of yours gains Haste and +1 ATK and attacks now. If it destroys its blocker, gain 1 {fury}.",
+    "flavor": "Two strides and the impact."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 1
+  },
+  "mechanics": [
+   "charge",
+   "gain_fury_1"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 3,
+  "stats": null
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Fúria",
+    "type": "Habilidade",
+    "subtype": "Bárbaro · Postura",
+    "rules": "Ganhe 2 {fury}. Até o fim do seu próximo turno, seus ataques causam +1 de dano. No fim de cada turno seu em Fúria, perca 1 PV.",
+    "flavor": "O mundo fica vermelho — e simples."
+   },
+   "en-US": {
+    "name": "Rage",
+    "type": "Ability",
+    "subtype": "Barbarian · Stance",
+    "rules": "Gain 2 {fury}. Until the end of your next turn, your attacks deal +1 damage. At the end of each of your turns in Rage, lose 1 HP.",
+    "flavor": "The world turns red — and simple."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 1
+  },
+  "mechanics": [
+   "gain_fury_2",
+   "pump_1",
+   "self_damage"
+  ],
+  "tags": [
+   "ability"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Erguer o Escudo",
+    "type": "Ação",
+    "subtype": "Guerreiro · Reação",
+    "rules": "Reação: quando você ou uma criatura sua for sofrer dano, previna até 3 desse dano. Se prevenir todo o dano, compre 1 carta.",
+    "flavor": "O escudo não é abrigo. É uma parede que anda."
+   },
+   "en-US": {
+    "name": "Raise a Shield",
+    "type": "Action",
+    "subtype": "Fighter · Reaction",
+    "rules": "Reaction: when you or a creature of yours would take damage, prevent up to 3 of it. If you prevent all of it, draw 1 card.",
+    "flavor": "A shield isn’t shelter. It’s a wall that walks."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 1
+  },
+  "mechanics": [
+   "shield_block",
+   "reaction",
+   "draw_1"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Sentinela Veterana",
+    "type": "Criatura",
+    "subtype": "Humana · Guerreira",
+    "rules": "Vigilância. Ataque Reativo: uma vez por turno, quando um inimigo ataca perto dela, ela golpeia primeiro com o próprio ATK.",
+    "flavor": "Quem passa por ela, passa ferido."
+   },
+   "en-US": {
+    "name": "Veteran Sentinel",
+    "type": "Creature",
+    "subtype": "Human · Fighter",
+    "rules": "Vigilance. Reactive Strike: once per turn, when an enemy attacks near her, she strikes first with her own ATK.",
+    "flavor": "Whoever gets past her gets past bleeding."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 3
+  },
+  "mechanics": [
+   "vigilance",
+   "reactive_strike"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 6,
+  "stats": {
+   "atk": 2,
+   "def": 3
+  }
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Berserker do Clã",
+    "type": "Criatura",
+    "subtype": "Humano · Bárbaro",
+    "rules": "Ímpeto. Atropelar.",
+    "flavor": "Ele não sabe o nome do inimigo. Só o caminho até ele."
+   },
+   "en-US": {
+    "name": "Clan Berserker",
+    "type": "Creature",
+    "subtype": "Human · Barbarian",
+    "rules": "Haste. Trample.",
+    "flavor": "He doesn’t know the enemy’s name. Only the way to him."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 2
+  },
+  "mechanics": [
+   "haste",
+   "trample"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 7,
+  "stats": {
+   "atk": 3,
+   "def": 2
+  }
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Final Furioso",
+    "type": "Ação",
+    "subtype": "Bárbaro · Ataque",
+    "rules": "Gaste toda a sua {fury}: cause 2 de dano mais 2 para cada {fury} gasta a uma criatura ou ao oponente. Sua Fúria termina.",
+    "flavor": "Tudo o que restava, num único golpe."
+   },
+   "en-US": {
+    "name": "Furious Finisher",
+    "type": "Action",
+    "subtype": "Barbarian · Strike",
+    "rules": "Spend all your {fury}: deal 2 damage plus 2 per {fury} spent to a creature or the opponent. Your Rage ends.",
+    "flavor": "Everything that was left, in a single blow."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_4",
+   "spend_fury"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "red",
+  "colors": [
+   "red"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Brunhild, a Inquebrável",
+    "type": "Criatura",
+    "subtype": "Lendária · Humana · Bárbara",
+    "rules": "Atropelar. Ataque Reativo. Sempre que Brunhild sofrer dano e sobreviver, ganhe 1 {fury}.",
+    "flavor": "Cada cicatriz foi um inimigo que não voltou para casa."
+   },
+   "en-US": {
+    "name": "Brunhild the Unbroken",
+    "type": "Creature",
+    "subtype": "Legendary · Human · Barbarian",
+    "rules": "Trample. Reactive Strike. Whenever Brunhild takes damage and survives, gain 1 {fury}.",
+    "flavor": "Every scar was an enemy who never went home."
+   }
+  },
+  "cost": {
+   "resource": "vigor",
+   "amount": 3
+  },
+  "mechanics": [
+   "trample",
+   "reactive_strike",
+   "gain_fury_1"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 4,
+   "def": 4
+  }
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Dardos de Força",
+    "type": "Magia",
+    "subtype": "Mago · Força",
+    "rules": "Cause 2 de dano, divididos como quiser entre até dois alvos. Não erra: ignora Resistência. Se destruir uma criatura, Preveja 2.",
+    "flavor": "Não se esquiva de uma certeza."
+   },
+   "en-US": {
+    "name": "Force Darts",
+    "type": "Spell",
+    "subtype": "Wizard · Force",
+    "rules": "Deal 2 damage divided as you choose among up to two targets. It never misses: ignores Resistance. If it destroys a creature, Scry 2.",
+    "flavor": "You can’t dodge a certainty."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "pierce",
+   "scry_2"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Bola de Fogo",
+    "type": "Magia",
+    "subtype": "Mago · Fogo",
+    "rules": "Cause 3 de dano a cada criatura inimiga.",
+    "flavor": "Um grão de luz, depois o sol inteiro."
+   },
+   "en-US": {
+    "name": "Fireball",
+    "type": "Spell",
+    "subtype": "Wizard · Fire",
+    "rules": "Deal 3 damage to each enemy creature.",
+    "flavor": "A grain of light, then the whole sun."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 4
+  },
+  "mechanics": [
+   "damage_3",
+   "aoe_damage"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Contramágica",
+    "type": "Magia",
+    "subtype": "Mago · Reação",
+    "rules": "Reação: anule uma magia enquanto ela é lançada. Depois, Preveja 2.",
+    "flavor": "— Não. — disse ela, e o mundo obedeceu."
+   },
+   "en-US": {
+    "name": "Counterspell",
+    "type": "Spell",
+    "subtype": "Wizard · Reaction",
+    "rules": "Reaction: counter a spell as it is being cast. Then Scry 2.",
+    "flavor": "“No,” she said, and the world obeyed."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 2
+  },
+  "mechanics": [
+   "counterspell",
+   "reaction",
+   "scry_2"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 3,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Coruja do Grimório",
+    "type": "Criatura",
+    "subtype": "Familiar",
+    "rules": "Voo. Familiar: não ataca. No início do seu turno, Preveja 2.",
+    "flavor": "Lê por cima do seu ombro. E corrige."
+   },
+   "en-US": {
+    "name": "Grimoire Owl",
+    "type": "Creature",
+    "subtype": "Familiar",
+    "rules": "Flying. Familiar: doesn’t attack. At the start of your turn, Scry 2.",
+    "flavor": "It reads over your shoulder. And corrects you."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 2
+  },
+  "mechanics": [
+   "flying",
+   "familiar",
+   "scry_2"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 4,
+  "stats": {
+   "atk": 0,
+   "def": 1
+  }
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Raio de Gelo",
+    "type": "Magia",
+    "subtype": "Mago · Truque",
+    "rules": "Cause 1 de dano a uma criatura. Truque: no fim do turno, pague 1 {mana} para devolver esta carta à mão.",
+    "flavor": "A primeira magia que se aprende. A última que se esquece."
+   },
+   "en-US": {
+    "name": "Ray of Frost",
+    "type": "Spell",
+    "subtype": "Wizard · Cantrip",
+    "rules": "Deal 1 damage to a creature. Cantrip: at end of turn, pay 1 {mana} to return this card to your hand.",
+    "flavor": "The first spell you learn. The last you forget."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 1
+  },
+  "mechanics": [
+   "damage_1",
+   "cantrip"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Escudo Arcano",
+    "type": "Magia",
+    "subtype": "Mago · Truque · Reação",
+    "rules": "Reação: uma criatura sua (ou você) ganha +2 DEF até o início do seu próximo turno. Truque.",
+    "flavor": "Um lampejo azul, e a lâmina escorrega."
+   },
+   "en-US": {
+    "name": "Arcane Shield",
+    "type": "Spell",
+    "subtype": "Wizard · Cantrip · Reaction",
+    "rules": "Reaction: a creature of yours (or you) gains +2 DEF until the start of your next turn. Cantrip.",
+    "flavor": "A blue flicker, and the blade slides off."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 1
+  },
+  "mechanics": [
+   "arcane_armor",
+   "reaction",
+   "cantrip"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 6,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Sangue Dracônico",
+    "type": "Encantamento",
+    "subtype": "Feiticeiro · Linhagem",
+    "rules": "Sua primeira magia de dano em cada turno causa +1. Você tem Resistência 1.",
+    "flavor": "Ninguém ensinou. Ela simplesmente lembrou."
+   },
+   "en-US": {
+    "name": "Draconic Blood",
+    "type": "Enchantment",
+    "subtype": "Sorcerer · Bloodline",
+    "rules": "Your first damage spell each turn deals +1. You have Resistance 1.",
+    "flavor": "Nobody taught her. She simply remembered."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 1
+  },
+  "mechanics": [
+   "permanent_buff_1",
+   "resistance"
+  ],
+  "tags": [
+   "enchantment"
+  ],
+  "n": 7,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Surto de Sangue",
+    "type": "Magia",
+    "subtype": "Feiticeiro · Magia de Sangue",
+    "rules": "Cause 3 de dano a um alvo e ganhe 1 {mana}. Você perde 1 PV.",
+    "flavor": "O poder não vem de livros. Vem das veias."
+   },
+   "en-US": {
+    "name": "Blood Surge",
+    "type": "Spell",
+    "subtype": "Sorcerer · Blood Magic",
+    "rules": "Deal 3 damage to a target and gain 1 {mana}. You lose 1 HP.",
+    "flavor": "The power doesn’t come from books. It comes from the veins."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 1
+  },
+  "mechanics": [
+   "damage_3",
+   "gain_resource_1",
+   "self_damage"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "blue",
+  "colors": [
+   "blue"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Seraphine, Arquimaga",
+    "type": "Criatura",
+    "subtype": "Lendária · Humana · Maga",
+    "rules": "Quando Seraphine entra, compre 2 cartas. Seus Truques voltam à mão sem precisar pagar.",
+    "flavor": "Sete círculos estudados. Nenhum deles a contém."
+   },
+   "en-US": {
+    "name": "Seraphine, Archmage",
+    "type": "Creature",
+    "subtype": "Legendary · Human · Wizard",
+    "rules": "When Seraphine enters, draw 2 cards. Your Cantrips return to your hand without paying.",
+    "flavor": "Seven circles mastered. None of them can hold her."
+   }
+  },
+  "cost": {
+   "resource": "mana",
+   "amount": 3
+  },
+  "mechanics": [
+   "draw_2",
+   "cantrip"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 2,
+   "def": 3
+  }
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Caçar Presa",
+    "type": "Habilidade",
+    "subtype": "Patrulheiro",
+    "rules": "Marque uma criatura inimiga como sua Presa: seus ataques e efeitos contra ela causam +1 até ela morrer. Quando ela morrer, compre 1 carta.",
+    "flavor": "Rastro, cheiro, silêncio. Depois, a flecha."
+   },
+   "en-US": {
+    "name": "Hunt Prey",
+    "type": "Ability",
+    "subtype": "Ranger",
+    "rules": "Mark an enemy creature as your Prey: your attacks and effects against it deal +1 until it dies. When it dies, draw 1 card.",
+    "flavor": "Track, scent, silence. Then, the arrow."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 2
+  },
+  "mechanics": [
+   "hunt_prey",
+   "draw_1"
+  ],
+  "tags": [
+   "ability"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Disparo Duplo",
+    "type": "Ação",
+    "subtype": "Patrulheiro · Ataque",
+    "rules": "Cause 1 de dano duas vezes (alvos iguais ou diferentes). Se os dois acertarem sua Presa, cause mais 1.",
+    "flavor": "A segunda flecha já estava no ar."
+   },
+   "en-US": {
+    "name": "Twin Shot",
+    "type": "Action",
+    "subtype": "Ranger · Strike",
+    "rules": "Deal 1 damage twice (same or different targets). If both hit your Prey, deal 1 more.",
+    "flavor": "The second arrow was already in the air."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "flurry"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Lobo Companheiro",
+    "type": "Criatura",
+    "subtype": "Fera · Companheiro",
+    "rules": "Quando o Lobo causar dano a uma criatura, ela fica Caída: não bloqueia neste turno.",
+    "flavor": "Ele não caça por você. Caça com você."
+   },
+   "en-US": {
+    "name": "Wolf Companion",
+    "type": "Creature",
+    "subtype": "Beast · Companion",
+    "rules": "When the Wolf deals damage to a creature, it is knocked Prone: it can’t block this turn.",
+    "flavor": "He doesn’t hunt for you. He hunts with you."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 2
+  },
+  "mechanics": [
+   "trip"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 3,
+  "stats": {
+   "atk": 2,
+   "def": 2
+  }
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Flora Enredante",
+    "type": "Magia",
+    "subtype": "Druida · Planta",
+    "rules": "Criaturas inimigas não podem atacar no próximo turno delas.",
+    "flavor": "A floresta decide quem passa."
+   },
+   "en-US": {
+    "name": "Entangling Flora",
+    "type": "Spell",
+    "subtype": "Druid · Plant",
+    "rules": "Enemy creatures can’t attack during their next turn.",
+    "flavor": "The forest decides who passes."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 1
+  },
+  "mechanics": [
+   "entangle"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Armadilha de Laço",
+    "type": "Ação",
+    "subtype": "Patrulheiro · Armadilha · Reação",
+    "rules": "Reação: quando uma criatura inimiga atacar, ela sofre 1 de dano e fica Imobilizada; o ataque é cancelado.",
+    "flavor": "Uma corda, um galho, um passo errado."
+   },
+   "en-US": {
+    "name": "Snare",
+    "type": "Action",
+    "subtype": "Ranger · Trap · Reaction",
+    "rules": "Reaction: when an enemy creature attacks, it takes 1 damage and becomes Immobilized; the attack is cancelled.",
+    "flavor": "A rope, a branch, one wrong step."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 1
+  },
+  "mechanics": [
+   "control",
+   "reaction",
+   "damage_1"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Forma Indomável",
+    "type": "Magia",
+    "subtype": "Druida · Polimorfia",
+    "rules": "Até o fim do seu próximo turno, você se torna uma fera 3/3 com Atropelar que pode atacar e bloquear como uma criatura.",
+    "flavor": "A pele se abre em pelo; a voz, em rugido."
+   },
+   "en-US": {
+    "name": "Untamed Form",
+    "type": "Spell",
+    "subtype": "Druid · Polymorph",
+    "rules": "Until the end of your next turn, you become a 3/3 beast with Trample that can attack and block like a creature.",
+    "flavor": "Skin splits into fur; voice, into a roar."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 1
+  },
+  "mechanics": [
+   "beast_form",
+   "trample"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 6,
+  "stats": null
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Guardião Leshy",
+    "type": "Criatura",
+    "subtype": "Planta · Ordem da Folha",
+    "rules": "Alcance. Regenerar 1.",
+    "flavor": "Brotou onde um herói caiu. E ficou de guarda."
+   },
+   "en-US": {
+    "name": "Leshy Warden",
+    "type": "Creature",
+    "subtype": "Plant · Leaf Order",
+    "rules": "Reach. Regenerate 1.",
+    "flavor": "It sprouted where a hero fell. And stood watch."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 2
+  },
+  "mechanics": [
+   "reach",
+   "regenerate_1"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 7,
+  "stats": {
+   "atk": 1,
+   "def": 3
+  }
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Fúria da Tempestade",
+    "type": "Magia",
+    "subtype": "Druida · Ordem da Tempestade",
+    "rules": "Cause 3 de dano a uma criatura e 1 de dano a cada outra criatura inimiga.",
+    "flavor": "O céu também tem dentes."
+   },
+   "en-US": {
+    "name": "Tempest Surge",
+    "type": "Spell",
+    "subtype": "Druid · Storm Order",
+    "rules": "Deal 3 damage to a creature and 1 damage to each other enemy creature.",
+    "flavor": "The sky has teeth too."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_3",
+   "aoe_damage"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "green",
+  "colors": [
+   "green"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Thessaly, Voz do Bosque",
+    "type": "Criatura",
+    "subtype": "Lendária · Elfa · Druida",
+    "rules": "Alcance. Quando Thessaly entra, ponha em jogo um Companheiro animal 2/2. Suas criaturas têm Regenerar 1.",
+    "flavor": "Onde ela pisa, a primavera volta."
+   },
+   "en-US": {
+    "name": "Thessaly, Voice of the Grove",
+    "type": "Creature",
+    "subtype": "Legendary · Elf · Druid",
+    "rules": "Reach. When Thessaly enters, put a 2/2 animal Companion into play. Your creatures have Regenerate 1.",
+    "flavor": "Where she walks, spring returns."
+   }
+  },
+  "cost": {
+   "resource": "nature",
+   "amount": 3
+  },
+  "mechanics": [
+   "reach",
+   "companion",
+   "regenerate_1"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 3,
+   "def": 4
+  }
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Toque Vampírico",
+    "type": "Magia",
+    "subtype": "Necromante · Vazio",
+    "rules": "Cause 2 de dano a uma criatura. Você recupera PV iguais ao dano causado.",
+    "flavor": "O calor dele agora é seu."
+   },
+   "en-US": {
+    "name": "Vampiric Touch",
+    "type": "Spell",
+    "subtype": "Necromancer · Void",
+    "rules": "Deal 2 damage to a creature. You regain HP equal to the damage dealt.",
+    "flavor": "His warmth is yours now."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "drain"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Erguer Esqueleto",
+    "type": "Magia",
+    "subtype": "Necromante",
+    "rules": "Ponha em jogo um Esqueleto 1/1. Se uma criatura morreu neste turno, ponha dois.",
+    "flavor": "Ossos não reclamam de horas extras."
+   },
+   "en-US": {
+    "name": "Raise Skeleton",
+    "type": "Spell",
+    "subtype": "Necromancer",
+    "rules": "Put a 1/1 Skeleton into play. If a creature died this turn, put two instead.",
+    "flavor": "Bones never complain about overtime."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 1
+  },
+  "mechanics": [
+   "summon"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Carniçal Faminto",
+    "type": "Criatura",
+    "subtype": "Morto-vivo",
+    "rules": "Quando causar dano a uma criatura, ela fica Paralisada: não ataca nem bloqueia no próximo turno.",
+    "flavor": "A fome dele congela o sangue antes de bebê-lo."
+   },
+   "en-US": {
+    "name": "Ravenous Ghoul",
+    "type": "Creature",
+    "subtype": "Undead",
+    "rules": "When it deals damage to a creature, that creature is Paralyzed: it can’t attack or block next turn.",
+    "flavor": "Its hunger freezes the blood before drinking it."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 2
+  },
+  "mechanics": [
+   "control"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 3,
+  "stats": {
+   "atk": 2,
+   "def": 1
+  }
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Mau-Olhado",
+    "type": "Magia",
+    "subtype": "Bruxo · Sortilégio",
+    "rules": "A criatura alvo recebe −1/−1 enquanto você Sustentar (pague 1 {souls} no início do seu turno). Só um Sortilégio por turno.",
+    "flavor": "Um olhar. Só isso. Por enquanto."
+   },
+   "en-US": {
+    "name": "Evil Eye",
+    "type": "Spell",
+    "subtype": "Witch · Hex",
+    "rules": "Target creature gets −1/−1 while you Sustain it (pay 1 {souls} at the start of your turn). Only one Hex per turn.",
+    "flavor": "One look. That’s all. For now."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 0
+  },
+  "mechanics": [
+   "curse",
+   "sustain"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Colheita de Almas",
+    "type": "Encantamento",
+    "subtype": "Necromante",
+    "rules": "Quando entra, compre 1 carta. Sempre que uma criatura morrer, ganhe 1 {souls} (no máximo 2 por turno).",
+    "flavor": "Nada se perde. Tudo se recolhe."
+   },
+   "en-US": {
+    "name": "Soul Harvest",
+    "type": "Enchantment",
+    "subtype": "Necromancer",
+    "rules": "When it enters, draw 1 card. Whenever a creature dies, gain 1 {souls} (at most 2 per turn).",
+    "flavor": "Nothing is lost. Everything is gathered."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 1
+  },
+  "mechanics": [
+   "soul_harvest",
+   "draw_1"
+  ],
+  "tags": [
+   "enchantment"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Reanimar",
+    "type": "Magia",
+    "subtype": "Necromante",
+    "rules": "Custo adicional: sacrifique uma criatura sua. Traga de volta ao jogo uma criatura do seu cemitério.",
+    "flavor": "Uma vida por outra. A morte é boa de contas."
+   },
+   "en-US": {
+    "name": "Reanimate",
+    "type": "Spell",
+    "subtype": "Necromancer",
+    "rules": "Additional cost: sacrifice a creature of yours. Return a creature from your graveyard to play.",
+    "flavor": "A life for a life. Death keeps good books."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 0
+  },
+  "mechanics": [
+   "reanimate",
+   "sacrifice"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 6,
+  "stats": null
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Gato do Patrono",
+    "type": "Criatura",
+    "subtype": "Familiar",
+    "rules": "Familiar. Quando entra, o oponente descarta 1 carta.",
+    "flavor": "Ele leva recados. De quem, ninguém pergunta."
+   },
+   "en-US": {
+    "name": "Patron’s Cat",
+    "type": "Creature",
+    "subtype": "Familiar",
+    "rules": "Familiar. When it enters, the opponent discards 1 card.",
+    "flavor": "It carries messages. From whom, no one asks."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 1
+  },
+  "mechanics": [
+   "familiar",
+   "discard"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 7,
+  "stats": {
+   "atk": 1,
+   "def": 1
+  }
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Palavra Final do Patrono",
+    "type": "Magia",
+    "subtype": "Bruxo · Sortilégio",
+    "rules": "Destrua uma criatura.",
+    "flavor": "O patrono não grita. Só termina a frase."
+   },
+   "en-US": {
+    "name": "Patron’s Final Word",
+    "type": "Spell",
+    "subtype": "Witch · Hex",
+    "rules": "Destroy a creature.",
+    "flavor": "The patron doesn’t shout. It just finishes the sentence."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 1
+  },
+  "mechanics": [
+   "destroy"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "black",
+  "colors": [
+   "black"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Morwen, a Rainha Cinzenta",
+    "type": "Criatura",
+    "subtype": "Lendária · Humana · Necromante",
+    "rules": "Vampirismo. Sempre que outra criatura morrer, ganhe 1 {souls} e ponha em jogo um Esqueleto 1/1.",
+    "flavor": "Seu reino não tem vivos. Não precisa."
+   },
+   "en-US": {
+    "name": "Morwen, the Ashen Queen",
+    "type": "Creature",
+    "subtype": "Legendary · Human · Necromancer",
+    "rules": "Lifelink. Whenever another creature dies, gain 1 {souls} and put a 1/1 Skeleton into play.",
+    "flavor": "Her kingdom has no living. It doesn’t need them."
+   }
+  },
+  "cost": {
+   "resource": "souls",
+   "amount": 2
+  },
+  "mechanics": [
+   "lifelink",
+   "soul_harvest",
+   "summon"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 3,
+   "def": 3
+  }
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Ataque Furtivo",
+    "type": "Ação",
+    "subtype": "Ladino · Ataque",
+    "rules": "Cause 1 de dano. Se o alvo estiver Desprevenido ou não estiver bloqueando, cause +2.",
+    "flavor": "Onde a armadura acaba, ela começa."
+   },
+   "en-US": {
+    "name": "Sneak Attack",
+    "type": "Action",
+    "subtype": "Rogue · Strike",
+    "rules": "Deal 1 damage. If the target is Off-guard or not blocking, deal +2.",
+    "flavor": "Where the armor ends, she begins."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_1",
+   "sneak"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Finta",
+    "type": "Ação",
+    "subtype": "Ladino · Truque",
+    "rules": "Uma criatura fica Desprevenida (−1 DEF neste turno). Compre 1 carta.",
+    "flavor": "Olhe para a esquerda. Não, a outra esquerda."
+   },
+   "en-US": {
+    "name": "Feint",
+    "type": "Action",
+    "subtype": "Rogue · Trick",
+    "rules": "A creature becomes Off-guard (−1 DEF this turn). Draw 1 card.",
+    "flavor": "Look left. No, the other left."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 1
+  },
+  "mechanics": [
+   "off_guard",
+   "draw_1"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Esquiva Ágil",
+    "type": "Ação",
+    "subtype": "Ladino · Reação",
+    "rules": "Reação: uma criatura sua ganha +2 DEF contra este ataque. Se não sofrer dano, ganha Furtividade até o fim do seu próximo turno.",
+    "flavor": "Estava ali. Juro que estava."
+   },
+   "en-US": {
+    "name": "Nimble Dodge",
+    "type": "Action",
+    "subtype": "Rogue · Reaction",
+    "rules": "Reaction: a creature of yours gains +2 DEF against this attack. If it takes no damage, it gains Stealth until the end of your next turn.",
+    "flavor": "She was right there. I swear."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 1
+  },
+  "mechanics": [
+   "arcane_armor",
+   "reaction",
+   "stealth"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 3,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Torcer a Lâmina",
+    "type": "Ação",
+    "subtype": "Ladino · Ataque",
+    "rules": "Uma criatura que sofreu dano neste turno sofre 1 de dano persistente. Compre 1 carta.",
+    "flavor": "O corte fecha. A dor, não."
+   },
+   "en-US": {
+    "name": "Twist the Knife",
+    "type": "Action",
+    "subtype": "Rogue · Strike",
+    "rules": "A creature that took damage this turn takes 1 persistent damage. Draw 1 card.",
+    "flavor": "The cut closes. The pain doesn’t."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 1
+  },
+  "mechanics": [
+   "burn",
+   "draw_1"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Batedora de Carteiras",
+    "type": "Criatura",
+    "subtype": "Halfling · Ladina",
+    "rules": "Furtividade. Quando causar dano ao oponente, roube 1 {gold} dele.",
+    "flavor": "Ela sorri, pede licença e leva a bolsa junto."
+   },
+   "en-US": {
+    "name": "Pickpocket",
+    "type": "Creature",
+    "subtype": "Halfling · Rogue",
+    "rules": "Stealth. When she deals damage to the opponent, steal 1 {gold} from them.",
+    "flavor": "She smiles, excuses herself, and takes the purse along."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 2
+  },
+  "mechanics": [
+   "stealth",
+   "steal"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 5,
+  "stats": {
+   "atk": 1,
+   "def": 1
+  }
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Lâmina Envenenada",
+    "type": "Encantamento",
+    "subtype": "Assassino · Veneno",
+    "rules": "Suas criaturas têm +1 ATK. Quem elas ferirem fica Envenenado: 1 de dano no início de cada turno dele, por 3 turnos.",
+    "flavor": "Um arranhão. Amanhã, um funeral."
+   },
+   "en-US": {
+    "name": "Poisoned Blade",
+    "type": "Enchantment",
+    "subtype": "Assassin · Poison",
+    "rules": "Your creatures have +1 ATK. Whoever they wound is Poisoned: 1 damage at the start of each of its turns, for 3 turns.",
+    "flavor": "A scratch. Tomorrow, a funeral."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 1
+  },
+  "mechanics": [
+   "poison",
+   "weapon_mastery"
+  ],
+  "tags": [
+   "enchantment"
+  ],
+  "n": 6,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Marca da Morte",
+    "type": "Habilidade",
+    "subtype": "Assassino",
+    "rules": "Marque uma criatura inimiga: seus ataques contra ela causam +1. Quando ela morrer, ganhe 2 {shadow}.",
+    "flavor": "O contrato já foi pago. Falta só entregar."
+   },
+   "en-US": {
+    "name": "Mark for Death",
+    "type": "Ability",
+    "subtype": "Assassin",
+    "rules": "Mark an enemy creature: your attacks against it deal +1. When it dies, gain 2 {shadow}.",
+    "flavor": "The contract’s been paid. It only needs delivering."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 2
+  },
+  "mechanics": [
+   "hunt_prey",
+   "gain_resource_2"
+  ],
+  "tags": [
+   "ability"
+  ],
+  "n": 7,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Golpe Letal",
+    "type": "Ação",
+    "subtype": "Assassino · Ataque",
+    "rules": "Destrua uma criatura que esteja Desprevenida ou que não esteja bloqueando. Compre 1 carta.",
+    "flavor": "Ele nunca viu a lâmina. Ninguém vê."
+   },
+   "en-US": {
+    "name": "Assassinate",
+    "type": "Action",
+    "subtype": "Assassin · Strike",
+    "rules": "Destroy a creature that is Off-guard or not blocking. Draw 1 card.",
+    "flavor": "He never saw the blade. No one does."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 1
+  },
+  "mechanics": [
+   "destroy_minor",
+   "draw_1"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "purple",
+  "colors": [
+   "purple"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Vesper, a Sombra Sem Nome",
+    "type": "Criatura",
+    "subtype": "Lendária · Assassina",
+    "rules": "Furtividade. Iniciativa. Toque mortal. Contra alvos Desprevenidos ou que não estão bloqueando, Vesper causa +2 de dano.",
+    "flavor": "Os contratos dela não têm assinatura. Só datas."
+   },
+   "en-US": {
+    "name": "Vesper, the Nameless Shadow",
+    "type": "Creature",
+    "subtype": "Legendary · Assassin",
+    "rules": "Stealth. First strike. Deathtouch. Against Off-guard or non-blocking targets, Vesper deals +2 damage.",
+    "flavor": "Her contracts have no signature. Only dates."
+   }
+  },
+  "cost": {
+   "resource": "shadow",
+   "amount": 2
+  },
+  "mechanics": [
+   "stealth",
+   "first_strike",
+   "deathtouch",
+   "sneak"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 3,
+   "def": 2
+  }
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Cura",
+    "type": "Magia",
+    "subtype": "Clérigo · Fonte Divina",
+    "rules": "Escolha um: você ou uma criatura sua recupera 4 PV; ou cause 2 de dano a um morto-vivo.",
+    "flavor": "A mesma luz que fecha feridas queima o que não devia andar."
+   },
+   "en-US": {
+    "name": "Heal",
+    "type": "Spell",
+    "subtype": "Cleric · Divine Font",
+    "rules": "Choose one: you or a creature of yours regains 4 HP; or deal 2 damage to an undead.",
+    "flavor": "The light that closes wounds burns what shouldn’t walk."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 2
+  },
+  "mechanics": [
+   "heal_4",
+   "modal"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Bênção",
+    "type": "Magia",
+    "subtype": "Clérigo",
+    "rules": "Suas criaturas ganham +1/+1 e Vigilância até o fim do turno.",
+    "flavor": "Cada escudo ergue um pouco mais alto."
+   },
+   "en-US": {
+    "name": "Bless",
+    "type": "Spell",
+    "subtype": "Cleric",
+    "rules": "Your creatures get +1/+1 and Vigilance until end of turn.",
+    "flavor": "Every shield rises a little higher."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 2
+  },
+  "mechanics": [
+   "bless",
+   "inspire",
+   "vigilance"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Golpe Restaurador",
+    "type": "Ação",
+    "subtype": "Clérigo · Ataque",
+    "rules": "Cause 2 de dano a uma criatura e recupere 2 PV.",
+    "flavor": "A maça desce. A graça sobe."
+   },
+   "en-US": {
+    "name": "Restorative Strike",
+    "type": "Action",
+    "subtype": "Cleric · Strike",
+    "rules": "Deal 2 damage to a creature and regain 2 HP.",
+    "flavor": "The mace falls. Grace rises."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "heal_2"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 3,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Fonte Divina",
+    "type": "Encantamento",
+    "subtype": "Clérigo",
+    "rules": "No início do seu turno, se você tiver 2 {faith} ou menos, ganhe 1 {faith}.",
+    "flavor": "A oração da manhã enche o cálice."
+   },
+   "en-US": {
+    "name": "Divine Font",
+    "type": "Enchantment",
+    "subtype": "Cleric",
+    "rules": "At the start of your turn, if you have 2 {faith} or fewer, gain 1 {faith}.",
+    "flavor": "Morning prayer fills the chalice."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 1
+  },
+  "mechanics": [
+   "gain_resource_1"
+  ],
+  "tags": [
+   "enchantment"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Golpe Retributivo",
+    "type": "Ação",
+    "subtype": "Paladino · Reação",
+    "rules": "Reação: quando um inimigo atacar uma criatura sua, previna 2 desse dano e cause 2 de dano ao atacante.",
+    "flavor": "Tocar num protegido é responder ao protetor."
+   },
+   "en-US": {
+    "name": "Retributive Strike",
+    "type": "Action",
+    "subtype": "Champion · Reaction",
+    "rules": "Reaction: when an enemy attacks a creature of yours, prevent 2 of that damage and deal 2 damage to the attacker.",
+    "flavor": "Harm the ward, answer to the guardian."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 2
+  },
+  "mechanics": [
+   "shield_block",
+   "damage_2",
+   "reaction"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Paladino Juramentado",
+    "type": "Criatura",
+    "subtype": "Humano · Paladino",
+    "rules": "Vigilância. Provocar.",
+    "flavor": "O juramento pesa mais que a armadura. E protege mais."
+   },
+   "en-US": {
+    "name": "Oathsworn Champion",
+    "type": "Creature",
+    "subtype": "Human · Champion",
+    "rules": "Vigilance. Taunt.",
+    "flavor": "The oath weighs more than the armor. And guards better."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 2
+  },
+  "mechanics": [
+   "vigilance",
+   "taunt"
+  ],
+  "tags": [
+   "creature"
+  ],
+  "n": 6,
+  "stats": {
+   "atk": 2,
+   "def": 3
+  }
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Aura de Coragem",
+    "type": "Encantamento",
+    "subtype": "Paladino · Aura",
+    "rules": "Suas criaturas não ficam Amedrontadas, e todo dano a elas é reduzido em 1.",
+    "flavor": "Ao lado dele, até o medo recua."
+   },
+   "en-US": {
+    "name": "Aura of Courage",
+    "type": "Enchantment",
+    "subtype": "Champion · Aura",
+    "rules": "Your creatures can’t be Frightened, and all damage to them is reduced by 1.",
+    "flavor": "Beside him, even fear steps back."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 0
+  },
+  "mechanics": [
+   "aura_protection"
+  ],
+  "tags": [
+   "enchantment"
+  ],
+  "n": 7,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Ressurreição",
+    "type": "Magia",
+    "subtype": "Clérigo",
+    "rules": "Traga de volta ao jogo uma criatura do seu cemitério. Ela volta com +1/+1.",
+    "flavor": "Ainda não. Não hoje."
+   },
+   "en-US": {
+    "name": "Raise Dead",
+    "type": "Spell",
+    "subtype": "Cleric",
+    "rules": "Return a creature from your graveyard to play. It returns with +1/+1.",
+    "flavor": "Not yet. Not today."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 1
+  },
+  "mechanics": [
+   "resurrect",
+   "pump_1"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "white",
+  "colors": [
+   "white"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Aldric, Martelo da Aurora",
+    "type": "Criatura",
+    "subtype": "Lendário · Humano · Paladino",
+    "rules": "Vigilância. Vampirismo. Castigo: contra mortos-vivos e demônios, causa +2 de dano. Todo dano às suas outras criaturas é reduzido em 1.",
+    "flavor": "Onde o martelo cai, amanhece."
+   },
+   "en-US": {
+    "name": "Aldric, Dawnhammer",
+    "type": "Creature",
+    "subtype": "Legendary · Human · Champion",
+    "rules": "Vigilance. Lifelink. Smite: against undead and fiends, deals +2 damage. All damage to your other creatures is reduced by 1.",
+    "flavor": "Where the hammer falls, dawn breaks."
+   }
+  },
+  "cost": {
+   "resource": "faith",
+   "amount": 4
+  },
+  "mechanics": [
+   "vigilance",
+   "lifelink",
+   "smite",
+   "aura_protection"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 3,
+   "def": 4
+  }
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Rajada de Golpes",
+    "type": "Ação",
+    "subtype": "Monge · Ataque",
+    "rules": "Cause 1 de dano duas vezes (alvos iguais ou diferentes).",
+    "flavor": "Ele contou dois golpes. Foram cinco."
+   },
+   "en-US": {
+    "name": "Flurry of Blows",
+    "type": "Action",
+    "subtype": "Monk · Strike",
+    "rules": "Deal 1 damage twice (same or different targets).",
+    "flavor": "He counted two blows. There were five."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "flurry"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Postura da Montanha",
+    "type": "Habilidade",
+    "subtype": "Monge · Postura",
+    "rules": "Postura. Enquanto nela, você tem Resistência 1 e não pode ficar Caído. Só uma Postura por vez.",
+    "flavor": "A montanha não luta. A montanha fica."
+   },
+   "en-US": {
+    "name": "Mountain Stance",
+    "type": "Ability",
+    "subtype": "Monk · Stance",
+    "rules": "Stance. While in it, you have Resistance 1 and can’t be knocked Prone. Only one Stance at a time.",
+    "flavor": "The mountain doesn’t fight. The mountain remains."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "resistance",
+   "ki_stance"
+  ],
+  "tags": [
+   "ability"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Hino de Cura",
+    "type": "Magia",
+    "subtype": "Bardo · Composição",
+    "rules": "Composição. Você recupera 2 PV agora e mais 2 no início do seu próximo turno.",
+    "flavor": "A melodia costura o que a espada rasgou."
+   },
+   "en-US": {
+    "name": "Hymn of Healing",
+    "type": "Spell",
+    "subtype": "Bard · Composition",
+    "rules": "Composition. You regain 2 HP now and 2 more at the start of your next turn.",
+    "flavor": "The melody stitches what the sword tore."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "heal_4"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 3,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Contra-Atuação",
+    "type": "Magia",
+    "subtype": "Bardo · Composição · Reação",
+    "rules": "Reação: previna até 3 de dano de uma magia ou efeito que atinja você ou suas criaturas.",
+    "flavor": "Uma nota mais alta que o feitiço."
+   },
+   "en-US": {
+    "name": "Counter Performance",
+    "type": "Spell",
+    "subtype": "Bard · Composition · Reaction",
+    "rules": "Reaction: prevent up to 3 damage from a spell or effect hitting you or your creatures.",
+    "flavor": "One note louder than the spell."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "shield_block",
+   "reaction"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Golpe de Ki",
+    "type": "Ação",
+    "subtype": "Monge · Ki",
+    "rules": "Cause 2 de dano. Este dano ignora Resistência e conta como mágico.",
+    "flavor": "O punho para. A energia, não."
+   },
+   "en-US": {
+    "name": "Ki Strike",
+    "type": "Action",
+    "subtype": "Monk · Ki",
+    "rules": "Deal 2 damage. This damage ignores Resistance and counts as magical.",
+    "flavor": "The fist stops. The energy doesn’t."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "damage_2",
+   "ki_strike"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Punho Atordoante",
+    "type": "Ação",
+    "subtype": "Monge · Ataque",
+    "rules": "Cause 1 de dano. O alvo fica Atordoado: perde o próximo turno inteiro.",
+    "flavor": "Um toque no ponto certo e o mundo apaga."
+   },
+   "en-US": {
+    "name": "Stunning Fist",
+    "type": "Action",
+    "subtype": "Monk · Strike",
+    "rules": "Deal 1 damage. The target is Stunned: it loses its entire next turn.",
+    "flavor": "One touch in the right spot and the world goes dark."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "damage_1",
+   "stun"
+  ],
+  "tags": [
+   "action"
+  ],
+  "n": 6,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Antífona da Coragem",
+    "type": "Magia",
+    "subtype": "Bardo · Composição · Truque",
+    "rules": "Suas criaturas ganham +1 ATK até o fim do turno. Truque: no fim do turno, pague 1 {focus} para devolver esta carta à mão.",
+    "flavor": "O refrão que todo exército sabe de cor."
+   },
+   "en-US": {
+    "name": "Courageous Anthem",
+    "type": "Spell",
+    "subtype": "Bard · Composition · Cantrip",
+    "rules": "Your creatures get +1 ATK until end of turn. Cantrip: at end of turn, pay 1 {focus} to return this card to your hand.",
+    "flavor": "The chorus every army knows by heart."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "inspire",
+   "cantrip"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 7,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Lamento Funesto",
+    "type": "Magia",
+    "subtype": "Bardo · Composição",
+    "rules": "Todas as criaturas inimigas ficam Amedrontadas (−1 ATK até o fim do próximo turno delas). O oponente descarta 1 carta.",
+    "flavor": "Uma canção de ninar para quem não vai acordar."
+   },
+   "en-US": {
+    "name": "Dirge of Doom",
+    "type": "Spell",
+    "subtype": "Bard · Composition",
+    "rules": "All enemy creatures become Frightened (−1 ATK until the end of their next turn). The opponent discards 1 card.",
+    "flavor": "A lullaby for those who won’t wake."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 1
+  },
+  "mechanics": [
+   "frighten",
+   "aoe_damage",
+   "discard"
+  ],
+  "tags": [
+   "spell"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "silver",
+  "colors": [
+   "silver"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Mestre Sen, Punho Sereno",
+    "type": "Criatura",
+    "subtype": "Lendário · Humano · Monge",
+    "rules": "Iniciativa. Resistência 1. Rajada: Mestre Sen ataca duas vezes por turno. O dano dele ignora Resistência.",
+    "flavor": "Ele não bate primeiro. Bate antes."
+   },
+   "en-US": {
+    "name": "Master Sen, the Serene Fist",
+    "type": "Creature",
+    "subtype": "Legendary · Human · Monk",
+    "rules": "First strike. Resistance 1. Flurry: Master Sen attacks twice per turn. His damage ignores Resistance.",
+    "flavor": "He doesn’t strike first. He strikes before."
+   }
+  },
+  "cost": {
+   "resource": "focus",
+   "amount": 3
+  },
+  "mechanics": [
+   "first_strike",
+   "resistance",
+   "flurry",
+   "ki_strike"
+  ],
+  "tags": [
+   "creature",
+   "legendary"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 3,
+   "def": 3
+  }
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Bolsa de Moedas",
+    "type": "Recurso",
+    "subtype": "Ouro",
+    "rules": "Ganhe 1 {gold}.",
+    "flavor": "Tilinta como promessa."
+   },
+   "en-US": {
+    "name": "Coin Pouch",
+    "type": "Resource",
+    "subtype": "Gold",
+    "rules": "Gain 1 {gold}.",
+    "flavor": "It jingles like a promise."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 0
+  },
+  "mechanics": [
+   "gold_value_1"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 1,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Baú do Tesouro",
+    "type": "Recurso",
+    "subtype": "Ouro",
+    "rules": "Ganhe 3 {gold}.",
+    "flavor": "O que o dragão não levou, você leva."
+   },
+   "en-US": {
+    "name": "Treasure Chest",
+    "type": "Resource",
+    "subtype": "Gold",
+    "rules": "Gain 3 {gold}.",
+    "flavor": "What the dragon didn’t take, you do."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "gold_value_3"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 2,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Poção de Cura",
+    "type": "Recurso",
+    "subtype": "Consumível · Poção",
+    "rules": "Recupere 4 PV.",
+    "flavor": "Gosto de cereja e remorso."
+   },
+   "en-US": {
+    "name": "Healing Potion",
+    "type": "Resource",
+    "subtype": "Consumable · Potion",
+    "rules": "Regain 4 HP.",
+    "flavor": "Tastes of cherry and regret."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "heal_4"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 3,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Fogo de Alquimista",
+    "type": "Recurso",
+    "subtype": "Consumível · Bomba",
+    "rules": "Cause 2 de dano a uma criatura. Ela sofre 1 de dano persistente.",
+    "flavor": "Não agite. Sério."
+   },
+   "en-US": {
+    "name": "Alchemist’s Fire",
+    "type": "Resource",
+    "subtype": "Consumable · Bomb",
+    "rules": "Deal 2 damage to a creature. It takes 1 persistent damage.",
+    "flavor": "Do not shake. Seriously."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 2
+  },
+  "mechanics": [
+   "damage_2",
+   "burn"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 4,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Pergaminho de Magia",
+    "type": "Recurso",
+    "subtype": "Consumível · Pergaminho",
+    "rules": "Procure uma Magia no seu deck e ponha na mão.",
+    "flavor": "Uma magia inteira, dobrada em quatro."
+   },
+   "en-US": {
+    "name": "Spell Scroll",
+    "type": "Resource",
+    "subtype": "Consumable · Scroll",
+    "rules": "Search your deck for a Spell and put it into your hand.",
+    "flavor": "A whole spell, folded in four."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 0
+  },
+  "mechanics": [
+   "search"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Espada de Aluguel",
+    "type": "Mercenário",
+    "subtype": "Humano · Mercenário",
+    "rules": "Contratar: pague o custo em {gold}. Luta por quem pagar mais.",
+    "flavor": "Lealdade? Isso custa extra."
+   },
+   "en-US": {
+    "name": "Hired Sellsword",
+    "type": "Mercenary",
+    "subtype": "Human · Mercenary",
+    "rules": "Hire: pay the cost in {gold}. Fights for whoever pays more.",
+    "flavor": "Loyalty? That costs extra."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "hire_gold"
+  ],
+  "tags": [
+   "mercenary",
+   "creature"
+  ],
+  "n": 6,
+  "stats": {
+   "atk": 2,
+   "def": 2
+  }
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Mapa do Tesouro",
+    "type": "Recurso",
+    "subtype": "Mapa",
+    "rules": "Preveja 2. Compre 1 carta. Ganhe 1 {gold}.",
+    "flavor": "O X nunca é onde parece."
+   },
+   "en-US": {
+    "name": "Treasure Map",
+    "type": "Resource",
+    "subtype": "Map",
+    "rules": "Scry 2. Draw 1 card. Gain 1 {gold}.",
+    "flavor": "X never marks where it seems."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "scry_2",
+   "draw_1",
+   "gold_value_1"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 7,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Varinha de Relâmpago",
+    "type": "Recurso",
+    "subtype": "Varinha",
+    "rules": "Cause 3 de dano. Truque: no fim do turno, pague 1 {gold} para devolver esta carta à mão.",
+    "flavor": "Cabe no bolso. O trovão não."
+   },
+   "en-US": {
+    "name": "Wand of Lightning",
+    "type": "Resource",
+    "subtype": "Wand",
+    "rules": "Deal 3 damage. Cantrip: at end of turn, pay 1 {gold} to return this card to your hand.",
+    "flavor": "It fits in a pocket. The thunder doesn’t."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "damage_3",
+   "cantrip"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 8,
+  "stats": null
+ },
+ {
+  "deck": "resources",
+  "colors": [
+   "orange"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Elixir da Vida",
+    "type": "Recurso",
+    "subtype": "Consumível · Elixir",
+    "rules": "Recupere 4 PV e compre 2 cartas. Remova todas as condições das suas criaturas.",
+    "flavor": "Dizem que o alquimista que o fez ainda está vivo."
+   },
+   "en-US": {
+    "name": "Elixir of Life",
+    "type": "Resource",
+    "subtype": "Consumable · Elixir",
+    "rules": "Regain 4 HP and draw 2 cards. Remove all conditions from your creatures.",
+    "flavor": "They say the alchemist who made it is still alive."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "heal_4",
+   "draw_2"
+  ],
+  "tags": [
+   "resource"
+  ],
+  "n": 9,
+  "stats": null
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Espada Longa",
+    "type": "Equipamento",
+    "subtype": "Mão principal",
+    "rules": "Arma. Enquanto equipada, +2 ATK.",
+    "flavor": "Simples, honesta, afiada."
+   },
+   "en-US": {
+    "name": "Longsword",
+    "type": "Equipment",
+    "subtype": "Main hand",
+    "rules": "Weapon. While equipped, +2 ATK.",
+    "flavor": "Simple, honest, sharp."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "equip_slot_weapon"
+  ],
+  "tags": [
+   "equipment",
+   "weapon"
+  ],
+  "n": 1,
+  "stats": {
+   "atk": 2,
+   "def": 0
+  }
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Escudo de Aço",
+    "type": "Equipamento",
+    "subtype": "Mão secundária",
+    "rules": "+1 DEF. Uma vez por turno, previna até 3 de dano de uma fonte (Bloqueio com escudo).",
+    "flavor": "Cada amassado é uma história que você viveu para contar."
+   },
+   "en-US": {
+    "name": "Steel Shield",
+    "type": "Equipment",
+    "subtype": "Off hand",
+    "rules": "+1 DEF. Once per turn, prevent up to 3 damage from one source (Shield Block).",
+    "flavor": "Every dent is a story you lived to tell."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "equip_slot_weapon",
+   "shield_block"
+  ],
+  "tags": [
+   "equipment",
+   "offhand"
+  ],
+  "n": 2,
+  "stats": {
+   "atk": 0,
+   "def": 1
+  }
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Cota de Malha",
+    "type": "Equipamento",
+    "subtype": "Peito · Armadura",
+    "rules": "+3 DEF. Penalidade: −1 em Destreza enquanto equipada.",
+    "flavor": "Pesa. Mas pesa menos que um caixão."
+   },
+   "en-US": {
+    "name": "Chain Mail",
+    "type": "Equipment",
+    "subtype": "Chest · Armor",
+    "rules": "+3 DEF. Penalty: −1 Dexterity while equipped.",
+    "flavor": "It’s heavy. But lighter than a coffin."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "equip_slot_armor",
+   "equip_penalty"
+  ],
+  "tags": [
+   "equipment",
+   "chest"
+  ],
+  "n": 3,
+  "stats": {
+   "atk": 0,
+   "def": 3
+  }
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "common",
+  "text": {
+   "pt-BR": {
+    "name": "Arco Longo",
+    "type": "Equipamento",
+    "subtype": "Mão principal · Duas mãos",
+    "rules": "Arma. +1 ATK. Alcance: você pode atacar e bloquear criaturas com Voo.",
+    "flavor": "Teixo, corda e paciência."
+   },
+   "en-US": {
+    "name": "Longbow",
+    "type": "Equipment",
+    "subtype": "Main hand · Two-handed",
+    "rules": "Weapon. +1 ATK. Reach: you can attack and block creatures with Flying.",
+    "flavor": "Yew, string and patience."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "equip_slot_weapon",
+   "reach"
+  ],
+  "tags": [
+   "equipment",
+   "weapon"
+  ],
+  "n": 4,
+  "stats": {
+   "atk": 1,
+   "def": 0
+  }
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Botas Élficas",
+    "type": "Equipamento",
+    "subtype": "Pés",
+    "rules": "+1 em Destreza. Seu primeiro ataque em cada turno tem Furtividade.",
+    "flavor": "Nem a neve lembra por onde você passou."
+   },
+   "en-US": {
+    "name": "Elven Boots",
+    "type": "Equipment",
+    "subtype": "Feet",
+    "rules": "+1 Dexterity. Your first attack each turn has Stealth.",
+    "flavor": "Not even the snow remembers where you walked."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 0
+  },
+  "mechanics": [
+   "equip_slot_accessory",
+   "permanent_buff_1",
+   "stealth"
+  ],
+  "tags": [
+   "equipment",
+   "feet"
+  ],
+  "n": 5,
+  "stats": null
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Amuleto Protetor",
+    "type": "Equipamento",
+    "subtype": "Amuleto",
+    "rules": "+1 em Sabedoria. Todo dano que você sofre é reduzido em 1.",
+    "flavor": "A avó jurou que funcionava. Funcionava."
+   },
+   "en-US": {
+    "name": "Warding Amulet",
+    "type": "Equipment",
+    "subtype": "Amulet",
+    "rules": "+1 Wisdom. All damage you take is reduced by 1.",
+    "flavor": "Grandma swore it worked. It did."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "equip_slot_accessory",
+   "permanent_buff_1",
+   "equip_mitigate"
+  ],
+  "tags": [
+   "equipment",
+   "amulet"
+  ],
+  "n": 6,
+  "stats": null
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "uncommon",
+  "text": {
+   "pt-BR": {
+    "name": "Runa Flamejante",
+    "type": "Equipamento",
+    "subtype": "Runa de arma",
+    "rules": "Grave numa arma: +1 ATK, e quem ela ferir sofre 1 de dano persistente. Perfurante.",
+    "flavor": "A lâmina lembra do forno em que nasceu."
+   },
+   "en-US": {
+    "name": "Flaming Rune",
+    "type": "Equipment",
+    "subtype": "Weapon rune",
+    "rules": "Etch it onto a weapon: +1 ATK, and whoever it wounds takes 1 persistent damage. Piercing.",
+    "flavor": "The blade remembers the forge it was born in."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 0
+  },
+  "mechanics": [
+   "equip_slot_weapon",
+   "burn",
+   "pierce"
+  ],
+  "tags": [
+   "equipment",
+   "weapon"
+  ],
+  "n": 7,
+  "stats": {
+   "atk": 1,
+   "def": 0
+  }
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "rare",
+  "text": {
+   "pt-BR": {
+    "name": "Vingadora Sagrada",
+    "type": "Equipamento",
+    "subtype": "Mão principal",
+    "rules": "Arma. +2 ATK. Castigo: +2 de dano contra mortos-vivos e demônios. Você tem Resistência 1 contra magias.",
+    "flavor": "Forjada em oração, temperada em luz."
+   },
+   "en-US": {
+    "name": "Holy Avenger",
+    "type": "Equipment",
+    "subtype": "Main hand",
+    "rules": "Weapon. +2 ATK. Smite: +2 damage against undead and fiends. You have Resistance 1 against spells.",
+    "flavor": "Forged in prayer, tempered in light."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 1
+  },
+  "mechanics": [
+   "equip_slot_weapon",
+   "smite",
+   "resistance"
+  ],
+  "tags": [
+   "equipment",
+   "weapon"
+  ],
+  "n": 8,
+  "stats": {
+   "atk": 2,
+   "def": 0
+  }
+ },
+ {
+  "deck": "equipment",
+  "colors": [
+   "gear"
+  ],
+  "rarity": "unique",
+  "text": {
+   "pt-BR": {
+    "name": "Manto do Arquimago",
+    "type": "Equipamento",
+    "subtype": "Peito · Lendário",
+    "rules": "+2 em Inteligência, +1 DEF. Ao equipar, compre 2 cartas. Uma vez por turno, você pode anular uma magia inimiga (Contramágica).",
+    "flavor": "Os bordados mudam de lugar quando ninguém olha."
+   },
+   "en-US": {
+    "name": "Robe of the Archmagi",
+    "type": "Equipment",
+    "subtype": "Chest · Legendary",
+    "rules": "+2 Intelligence, +1 DEF. When equipped, draw 2 cards. Once per turn, you may counter an enemy spell (Counterspell).",
+    "flavor": "The embroidery moves when no one is looking."
+   }
+  },
+  "cost": {
+   "resource": "gold",
+   "amount": 3
+  },
+  "mechanics": [
+   "equip_slot_armor",
+   "permanent_buff_2",
+   "draw_2",
+   "counterspell"
+  ],
+  "tags": [
+   "equipment",
+   "chest"
+  ],
+  "n": 9,
+  "stats": {
+   "atk": 0,
+   "def": 1
+  }
+ }
+]

@@ -6,7 +6,7 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { seedProject } from '../model/seed';
+import { PF_ID, pfCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import type { Card, ColorId, Deck, Lang, Project } from '../model/types';
 import * as store from './db';
@@ -19,6 +19,8 @@ class ProjectState {
   ready = $state(false);
   saveState = $state<SaveState>('idle');
   saveError = $state('');
+  /** Coleção (edição) aberta na biblioteca, no verso e nos ajustes. */
+  editionId = $state('');
 
   #dirtyCards = new Set<string>();
   #deletedCards = new Set<string>();
@@ -33,6 +35,7 @@ class ProjectState {
     if (project) {
       this.project = project;
       this.cards = Object.fromEntries(cards.map((c) => [c.id, c]));
+      this.#addMissingCollections();
     } else {
       const s = seedProject();
       this.project = s.project;
@@ -40,14 +43,36 @@ class ProjectState {
       await store.saveProject(s.project);
       await store.saveCards(s.cards);
     }
+    this.editionId = this.project!.editions[0]?.id ?? '';
     this.ready = true;
+  }
+
+  /**
+   * Acrescenta coleções de exemplo novas a projetos antigos — uma vez só, sem tocar no resto.
+   * Vai pela fila normal de salvamento (uma falha não impede o app de abrir).
+   */
+  #addMissingCollections(): void {
+    const p = this.project!;
+    if (p.seeded?.includes(PF_ID)) return;
+    p.seeded = [...(p.seeded ?? []), PF_ID];
+    if (!p.editions.some((e) => e.id === PF_ID)) {
+      const pf = pfCollection();
+      p.editions.push(pf.edition);
+      p.decks.push(...pf.decks);
+      for (const c of pf.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+    }
+    this.#projectDirty = true;
+    this.#schedule();
   }
 
   // ───────────── leitura ─────────────
 
   deck(id: string): Deck | undefined { return this.project?.decks.find((d) => d.id === id); }
   get decks(): Deck[] { return [...(this.project?.decks ?? [])].sort((a, b) => a.order - b.order); }
-  edition(id?: string) { return this.project?.editions.find((e) => e.id === id) ?? this.project?.editions[0]; }
+  /** Decks da coleção aberta (ou da informada). */
+  decksOf(editionId = this.editionId): Deck[] { return this.decks.filter((d) => d.editionId === editionId); }
+  /** Edição pelo id; sem id, a coleção aberta. */
+  edition(id?: string) { const eds = this.project?.editions; return eds?.find((e) => e.id === (id ?? this.editionId)) ?? eds?.[0]; }
 
   cardsOf(deckId: string): Card[] {
     return Object.values(this.cards).filter((c) => c.deckId === deckId).sort((a, b) => a.n - b.n);
@@ -122,6 +147,7 @@ class ProjectState {
     await store.saveCards(cards);
     this.project = project;
     this.cards = Object.fromEntries(cards.map((c) => [c.id, c]));
+    if (!project.editions.some((e) => e.id === this.editionId)) this.editionId = project.editions[0]?.id ?? '';
   }
 
   async resetToSeed(): Promise<void> {
