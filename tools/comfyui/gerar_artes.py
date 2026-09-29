@@ -105,6 +105,14 @@ def achar(lista, *pistas):
     return None
 
 
+def corte(a):
+    """Gera a imagem mais alta e corta a faixa de baixo: é ali que o Flux costuma "assinar" o quadro."""
+    return {
+        "14": {"class_type": "ImageCrop", "inputs": {"image": ["8", 0], "width": a.largura, "height": a.altura, "x": 0, "y": 0}},
+        "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "darkstar/" + a._nome, "images": ["14", 0]}},
+    }
+
+
 def fluxo_flux(m, positivo, a):
     """Flux em arquivos separados (igual ao exemplo Flux Dev do ComfyUI)."""
     dual = {"clip_name1": m["t5"], "clip_name2": m["clip_l"], "type": "flux"}
@@ -117,12 +125,12 @@ def fluxo_flux(m, positivo, a):
         "6": {"class_type": "CLIPTextEncode", "inputs": {"text": positivo, "clip": ["11", 0]}},
         "7": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["11", 0]}},
         "13": {"class_type": "FluxGuidance", "inputs": {"conditioning": ["6", 0], "guidance": a.guia}},
-        "5": {"class_type": "EmptySD3LatentImage", "inputs": {"width": a.largura, "height": a.altura, "batch_size": 1}},
+        "5": {"class_type": "EmptySD3LatentImage", "inputs": {"width": a.largura, "height": a.altura + a.corte, "batch_size": 1}},
         "3": {"class_type": "KSampler", "inputs": {
             "seed": a._semente, "steps": a.passos, "cfg": 1.0, "sampler_name": a.sampler, "scheduler": a.scheduler,
             "denoise": 1.0, "model": ["10", 0], "positive": ["13", 0], "negative": ["7", 0], "latent_image": ["5", 0]}},
         "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["12", 0]}},
-        "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "darkstar/" + a._nome, "images": ["8", 0]}},
+        **corte(a),
     }
 
 
@@ -130,14 +138,14 @@ def fluxo_ckpt(ckpt, positivo, negativo, a):
     """Modelo de arquivo único (SDXL, SD 1.5…)."""
     return {
         "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": ckpt}},
-        "5": {"class_type": "EmptyLatentImage", "inputs": {"width": a.largura, "height": a.altura, "batch_size": 1}},
+        "5": {"class_type": "EmptyLatentImage", "inputs": {"width": a.largura, "height": a.altura + a.corte, "batch_size": 1}},
         "6": {"class_type": "CLIPTextEncode", "inputs": {"text": positivo, "clip": ["4", 1]}},
         "7": {"class_type": "CLIPTextEncode", "inputs": {"text": negativo, "clip": ["4", 1]}},
         "3": {"class_type": "KSampler", "inputs": {
             "seed": a._semente, "steps": a.passos, "cfg": a.cfg, "sampler_name": a.sampler, "scheduler": a.scheduler,
             "denoise": 1.0, "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]}},
         "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]}},
-        "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "darkstar/" + a._nome, "images": ["8", 0]}},
+        **corte(a),
     }
 
 
@@ -186,9 +194,11 @@ def main():
     p.add_argument("--cfg", type=float, default=6.0, help="só para modelos que não são Flux")
     p.add_argument("--sampler", help="padrão: euler no Flux, dpmpp_2m nos outros")
     p.add_argument("--scheduler", help="padrão: simple no Flux, karras nos outros")
+    p.add_argument("--corte", type=int, default=64, help="px gerados a mais embaixo e cortados (tira assinaturas falsas; 0 = desliga)")
     p.add_argument("--semente", type=int, default=2026, help="semente base (mesma semente = mesma imagem)")
     p.add_argument("--tempo-max", type=int, default=1800, help="segundos de espera por imagem")
     a = p.parse_args()
+    a.corte = max(0, round(a.corte / 16) * 16)  # múltiplo de 16 (exigência dos modelos)
 
     try:
         m = descobrir(a.servidor)
@@ -218,7 +228,7 @@ def main():
         a.passos = a.passos or 20
         a.sampler, a.scheduler = a.sampler or "euler", a.scheduler or "simple"
         print(f"Flux: {m['unet']}  ·  texto: {m['t5']} + {m['clip_l']}  ·  VAE: {m['vae']}")
-        print(f"      {a.largura}×{a.altura}  ·  {a.passos} passos  ·  guidance {a.guia}  ·  {a.sampler}/{a.scheduler}  ·  peso {a.peso}")
+        print(f"      {a.largura}×{a.altura} (gera {a.corte} px a mais embaixo e corta)  ·  {a.passos} passos  ·  guidance {a.guia}  ·  {a.sampler}/{a.scheduler}  ·  peso {a.peso}")
     else:
         ck = m["checkpoints"]
         if not ck:

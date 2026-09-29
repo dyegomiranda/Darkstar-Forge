@@ -51,6 +51,8 @@ Dicas:
 - `--refazer --so pf-red_004 --semente 123` gera de novo uma carta que não ficou boa (outra semente = outra imagem).
 - Pouca memória na placa de vídeo: `--peso fp8_e4m3fn` (Flux) ou `--largura 640 --altura 896`.
 - Se as 3 primeiras cartas derem erro, o script para e mostra o motivo. Mande o print.
+- O Flux costuma "assinar" o quadro no canto de baixo. Por isso o script gera a imagem 64 px mais alta e corta
+  essa faixa antes de salvar (a imagem final continua 832×1152). `--corte 128` corta mais; `--corte 0` desliga.
 
 ## 3. Coloque as artes nas cartas
 
