@@ -283,7 +283,13 @@ export function compose(inp: ComposeInput): string {
       const pick = res === first ? look.icons?.cost : undefined;
       const glyph = pick?.glyph ?? resourceIcon(res);
       const color = pick?.color ?? RESOURCE_COLORS[res as ResourceId];
-      if (glyph) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, { color }));
+      if (glyph && C.out.costOrbs) {
+        // esfera de energia na cor do recurso, com o símbolo escuro por cima
+        const r = u.s * 0.56, ox = x0 + u.x + u.s / 2, oy = c.y + u.y + u.s / 2;
+        text += `<circle cx="${ox}" cy="${oy}" r="${r + 1.5}" fill="#0c0c0e"/>` +
+          `<circle cx="${ox}" cy="${oy}" r="${r}" fill="${defs.radial([[0, lighten(color, 0.55)], [0.55, color], [1, darken(color, 0.35)]], 0.38, 0.3, 0.8)}"/>` +
+          drawGlyph(defs, glyph, costIcons, ox - r * 0.72, oy - r * 0.72, r * 1.44, { color: '#141416' });
+      } else if (glyph) text += pix(C.out, drawGlyph(defs, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, { color }));
       if (u.num) text += centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 });
     }
   }

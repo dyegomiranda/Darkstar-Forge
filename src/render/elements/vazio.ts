@@ -13,6 +13,8 @@ import { center, gem, metalBand } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
 const SERIF = 'Marcellus';
+/** Números e regras: letra sem serifa (na Marcellus o 0 parece O e o 1 parece I). */
+const SANS = 'Noto Sans';
 const INK = '#f1edff';
 
 const accent = (pal: Palette) => lighten(vivid(pal.base), 0.25);
@@ -63,7 +65,7 @@ function facetGem(a: PieceArgs, box: Box): PieceOut {
     `<path d="${poly(inner)}" fill="none" stroke="${lighten(c, 0.6)}" stroke-width="1" opacity=".55"/>` +
     `<path d="${diamond(cx - ext - (R - 8) * 0.35, cy - (R - 8) * 0.45, 5, 3)}" fill="#fff" opacity=".7"/>`;
   const ci = (R - 8) * 0.64;
-  return { svg, content: { x: cx - ci - ext, y: cy - ci, w: 2 * (ci + ext), h: 2 * ci }, text: { family: SERIF, weight: 400, color: '#ffffff', glow: darken(c, 0.5) } };
+  return { svg, content: { x: cx - ci - ext, y: cy - ci, w: 2 * (ci + ext), h: 2 * ci }, text: { family: SANS, weight: 700, color: '#ffffff', glow: darken(c, 0.5) } };
 }
 
 /** Soquete redondo de cromo (classe, edição). */
@@ -130,7 +132,7 @@ export const vazio: PieceStyle[] = [
         voidFill(a, inner) +
         glowLine(a, chamfer(inset(b, 13), 14), 1, 0.45) +
         gem(cx - 22, b.y + 2, 5, 7, c) + gem(cx, b.y + 1, 7, 9, c) + gem(cx + 22, b.y + 2, 5, 7, c);
-      return { svg, content: inset(b, 34, 26), text: { family: SERIF, weight: 400, color: '#ebe7f7' } };
+      return { svg, content: inset(b, 34, 26), text: { family: SANS, weight: 400, color: '#ebe7f7' } };
     },
     divider(a, x, y, w) {
       const c = accent(a.pal);
@@ -146,7 +148,7 @@ export const vazio: PieceStyle[] = [
       const { cy } = center(b);
       const hex = (k: number) => poly([[b.x + k, cy], [b.x + 16 + k * 0.6, b.y + k], [b.x + b.w - 16 - k * 0.6, b.y + k], [b.x + b.w - k, cy], [b.x + b.w - 16 - k * 0.6, b.y + b.h - k], [b.x + 16 + k * 0.6, b.y + b.h - k]]);
       const svg = chrome(a, hex(0) + hex(7)) + voidFill(a, hex(7), 0.1) + glowLine(a, hex(11), 1, 0.5);
-      return { svg, content: inset(b, 18, 8), text: { family: SERIF, weight: 400, color: '#ffffff' } };
+      return { svg, content: inset(b, 18, 8), text: { family: SANS, weight: 700, color: '#ffffff' } };
     },
   },
   {
@@ -155,7 +157,7 @@ export const vazio: PieceStyle[] = [
       const b = a.box;
       const inner = chamfer(inset(b, 5), 9);
       const svg = chrome(a, chamfer(b, 12) + inner, 1.6) + voidFill(a, inner);
-      return { svg, content: inset(b, 16, 6), text: { family: SERIF, weight: 400, color: '#d9d4ea' } };
+      return { svg, content: inset(b, 16, 6), text: { family: SANS, weight: 400, color: '#d9d4ea' } };
     },
   },
   {

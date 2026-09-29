@@ -2,146 +2,22 @@
  * Estilo PIXEL SOMBRIO — pixel art de fantasia sombria. Referência: "Dark Elf
  * TCG Cards" (free-game-assets): ferro escuro, arremates de osso, faixa do nome
  * na cor da classe, selos redondos e pergaminho de bordas rasgadas.
- *
- * Tudo é rasterizado numa grade de pixels a partir de uma "distância até a
- * borda" (sdf): a mesma regra pinta contorno, aro iluminado e miolo em faixas,
- * em qualquer forma (disco, cápsula, placa, faixa, chifre).
+ * Desenhado pixel a pixel pelo motor de ./pxengine.
  */
-import { darken, lighten, mix } from '../color';
+import { darken, mix } from '../color';
 import { CARD_RADIUS } from '../layout';
-import { vivid, type Palette } from '../palette';
+import { vivid } from '../palette';
 import { bezier, inset, pixelArt, type Box, type Pt } from '../shapes';
+import { band, boxSdf, deckShades, g, hardShadow, hornSdf, lit, noise, OUT, P, pillSdf, plate, polySdf, raster, type Paint, type Sdf } from './pxengine';
 import type { TextLook } from '../text';
 import { center } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
-/** Tamanho do "pixel" (a carta tem 125 pixels de largura). */
-const P = 6;
-const OUT = '#120f16';
 const IRON = { hi: '#6d6776', light: '#4d4856', mid: '#37333e', dark: '#27242d', deep: '#1b1920' };
 const BONE = { hi: '#f3e9cb', light: '#d8c496', mid: '#a98f63', dark: '#6f5a3c' };
 const PARCH = ['#f2e5c3', '#eadab3', '#e0cda2', '#d2bc8e'];
 const INK_DARK = '#3a2a1b';
 const FONT = 'Pixelify Sans';
-
-// ───────────── motor de pixels ─────────────
-
-/** Distância com sinal até a borda (> 0 dentro), em px da carta. */
-type Sdf = (x: number, y: number) => number;
-/** Cor de um pixel: [cor, camada] (camada 'f' = miolo, recebe a transparência) ou null. */
-type Paint = (d: number, light: number, x: number, y: number) => [string, 'r' | 'f'] | null;
-
-const g = (n: number) => Math.floor(n / P) * P;
-
-/** Rasteriza a forma na grade, juntando pixels vizinhos da mesma cor numa faixa só. */
-function raster(b: Box, sdf: Sdf, paint: Paint, opacity = 1, extra = ''): string {
-  const groups = new Map<string, string>();
-  const x0 = g(b.x - P), x1 = b.x + b.w + P, y0 = g(b.y - P), y1 = b.y + b.h + P;
-  for (let y = y0; y < y1; y += P) {
-    let run: { key: string; x: number; n: number } | null = null;
-    const flush = () => {
-      if (run) groups.set(run.key, (groups.get(run.key) ?? '') + `M${run.x} ${y}h${run.n * P}v${P}h${-run.n * P}Z`);
-      run = null;
-    };
-    for (let x = x0; x < x1; x += P) {
-      const cx = x + P / 2, cy = y + P / 2;
-      const d = sdf(cx, cy);
-      let key: string | null = null;
-      if (d >= 0) {
-        // luz de cima-esquerda: o aro que "olha" para lá fica claro
-        const gx = sdf(cx + 1, cy) - sdf(cx - 1, cy), gy = sdf(cx, cy + 1) - sdf(cx, cy - 1);
-        const len = Math.hypot(gx, gy) || 1;
-        const light = (gx + gy) / len; // borda de cima/esquerda → gradiente aponta para baixo/direita → positivo
-        const c = paint(d, light, cx, cy);
-        if (c) key = `${c[1]}|${c[0]}`;
-      }
-      if (run && run.key === key && run.x + run.n * P === x) run.n++;
-      else { flush(); if (key) run = { key, x, n: 1 }; }
-    }
-    flush();
-  }
-  let out = '';
-  for (const [key, d] of groups) {
-    const [layer, color] = key.split('|');
-    const op = layer === 'f' && opacity < 1 ? ` fill-opacity="${+opacity.toFixed(3)}"` : '';
-    out += `<path d="${d}" fill="${color}"${op} shape-rendering="crispEdges"/>`;
-  }
-  return extra ? `<g${extra}>${out}</g>` : out;
-}
-
-const pillSdf = (cx: number, cy: number, r: number, ext: number): Sdf => (x, y) => {
-  const dx = Math.max(0, Math.abs(x - cx) - ext);
-  return r - Math.hypot(dx, y - cy);
-};
-
-const boxSdf = (b: Box, r: number): Sdf => {
-  const cx = b.x + b.w / 2, cy = b.y + b.h / 2, hx = b.w / 2 - r, hy = b.h / 2 - r;
-  return (x, y) => {
-    const qx = Math.abs(x - cx) - hx, qy = Math.abs(y - cy) - hy;
-    return -(Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r);
-  };
-};
-
-function segDist(x: number, y: number, a: Pt, b: Pt): { d: number; t: number } {
-  const vx = b[0] - a[0], vy = b[1] - a[1];
-  const t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / (vx * vx + vy * vy || 1)));
-  return { d: Math.hypot(x - a[0] - vx * t, y - a[1] - vy * t), t };
-}
-
-const polySdf = (pts: Pt[]): Sdf => (x, y) => {
-  let inside = false, best = Infinity;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, yi] = pts[i], [xj, yj] = pts[j];
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-    best = Math.min(best, segDist(x, y, pts[j], pts[i]).d);
-  }
-  return inside ? best : -best;
-};
-
-/** Traço grosso que afina (chifres, costelas). */
-const hornSdf = (pts: Pt[], w0: number, w1: number): Sdf => (x, y) => {
-  let best = -Infinity;
-  const n = pts.length - 1;
-  for (let i = 0; i < n; i++) {
-    const { d, t } = segDist(x, y, pts[i], pts[i + 1]);
-    const w = w0 + (w1 - w0) * ((i + t) / n);
-    best = Math.max(best, w / 2 - d);
-  }
-  return best;
-};
-
-/** Pinta aro claro/médio/escuro conforme a luz. */
-const lit = (light: number, c: { light: string; mid: string; dark: string }) =>
-  light > 0.35 ? c.light : light < -0.35 ? c.dark : c.mid;
-
-/** Tons do miolo na cor da classe (em várias cores, colunas lado a lado). */
-function deckShades(pal: Palette, x: number, b: Box, dark = 0): string[] {
-  const n = pal.colors.length;
-  const i = Math.min(n - 1, Math.max(0, Math.floor(((x - b.x) / b.w) * n)));
-  const v = darken(vivid(pal.colors[i]), dark);
-  return [lighten(v, 0.18), v, darken(v, 0.16), darken(v, 0.32)];
-}
-
-/** Faixa de tom pela altura (4 faixas sólidas, sem degradê). */
-const band = (y: number, b: Box, shades: string[]) =>
-  shades[Math.min(shades.length - 1, Math.max(0, Math.floor(((y - b.y) / b.h) * shades.length)))];
-
-/**
- * Peça padrão: contorno escuro, aro (osso ou ferro), filete escuro e miolo em faixas.
- * `fill` escolhe a cor do miolo pela posição.
- */
-function plate(sdf: Sdf, rim: { light: string; mid: string; dark: string }, fill: (x: number, y: number) => string, rimW = P, line = true): Paint {
-  return (d, light, x, y) => {
-    if (d < P) return [OUT, 'r'];
-    if (d < P + rimW) return [lit(light, rim), 'r'];
-    if (line && d < 2 * P + rimW) return [OUT, 'r'];
-    return [fill(x, y), 'f'];
-  };
-}
-
-/** Sombra dura de 1 pixel, deslocada para baixo e à direita. */
-const hardShadow = (b: Box, sdf: Sdf, opacity: number) =>
-  raster(b, sdf, (d) => (d >= 0 ? ['#000', 'r'] : null), 1, ` opacity="${+(0.55 * opacity).toFixed(3)}" transform="translate(${P} ${P})"`);
 
 const txt = (color = '#ffffff', weight = 500): TextLook => ({ family: FONT, weight, color, hard: true });
 const num = (color = '#ffffff'): TextLook => ({ family: 'Silkscreen', weight: 400, color, hard: true });
@@ -192,12 +68,6 @@ function ironPlate(a: PieceArgs, b: Box, radius: number, rimW = P): { svg: strin
     raster(b, sdf, plate(sdf, BONE, (_x, y) => band(y, b, [IRON.light, IRON.mid, IRON.dark, IRON.deep]), rimW), a.opacity);
   return { svg, inner: inset(b, rimW + 2 * P, rimW + P) };
 }
-
-/** Ruído estável por pixel (bordas rasgadas). */
-const noise = (i: number, j: number) => {
-  const s = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
-  return s - Math.floor(s);
-};
 
 const GEM = ['...O...', '..OWO..', '.OWCCO.', 'OWCCCDO', '.OCCDO.', '..ODO..', '...O...'];
 

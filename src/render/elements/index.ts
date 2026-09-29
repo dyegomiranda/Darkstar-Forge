@@ -7,6 +7,8 @@ import { selvagem } from './selvagem';
 import { sombrio } from './sombrio';
 import { vazio } from './vazio';
 import { espectral } from './espectral';
+import { energia } from './energia';
+import { aco } from './aco';
 import type { PieceKind, PieceStyle, StyleId, StyleInfo } from './types';
 
 export * from './types';
@@ -21,9 +23,11 @@ export const STYLES: StyleInfo[] = [
   { id: 'sombrio', name: 'Pixel Sombrio', icons: 'pixel', pixelArt: true, description: 'Pixel art de fantasia sombria: ferro escuro, arremates e chifres de osso, faixa do nome na cor da classe e pergaminho rasgado.' },
   { id: 'vazio', name: 'Vazio', icons: 'emblema', description: 'Cromo polido com brilho na cor da classe: cantos em degrau, custo em gema facetada, soquetes redondos e painéis escuros com filete luminoso.' },
   { id: 'espectral', name: 'Espectral', icons: 'emblema', description: 'Prata com filigrana de espinhos: moldura escura fina, plaquinhas claras de pontas escuras, painel de texto claro e orbes vítreos.' },
+  { id: 'energia', name: 'Energia', icons: 'chapado', description: 'Inspirado nas cartas de monstros tipo V: corpo preto com faixa prateada em V, barra do nome em degradê da cor do tipo, esferas de energia e barras pretas com curvas prateadas.' },
+  { id: 'aco', name: 'Pixel Aço', icons: 'pixel', pixelArt: true, description: 'Pixel art de metal: moldura de aço chanfrada (ou ouro, bronze, ferro, cor da classe), placa do nome gravada, slots escuros para números, medalhão dentado e painel de pedra gasta.' },
 ];
 
-const ALL: PieceStyle[] = [...ornado, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral];
+const ALL: PieceStyle[] = [...ornado, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
 
 const index = new Map<string, PieceStyle>(ALL.map((p) => [`${p.style}:${p.kind}`, p]));
 

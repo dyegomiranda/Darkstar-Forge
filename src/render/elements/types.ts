@@ -9,7 +9,7 @@ export type PieceKind = 'frame' | 'header' | 'cost' | 'class' | 'typeBar' | 'rul
 
 export const PIECE_KINDS: PieceKind[] = ['frame', 'header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set'];
 
-export type StyleId = 'ornado' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral';
+export type StyleId = 'ornado' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
 
 export interface PieceArgs {
   /** Área que o esqueleto reservou para a peça. */
@@ -37,6 +37,8 @@ export interface PieceOut {
   iconColor?: string;
   /** Pixelar os ícones desenhados dentro da peça (tamanho do bloco). */
   pixelIcons?: number;
+  /** Selo de custo: cada símbolo vai escuro sobre uma esfera na cor do recurso (esferas de energia). */
+  costOrbs?: boolean;
 }
 
 export interface PieceStyle {
