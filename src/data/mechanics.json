@@ -1,0 +1,973 @@
+[
+ {
+  "id": "damage_1",
+  "name": "Dano 1",
+  "en": "Damage 1",
+  "points": 2,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Causa 1 de dano"
+ },
+ {
+  "id": "damage_2",
+  "name": "Dano 2",
+  "en": "Damage 2",
+  "points": 3,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Causa 2 de dano"
+ },
+ {
+  "id": "damage_3",
+  "name": "Dano 3",
+  "en": "Damage 3",
+  "points": 5,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Causa 3 de dano (dano alto custa proporcionalmente mais)"
+ },
+ {
+  "id": "damage_4",
+  "name": "Dano 4",
+  "en": "Damage 4",
+  "points": 7,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Causa 4 de dano (dano alto custa proporcionalmente mais)"
+ },
+ {
+  "id": "damage_5",
+  "name": "Dano 5",
+  "en": "Damage 5",
+  "points": 9,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Causa 5 de dano (dano alto custa proporcionalmente mais)"
+ },
+ {
+  "id": "damage_6",
+  "name": "Dano 6",
+  "en": "Damage 6",
+  "points": 11,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Causa 6 de dano (dano alto custa proporcionalmente mais)"
+ },
+ {
+  "id": "aoe_damage",
+  "name": "Área",
+  "en": "Area",
+  "points": 3,
+  "tags": [
+   "spell"
+  ],
+  "desc": "O efeito atinge todos os inimigos (ou vários alvos)"
+ },
+ {
+  "id": "pierce",
+  "name": "Perfurante",
+  "en": "Piercing",
+  "points": 1,
+  "tags": [
+   "action",
+   "weapon"
+  ],
+  "desc": "Ignora 1 de DEF ou Resistência"
+ },
+ {
+  "id": "destroy",
+  "name": "Destruir",
+  "en": "Destroy",
+  "points": 6,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Destrói uma criatura, sem condição"
+ },
+ {
+  "id": "destroy_minor",
+  "name": "Destruir (condicional)",
+  "en": "Destroy (conditional)",
+  "points": 4,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Destrói uma criatura que cumpra uma condição (ex.: DEF 2 ou menos, já ferida)"
+ },
+ {
+  "id": "burn",
+  "name": "Dano persistente",
+  "en": "Persistent damage",
+  "points": 1,
+  "tags": [
+   "mage",
+   "spell"
+  ],
+  "desc": "O alvo sofre 1 de dano no início de cada turno dele até se livrar (PF2: dano persistente)"
+ },
+ {
+  "id": "poison",
+  "name": "Veneno",
+  "en": "Poison",
+  "points": 2,
+  "tags": [
+   "rogue",
+   "action"
+  ],
+  "desc": "Dano ao longo de vários turnos; difícil de remover"
+ },
+ {
+  "id": "haste",
+  "name": "Ímpeto",
+  "en": "Haste",
+  "points": 1,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Pode atacar no turno em que entra"
+ },
+ {
+  "id": "flying",
+  "name": "Voo",
+  "en": "Flying",
+  "points": 2,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Só pode ser bloqueada por quem tem Voo ou Alcance"
+ },
+ {
+  "id": "reach",
+  "name": "Alcance",
+  "en": "Reach",
+  "points": 1,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Bloqueia criaturas com Voo"
+ },
+ {
+  "id": "trample",
+  "name": "Atropelar",
+  "en": "Trample",
+  "points": 1,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Dano que sobra passa para o jogador"
+ },
+ {
+  "id": "first_strike",
+  "name": "Iniciativa",
+  "en": "First strike",
+  "points": 1,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Causa dano antes no combate"
+ },
+ {
+  "id": "vigilance",
+  "name": "Vigilância",
+  "en": "Vigilance",
+  "points": 1,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Ataca e ainda pode bloquear"
+ },
+ {
+  "id": "regenerate_1",
+  "name": "Regenerar 1",
+  "en": "Regenerate 1",
+  "points": 2,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Recupera 1 DEF no início do seu turno"
+ },
+ {
+  "id": "deathtouch",
+  "name": "Toque mortal",
+  "en": "Deathtouch",
+  "points": 2,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Qualquer dano que causar a uma criatura a destrói"
+ },
+ {
+  "id": "lifelink",
+  "name": "Vampirismo",
+  "en": "Lifelink",
+  "points": 1,
+  "tags": [
+   "creature"
+  ],
+  "desc": "O dano que causa cura você na mesma quantidade"
+ },
+ {
+  "id": "resistance",
+  "name": "Resistência 1",
+  "en": "Resistance 1",
+  "points": 2,
+  "tags": [
+   "creature"
+  ],
+  "desc": "Todo dano que sofre é reduzido em 1"
+ },
+ {
+  "id": "reactive_strike",
+  "name": "Ataque Reativo",
+  "en": "Reactive Strike",
+  "points": 2,
+  "tags": [
+   "warrior",
+   "creature"
+  ],
+  "desc": "Uma vez por turno, quando um inimigo ataca perto dela, ela golpeia primeiro com o próprio ATK (PF2: Ataque Reativo)"
+ },
+ {
+  "id": "taunt",
+  "name": "Provocar",
+  "en": "Taunt",
+  "points": 1,
+  "tags": [
+   "warrior"
+  ],
+  "desc": "Inimigos precisam atacar ou bloquear este alvo se puderem"
+ },
+ {
+  "id": "stealth",
+  "name": "Furtividade",
+  "en": "Stealth",
+  "points": 1,
+  "tags": [
+   "rogue"
+  ],
+  "desc": "Não pode ser bloqueada no primeiro ataque"
+ },
+ {
+  "id": "draw_1",
+  "name": "Comprar 1",
+  "en": "Draw 1",
+  "points": 2,
+  "tags": [
+   "action",
+   "spell"
+  ],
+  "desc": "Compre 1 carta"
+ },
+ {
+  "id": "draw_2",
+  "name": "Comprar 2",
+  "en": "Draw 2",
+  "points": 5,
+  "tags": [
+   "action",
+   "spell"
+  ],
+  "desc": "Compre 2 cartas"
+ },
+ {
+  "id": "scry_2",
+  "name": "Prever 2",
+  "en": "Scry 2",
+  "points": 1,
+  "tags": [
+   "mage",
+   "spell"
+  ],
+  "desc": "Olhe as 2 do topo do seu deck e reordene"
+ },
+ {
+  "id": "search",
+  "name": "Buscar",
+  "en": "Tutor",
+  "points": 2,
+  "tags": [
+   "spell",
+   "action"
+  ],
+  "desc": "Procure uma carta de um tipo no seu deck e ponha na mão"
+ },
+ {
+  "id": "discard",
+  "name": "Descarte",
+  "en": "Discard",
+  "points": 2,
+  "tags": [
+   "spell"
+  ],
+  "desc": "O oponente descarta 1 carta"
+ },
+ {
+  "id": "steal",
+  "name": "Roubar",
+  "en": "Steal",
+  "points": 3,
+  "tags": [
+   "rogue",
+   "action"
+  ],
+  "desc": "Pega um recurso, ouro ou carta do oponente"
+ },
+ {
+  "id": "gain_resource_1",
+  "name": "+1 Recurso",
+  "en": "+1 Resource",
+  "points": 2,
+  "tags": [
+   "action"
+  ],
+  "desc": "Ganha 1 do recurso da classe"
+ },
+ {
+  "id": "gain_resource_2",
+  "name": "+2 Recurso",
+  "en": "+2 Resource",
+  "points": 4,
+  "tags": [
+   "action"
+  ],
+  "desc": "Ganha 2 do recurso da classe"
+ },
+ {
+  "id": "gain_fury_1",
+  "name": "+1 Fúria",
+  "en": "+1 Rage",
+  "points": 1,
+  "tags": [
+   "warrior"
+  ],
+  "desc": "Gera 1 Fúria"
+ },
+ {
+  "id": "gain_fury_2",
+  "name": "+2 Fúria",
+  "en": "+2 Rage",
+  "points": 2,
+  "tags": [
+   "warrior"
+  ],
+  "desc": "Gera 2 Fúria"
+ },
+ {
+  "id": "spend_fury",
+  "name": "Opção de Fúria",
+  "en": "Rage option",
+  "points": 1,
+  "tags": [
+   "warrior"
+  ],
+  "desc": "Opcional: gaste Fúria para melhorar o efeito"
+ },
+ {
+  "id": "hire_gold",
+  "name": "Contratar (Ouro)",
+  "en": "Hire (Gold)",
+  "points": 0,
+  "tags": [
+   "mercenary"
+  ],
+  "desc": "Custo pago em Ouro em vez do recurso da classe"
+ },
+ {
+  "id": "gold_value_1",
+  "name": "Vale 1 Ouro",
+  "en": "Worth 1 Gold",
+  "points": 1,
+  "tags": [
+   "resource"
+  ],
+  "desc": "Produz ou concede 1 Ouro"
+ },
+ {
+  "id": "gold_value_2",
+  "name": "Vale 2 Ouro",
+  "en": "Worth 2 Gold",
+  "points": 2,
+  "tags": [
+   "resource"
+  ],
+  "desc": "Produz ou concede 2 Ouro"
+ },
+ {
+  "id": "gold_value_3",
+  "name": "Vale 3 Ouro",
+  "en": "Worth 3 Gold",
+  "points": 3,
+  "tags": [
+   "resource"
+  ],
+  "desc": "Produz ou concede 3 Ouro"
+ },
+ {
+  "id": "pump_1",
+  "name": "Reforço",
+  "en": "Boost",
+  "points": 1,
+  "tags": [
+   "action"
+  ],
+  "desc": "Uma criatura ganha +1/+1 (ou +2 ATK) até o fim do turno"
+ },
+ {
+  "id": "inspire",
+  "name": "Inspirar",
+  "en": "Inspire",
+  "points": 2,
+  "tags": [
+   "bard",
+   "action"
+  ],
+  "desc": "Todas as suas criaturas ganham +1 ATK até o fim do turno"
+ },
+ {
+  "id": "bless",
+  "name": "Bênção",
+  "en": "Bless",
+  "points": 2,
+  "tags": [
+   "cleric",
+   "spell"
+  ],
+  "desc": "Suas criaturas ganham +1 DEF (ou +1/+1 em uma) até o fim do turno"
+ },
+ {
+  "id": "frighten",
+  "name": "Amedrontar",
+  "en": "Frighten",
+  "points": 1,
+  "tags": [
+   "action"
+  ],
+  "desc": "O alvo fica Amedrontado: −1 ATK até o fim do próximo turno dele"
+ },
+ {
+  "id": "off_guard",
+  "name": "Desprevenido",
+  "en": "Off-guard",
+  "points": 1,
+  "tags": [
+   "rogue",
+   "action"
+  ],
+  "desc": "O alvo fica Desprevenido: −1 DEF neste turno e conta como desatento para Ataque Furtivo"
+ },
+ {
+  "id": "trip",
+  "name": "Derrubar",
+  "en": "Trip",
+  "points": 1,
+  "tags": [
+   "warrior",
+   "action"
+  ],
+  "desc": "O alvo fica Caído: não bloqueia neste turno"
+ },
+ {
+  "id": "control",
+  "name": "Controle",
+  "en": "Control",
+  "points": 2,
+  "tags": [
+   "mage",
+   "spell"
+  ],
+  "desc": "Imobiliza o alvo: ele não ataca nem bloqueia no próximo turno"
+ },
+ {
+  "id": "stun",
+  "name": "Atordoar",
+  "en": "Stun",
+  "points": 3,
+  "tags": [
+   "monk",
+   "action"
+  ],
+  "desc": "O alvo perde o próximo turno inteiro (não ataca, não bloqueia, não usa efeitos)"
+ },
+ {
+  "id": "curse",
+  "name": "Maldição",
+  "en": "Curse",
+  "points": 2,
+  "tags": [
+   "necro",
+   "warlock",
+   "spell"
+  ],
+  "desc": "Penalidade que fica no alvo até ele se livrar"
+ },
+ {
+  "id": "song_control",
+  "name": "Canção de controle",
+  "en": "Song of control",
+  "points": 2,
+  "tags": [
+   "bard",
+   "spell"
+  ],
+  "desc": "Mexe com a emoção do alvo: ele ataca quem você escolher ou não ataca"
+ },
+ {
+  "id": "entangle",
+  "name": "Enredar",
+  "en": "Entangle",
+  "points": 2,
+  "tags": [
+   "druid",
+   "spell"
+  ],
+  "desc": "Criaturas inimigas não atacam no próximo turno delas"
+ },
+ {
+  "id": "hunt_prey",
+  "name": "Presa",
+  "en": "Hunt Prey",
+  "points": 2,
+  "tags": [
+   "ranger"
+  ],
+  "desc": "Marque uma criatura inimiga: seus ataques e efeitos contra ela causam +1 (PF2: Caçar Presa)"
+ },
+ {
+  "id": "charge",
+  "name": "Investida",
+  "en": "Charge",
+  "points": 2,
+  "tags": [
+   "warrior",
+   "action"
+  ],
+  "desc": "Uma criatura ganha Ímpeto e +1 ATK neste ataque"
+ },
+ {
+  "id": "power_attack",
+  "name": "Golpe poderoso",
+  "en": "Power attack",
+  "points": 2,
+  "tags": [
+   "warrior",
+   "action"
+  ],
+  "desc": "Troca precisão por dano extra (+2 dano, com um porém)"
+ },
+ {
+  "id": "flurry",
+  "name": "Rajada",
+  "en": "Flurry",
+  "points": 2,
+  "tags": [
+   "monk",
+   "action"
+  ],
+  "desc": "Dois ataques menores em vez de um"
+ },
+ {
+  "id": "sneak",
+  "name": "Ataque furtivo",
+  "en": "Sneak attack",
+  "points": 2,
+  "tags": [
+   "rogue",
+   "action"
+  ],
+  "desc": "+2 de dano contra alvo Desprevenido ou que não está bloqueando"
+ },
+ {
+  "id": "smite",
+  "name": "Castigo",
+  "en": "Smite",
+  "points": 2,
+  "tags": [
+   "paladin",
+   "action"
+  ],
+  "desc": "+2 de dano; dobra contra mortos-vivos e demônios"
+ },
+ {
+  "id": "ki_strike",
+  "name": "Golpe de ki",
+  "en": "Ki strike",
+  "points": 2,
+  "tags": [
+   "monk",
+   "action"
+  ],
+  "desc": "Golpe corpo a corpo que ignora Resistência e conta como mágico"
+ },
+ {
+  "id": "shield_block",
+  "name": "Bloqueio com escudo",
+  "en": "Shield block",
+  "points": 2,
+  "tags": [
+   "warrior",
+   "action"
+  ],
+  "desc": "Previne até 3 de dano de uma fonte"
+ },
+ {
+  "id": "arcane_armor",
+  "name": "Armadura arcana",
+  "en": "Arcane armor",
+  "points": 1,
+  "tags": [
+   "mage",
+   "spell"
+  ],
+  "desc": "+2 DEF até o início do seu próximo turno"
+ },
+ {
+  "id": "aura_protection",
+  "name": "Aura protetora",
+  "en": "Protective aura",
+  "points": 3,
+  "tags": [
+   "paladin"
+  ],
+  "desc": "Enquanto estiver em jogo, todo dano a seus aliados é reduzido em 1"
+ },
+ {
+  "id": "counterspell",
+  "name": "Contramágica",
+  "en": "Counterspell",
+  "points": 3,
+  "tags": [
+   "mage",
+   "spell"
+  ],
+  "desc": "Anula uma magia enquanto ela é lançada"
+ },
+ {
+  "id": "reaction",
+  "name": "Reação",
+  "en": "Reaction",
+  "points": 1,
+  "tags": [
+   "action"
+  ],
+  "desc": "Pode ser jogada no turno do oponente, em resposta a algo"
+ },
+ {
+  "id": "modal",
+  "name": "Escolha um",
+  "en": "Choose one",
+  "points": 1,
+  "tags": [
+   "action",
+   "spell"
+  ],
+  "desc": "Ao jogar, escolha entre dois efeitos (a pontuação conta o melhor)"
+ },
+ {
+  "id": "weapon_mastery",
+  "name": "Maestria de arma",
+  "en": "Weapon mastery",
+  "points": 2,
+  "tags": [
+   "warrior",
+   "equipment"
+  ],
+  "desc": "Bônus permanente com um tipo de arma"
+ },
+ {
+  "id": "rage_aura",
+  "name": "Aura de fúria",
+  "en": "Rage aura",
+  "points": 3,
+  "tags": [
+   "warrior"
+  ],
+  "desc": "Aliados corpo a corpo ganham +1 ATK enquanto estiver em jogo"
+ },
+ {
+  "id": "heal_2",
+  "name": "Cura 2",
+  "en": "Heal 2",
+  "points": 1,
+  "tags": [
+   "druid",
+   "cleric",
+   "spell"
+  ],
+  "desc": "Recupera 2 PV (cura vale menos que dano)"
+ },
+ {
+  "id": "heal_4",
+  "name": "Cura 4",
+  "en": "Heal 4",
+  "points": 3,
+  "tags": [
+   "druid",
+   "cleric",
+   "spell"
+  ],
+  "desc": "Recupera 4 PV"
+ },
+ {
+  "id": "second_wind",
+  "name": "Segundo fôlego",
+  "en": "Second wind",
+  "points": 2,
+  "tags": [
+   "warrior",
+   "action"
+  ],
+  "desc": "Você recupera PV e se reergue no meio da luta"
+ },
+ {
+  "id": "drain",
+  "name": "Drenar",
+  "en": "Drain",
+  "points": 2,
+  "tags": [
+   "necro",
+   "spell"
+  ],
+  "desc": "O dano causado também cura você"
+ },
+ {
+  "id": "reanimate",
+  "name": "Reanimar",
+  "en": "Reanimate",
+  "points": 3,
+  "tags": [
+   "necro",
+   "spell"
+  ],
+  "desc": "Volta uma criatura do seu cemitério para o jogo"
+ },
+ {
+  "id": "resurrect",
+  "name": "Reviver",
+  "en": "Resurrect",
+  "points": 5,
+  "tags": [
+   "cleric",
+   "spell"
+  ],
+  "desc": "Traz de volta uma criatura destruída com tudo que tinha"
+ },
+ {
+  "id": "turn_undead",
+  "name": "Repelir mortos",
+  "en": "Turn undead",
+  "points": 2,
+  "tags": [
+   "cleric",
+   "spell"
+  ],
+  "desc": "Efeito forte contra mortos-vivos"
+ },
+ {
+  "id": "soul_harvest",
+  "name": "Colheita de almas",
+  "en": "Soul harvest",
+  "points": 2,
+  "tags": [
+   "necro"
+  ],
+  "desc": "Ganha Almas quando criaturas morrem"
+ },
+ {
+  "id": "summon",
+  "name": "Invocação",
+  "en": "Summon",
+  "points": 2,
+  "tags": [
+   "mage",
+   "spell"
+  ],
+  "desc": "Põe em jogo uma ficha de criatura 1/1"
+ },
+ {
+  "id": "companion",
+  "name": "Companheiro",
+  "en": "Companion",
+  "points": 2,
+  "tags": [
+   "druid",
+   "ranger"
+  ],
+  "desc": "Um animal aliado entra em jogo com você"
+ },
+ {
+  "id": "familiar",
+  "name": "Familiar",
+  "en": "Familiar",
+  "points": 1,
+  "tags": [
+   "mage",
+   "warlock"
+  ],
+  "desc": "Pequeno aliado que não ataca, mas dá um benefício por turno"
+ },
+ {
+  "id": "beast_form",
+  "name": "Forma bestial",
+  "en": "Wild shape",
+  "points": 3,
+  "tags": [
+   "druid"
+  ],
+  "desc": "Você (ou uma criatura) assume novos ATK/DEF por um tempo"
+ },
+ {
+  "id": "cantrip",
+  "name": "Truque",
+  "en": "Cantrip",
+  "points": 2,
+  "tags": [
+   "spell"
+  ],
+  "desc": "No fim do turno, pague 1 para devolver esta carta à mão (magia sem limite do PF2)"
+ },
+ {
+  "id": "disarm_trap",
+  "name": "Desarmar",
+  "en": "Disarm",
+  "points": 1,
+  "tags": [
+   "rogue"
+  ],
+  "desc": "Remove uma armadilha ou encantamento"
+ },
+ {
+  "id": "ki_stance",
+  "name": "Postura",
+  "en": "Stance",
+  "points": 0,
+  "tags": [
+   "monk"
+  ],
+  "desc": "Só uma Postura por vez; trocar encerra a anterior"
+ },
+ {
+  "id": "sacrifice",
+  "name": "Sacrifício",
+  "en": "Sacrifice",
+  "points": -1,
+  "tags": [
+   "necro"
+  ],
+  "desc": "Exige sacrificar uma criatura sua para jogar"
+ },
+ {
+  "id": "self_damage",
+  "name": "Custo em PV",
+  "en": "Life cost",
+  "points": -1,
+  "tags": [
+   "necro",
+   "warrior"
+  ],
+  "desc": "Você perde PV para usar"
+ },
+ {
+  "id": "sustain",
+  "name": "Sustentar",
+  "en": "Sustain",
+  "points": -1,
+  "tags": [
+   "spell"
+  ],
+  "desc": "Pague 1 no início de cada turno seu ou a carta acaba"
+ },
+ {
+  "id": "equip_penalty",
+  "name": "Penalidade",
+  "en": "Penalty",
+  "points": -1,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "Tem um porém (ex.: lentidão, −1 em algo)"
+ },
+ {
+  "id": "equip_slot_weapon",
+  "name": "Arma",
+  "en": "Weapon",
+  "points": 0,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "Ocupa o espaço de arma na ficha"
+ },
+ {
+  "id": "equip_slot_armor",
+  "name": "Armadura",
+  "en": "Armor",
+  "points": 0,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "Ocupa o espaço de armadura na ficha"
+ },
+ {
+  "id": "equip_slot_helm",
+  "name": "Elmo",
+  "en": "Helm",
+  "points": 0,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "Ocupa o espaço de elmo na ficha"
+ },
+ {
+  "id": "equip_slot_accessory",
+  "name": "Acessório",
+  "en": "Accessory",
+  "points": 0,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "Ocupa o espaço de acessório na ficha"
+ },
+ {
+  "id": "permanent_buff_1",
+  "name": "Bônus permanente +1",
+  "en": "Permanent +1",
+  "points": 2,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "+1 em um atributo enquanto equipado"
+ },
+ {
+  "id": "permanent_buff_2",
+  "name": "Bônus permanente +2",
+  "en": "Permanent +2",
+  "points": 4,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "+2 em um atributo enquanto equipado"
+ },
+ {
+  "id": "equip_mitigate",
+  "name": "Mitigação",
+  "en": "Mitigation",
+  "points": 2,
+  "tags": [
+   "equipment"
+  ],
+  "desc": "Reduz o dano recebido pelo portador"
+ }
+]

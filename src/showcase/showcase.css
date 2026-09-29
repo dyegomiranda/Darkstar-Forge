@@ -1,0 +1,45 @@
+:root { color-scheme: dark; --bg: #0f0d0c; --panel: #191512; --line: #2e2620; --text: #efe6da; --muted: #a8998a; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Noto Sans", system-ui, sans-serif; }
+.top { padding: 28px 32px 12px; border-bottom: 1px solid var(--line); }
+h1 { font: 600 28px "Cinzel", serif; margin: 0 0 6px; letter-spacing: .04em; }
+.top p { margin: 0 0 10px; color: var(--muted); max-width: 900px; }
+select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: inherit; margin-left: 8px; }
+section { padding: 20px 32px 36px; border-bottom: 1px solid var(--line); }
+h2 { font: 600 20px "Cinzel", serif; letter-spacing: .03em; margin: 8px 0 18px; color: #e8c98a; }
+h3 { font: 600 17px "EB Garamond", serif; margin: 22px 0 10px; }
+h3 small { font: 400 13px "Noto Sans", sans-serif; color: var(--muted); margin-left: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.card { margin: 0; width: 300px; }
+.card-svg svg { width: 300px; height: auto; display: block; border-radius: 13px; box-shadow: 0 10px 30px rgb(0 0 0 / .6); }
+.card figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; text-align: center; }
+table.pieces { border-collapse: separate; border-spacing: 10px; }
+table.pieces th { font: 600 14px "EB Garamond", serif; color: var(--muted); text-align: left; vertical-align: middle; white-space: nowrap; }
+table.pieces thead th { text-align: center; font: 600 16px "Cinzel", serif; color: var(--text); }
+table.pieces td { background: #0d0b0a; border: 1px solid var(--line); border-radius: 10px; padding: 0; vertical-align: middle; text-align: center; }
+svg.piece { display: block; width: 100%; border-radius: 10px; }
+svg.piece-header, svg.piece-typeBar, svg.piece-rules { width: 340px; }
+svg.piece-cost, svg.piece-class, svg.piece-set, svg.piece-stat, svg.piece-footer { width: 170px; margin: auto; }
+section:has(table.pieces) { overflow-x: auto; }
+h4 { font: 600 15px "Cinzel", serif; color: #e8c98a; margin: 16px 0 8px; }
+.bench { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+.bench-ctl { flex: 1 1 560px; min-width: 0; }
+.bench-view { position: sticky; top: 12px; }
+.card-svg.big svg { width: 420px; height: auto; display: block; border-radius: 18px; box-shadow: 0 14px 40px rgb(0 0 0 / .7); }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 8px 0; }
+.ctl-row .lbl { width: 70px; color: var(--muted); }
+.ctl-row label { display: inline-flex; gap: 6px; align-items: center; }
+.ctl-row select { margin-left: 0; }
+button, .mini { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: inherit; cursor: pointer; }
+.mini { padding: 2px 7px; margin-left: 4px; }
+.bench-table { border-collapse: collapse; font-size: 13px; }
+.bench-table th, .bench-table td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.bench-table thead th { color: var(--muted); font-weight: 600; }
+.bench-table tr.off { opacity: .45; }
+.bench-table select { margin: 0; padding: 4px 6px; max-width: 150px; }
+input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: none; vertical-align: middle; }
+input[type=range] { width: 110px; vertical-align: middle; }
+.row.gl { gap: 40px; }
+.glyph-head { border-collapse: collapse; margin-left: 12px; }
+.glyph-head th { font: 600 13px "Noto Sans", sans-serif; color: var(--muted); text-align: center; }
+svg.glyphs { display: block; background: #16120f; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; height: auto; }
