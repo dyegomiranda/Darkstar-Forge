@@ -25,8 +25,27 @@
   const url = (f: File) => { let u = urls.get(f); if (!u) { u = URL.createObjectURL(f); urls.set(f, u); } return u; };
   onDestroy(() => { for (const u of urls.values()) URL.revokeObjectURL(u); });
 
-  /** Escolha por carta: índice da imagem ou -1 (nenhuma). Começa na 1ª. */
-  let pick = $state<Record<string, number>>(Object.fromEntries(groups.map((g) => [g.card.id, 0])));
+  // ── escolhas guardadas: reabrir com os mesmos arquivos traz as escolhas de volta ──
+  const SAVED = 'darkstar.escolhasArte';
+  /** Carta → nome do arquivo escolhido ('' = nenhuma). */
+  let saved: Record<string, string> = {};
+  try { saved = JSON.parse(localStorage.getItem(SAVED) ?? '{}') ?? {}; } catch { saved = {}; }
+
+  /** Escolha por carta: índice da imagem ou -1 (nenhuma). Começa na escolha guardada ou na 1ª. */
+  let pick = $state<Record<string, number>>(Object.fromEntries(groups.map((g) => {
+    const s = saved[g.card.id];
+    if (s === '') return [g.card.id, -1];
+    const i = s ? g.files.findIndex((f) => f.name === s) : -1;
+    return [g.card.id, i >= 0 ? i : 0];
+  })));
+  const restored = groups.filter((g) => saved[g.card.id] !== undefined).length;
+
+  // grava a cada mudança (sobrevive a fechar a janela ou o programa)
+  $effect(() => {
+    const out = { ...saved };
+    for (const g of groups) { const i = pick[g.card.id]; out[g.card.id] = i >= 0 ? g.files[i].name : ''; }
+    try { localStorage.setItem(SAVED, JSON.stringify(out)); } catch { /* sem armazenamento local */ }
+  });
   const chosen = $derived(groups.filter((g) => pick[g.card.id] >= 0).length);
   const nameOf = (c: Card) => c.text[app.lang]?.name ?? c.text['pt-BR'].name;
 
@@ -75,7 +94,8 @@
     <header>
       <div class="grow">
         <h2>{L('Escolha a arte de cada carta', 'Choose each card\'s artwork')}</h2>
-        <p class="muted">{L('Clique na melhor versão de cada carta. Use "Ver grande" para olhar os detalhes.', 'Click the best version for each card. Use "View large" to see the details.')}</p>
+        <p class="muted">{L('Clique na melhor versão de cada carta. Use "Ver grande" para olhar os detalhes. Suas escolhas ficam guardadas.', 'Click the best version for each card. Use "View large" to see the details. Your choices are saved.')}</p>
+        {#if restored}<p class="restored">{L(`${restored} escolhas anteriores foram recuperadas.`, `${restored} earlier choices were restored.`)}</p>{/if}
       </div>
       <button class="btn ghost icon close" title={L('Fechar sem importar (Esc)', 'Close without importing (Esc)')} onclick={oncancel}><X size={18} /></button>
     </header>
@@ -144,6 +164,7 @@
   .dialog > header h2 { margin: 0 0 4px; font-size: 18px; }
   .dialog > header p { margin: 0; font-size: 13px; }
   .grow { flex: 1; min-width: 0; }
+  .restored { margin: 6px 0 0 !important; color: var(--ok, #7ac27a); font-size: 12.5px !important; }
   .small { font-size: 12.5px; }
   .list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 20px; display: flex; flex-direction: column; gap: 10px; }
   .row { display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }

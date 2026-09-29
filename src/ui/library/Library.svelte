@@ -121,8 +121,8 @@
     const list = [...files];
     artInput.value = '';
     const { groups, unmatched } = groupArtFiles(list);
-    pickMissing = unmatched;
-    if (!groups.length) { reportArt(0, unmatched); return; }
+    pickMissing = unmatched.map((f) => f + L(' (sem carta com esse nome)', ' (no card with that name)'));
+    if (!groups.length) { reportArt(0, unmatched.map((f) => f + L(' (sem carta com esse nome)', ' (no card with that name)'))); return; }
     // alguma carta com mais de uma versão → deixa escolher; senão, aplica direto
     if (groups.some((g) => g.files.length > 1)) { picking = groups; return; }
     await finishArt(groups.map((g) => ({ card: g.card, file: g.files[0] })));
@@ -130,13 +130,26 @@
 
   async function finishArt(choices: { card: Card; file: File }[]) {
     picking = null;
-    ui.toast(L(`Importando ${choices.length} imagens…`, `Importing ${choices.length} images…`));
-    reportArt(await applyArt(choices), pickMissing);
+    if (!choices.length) return;
+    let cancelled = false;
+    ui.progress = { label: L('Colocando as artes nas cartas…', 'Placing the artwork on the cards…'), done: 0, total: choices.length, cancel: () => { cancelled = true; } };
+    let r: { done: number; failed: string[] };
+    try {
+      r = await applyArt(choices, (n) => { if (ui.progress) ui.progress = { ...ui.progress, done: n }; }, () => cancelled);
+    } finally {
+      ui.progress = null;
+    }
+    // mostra a coleção que recebeu as artes (senão a Biblioteca pode estar em outra e "nada muda")
+    const edId = app.deck(choices[0].card.deckId)?.editionId;
+    if (edId && edId !== app.editionId) openEdition(edId);
+    reportArt(r.done, [...r.failed.map((f) => f + L(' (erro ao ler)', ' (read error)')), ...pickMissing], app.edition(edId)?.name);
   }
 
-  function reportArt(n: number, unmatched: string[]) {
-    const miss = unmatched.length ? L(` · sem carta correspondente: ${unmatched.slice(0, 6).join(', ')}${unmatched.length > 6 ? '…' : ''}`, ` · no matching card: ${unmatched.slice(0, 6).join(', ')}${unmatched.length > 6 ? '…' : ''}`) : '';
-    ui.toast(L(`${n} artes colocadas nas cartas`, `${n} artworks placed on cards`) + miss, unmatched.length ? 'error' : undefined, unmatched.length ? 9000 : 4000);
+  function reportArt(n: number, problems: string[], collection?: string) {
+    const where = collection ? L(` da coleção “${collection}”`, ` in “${collection}”`) : '';
+    const miss = problems.length ? L(` · não entraram: ${problems.slice(0, 6).join(', ')}${problems.length > 6 ? '…' : ''}`, ` · not added: ${problems.slice(0, 6).join(', ')}${problems.length > 6 ? '…' : ''}`) : '';
+    const done = n === 1 ? L(`1 arte colocada na carta${where}`, `1 artwork placed${where}`) : L(`${n} artes colocadas nas cartas${where}`, `${n} artworks placed on cards${where}`);
+    ui.toast(done + miss, problems.length ? 'error' : undefined, problems.length ? 10000 : 6000);
   }
 
   function newCard() {

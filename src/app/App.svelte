@@ -3,7 +3,7 @@
   import { LibraryBig, ScrollText, Settings2, PenTool, Check, CloudAlert, LoaderCircle, SquareStack } from '@lucide/svelte';
   import Back from '../ui/back/Back.svelte';
   import PdfDialog from '../ui/common/PdfDialog.svelte';
-  import { app } from '../store/project.svelte';
+  import { app, LAST_EDITION } from '../store/project.svelte';
   import { loadCardFonts } from '../render/fonts';
   import { router } from './router.svelte';
   import { L } from './i18n.svelte';
@@ -40,6 +40,9 @@
     app.updateProject((p) => { p.lang = l; });
     document.documentElement.lang = l;
   }
+
+  // lembra a coleção aberta para a próxima vez que o programa abrir
+  $effect(() => { const id = app.editionId; if (id) try { localStorage.setItem(LAST_EDITION, id); } catch { /* sem armazenamento local */ } });
 </script>
 
 <div class="shell">

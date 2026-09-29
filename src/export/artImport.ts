@@ -57,13 +57,29 @@ export function groupArtFiles(files: File[]): { groups: ArtGroup[]; unmatched: s
   return { groups, unmatched };
 }
 
-/** Coloca a imagem escolhida em cada carta. */
-export async function applyArt(choices: { card: Card; file: File }[]): Promise<number> {
-  const changed: Card[] = [];
-  for (const { card, file } of choices) {
-    const mediaId = await importImage(file, file.name);
-    changed.push({ ...(app.cards[card.id] ?? card), art: { mediaId, zoom: 1, x: 0, y: 0, mirror: false } });
+/**
+ * Coloca a imagem escolhida em cada carta. Cada carta é gravada assim que recebe a
+ * arte (fechar no meio não perde o que já entrou) e um arquivo com problema não
+ * impede os outros. `onStep` recebe quantas já foram; `stop()` true interrompe.
+ */
+export async function applyArt(
+  choices: { card: Card; file: File }[],
+  onStep?: (done: number) => void,
+  stop?: () => boolean,
+): Promise<{ done: number; failed: string[] }> {
+  let done = 0;
+  const failed: string[] = [];
+  for (const [i, { card, file }] of choices.entries()) {
+    if (stop?.()) break;
+    try {
+      const mediaId = await importImage(file, file.name);
+      app.putCard({ ...(app.cards[card.id] ?? card), art: { mediaId, zoom: 1, x: 0, y: 0, mirror: false } });
+      done++;
+    } catch (e) {
+      console.error('Arte não importada:', file.name, e);
+      failed.push(file.name);
+    }
+    onStep?.(i + 1);
   }
-  if (changed.length) app.putCards(changed);
-  return changed.length;
+  return { done, failed };
 }

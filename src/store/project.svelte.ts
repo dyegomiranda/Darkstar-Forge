@@ -14,6 +14,9 @@ import * as store from './db';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
+/** Onde fica guardada a última coleção aberta (preferência deste computador). */
+export const LAST_EDITION = 'darkstar.colecao';
+
 class ProjectState {
   project = $state<Project | null>(null);
   cards = $state<Record<string, Card>>({});
@@ -45,7 +48,11 @@ class ProjectState {
       await store.saveProject(s.project);
       await store.saveCards(s.cards);
     }
-    this.editionId = this.project!.editions[0]?.id ?? '';
+    // abre na última coleção usada (senão, na primeira)
+    let last = '';
+    try { last = localStorage.getItem(LAST_EDITION) ?? ''; } catch { /* sem armazenamento local */ }
+    const eds = this.project!.editions;
+    this.editionId = eds.some((e) => e.id === last) ? last : eds[0]?.id ?? '';
     this.ready = true;
   }
 
