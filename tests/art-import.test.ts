@@ -29,8 +29,9 @@ describe('importar artes em lote', () => {
     expect(matchCard('bola-de-fogo.png', cards, edOf, 'ed1')?.id).toBe('b');
   });
 
-  it('variações e nomes desconhecidos não entram por engano', () => {
-    expect(matchCard('pf-red_001__v2.png', cards, edOf)).toBeUndefined();
+  it('variações (__v2, __v3…) vão para a mesma carta; nomes desconhecidos não entram', () => {
+    expect(matchCard('pf-red_001__v2.png', cards, edOf)?.id).toBe('a');
+    expect(matchCard('Corte Duplo__v3.jpg', cards, edOf)?.id).toBe('a');
     expect(matchCard('qualquer.png', cards, edOf)).toBeUndefined();
   });
 

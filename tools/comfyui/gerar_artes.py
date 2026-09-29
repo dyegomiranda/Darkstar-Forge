@@ -37,7 +37,7 @@ ESTILO_PADRAO = ("fantasy trading card game illustration in the style of Magic: 
                  "epic composition, highly detailed, masterpiece")
 ESTILO_FLUX = ("epic high fantasy concept art, painterly digital painting with visible brushstrokes, "
                "dramatic cinematic lighting, rich saturated colors, detailed textures, heroic composition, "
-               "the scene fills the entire picture edge to edge")
+               "correct anatomy, the scene fills the entire picture edge to edge")
 
 
 def prompt_flux(prompt):

@@ -11,7 +11,7 @@ Em IAs sem campo de "prompt negativo" (ChatGPT, Midjourney…), cole só o promp
 
 **Prompt:**
 ```
-fantasy trading card game illustration in the style of Magic: The Gathering card art, painterly digital oil painting, dramatic cinematic lighting, rich detailed textures, epic composition, highly detailed, masterpiece, a battle-scarred human woman fighter in dented steel plate armor mid-spin, slashing with a longsword in her right hand and a short sword in her left hand at the same moment, two bright arcs of motion trailing the two blades, an armored orc raider staggering back with his shield knocked aside, muddy battlefield at dusk, sparks flying, warm crimson, orange and ember color palette, fiery battlefield atmosphere, vertical portrait composition, main subject in the upper and middle part of the picture, calmer darker area at the bottom of the picture
+fantasy trading card game illustration in the style of Magic: The Gathering card art, painterly digital oil painting, dramatic cinematic lighting, rich detailed textures, epic composition, highly detailed, masterpiece, a battle-scarred human woman fighter in dented steel plate armor in a dynamic dual-wielding fighting stance, a longsword in her right hand and a short sword in her left hand, each hand firmly gripping the hilt of its own sword, both blades pointing forward at an armored orc raider who staggers back with his shield knocked aside, two bright arcs of motion trailing the blades, muddy battlefield at dusk, sparks flying, warm crimson, orange and ember color palette, fiery battlefield atmosphere, vertical portrait composition, main subject in the upper and middle part of the picture, calmer darker area at the bottom of the picture
 ```
 **Negativo:**
 ```
@@ -819,7 +819,7 @@ text, words, letters, caption, title, watermark, signature, logo, card frame, ca
 
 **Prompt:**
 ```
-fantasy trading card game illustration in the style of Magic: The Gathering card art, painterly digital oil painting, dramatic cinematic lighting, rich detailed textures, epic composition, highly detailed, masterpiece, a finely made steel longsword standing upright with its tip stuck in a stone, simple cross guard and leather-wrapped grip, sunlight glinting along the blade, glowing forge embers in the background, still life, steel grey, leather brown and warm forge light color palette, vertical portrait composition, main subject in the upper and middle part of the picture, calmer darker area at the bottom of the picture
+fantasy trading card game illustration in the style of Magic: The Gathering card art, painterly digital oil painting, dramatic cinematic lighting, rich detailed textures, epic composition, highly detailed, masterpiece, a finely made steel longsword plunged point-first deep into a cracked grey boulder, the lower third of the blade buried inside the rock, the sword standing perfectly upright, simple cross guard and leather-wrapped grip, sunlight glinting along the blade, glowing forge embers in the background, still life, steel grey, leather brown and warm forge light color palette, vertical portrait composition, main subject in the upper and middle part of the picture, calmer darker area at the bottom of the picture
 ```
 **Negativo:**
 ```

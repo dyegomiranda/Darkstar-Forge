@@ -38,16 +38,22 @@ Com o Flux, ele usa 832×1152, 20 passos, guidance 3.5 e euler/simple. Se você 
 arquivo de cada tipo, escolha com `--modelo`, `--t5`, `--clip-l` e `--vae` (os nomes aparecem no
 `--listar`). Modelos de arquivo único (SDXL etc., em `models/checkpoints`) também funcionam.
 
-As imagens vão para a pasta `artes-pf/`. Se gostar, gere todas (as que já existem são puladas):
+As imagens vão para a pasta `artes-pf/`.
+
+**Recomendado: gerar 3 versões de cada carta e escolher a melhor.** A mesma descrição às vezes sai
+ótima e às vezes com mãos ou armas estranhas; com 3 versões quase sempre uma fica boa:
 
 ```
-python3 tools/comfyui/gerar_artes.py
+python3 tools/comfyui/gerar_artes.py --variacoes 3
 ```
+
+Isso cria `pf-red_001.png`, `pf-red_001__v2.png` e `pf-red_001__v3.png` para cada carta (as que já
+existem são puladas). No Flux, cada imagem leva cerca de 1 minuto: 81 cartas × 3 versões ≈ 4 horas
+(dá para deixar rodando à noite; `--variacoes 2` leva metade). Na importação (passo 3), o programa
+mostra as versões lado a lado para você clicar na melhor de cada carta.
 
 Dicas:
 
-- `--variacoes 3` gera 3 versões de cada carta (`pf-red_001.png`, `pf-red_001__v2.png`, `pf-red_001__v3.png`).
-  Fique com a melhor e renomeie para `pf-red_001.png`.
 - `--refazer --so pf-red_004 --semente 123` gera de novo uma carta que não ficou boa (outra semente = outra imagem).
 - Pouca memória na placa de vídeo: `--peso fp8_e4m3fn` (Flux) ou `--largura 640 --altura 896`.
 - Se as 3 primeiras cartas derem erro, o script para e mostra o motivo. Mande o print.
@@ -57,9 +63,10 @@ Dicas:
 ## 3. Coloque as artes nas cartas
 
 No Darkstar Forge: **Biblioteca → Coleção "Classes — Pathfinder" → Importar artes** e selecione
-todas as imagens da pasta `artes-pf`. Cada uma vai para a carta do mesmo nome
+todas as imagens da pasta `artes-pf` (Ctrl+A). Cada uma vai para a carta do mesmo nome
 (`pf-red_001.png` = carta nº 1 do deck vermelho da coleção). Também funciona com o nome da carta
-(`corte-duplo.png` ou `Corte Duplo.jpg`).
+(`corte-duplo.png` ou `Corte Duplo.jpg`). Se alguma carta tiver mais de uma versão, abre uma janela
+com as versões lado a lado: clique na melhor de cada carta (ou em "Nenhuma") e confirme.
 
 Depois, na aba **Arte** do editor, dá para arrastar e dar zoom para enquadrar melhor.
 
