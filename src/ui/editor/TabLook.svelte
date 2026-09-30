@@ -197,7 +197,7 @@
             <div class="pc-body">
               <div class="row wrap">
                 <button class="btn sm" disabled={!changed} onclick={() => ed.revertPiece(p.kind)} title={L('Desfaz só as mudanças desta peça', 'Undo only this piece')}><Undo2 size={14} /> {L('Voltar ao que estava', 'Back to how it was')}</button>
-                <button class="btn sm ghost" onclick={() => ed.setPiece(p.kind, { style: st }, ['colors', 'opacity', 'metal', 'ink', 'font', 'hidden', 'image'])}><RotateCcw size={14} /> {L('Padrão do estilo', 'Style default')}</button>
+                <button class="btn sm ghost" onclick={() => ed.setPiece(p.kind, { style: st }, ['colors', 'opacity', 'metal', 'ink', 'font', 'hidden', 'image', 'fill', 'size'])}><RotateCcw size={14} /> {L('Padrão do estilo', 'Style default')}</button>
               </div>
               {#if isFrame}
                 <label class="toggle"><input type="checkbox" checked={frameShown}
@@ -232,6 +232,25 @@
               <label class="field"><span>{L('Opacidade do fundo', 'Background opacity')} · {Math.round((ch.opacity ?? piece(st, p.kind).opacity) * 100)}%</span>
                 <input type="range" min="0" max="1" step="0.01" value={ch.opacity ?? piece(st, p.kind).opacity} oninput={(e) => ed.setPiece(p.kind, { opacity: +(e.currentTarget as HTMLInputElement).value })} />
               </label>
+              {#if !isFrame}
+                <div class="grid2">
+                  <div class="field"><span>{L('Cor do fundo', 'Background color')}</span>
+                    <div class="row">
+                      <input type="color" value={ch.fill ?? '#2a2320'} oninput={(e) => ed.setPiece(p.kind, { fill: (e.currentTarget as HTMLInputElement).value })} />
+                      <button class="btn sm ghost" disabled={!ch.fill} onclick={() => ed.setPiece(p.kind, {}, ['fill'])}>{L('Do estilo', 'Style')}</button>
+                    </div>
+                  </div>
+                  {#if p.kind !== 'rules'}
+                    {@const sz = ch.size ?? 1}
+                    <label class="field"><span>{L('Tamanho da peça', 'Piece size')} · {Math.round(sz * 100)}%</span>
+                      <div class="row">
+                        <input type="range" min="0.5" max="1.6" step="0.05" value={sz} oninput={(e) => ed.setPiece(p.kind, { size: +(e.currentTarget as HTMLInputElement).value })} />
+                        <button class="btn sm ghost icon" title={L('Tamanho padrão', 'Default size')} disabled={sz === 1} onclick={() => ed.setPiece(p.kind, {}, ['size'])}><RotateCcw size={13} /></button>
+                      </div>
+                    </label>
+                  {/if}
+                </div>
+              {/if}
               {#if !isFrame && p.kind !== 'set'}
                 <div class="grid2">
                   <div class="field"><span>{L('Cor do texto', 'Text color')}</span>
@@ -264,7 +283,7 @@
     </div>
 
     <div class="field">
-      <span>{L('Tamanho dos símbolos', 'Symbol size')}</span>
+      <span>{L('Tamanho dos símbolos (dentro da peça)', 'Symbol size (inside the piece)')}</span>
       <div class="sizes">
         {#each SIZE_SLOTS as z (z.slot)}
           {@const v = look.icons?.[z.slot]?.size ?? 1}

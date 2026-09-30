@@ -30,14 +30,14 @@ function silver(a: PieceArgs, d: string, depth = 1.8, shadow = true): string {
 function lightPanel(a: PieceArgs, d: string): string {
   const { defs, pal } = a;
   return `<g opacity="${a.opacity}"><g filter="${defs.innerShadow(8, 0.3, darken(vivid(pal.base), 0.4))}">` +
-    `<path d="${d}" fill="${defs.hue(pal, pale)}"/></g>` +
+    `<path d="${d}" fill="${a.fill ?? defs.hue(pal, pale)}"/></g>` +
     `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.35], [0.4, '#fff', 0], [1, darken(vivid(pal.base), 0.3), 0.18]])}"/></g>`;
 }
 
 /** Painel escuro (rodapé, pontas das plaquinhas). */
 function darkPanel(a: PieceArgs, d: string): string {
   const { defs, pal } = a;
-  return `<g opacity="${a.opacity}"><path d="${d}" fill="${defs.hue(pal, (c) => mix(darken(vivid(c), 0.7), '#120d1a', 0.4))}"/>` +
+  return `<g opacity="${a.opacity}"><path d="${d}" fill="${a.fill ?? defs.hue(pal, (c) => mix(darken(vivid(c), 0.7), '#120d1a', 0.4))}"/>` +
     `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.12], [0.5, '#fff', 0], [1, '#000', 0.3]])}"/></g>`;
 }
 
@@ -90,17 +90,19 @@ function plaque(a: PieceArgs, b: Box, tip: number): { svg: string; inner: Box } 
 // painel claro de regras; orbes nos cantos de baixo (custo à esquerda, ATK/DEF à direita).
 const T = 18;
 export function espectralLayout(rulesH: number): Partial<Skeleton> {
-  const rules = { x: 66, y: 944 - rulesH, w: 618, h: rulesH };
+  const rules = { x: 66, y: 936 - rulesH, w: 618, h: rulesH };
   const header = { x: 96, y: rules.y - 84, w: 558, h: 74 };
   return {
     rules, header,
-    typeBar: { x: 128, y: 22, w: 480, h: 58 },
-    class: { x: 646, y: 30, w: 70, h: 70 },
-    cost: { x: 20, y: 934, w: 100, h: 100 },
-    atk: { x: 470, y: 958, w: 118, h: 64 },
-    def: { x: 596, y: 958, w: 118, h: 64 },
-    set: { x: 347, y: 978, w: 56, h: 56 },
-    footer: { x: 130, y: 994, w: 200, h: 30 },
+    typeBar: { x: 128, y: 22, w: 494, h: 58 },
+    // cantos de baixo: orbes do custo e da classe (no lugar dos espinhos)
+    cost: { x: 14, y: 934, w: 104, h: 104 },
+    class: { x: 632, y: 934, w: 104, h: 104 },
+    // entre eles: ATK e DEF simétricos, edição no meio, rodapé embaixo
+    atk: { x: 186, y: 952, w: 136, h: 58 },
+    def: { x: 428, y: 952, w: 136, h: 58 },
+    set: { x: 351, y: 955, w: 48, h: 48 },
+    footer: { x: 255, y: 1012, w: 240, h: 26 },
   };
 }
 
@@ -112,7 +114,7 @@ export const espectral: PieceStyle[] = [
     render(a) {
       const b = inset(a.box, 4, 8);
       const { svg, inner } = plaque(a, b, 20);
-      return { svg: svg + gem(b.x + b.w / 2, b.y + b.h - 1, 6, 8, vivid(a.pal.base)), content: inset(inner, 0, 4), text: title(a.pal) };
+      return { svg: svg + gem(b.x + b.w / 2, b.y + b.h - 1, 6, 8, vivid(a.pal.base)), content: inset(inner, 16, 4), text: title(a.pal) };
     },
   },
   { style: 'espectral', kind: 'cost', opacity: 1, metal: 'silver', render: (a) => orb(a, a.box) },
@@ -131,7 +133,7 @@ export const espectral: PieceStyle[] = [
     render(a) {
       const b = inset(a.box, 18, 4);
       const { svg, inner } = plaque(a, b, 22);
-      return { svg, content: { ...inner, x: inner.x + 4, w: inner.w - 8 }, text: title(a.pal, 600), align: 'center', gem: { x: b.x + b.w + 6, y: b.y + b.h / 2 - 13, w: 26, h: 26 } };
+      return { svg, content: { ...inner, x: inner.x + 34, w: inner.w - 68 }, text: title(a.pal, 600), align: 'center', gem: { x: inner.x + inner.w - 28, y: b.y + b.h / 2 - 12, w: 24, h: 24 } };
     },
   },
   {
@@ -203,7 +205,6 @@ export const espectral: PieceStyle[] = [
         `<path d="${zig}" fill="none" stroke="${lighten(c, 0.35)}" stroke-width="1.4" opacity=".45"/>` +
         silver(a, `M${bar.x} ${bar.y - 3}h${bar.w}v3h${-bar.w}Z M${bar.x} ${bar.y + bar.h}h${bar.w}v3h${-bar.w}Z`, 0.8, false) +
         thorn(a, b.x + 10, b.y + 10, 1, 1, 70) + thorn(a, b.x + b.w - 10, b.y + 10, -1, 1, 70) +
-        thorn(a, b.x + 10, b.y + b.h - 10, 1, -1, 60) + thorn(a, b.x + b.w - 10, b.y + b.h - 10, -1, -1, 60) +
         thorn(a, b.x + T, barY - 26, 1, -1, 44) + thorn(a, b.x + b.w - T, barY - 26, -1, -1, 44);
       return { svg, content: inset(b, T), text: title(a.pal), under, artClip: winD };
     },

@@ -7,7 +7,7 @@ import { darken, lighten } from '../color';
 import { vivid, type Palette } from '../palette';
 import { inset, pixelArt, pixelRect, type Box } from '../shapes';
 import type { TextLook } from '../text';
-import { center } from './common';
+import { center, shades4 } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
 /** Tamanho do "pixel" no espaço 750×1050 (a carta tem 125 pixels de largura). */
@@ -42,13 +42,13 @@ function windowBox(a: PieceArgs, b0: Box, content: (b: Box, border: number) => B
   const fillD = pixelRect(fillB, P, Math.max(1, steps - 1));
   const cid = defs.add(`pxclip:${b.x}:${b.y}:${b.w}`, (id) => `<clipPath id="${id}"><path d="${fillD}"/></clipPath>`);
   // colunas por cor (híbrida) × faixas horizontais de tom
-  const n = pal.colors.length;
+  const n = a.fill ? 1 : pal.colors.length;
   const colW = Math.round(fillB.w / n / P) * P;
   const rows = [0.28, 0.24, 0.24, 0.24];
   let bands = '';
-  pal.colors.forEach((c, i) => {
+  (a.fill ? [a.fill] : pal.colors).forEach((c, i) => {
     const v = vivid(c);
-    const shades = [darken(v, 0.48), darken(v, 0.56), darken(v, 0.62), darken(v, 0.68)];
+    const shades = a.fill ? shades4(a.fill) : [darken(v, 0.48), darken(v, 0.56), darken(v, 0.62), darken(v, 0.68)];
     const x = fillB.x + i * colW;
     const w = i === n - 1 ? fillB.w - i * colW : colW;
     let y = fillB.y;

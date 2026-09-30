@@ -93,7 +93,7 @@ export const gotico: PieceStyle[] = [
       for (let x = b.x + 24; x < b.x + b.w - 10; x += 44) rv.push([x, b.y + b.h - 4.5]);
       const svg =
         `<g filter="${defs.shadow(5, 6, 0.6)}">${iron(defs, pal, outer + inner, 2.6)}</g>` +
-        stone(defs, pal, inner, a.opacity) +
+        stone(defs, pal, inner, a.opacity, a.fill) +
         `<path d="${arch(inset(b, 15, 15), 15)}" fill="none" stroke="${vivid(pal.base)}" stroke-width="1.4" opacity=".75"/>` +
         rivets(defs, rv, 3.2) +
         `<path d="${quatrefoil(cx, b.y + 21, 8)}" fill="${vivid(pal.base)}" stroke="#111" stroke-width="1.5"/>`;
@@ -119,7 +119,7 @@ export const gotico: PieceStyle[] = [
       const svg =
         `<g filter="${defs.shadow(5, 6, 0.6)}"><g mask="url(#${hole})">${layers(bar, defs.metal(pal))}` +
         `<path d="${bar}" fill="${defs.hue(pal, vivid)}" opacity=".2"/></g></g>` +
-        stone(defs, pal, innerBar, a.opacity) +
+        stone(defs, pal, innerBar, a.opacity, a.fill) +
         vitral(defs, pal, b.x, cy, r - 6, circle(b.x, cy, r - 6), 'tl') + vitral(defs, pal, b.x + b.w, cy, r - 6, circle(b.x + b.w, cy, r - 6), 'tr') +
         `<path d="${circle(b.x, cy, r - 6)}${circle(b.x + b.w, cy, r - 6)}" fill="none" stroke="#141112" stroke-width="2.5"/>` +
         fadeLine(defs, b.x + 30, b.y + b.h - 10, b.w - 60, vivid(pal.base), 1, 0.7);
@@ -137,7 +137,7 @@ export const gotico: PieceStyle[] = [
       const inner = rect(inset(b, 7));
       const svg =
         `<g filter="${defs.shadow(6, 8, 0.6)}">${iron(defs, pal, outer + inner, 2)}</g>` +
-        stone(defs, pal, inner, a.opacity) +
+        stone(defs, pal, inner, a.opacity, a.fill) +
         `<path d="${rect(inset(b, 16))}" fill="none" stroke="${vivid(pal.base)}" stroke-width="1.2" opacity=".6"/>` +
         brackets(defs, pal, inset(b, -4), 64, 16);
       return { svg, content: inset(b, 36, 30), text: { family: BODY, weight: 500, color: INK } };
@@ -159,7 +159,7 @@ export const gotico: PieceStyle[] = [
       const inner = heater(inset(b, 6, 6));
       const field = variant === 'atk'
         ? `<path d="${inner}" fill="${defs.hue(pal, (c) => darken(vivid(c), 0.35))}" fill-opacity="${a.opacity}"/>`
-        : stone(defs, pal, inner, a.opacity);
+        : stone(defs, pal, inner, a.opacity, a.fill);
       const svg = `<g filter="${defs.shadow(4, 5, 0.6)}">${iron(defs, pal, outer + inner, 2.2)}</g>` + field +
         `<path d="${inner}" fill="${defs.linear([[0, '#fff', 0.18], [0.4, '#fff', 0], [1, '#000', 0.3]])}"/>`;
       return { svg, content: { x: b.x + 4, y: b.y + 8, w: b.w - 8, h: b.h * 0.62 }, text: { family: TITLE, weight: 700, color: INK } };
@@ -171,7 +171,7 @@ export const gotico: PieceStyle[] = [
       const { box: b, defs, pal } = a;
       const outer = rect(b);
       const inner = rect(inset(b, 5));
-      const svg = `<g filter="${defs.shadow(3, 4, 0.5)}">${iron(defs, pal, outer + inner, 1.6)}</g>` + stone(defs, pal, inner) +
+      const svg = `<g filter="${defs.shadow(3, 4, 0.5)}">${iron(defs, pal, outer + inner, 1.6)}</g>` + stone(defs, pal, inner, 1, a.fill) +
         rivets(defs, [[b.x + 9, b.y + b.h / 2], [b.x + b.w - 9, b.y + b.h / 2]], 3);
       return { svg, content: inset(b, 20, 4), text: { family: BODY, weight: 500, color: '#d8ccbb' } };
     },

@@ -84,7 +84,7 @@ export const energia: PieceStyle[] = [
       const b = a.box;
       const c = typeColor(a.pal);
       const d = `M${b.x} ${b.y + 8}H${b.x + b.w - 20}L${b.x + b.w} ${b.y + b.h / 2}L${b.x + b.w - 20} ${b.y + b.h - 8}H${b.x}Z`;
-      const svg = `<g opacity="${a.opacity}"><path d="${d}" fill="${a.defs.linear([[0, lighten(c, 0.15), 0.95], [0.55, lighten(c, 0.6), 0.9], [1, '#ffffff', 0.85]], 'h')}"/></g>` +
+      const svg = `<g opacity="${a.opacity}"><path d="${d}" fill="${a.fill ?? a.defs.linear([[0, lighten(c, 0.15), 0.95], [0.55, lighten(c, 0.6), 0.9], [1, '#ffffff', 0.85]], 'h')}"/></g>` +
         `<path d="M${b.x} ${b.y + b.h - 10}H${b.x + b.w - 22}" stroke="${darken(c, 0.35)}" stroke-width="2" opacity=".5"/>`;
       return { svg, content: { x: b.x + 14, y: b.y + 6, w: b.w - 40, h: b.h - 12 }, text: { family: SANS, weight: 800, italic: true, color: INK }, align: 'left' };
     },
@@ -126,7 +126,7 @@ export const energia: PieceStyle[] = [
       const b = a.box;
       const c = typeColor(a.pal);
       const d = roundRect(b, 10);
-      const svg = `<g opacity="${a.opacity}"><path d="${d}" fill="${a.defs.linear([[0, mix(lighten(c, 0.82), '#fff', 0.4), 0.82], [1, mix(lighten(c, 0.7), '#fff', 0.2), 0.95]])}"/></g>` +
+      const svg = `<g opacity="${a.opacity}"><path d="${d}" fill="${a.fill ?? a.defs.linear([[0, mix(lighten(c, 0.82), '#fff', 0.4), 0.82], [1, mix(lighten(c, 0.7), '#fff', 0.2), 0.95]])}"/></g>` +
         `<path d="${d}" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>`;
       return { svg, content: inset(b, 24, 20), text: { family: SANS, weight: 500, color: INK } };
     },

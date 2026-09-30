@@ -40,7 +40,7 @@ function chrome(a: PieceArgs, d: string, depth = 2.2, shadow = true): string {
 function voidFill(a: PieceArgs, d: string, lift = 0): string {
   const { defs, pal } = a;
   return `<g opacity="${a.opacity}">` +
-    `<path d="${d}" fill="${defs.hue(pal, (c) => mix(darken(vivid(c), 0.8 - lift), '#07060f', 0.35))}"/>` +
+    `<path d="${d}" fill="${a.fill ?? defs.hue(pal, (c) => mix(darken(vivid(c), 0.8 - lift), '#07060f', 0.35))}"/>` +
     `<path d="${d}" fill="${defs.radial([[0, vivid(pal.base), 0.24], [1, vivid(pal.base), 0]], 0.5, 1, 0.75)}"/>` +
     `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.1], [0.18, '#fff', 0], [1, '#000', 0.25]])}"/></g>`;
 }
@@ -155,7 +155,7 @@ export const vazio: PieceStyle[] = [
       const c = vivid(a.pal.base);
       const svg =
         chrome(a, banner(b, 34) + inner, 1.8) +
-        `<g opacity="${a.opacity}"><path d="${inner}" fill="${a.defs.hue(a.pal, (x) => mix(darken(vivid(x), 0.45), '#10195a', 0.55))}"/>` +
+        `<g opacity="${a.opacity}"><path d="${inner}" fill="${a.fill ?? a.defs.hue(a.pal, (x) => mix(darken(vivid(x), 0.45), '#10195a', 0.55))}"/>` +
         `<path d="${inner}" fill="${a.defs.linear([[0, '#ffffff', 0.28], [0.45, '#ffffff', 0.04], [0.55, '#000', 0.12], [1, '#000', 0.35]])}"/></g>` +
         glowLine(a, banner(inset(b, 12, 12), 24), 1, 0.5) +
         gem(b.x + b.w / 2, b.y + b.h - 3, 6, 8, c);

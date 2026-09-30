@@ -3,7 +3,7 @@
  * escolhido) + textos + símbolos. A mesma saída serve para o editor, a biblioteca
  * (rasterizada e guardada em cache) e a exportação.
  */
-import { darken, lighten, luminance } from './color';
+import { darken, lighten, luminance, mix } from './color';
 import { Defs } from './defs';
 import { piece, styleInfo, type PieceKind, type PieceOut, type PieceStyle, type StyleId } from './elements';
 import { RARITY_COLORS, rarityGem, textShadow } from './elements/common';
@@ -30,6 +30,10 @@ export interface PieceChoice {
   /** Fonte do texto dentro da peça. */
   font?: string;
   hidden?: boolean;
+  /** Tamanho da peça (1 = padrão do esqueleto; 0,5 a 1,6). O conteúdo acompanha. */
+  size?: number;
+  /** Cor do fundo do painel (miolo), no lugar da cor que o estilo usa. */
+  fill?: string;
   /** Imagem do usuário no lugar do desenho do estilo (ver pieceImage.ts). */
   image?: PieceImage;
 }
@@ -181,8 +185,13 @@ function choose(look: Look, kind: PieceKind): { ps: PieceStyle; ch: PieceChoice 
 
 /** Aplica cor de texto e fonte escolhidas pelo usuário sobre o padrão do estilo. */
 function textOf(out: PieceOut, ch: PieceChoice): TextLook {
-  return { ...out.text, ...(ch.ink ? { color: ch.ink } : {}), ...(ch.font ? { family: ch.font } : {}) };
+  // fundo escolhido e cor de texto não: escolhe claro ou escuro para dar leitura
+  const auto = ch.fill && !ch.ink ? { color: inkFor(ch.fill), glow: undefined } : {};
+  return { ...out.text, ...auto, ...(ch.ink ? { color: ch.ink } : {}), ...(ch.font ? { family: ch.font } : {}) };
 }
+
+/** Cor de texto legível sobre um fundo. */
+export const inkFor = (bg: string) => (luminance(bg) > 0.45 ? '#1d1712' : '#fbf5ec');
 
 /** Estilo de texto final: tamanho + legibilidade (sombra dura, brilho ou sombra suave). */
 function styled(defs: Defs, look: TextLook, size: number): { st: TextStyle; filter?: string } {
@@ -233,7 +242,11 @@ export function compose(inp: ComposeInput): string {
   const padT = probe.content.y, padB = 400 - (probe.content.y + probe.content.h);
   const innerW = probe.content.w;
   const rulesLook = textOf(probe, rulesPick.ch);
-  const flavorLook = { ...(rulesPick.ps.flavor?.(makePalette(colors, undefined, blend)) ?? { ...rulesLook, italic: true }), ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}) };
+  const flavorLook = {
+    ...(rulesPick.ps.flavor?.(makePalette(colors, undefined, blend)) ?? { ...rulesLook, italic: true }),
+    ...(rulesPick.ch.fill && !rulesPick.ch.ink ? { color: mix(inkFor(rulesPick.ch.fill), rulesPick.ch.fill, 0.28), glow: undefined } : {}),
+    ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}),
+  };
 
   let rulesSize = sz.rules, flavorSize = sz.flavor;
   const layoutText = () => {
@@ -251,6 +264,11 @@ export function compose(inp: ComposeInput): string {
     T = layoutText();
   }
   const S = layoutFor(Math.ceil(T.need + padT + padB));
+  // tamanho escolhido por peça: a caixa cresce/encolhe em volta do centro
+  const resize = (b: Box, k?: number): Box => (!k || Math.abs(k - 1) < 0.005 ? b : { x: b.x + (b.w * (1 - k)) / 2, y: b.y + (b.h * (1 - k)) / 2, w: b.w * k, h: b.h * k });
+  for (const k of ['cost', 'class', 'set', 'header', 'typeBar', 'footer'] as const) S[k] = resize(S[k], look.pieces?.[k]?.size);
+  S.atk = resize(S.atk, look.pieces?.stat?.size);
+  S.def = resize(S.def, look.pieces?.stat?.size);
 
   // 2) Arte (cobre a carta inteira: full art)
   const clip = defs.add('cardclip', (id) => `<clipPath id="${id}"><path d="${roundRect(S.card, CARD_RADIUS)}"/></clipPath>`);
@@ -278,7 +296,7 @@ export function compose(inp: ComposeInput): string {
     const { ps, ch } = choose(look, kind);
     if (ch.hidden) return;
     const pal = makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, blend);
-    const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant, layout: S };
+    const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant, layout: S, fill: ch.fill };
     const out = renderPiece(kind, ps, ch, args);
     outs[slot] = { out, ch, ps, args };
     if (!draw) return;

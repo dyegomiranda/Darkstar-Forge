@@ -11,7 +11,7 @@ import { CARD_RADIUS, CARD_W, type Skeleton } from '../layout';
 import { METALS, vivid, type Palette } from '../palette';
 import { inset, pixelArt, rect, roundRect, type Box } from '../shapes';
 import type { TextLook } from '../text';
-import { center } from './common';
+import { center, shades4 } from './common';
 import { band, boxSdf, g, hardShadow, lit, noise, OUT, P, pillSdf, raster, type Paint, type Sdf } from './pxengine';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
@@ -45,7 +45,7 @@ function slot(a: PieceArgs, b: Box, radius = 2 * P, thin = false): string {
     if (d < P) return [OUT, 'r'];
     if (d < 2 * P) return [lit(light, t), 'r'];
     if (!thin && d < 3 * P) return [lit(light, sunk(t)), 'r'];
-    return [band(y, b, SLOT), 'f'];
+    return [band(y, b, a.fill ? shades4(a.fill) : SLOT), 'f'];
   };
   return hardShadow(b, sdf, a.opacity) + raster(b, sdf, paint, a.opacity);
 }
@@ -136,7 +136,7 @@ export const aco: PieceStyle[] = [
       const t = trim(a.pal);
       const b = inset(a.box, 2, 6);
       const sdf = boxSdf(b, 2 * P);
-      const panel = [lighten(t.light, 0.2), t.light, mix(t.light, t.mid, 0.4), mix(t.light, t.mid, 0.6)];
+      const panel = a.fill ? shades4(a.fill) : [lighten(t.light, 0.2), t.light, mix(t.light, t.mid, 0.4), mix(t.light, t.mid, 0.6)];
       const paint: Paint = (d, light, _x, y) => {
         if (d < P) return [OUT, 'r'];
         if (d < 2 * P) return [lit(light, t), 'r'];
@@ -183,7 +183,7 @@ export const aco: PieceStyle[] = [
         const n = noise(Math.floor(x / P), Math.floor(y / P));
         if (n > 0.975) return ['#a59e8c', 'f'];
         if (n < 0.012) return ['#d6d0c1', 'f'];
-        return [band(y, b, STONE), 'f'];
+        return [band(y, b, a.fill ? shades4(a.fill) : STONE), 'f'];
       };
       const svg = hardShadow(b, sdf, a.opacity) + raster(b, sdf, paint, a.opacity);
       return { svg, content: inset(b, 7 * P, 6 * P), text: txt('#2b2a26') };

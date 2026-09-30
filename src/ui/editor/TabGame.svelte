@@ -94,9 +94,14 @@
     <span class="section-title">{L('Deck e classe', 'Deck & class')}</span>
     <label class="field"><span>{L('Deck', 'Deck')}</span>
       <select class="select" bind:value={d.deckId} onchange={() => ed.touch()}>
-        {#each app.decks as dk}<option value={dk.id}>{dk.name[app.lang]}</option>{/each}
+        {#each app.project?.editions ?? [] as edn (edn.id)}
+          <optgroup label={L(`Coleção: ${edn.name}`, `Collection: ${edn.name}`)}>
+            {#each app.decksOf(edn.id) as dk (dk.id)}<option value={dk.id}>{dk.name[app.lang]}</option>{/each}
+          </optgroup>
+        {/each}
       </select>
     </label>
+    <p class="muted small">{L('Trocar o deck move a carta para ele: ela passa a usar o tema (aparência) desse deck.', 'Changing the deck moves the card there: it takes on that deck\'s theme (look).')}</p>
     <div class="field">
       <span>{L('Cores / classes da carta (até 5, na ordem dos cliques)', 'Card colors / classes (up to 5, in click order)')}</span>
       <div class="colors">

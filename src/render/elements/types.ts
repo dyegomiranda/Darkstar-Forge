@@ -10,7 +10,7 @@ export type PieceKind = 'frame' | 'header' | 'cost' | 'class' | 'typeBar' | 'rul
 
 export const PIECE_KINDS: PieceKind[] = ['frame', 'header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set'];
 
-export type StyleId = 'ornado' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
+export type StyleId = 'ornado' | 'ornadoRegio' | 'ornadoMarfim' | 'ornadoPontas' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
 
 export interface PieceArgs {
   /** Área que o esqueleto reservou para a peça. */
@@ -21,6 +21,8 @@ export interface PieceArgs {
   opacity: number;
   /** ATK ou DEF (placas de combate). */
   variant?: 'atk' | 'def';
+  /** Cor do fundo do painel escolhida pelo usuário (senão, a do estilo). */
+  fill?: string;
   /** Esqueleto da carta (a moldura usa para recortar a janela da arte). */
   layout?: Skeleton;
 }

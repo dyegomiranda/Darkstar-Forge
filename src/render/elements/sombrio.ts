@@ -10,7 +10,7 @@ import { vivid } from '../palette';
 import { bezier, inset, pixelArt, roundRect, type Box, type Pt } from '../shapes';
 import { band, boxSdf, deckShades, g, hardShadow, hornSdf, lit, noise, OUT, P, pillSdf, plate, polySdf, raster, type Paint, type Sdf } from './pxengine';
 import type { TextLook } from '../text';
-import { center } from './common';
+import { center, shades4 } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
 /** Ardósia azulada (ferro escuro da referência). */
@@ -60,7 +60,7 @@ function ribbon(a: PieceArgs): PieceOut {
   }).join('');
   const sdf = boxSdf(body, 2 * P);
   const svg = tails + hardShadow(body, sdf, a.opacity) +
-    raster(body, sdf, plate(sdf, BONE, (x, y) => band(y, body, deckShades(a.pal, x, body, 0.1)), P), a.opacity);
+    raster(body, sdf, plate(sdf, BONE, (x, y) => band(y, body, a.fill ? shades4(a.fill) : deckShades(a.pal, x, body, 0.1)), P), a.opacity);
   return { svg, content: inset(body, 5 * P, 2 * P), text: txt('#ffffff', 700) };
 }
 
@@ -68,7 +68,7 @@ function ribbon(a: PieceArgs): PieceOut {
 function ironPlate(a: PieceArgs, b: Box, radius: number, rimW = P): { svg: string; inner: Box } {
   const sdf = boxSdf(b, radius);
   const svg = hardShadow(b, sdf, a.opacity) +
-    raster(b, sdf, plate(sdf, BONE, (_x, y) => band(y, b, [IRON.light, IRON.mid, IRON.dark, IRON.deep]), rimW), a.opacity);
+    raster(b, sdf, plate(sdf, BONE, (_x, y) => band(y, b, a.fill ? shades4(a.fill) : [IRON.light, IRON.mid, IRON.dark, IRON.deep]), rimW), a.opacity);
   return { svg, inner: inset(b, rimW + 2 * P, rimW + P) };
 }
 
@@ -137,7 +137,7 @@ export const sombrio: PieceStyle[] = [
       const paint: Paint = (d, light, _x, y) => {
         if (d < P) return [OUT, 'r'];
         if (d < 2 * P) return [light < -0.2 ? '#9a8058' : '#c7ae7c', 'f'];
-        return [band(y, pb, PARCH), 'f'];
+        return [band(y, pb, a.fill ? shades4(a.fill) : PARCH), 'f'];
       };
       const svg = hardShadow(pb, torn, a.opacity) + raster(pb, torn, paint, a.opacity);
       return { svg, content: inset(pb, 3 * P, 2.5 * P), text: { family: FONT, weight: 500, color: INK_DARK } };

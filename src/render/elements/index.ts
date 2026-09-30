@@ -1,7 +1,8 @@
 import { arcano } from './arcano';
 import { gotico } from './gotico';
 import { moderno } from './moderno';
-import { ornado } from './ornado';
+import { ornado, ornadoMarfim, ornadoRegio } from './ornado';
+import { ornadoPontas } from './ornado-pontas';
 import { pixel } from './pixel';
 import { selvagem } from './selvagem';
 import { sombrio, sombrioLayout } from './sombrio';
@@ -14,7 +15,10 @@ import type { PieceKind, PieceStyle, StyleId, StyleInfo } from './types';
 export * from './types';
 
 export const STYLES: StyleInfo[] = [
-  { id: 'ornado', name: 'Ornado', icons: 'emblema', description: 'Metal laqueado com relevo, pergaminho, cravos e joias.' },
+  { id: 'ornado', name: 'Ornado', icons: 'emblema', description: 'Ourivesaria na cor da classe: medalhões com fio de pérolas, cartelas com volutas, filigrana nos cantos e pergaminho.' },
+  { id: 'ornadoRegio', name: 'Ornado Régio', icons: 'emblema', description: 'A mesma ourivesaria em ouro, com painéis de laca escura e letra clara.' },
+  { id: 'ornadoMarfim', name: 'Ornado Marfim', icons: 'emblema', description: 'A mesma ourivesaria em prata, com painéis de marfim.' },
+  { id: 'ornadoPontas', name: 'Ornado Pontas', icons: 'emblema', description: 'O Ornado original: metal laqueado com espinhos, chamas no nome, cravos e joias.' },
   { id: 'gotico', name: 'Gótico', icons: 'emblema', description: 'Ferro negro com rebites, arcos pontiagudos, pedra e rosáceas de vitral.' },
   { id: 'arcano', name: 'Arcano', icons: 'emblema', description: 'Astrolábio: latão gravado, esmalte azul-noite, mapas de estrelas e luas.' },
   { id: 'moderno', name: 'Moderno', icons: 'chapado', description: 'Blocos de cor chapada, cortes diagonais, sombra dura e letra condensada.' },
@@ -27,7 +31,7 @@ export const STYLES: StyleInfo[] = [
   { id: 'aco', name: 'Pixel Aço', icons: 'pixel', pixelArt: true, frame: true, rulesMax: 300, layout: acoLayout, description: 'Pixel art de metal (referência: TCG Creator vol. 18): borda grossa de pedra e aço com cantoneiras douradas, arte em janela, placa do nome, fileira de placas (custo, ATK, DEF) e caixa de pedra.' },
 ];
 
-const ALL: PieceStyle[] = [...ornado, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
+const ALL: PieceStyle[] = [...ornado, ...ornadoRegio, ...ornadoMarfim, ...ornadoPontas, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
 
 const index = new Map<string, PieceStyle>(ALL.map((p) => [`${p.style}:${p.kind}`, p]));
 
