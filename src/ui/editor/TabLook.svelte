@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2 } from '@lucide/svelte';
+  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2, Check, ArrowUpToLine } from '@lucide/svelte';
   import { ensureAll, importImage, mediaUrl } from '../../store/media';
   import { ui } from '../../app/ui.svelte';
   import { app } from '../../store/project.svelte';
@@ -107,6 +107,24 @@
     } finally { symInput.value = ''; }
   }
 
+  /** Aplica (grava) o que está pendente, com um aviso claro de onde vale. */
+  async function apply() {
+    const theme = ed.themeDirty;
+    const wide = ed.touched.some((t) => t.wide);
+    const where = !theme ? L('só nesta carta', 'on this card only')
+      : wide ? L(`em todos os decks da coleção “${edition?.name ?? ''}” (${collectionCount} cartas)`, `on every deck of “${edition?.name ?? ''}” (${collectionCount} cards)`)
+      : L(`nas ${deckCount} cartas deste deck`, `on all ${deckCount} cards of this deck`);
+    const r = await ui.confirm({
+      title: L('Aplicar mudanças?', 'Apply changes?'),
+      text: L(`As mudanças de aparência valerão ${where}.`, `The look changes will apply ${where}.`) +
+        (theme ? L('\nCartas que tinham ajuste próprio nas mesmas peças passam a seguir o tema.', '\nCards with their own tweak on the same pieces will follow the theme.') : ''),
+      ok: L('Aplicar', 'Apply'),
+    });
+    if (r !== 'ok') return;
+    const others = ed.save();
+    ui.toast(theme ? L(`Aplicado ${where}${others ? ` (${others} cartas deixaram ajustes próprios)` : ''}`, `Applied ${where}${others ? ` (${others} cards dropped own tweaks)` : ''}`) : L('Carta salva', 'Card saved'), 'ok', 5000);
+  }
+
   function setTint(i: number, v: string) { const t = [...tint]; t[i] = v; ed.setLook({ tint: t }); }
 </script>
 
@@ -132,9 +150,22 @@
         {L(' Nada é gravado até você clicar em Salvar.', ' Nothing is written until you click Save.')}
       </span>
     </p>
+    {#if ed.scope !== 'card' && ed.hasCardLook}
+      <div class="warn">
+        <p>{ed.scope === 'deck'
+          ? L('Esta carta tem ajustes próprios que NÃO fazem parte do deck. Eles aparecem aqui só nesta carta.', 'This card has its own tweaks that are NOT part of the deck. They show here on this card only.')
+          : L('Esta carta tem ajustes próprios que NÃO fazem parte da coleção. Eles aparecem aqui só nesta carta.', 'This card has its own tweaks that are NOT part of the collection. They show here on this card only.')}</p>
+        <button class="btn sm" onclick={() => ed.promoteCardLook()}><ArrowUpToLine size={14} />
+          {ed.scope === 'deck' ? L('Levar estes ajustes para o deck inteiro', 'Move these tweaks to the whole deck') : L('Levar estes ajustes para a coleção inteira', 'Move these tweaks to the whole collection')}</button>
+      </div>
+    {/if}
     {#if ed.scope === 'card' && ed.draft.look}
       <button class="btn sm ghost" onclick={() => ed.resetCardLook()}><RotateCcw size={14} /> {L('Tirar todos os ajustes desta carta (usar o tema do deck)', 'Remove all tweaks on this card (use deck theme)')}</button>
     {/if}
+    <button class="btn primary apply" disabled={!ed.dirty} onclick={apply}><Check size={15} />
+      {ed.scope === 'card' ? L('Aplicar a esta carta', 'Apply to this card')
+        : ed.scope === 'deck' ? L(`Aplicar ao deck inteiro (${deckCount} cartas)`, `Apply to whole deck (${deckCount} cards)`)
+        : L(`Aplicar à coleção inteira (${collectionCount} cartas)`, `Apply to whole collection (${collectionCount} cards)`)}</button>
   </section>
 
   <section class="stack s">
@@ -350,6 +381,9 @@
   .symimg img { max-width: 100%; max-height: 100%; }
   .thumbs.dim { opacity: .45; }
   .scope { display: flex; flex-direction: column; gap: 8px; position: sticky; top: -20px; z-index: 5; background: var(--bg); padding: 12px 0 14px; margin-top: -12px; border-bottom: 1px solid var(--line); }
+  .warn { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 9px; border: 1px solid #b7791f; background: color-mix(in srgb, #b7791f 14%, transparent); }
+  .warn p { margin: 0; font-size: 12.5px; color: var(--text); }
+  .apply { justify-content: center; }
   .scope.wide .note { border-color: var(--accent); background: var(--accent-soft); }
   .three button { flex-direction: column; gap: 1px; padding: 7px 4px; height: auto; }
   .three b { font-weight: 600; font-size: 12.5px; }

@@ -48,4 +48,17 @@ describe('tema no editor', () => {
     expect(app.cards.y.look).toBeUndefined(); // estilo próprio saiu
     expect(app.cards.z.look?.pieces?.header).toEqual({ ink: '#ffffff' }); // opacidade própria saiu, cor do texto fica
   });
+
+  it('ajustes feitos em "Esta carta" podem ser levados para o deck e aplicados nele', () => {
+    app.putCard(card({ id: 'w', deckId: 'a' }));
+    const ed = new EditorState(app.cards.w);
+    ed.setPiece('rules', { fill: '#123456' });
+    ed.scope = 'deck';
+    expect(ed.hasCardLook).toBe(true);
+    ed.promoteCardLook();
+    expect(ed.hasCardLook).toBe(false);
+    ed.save();
+    expect(app.deck('a')!.look.pieces?.rules?.fill).toBe('#123456');
+    expect(app.cards.w.look).toBeUndefined();
+  });
 });

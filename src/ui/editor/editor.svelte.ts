@@ -282,6 +282,31 @@ export class EditorState {
     });
   }
 
+  /** A carta tem ajustes próprios de aparência (por cima do tema)? */
+  get hasCardLook(): boolean { return !!this.draft.look && Object.keys(this.draft.look).length > 0; }
+
+  /**
+   * Leva os ajustes próprios desta carta para o tema do deck (ou da coleção,
+   * conforme o escopo): viram mudanças do tema e saem da carta.
+   */
+  promoteCardLook(): void {
+    const own = this.draft.look;
+    if (!own || this.scope === 'card') return;
+    const paths: string[] = [];
+    for (const [k, v] of Object.entries(own)) {
+      if ((k === 'pieces' || k === 'icons') && v && typeof v === 'object') {
+        for (const [sub, val] of Object.entries(v as Record<string, unknown>)) {
+          if (val && typeof val === 'object') for (const prop of Object.keys(val)) paths.push(`${k}.${sub}.${prop}`);
+          else paths.push(`${k}.${sub}`);
+        }
+      } else paths.push(k);
+    }
+    const source = clone(own);
+    this.#write(paths, (l) => { for (const p of paths) copyPath(l as never, source as never, p); });
+    this.draft.look = undefined;
+    this.touch();
+  }
+
   /** Remove todos os ajustes desta carta (volta ao tema do deck). */
   resetCardLook(): void {
     this.draft.look = undefined;
