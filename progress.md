@@ -4,6 +4,22 @@
 **Como abrir:** atalho *Darkstar Forge* no menu de aplicativos, ou o script `Darkstar Forge` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`.
 
+## Versão 2.3 (30/09/2026)
+
+### Aparência sem sustos
+- [x] A pré-visualização não percebia mudanças no tema do deck (parecia que o estilo não mudava) — corrigido
+- [x] "Onde as mudanças valem": **esta carta**, **deck inteiro** ou **coleção inteira**; tudo é rascunho (Salvar liga, Descartar desfaz)
+- [x] Ao aplicar ao deck/coleção, as cartas deixam o ajuste próprio naquela peça e seguem o tema; na coleção, cada deck mantém cores e símbolos de classe/custo
+- [x] Tamanho dos símbolos de custo, classe, ATK, DEF e do selo da edição
+- [x] Biblioteca: a carta sobe e cresce ao passar o mouse; zoom mais rápido
+
+### Estilos refeitos a partir das referências
+- [x] Cada estilo pode ter arranjo próprio (onde fica cada peça), moldura com fundo e janela de arte
+- [x] Vazio (Dracanis Void), Espectral (TCG Vol. 5), Energia (tipo V), Pixel Aço (TCG Creator vol. 18), Pixel Sombrio (Fantasy TCG Pixel Art)
+
+### Regras
+- [x] Proposta de regras publicada para discussão: níveis e mana, XP, três ações, frente e retaguarda, ficha como herói
+
 ## Versão 2.2 (29/09/2026)
 
 ### Peças feitas de imagem
@@ -78,9 +94,10 @@ Os estilos desenhados por código não reproduzem modelos pintados à mão; por 
 - [x] Verso das cartas e PDF frente e verso; até 5 cores por carta com modos de mistura
 
 ## Próximos passos
-1. Gerar e testar o executável (AppImage) no computador Linux do usuário
-2. Gerar as artes das 81 cartas no ComfyUI (guia em `docs/artes.md`) e importar
-3. Motor de regras e simulação (futuro)
+1. Decidir as perguntas em aberto da proposta de regras (mana única, 3 ações, dano que fica, saque)
+2. Atualizar a tabela de mecânicas e o molde das cartas (◆ ações, fileira, XP) e reescrever as cartas de exemplo
+3. Imprimir um deck de teste e jogar
+4. Motor de regras e simulação (futuro)
 
 ## Arquivos-chave
 | Arquivo | Papel |
