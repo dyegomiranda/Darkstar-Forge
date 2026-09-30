@@ -6,7 +6,7 @@
   import { compose } from '../../render/compose';
   import { cardInput, lookMediaIds, mergeLook } from '../../render/card';
   import { CARD_W } from '../../render/layout';
-  import { ensureCardMedia, ctxFor } from '../common/cardCtx';
+  import { ensureCardMedia } from '../common/cardCtx';
   import type { EditorState } from './editor.svelte';
 
   let { ed }: { ed: EditorState } = $props();
@@ -26,7 +26,7 @@
   // máximo uma vez por quadro de tela (sem fila de trabalho atrasado)
   const input = $derived.by(() => {
     void mediaReady;
-    const ctx = ctxFor(ed.draft);
+    const ctx = ed.ctx();
     // idioma do texto = idioma escolhido no editor
     return ctx ? cardInput(ed.draft, { ...ctx, lang: ed.lang }) : null;
   });

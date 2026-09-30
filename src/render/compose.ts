@@ -44,7 +44,18 @@ export interface IconImage {
 }
 
 /** Escolha de um símbolo: estilo de desenho, qual símbolo e cor (ou uma imagem própria). */
-export interface IconChoice { style?: IconStyle; glyph?: string; color?: string; image?: IconImage }
+export interface IconChoice {
+  style?: IconStyle; glyph?: string; color?: string; image?: IconImage;
+  /** Tamanho do símbolo (1 = padrão do estilo; 0,5 a 1,8). */
+  size?: number;
+}
+
+/** Aumenta/diminui um desenho em volta do centro (cx, cy). */
+function scaled(svg: string, cx: number, cy: number, k?: number): string {
+  if (!svg || !k || Math.abs(k - 1) < 0.005) return svg;
+  const f = (n: number) => +n.toFixed(2);
+  return `<g transform="translate(${f(cx)} ${f(cy)}) scale(${+k.toFixed(3)}) translate(${f(-cx)} ${f(-cy)})">${svg}</g>`;
+}
 
 /** Filtro que pinta a imagem inteira numa cor (mantém só o formato/transparência). */
 function recolorFilter(defs: Defs, color: string): string {
@@ -72,6 +83,8 @@ export interface Look {
     class?: IconChoice;
     atk?: IconChoice;
     def?: IconChoice;
+    /** Selo da edição (só o tamanho). */
+    set?: { size?: number };
     /** 'todas' = um símbolo por classe da carta (padrão); 'primeira' = só o da 1ª classe. */
     classMode?: 'todas' | 'primeira';
     /** 'placa' = símbolo + número numa caixinha; 'emblema' = número dentro do símbolo, sem caixa. */
@@ -345,6 +358,8 @@ export function compose(inp: ComposeInput): string {
   const C = outs.cost;
   if (C && costPlan && inp.cost) {
     const c = C.out.content;
+    const before = text;
+    text = '';
     const x0 = c.x + (c.w - costPlan.width) / 2;
     const first = inp.cost[0].resource;
     for (const u of costPlan.units) {
@@ -362,12 +377,15 @@ export function compose(inp: ComposeInput): string {
       } else if (glyph) text += pix(C.out, symbol(defs, pick, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, color));
       if (u.num) text += centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 });
     }
+    text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, look.icons?.cost?.size);
   }
 
   const K = outs.class;
   if (K) {
     const c = K.out.content;
     const pick = look.icons?.class;
+    const before = text;
+    text = '';
     const style = iconStyleFor('class', pick);
     if (classPlan) {
       // várias classes: cada símbolo na cor da sua classe (a escolha da Aparência vale para a 1ª)
@@ -384,12 +402,13 @@ export function compose(inp: ComposeInput): string {
       const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
       text += pix(K.out, symbol(defs, pick, glyph, style, c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, color));
     }
+    text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, pick?.size);
   }
 
   const SET = outs.set;
   if (SET && inp.setIcon) {
     const c = SET.out.content;
-    text += `<image href="${inp.setIcon}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" preserveAspectRatio="xMidYMid meet"/>`;
+    text += scaled(`<image href="${inp.setIcon}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" preserveAspectRatio="xMidYMid meet"/>`, c.x + c.w / 2, c.y + c.h / 2, look.icons?.set?.size);
   }
 
   const F = outs.footer;
@@ -409,15 +428,16 @@ export function compose(inp: ComposeInput): string {
       const b = P.args.box;
       const s = b.h * 1.42;
       const cx = b.x + b.w / 2, cy = b.y + b.h / 2 - 4;
-      text += pick?.image?.src
+      const badge = (pick?.image?.src
         ? symbol(defs, pick, glyph, style, cx - s / 2, cy - s / 2, s, color)
-        : drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c');
-      text += centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
+        : drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c')) +
+        centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
+      text += scaled(badge, cx, cy, pick?.size);
       continue;
     }
     const c = P.out.content;
     const iconS = c.h * 0.98;
-    text += symbol(defs, pick, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, color);
+    text += scaled(symbol(defs, pick, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, color), c.x + iconS / 2, c.y + c.h / 2, pick?.size);
     text += centered(defs, num, tl, sz.stat * (c.h / 56), { x: c.x + iconS, y: c.y, w: c.w - iconS, h: c.h });
   }
 

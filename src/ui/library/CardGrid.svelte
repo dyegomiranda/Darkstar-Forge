@@ -65,8 +65,9 @@
   .space { position: relative; }
   .tile { position: absolute; top: 0; left: 0; will-change: transform; }
   .face { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 4.5% / 3.2%;
-    transition: transform var(--t), box-shadow var(--t); box-shadow: 0 8px 22px rgb(0 0 0 / .45); }
-  .tile:hover .face { transform: translateY(-4px); box-shadow: 0 18px 38px rgb(0 0 0 / .6); }
+    transition: transform .18s cubic-bezier(.2, .8, .3, 1.2), box-shadow .18s ease-out; box-shadow: 0 8px 22px rgb(0 0 0 / .45); transform-origin: 50% 60%; }
+  .tile:hover { z-index: 3; }
+  .tile:hover .face { transform: translateY(-8px) scale(1.045); box-shadow: 0 24px 46px rgb(0 0 0 / .7); }
   .tile.sel .face { box-shadow: 0 0 0 3px var(--accent), 0 14px 34px rgb(0 0 0 / .6); }
   .check { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px;
     background: rgb(12 10 10 / .75); opacity: 0; transition: opacity var(--t); cursor: pointer; }

@@ -17,8 +17,8 @@ export function mergeLook(base: Look, over?: Partial<Look>): Look {
     pieces[k as keyof typeof pieces] = { ...pieces[k as keyof typeof pieces], ...v } as never;
   }
   const icons = { ...base.icons, ...over.icons };
-  for (const k of ['cost', 'class', 'atk', 'def'] as const) {
-    if (base.icons?.[k] || over.icons?.[k]) icons[k] = { ...base.icons?.[k], ...over.icons?.[k] };
+  for (const k of ['cost', 'class', 'atk', 'def', 'set'] as const) {
+    if (base.icons?.[k] || over.icons?.[k]) icons[k] = { ...base.icons?.[k], ...over.icons?.[k] } as never;
   }
   return { ...base, ...over, style: over.style ?? base.style, pieces, icons };
 }
@@ -86,7 +86,9 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     cost: card.cost.map((p) => ({ resource: p.resource, amount: p.amount, show: p.show ?? 'number' })),
     stats: card.stats ? { atk: card.stats.atk, def: card.stats.def } : null,
     rarity: card.rarity,
-    look: withImageSrc(mergeLook(ctx.deck.look, card.look), ctx.mediaUrl, forKey),
+    // cópia simples: o desenho não deve depender de objetos reativos (a
+    // pré-visualização só percebe mudanças que ela mesma leu)
+    look: withImageSrc(JSON.parse(JSON.stringify(mergeLook(ctx.deck.look, card.look))) as Look, ctx.mediaUrl, forKey),
     setIcon: set ? (forKey ? set : ctx.mediaUrl(set)) : '/brand/logo.png',
   };
 }

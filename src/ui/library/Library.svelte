@@ -107,7 +107,7 @@
   function onhover(c: Card | null, el?: HTMLElement) {
     clearTimeout(hoverTimer);
     if (!c || !el) { hover = null; return; }
-    hoverTimer = setTimeout(() => { hover = { card: c, rect: el.getBoundingClientRect() }; }, 550);
+    hoverTimer = setTimeout(() => { hover = { card: c, rect: el.getBoundingClientRect() }; }, 380);
   }
 
   // ── artes em lote ──

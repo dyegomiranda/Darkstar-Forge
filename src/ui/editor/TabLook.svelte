@@ -14,8 +14,7 @@
   import { ICON_STYLES, type IconStyle } from '../../render/icons/render';
   import { ATK_CHOICES, DEF_CHOICES, ICON_NAMES, RESOURCE_COLORS, classChoices, resourceChoices } from '../../render/icons/glyphs';
   import { makePalette, type BlendMode, type MetalKind } from '../../render/palette';
-  import { ctxFor } from '../common/cardCtx';
-  import Glyph from '../common/Glyph.svelte';
+    import Glyph from '../common/Glyph.svelte';
   import { pieceThumb } from './thumbs';
   import PieceImagePanel from './PieceImagePanel.svelte';
   import type { EditorState } from './editor.svelte';
@@ -27,6 +26,12 @@
   /** Cores que a carta usa de fato (depois do modo de cor). */
   const colors = $derived(cardColors(ed.draft.colors.map(colorHex), look));
   const deckCount = $derived(app.cardsOf(ed.draft.deckId).length);
+  const edition = $derived(app.edition(ed.deck.editionId));
+  const collectionCount = $derived(app.decksOf(ed.deck.editionId).reduce((n, d) => n + app.cardsOf(d.id).length, 0));
+  const SIZE_SLOTS: { slot: 'cost' | 'class' | 'atk' | 'def' | 'set'; pt: string; en: string }[] = [
+    { slot: 'cost', pt: 'Custo', en: 'Cost' }, { slot: 'class', pt: 'Classe', en: 'Class' },
+    { slot: 'atk', pt: 'Ataque', en: 'Attack' }, { slot: 'def', pt: 'Defesa', en: 'Defense' }, { slot: 'set', pt: 'Selo da edição', en: 'Set symbol' },
+  ];
   const FONTS = [...new Set(CARD_FONTS.map((f) => f.family))];
 
   const PIECES: { kind: PieceKind; pt: string; en: string }[] = [
@@ -47,12 +52,12 @@
   // miniaturas dos estilos: pesadas, então só atualizam 300 ms depois da última mudança
   let styleThumbs = $state<Record<string, string>>({});
   $effect(() => {
-    const snap = JSON.stringify(ed.draft) + JSON.stringify(ed.deck.look);
+    const snap = JSON.stringify(ed.draft) + JSON.stringify(ed.deckLook);
     const t = setTimeout(() => {
       void snap;
-      const ctx = ctxFor(ed.draft);
+      const ctx = ed.ctx();
       if (!ctx) return;
-      const base = mergeLook(ed.deck.look, ed.draft.look);
+      const base = mergeLook(ed.baseLook, ed.draft.look);
       styleThumbs = Object.fromEntries(STYLES.map((s) => {
         const inp = cardInput({ ...ed.draft, look: undefined }, { ...ctx, lang: ed.lang, deck: { ...ctx.deck, look: { ...base, style: s.id, pieces: {}, pixelateArt: s.pixelArt ? 7 : undefined } } });
         inp.uid = `sc-${s.id}`;
@@ -106,15 +111,26 @@
 </script>
 
 <div class="stack">
-  <section class="scope">
-    <div class="seg full">
-      <button class:on={ed.scope === 'card'} onclick={() => (ed.scope = 'card')}>{L('Só esta carta', 'This card only')}</button>
-      <button class:on={ed.scope === 'deck'} onclick={() => (ed.scope = 'deck')}>{L(`Tema do deck (${deckCount} cartas)`, `Deck theme (${deckCount} cards)`)}</button>
+  <section class="scope" class:wide={ed.scope !== 'card'}>
+    <span class="section-title">{L('Onde as mudanças valem', 'Where changes apply')}</span>
+    <div class="seg full three">
+      <button class:on={ed.scope === 'card'} onclick={() => (ed.scope = 'card')}><b>{L('Esta carta', 'This card')}</b><small>1</small></button>
+      <button class:on={ed.scope === 'deck'} onclick={() => (ed.scope = 'deck')}><b>{L('Deck inteiro', 'Whole deck')}</b><small>{deckCount}</small></button>
+      <button class:on={ed.scope === 'collection'} onclick={() => (ed.scope = 'collection')}><b>{L('Coleção inteira', 'Whole collection')}</b><small>{collectionCount}</small></button>
     </div>
     <p class="note"><Info size={14} />
-      {ed.scope === 'deck'
-        ? L('Mudanças aqui valem para todas as cartas do deck e são salvas na hora.', 'Changes here apply to every card in the deck and are saved immediately.')
-        : L('Ajustes só desta carta, por cima do tema do deck. Salve para aplicar.', 'Tweaks for this card only, on top of the deck theme. Save to apply.')}
+      <span>
+        {#if ed.scope === 'card'}
+          {L('Ajustes só desta carta, por cima do tema do deck.', 'Tweaks for this card only, on top of the deck theme.')}
+        {:else if ed.scope === 'deck'}
+          {L(`Muda o tema das ${deckCount} cartas deste deck. As cartas que tinham ajuste próprio na mesma peça passam a seguir o tema.`,
+            `Changes the theme of all ${deckCount} cards in this deck. Cards with their own tweak on the same piece will follow the theme.`)}
+        {:else}
+          {L(`Muda o tema de todos os decks de “${edition?.name ?? ''}” (${collectionCount} cartas). Cada deck mantém as suas cores e os seus símbolos de classe e de custo.`,
+            `Changes the theme of every deck in “${edition?.name ?? ''}” (${collectionCount} cards). Each deck keeps its own colors and class/cost symbols.`)}
+        {/if}
+        {L(' Nada é gravado até você clicar em Salvar.', ' Nothing is written until you click Save.')}
+      </span>
     </p>
     {#if ed.scope === 'card' && ed.draft.look}
       <button class="btn sm ghost" onclick={() => ed.resetCardLook()}><RotateCcw size={14} /> {L('Tirar todos os ajustes desta carta (usar o tema do deck)', 'Remove all tweaks on this card (use deck theme)')}</button>
@@ -247,6 +263,19 @@
       </div>
     </div>
 
+    <div class="field">
+      <span>{L('Tamanho dos símbolos', 'Symbol size')}</span>
+      <div class="sizes">
+        {#each SIZE_SLOTS as z (z.slot)}
+          {@const v = look.icons?.[z.slot]?.size ?? 1}
+          <label class="sz"><span>{L(z.pt, z.en)}</span>
+            <input type="range" min="0.5" max="1.8" step="0.05" value={v} oninput={(e) => ed.setIcon(z.slot, { size: +(e.currentTarget as HTMLInputElement).value })} />
+            <button class="pct" title={L('Voltar ao padrão', 'Reset')} disabled={v === 1} onclick={() => ed.setIcon(z.slot, {}, ['size'])}>{Math.round(v * 100)}%</button>
+          </label>
+        {/each}
+      </div>
+    </div>
+
     {#snippet picker(slot: 'cost' | 'class' | 'atk' | 'def', title: string, ids: string[], color: string)}
       {@const cur = look.icons?.[slot]?.glyph ?? ids[0]}
       {@const im = look.icons?.[slot]?.image}
@@ -280,7 +309,7 @@
     {/if}
     {@render picker('class', L('Classe', 'Class') + (ed.draft.colors.length > 1 && look.icons?.classMode !== 'primeira' ? L(' (1ª classe)', ' (1st class)') : ''), classChoices(ed.draft.colors[0]), '#e8dcc4')}
     {#if ed.draft.colors.length > 1}
-      <label class="toggle"><input type="checkbox" checked={look.icons?.classMode !== 'primeira'} onchange={(e) => ed.setLook({ icons: { ...look.icons, classMode: (e.currentTarget as HTMLInputElement).checked ? 'todas' : 'primeira' } })} />
+      <label class="toggle"><input type="checkbox" checked={look.icons?.classMode !== 'primeira'} onchange={(e) => ed.setIconOption('classMode', (e.currentTarget as HTMLInputElement).checked ? 'todas' : 'primeira')} />
         {L('Mostrar o símbolo de cada classe da carta (o selo se alarga)', 'Show a symbol for each of the card\'s classes (the seal widens)')}</label>
     {/if}
     {#if ed.draft.stats}
@@ -288,8 +317,8 @@
       {@render picker('def', L('Defesa', 'Defense'), DEF_CHOICES, '#d3dae3')}
       <div class="field"><span>{L('Como mostrar ATK/DEF', 'How to show ATK/DEF')}</span>
         <div class="seg full">
-          <button class:on={(look.icons?.statMode ?? 'placa') === 'placa'} onclick={() => ed.setLook({ icons: { ...look.icons, statMode: 'placa' } })}>{L('Em placas', 'In plates')}</button>
-          <button class:on={look.icons?.statMode === 'emblema'} onclick={() => ed.setLook({ icons: { ...look.icons, statMode: 'emblema' } })}>{L('Número no medalhão', 'Number in medallion')}</button>
+          <button class:on={(look.icons?.statMode ?? 'placa') === 'placa'} onclick={() => ed.setIconOption('statMode', 'placa')}>{L('Em placas', 'In plates')}</button>
+          <button class:on={look.icons?.statMode === 'emblema'} onclick={() => ed.setIconOption('statMode', 'emblema')}>{L('Número no medalhão', 'Number in medallion')}</button>
         </div>
       </div>
     {/if}
@@ -301,7 +330,15 @@
   .symimg { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; overflow: hidden; background: repeating-conic-gradient(#3a3a3a 0 25%, #2a2a2a 0 50%) 0 0 / 10px 10px; }
   .symimg img { max-width: 100%; max-height: 100%; }
   .thumbs.dim { opacity: .45; }
-  .scope { display: flex; flex-direction: column; gap: 8px; }
+  .scope { display: flex; flex-direction: column; gap: 8px; position: sticky; top: -20px; z-index: 5; background: var(--bg); padding: 12px 0 14px; margin-top: -12px; border-bottom: 1px solid var(--line); }
+  .scope.wide .note { border-color: var(--accent); background: var(--accent-soft); }
+  .three button { flex-direction: column; gap: 1px; padding: 7px 4px; height: auto; }
+  .three b { font-weight: 600; font-size: 12.5px; }
+  .three small { font-size: 11px; opacity: .7; }
+  .sizes { display: flex; flex-direction: column; gap: 6px; }
+  .sz { display: grid; grid-template-columns: 110px 1fr 52px; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); }
+  .pct { border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text-2); border-radius: 7px; font: 500 12px var(--ui); padding: 3px 0; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pct:disabled { opacity: .55; cursor: default; }
   .full { display: flex; width: 100%; }
   .full button { flex: 1; justify-content: center; }
   .note { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--text-2); margin: 0; padding: 9px 11px; border-radius: 9px; background: var(--surface); border: 1px solid var(--line); }
