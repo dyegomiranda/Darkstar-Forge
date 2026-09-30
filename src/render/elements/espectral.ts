@@ -5,7 +5,7 @@
  * claro (lilás na cor da classe) e orbes vítreos nos cantos.
  */
 import { darken, lighten, mix } from '../color';
-import { CARD_RADIUS } from '../layout';
+import { CARD_RADIUS, CARD_W, type Skeleton } from '../layout';
 import { vivid, type Palette } from '../palette';
 import { banner, bezier, diamond, inset, pill, poly, roundRect, spike, tapered, type Box, type Pt } from '../shapes';
 import type { TextLook } from '../text';
@@ -85,6 +85,25 @@ function plaque(a: PieceArgs, b: Box, tip: number): { svg: string; inner: Box } 
   return { svg, inner: { x: innerB.x + tip + 13, y: innerB.y, w: innerB.w - 2 * (tip + 13), h: innerB.h } };
 }
 
+// ───────────── esqueleto (arranjo da referência) ─────────────
+// plaquinha do tipo no topo; arte grande; faixa do nome sobre uma barra escura;
+// painel claro de regras; orbes nos cantos de baixo (custo à esquerda, ATK/DEF à direita).
+const T = 18;
+export function espectralLayout(rulesH: number): Partial<Skeleton> {
+  const rules = { x: 66, y: 944 - rulesH, w: 618, h: rulesH };
+  const header = { x: 96, y: rules.y - 84, w: 558, h: 74 };
+  return {
+    rules, header,
+    typeBar: { x: 128, y: 22, w: 480, h: 58 },
+    class: { x: 646, y: 30, w: 70, h: 70 },
+    cost: { x: 20, y: 934, w: 100, h: 100 },
+    atk: { x: 470, y: 958, w: 118, h: 64 },
+    def: { x: 596, y: 958, w: 118, h: 64 },
+    set: { x: 347, y: 978, w: 56, h: 56 },
+    footer: { x: 130, y: 994, w: 200, h: 30 },
+  };
+}
+
 const title = (pal: Palette, weight = 700): TextLook => ({ family: TITLE, weight, color: ink(pal), caps: true, tracking: 0.02 });
 
 export const espectral: PieceStyle[] = [
@@ -112,7 +131,7 @@ export const espectral: PieceStyle[] = [
     render(a) {
       const b = inset(a.box, 18, 4);
       const { svg, inner } = plaque(a, b, 22);
-      return { svg, content: { ...inner, w: inner.w - 34 }, text: title(a.pal, 600), gem: { x: inner.x + inner.w - 26, y: b.y + b.h / 2 - 13, w: 26, h: 26 } };
+      return { svg, content: { ...inner, x: inner.x + 4, w: inner.w - 8 }, text: title(a.pal, 600), align: 'center', gem: { x: b.x + b.w + 6, y: b.y + b.h / 2 - 13, w: 26, h: 26 } };
     },
   },
   {
@@ -161,15 +180,32 @@ export const espectral: PieceStyle[] = [
     style: 'espectral', kind: 'frame', opacity: 1, metal: 'silver',
     render(a) {
       const b = a.box;
-      const T = 18;
+      const S = a.layout;
       const outer = roundRect(b, CARD_RADIUS), inner = roundRect(inset(b, T), 12);
+      const barY = S ? S.header.y + S.header.h / 2 : 560;
+      const win = { x: b.x + T, y: b.y + T, w: b.w - 2 * T, h: barY - b.y - T };
+      const winD = roundRect(win, 12);
+      const c = vivid(a.pal.base);
+      // barra escura atrás da faixa do nome, com um friso em zigue-zague
+      let zig = '';
+      for (let x = T + 6; x < CARD_W - T - 20; x += 24) zig += `M${x} ${barY + 8}l12 -8l12 8`;
+      const bar = { x: T, y: barY - 22, w: CARD_W - 2 * T, h: 44 };
+      const under = `<path d="${outer}" fill="${a.defs.hue(a.pal, (x) => mix(darken(vivid(x), 0.78), '#0d0913', 0.4))}"/>` +
+        `<path d="${outer}" fill="${a.defs.radial([[0, c, 0.2], [1, c, 0]], 0.5, 0.85, 0.55)}"/>`;
       const svg =
         `<path d="${outer + inner}" fill-rule="evenodd" fill="${deep(a.pal)}"/>` +
         silver(a, outer + roundRect(inset(b, 3), CARD_RADIUS - 3), 1, false) +
         silver(a, roundRect(inset(b, T - 3), 14) + inner, 1, false) +
+        // aro fino da janela da arte
+        silver(a, roundRect(inset(win, -3), 14) + winD, 1, false) +
+        `<g filter="${a.defs.shadow(3, 6, 0.6)}"><rect x="${bar.x}" y="${bar.y}" width="${bar.w}" height="${bar.h}" fill="${a.defs.hue(a.pal, (x) => mix(darken(vivid(x), 0.45), '#1a1024', 0.3))}"/></g>` +
+        `<rect x="${bar.x}" y="${bar.y}" width="${bar.w}" height="${bar.h}" fill="${a.defs.linear([[0, '#fff', 0.14], [0.5, '#fff', 0], [1, '#000', 0.35]])}"/>` +
+        `<path d="${zig}" fill="none" stroke="${lighten(c, 0.35)}" stroke-width="1.4" opacity=".45"/>` +
+        silver(a, `M${bar.x} ${bar.y - 3}h${bar.w}v3h${-bar.w}Z M${bar.x} ${bar.y + bar.h}h${bar.w}v3h${-bar.w}Z`, 0.8, false) +
         thorn(a, b.x + 10, b.y + 10, 1, 1, 70) + thorn(a, b.x + b.w - 10, b.y + 10, -1, 1, 70) +
-        thorn(a, b.x + 10, b.y + b.h - 10, 1, -1, 70) + thorn(a, b.x + b.w - 10, b.y + b.h - 10, -1, -1, 70);
-      return { svg, content: inset(b, T), text: title(a.pal) };
+        thorn(a, b.x + 10, b.y + b.h - 10, 1, -1, 60) + thorn(a, b.x + b.w - 10, b.y + b.h - 10, -1, -1, 60) +
+        thorn(a, b.x + T, barY - 26, 1, -1, 44) + thorn(a, b.x + b.w - T, barY - 26, -1, -1, 44);
+      return { svg, content: inset(b, T), text: title(a.pal), under, artClip: winD };
     },
   },
 ];

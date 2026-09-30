@@ -7,7 +7,7 @@
   import { colorHex } from '../../model/catalog';
   import { STYLES, piece, type PieceKind, type StyleId } from '../../render/elements';
   import { CARD_FONTS } from '../../render/fonts';
-  import { cardColors, compose, type Look } from '../../render/compose';
+  import { cardColors, compose, frameOn, type Look } from '../../render/compose';
   import { cardInput, mergeLook } from '../../render/card';
   import { Defs } from '../../render/defs';
   import { skeleton } from '../../render/layout';
@@ -76,7 +76,7 @@
     return /^#[0-9a-f]{6}$/i.test(c) ? c : '#ffffff';
   }
 
-  const frameOn = $derived(!!look.pieces?.frame && !look.pieces.frame.hidden);
+  const frameShown = $derived(frameOn(look));
   const iconStyle = $derived((look.icons?.class?.style ?? STYLES.find((s) => s.id === look.style)?.icons ?? 'emblema') as IconStyle);
   const mode = $derived(look.colorMode ?? 'classes');
   const tint = $derived(look.tint?.length ? look.tint : [colorHex(ed.draft.colors[0])]);
@@ -190,7 +190,7 @@
             <span class="sw" style="background:{pc[0]}"></span>
             <b>{L(p.pt, p.en)}</b>
             {#if changed}<span class="dot-ch" title={L('Alterada desde que abriu', 'Changed since opened')}></span>{/if}
-            <span class="muted">{isFrame && !frameOn ? L('desligada', 'off') : ch.image ? (ch.image.mediaId ? L('imagem', 'image') : L('só texto', 'text only')) : STYLES.find((x) => x.id === st)?.name}</span>
+            <span class="muted">{isFrame && !frameShown ? L('desligada', 'off') : ch.image ? (ch.image.mediaId ? L('imagem', 'image') : L('só texto', 'text only')) : STYLES.find((x) => x.id === st)?.name}</span>
             <ChevronDown size={16} />
           </button>
           {#if open === p.kind}
@@ -200,9 +200,9 @@
                 <button class="btn sm ghost" onclick={() => ed.setPiece(p.kind, { style: st }, ['colors', 'opacity', 'metal', 'ink', 'font', 'hidden', 'image'])}><RotateCcw size={14} /> {L('Padrão do estilo', 'Style default')}</button>
               </div>
               {#if isFrame}
-                <label class="toggle"><input type="checkbox" checked={frameOn}
+                <label class="toggle"><input type="checkbox" checked={frameShown}
                   onchange={(e) => (e.currentTarget as HTMLInputElement).checked ? ed.setPiece('frame', { style: look.style }, ['hidden']) : ed.setPiece('frame', { hidden: true })} />
-                  {L('Mostrar moldura (o padrão é full art, sem borda)', 'Show a border (default is borderless full art)')}</label>
+                  {L('Mostrar moldura', 'Show the border')}</label>
               {:else}
                 <label class="toggle"><input type="checkbox" checked={!ch.hidden} onchange={(e) => ed.setPiece(p.kind, { hidden: !(e.currentTarget as HTMLInputElement).checked })} />
                   {#if ch.hidden}<EyeOff size={14} />{:else}<Eye size={14} />{/if} {L('Mostrar esta peça', 'Show this piece')}</label>

@@ -10,7 +10,7 @@ import { RARITY_COLORS, rarityGem, textShadow } from './elements/common';
 import { ATK_ICON, classIcon, DEF_ICON, isResource, RESOURCE_COLORS, resourceIcon, STEEL } from './icons/glyphs';
 import { drawGlyph, drawStatBadge, pixelSteps, type IconStyle } from './icons/render';
 import type { ResourceId } from '../model/types';
-import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, skeleton } from './layout';
+import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, RULES_MIN_H, skeleton, type Skeleton } from './layout';
 import { makePalette, MULTICOLOR_GOLD, vivid, type BlendMode, type MetalKind } from './palette';
 import { COST_MAX_W, planCost, type CostItem, type CostPlan } from './costSeal';
 import { DEFAULT_PAD, drawPieceImage, imageBox, imageContent, type PieceImage } from './pieceImage';
@@ -106,6 +106,12 @@ export interface Look {
   blend?: BlendMode;
 }
 
+/** A moldura aparece? Nos estilos com moldura própria, sim (a menos que desligada). */
+export function frameOn(look: Look): boolean {
+  const f = look.pieces?.frame;
+  return f ? !f.hidden : !!styleInfo(look.style).frame;
+}
+
 /** Cores efetivas da carta segundo o modo de cor escolhido. */
 export function cardColors(colors: string[], look: Look): string[] {
   switch (look.colorMode) {
@@ -167,7 +173,6 @@ function renderPiece(kind: PieceKind, ps: PieceStyle, ch: PieceChoice, args: Par
   }
   return out;
 }
-const RULES_X = 48, RULES_W = 654;
 
 function choose(look: Look, kind: PieceKind): { ps: PieceStyle; ch: PieceChoice } {
   const ch = look.pieces?.[kind] ?? { style: look.style };
@@ -217,9 +222,13 @@ export function compose(inp: ComposeInput): string {
   const knownIcon = isResource;
 
   // 1) Altura da caixa de regras: mede o texto com as margens internas do estilo escolhido.
+  const info = styleInfo(look.style);
+  const rulesMax = info.rulesMax ?? RULES_MAX_H;
+  const layoutFor = (h: number): Skeleton => ({ ...skeleton(h), ...info.layout?.(Math.max(RULES_MIN_H, Math.min(rulesMax, h))) });
+  const probeRules = layoutFor(400).rules;
   const rulesPick = choose(look, 'rules');
   const probe = renderPiece('rules', rulesPick.ps, rulesPick.ch, {
-    box: { x: RULES_X, y: 0, w: RULES_W, h: 400 }, pal: makePalette(colors, undefined, blend), defs: new Defs("probe"), opacity: 1,
+    box: { x: probeRules.x, y: 0, w: probeRules.w, h: 400 }, pal: makePalette(colors, undefined, blend), defs: new Defs("probe"), opacity: 1,
   });
   const padT = probe.content.y, padB = 400 - (probe.content.y + probe.content.h);
   const innerW = probe.content.w;
@@ -236,12 +245,12 @@ export function compose(inp: ComposeInput): string {
     return { rs, fs, rl, fl, gap, need: blockHeight(rl, rs) + gap + blockHeight(fl, fs) };
   };
   let T = layoutText();
-  while (T.need + padT + padB > RULES_MAX_H && rulesSize > RULES_MIN_FONT) {
+  while (T.need + padT + padB > rulesMax && rulesSize > RULES_MIN_FONT) {
     rulesSize -= 1;
     flavorSize = Math.max(RULES_MIN_FONT, flavorSize - 1);
     T = layoutText();
   }
-  const S = skeleton(Math.ceil(T.need + padT + padB));
+  const S = layoutFor(Math.ceil(T.need + padT + padB));
 
   // 2) Arte (cobre a carta inteira: full art)
   const clip = defs.add('cardclip', (id) => `<clipPath id="${id}"><path d="${roundRect(S.card, CARD_RADIUS)}"/></clipPath>`);
@@ -269,7 +278,7 @@ export function compose(inp: ComposeInput): string {
     const { ps, ch } = choose(look, kind);
     if (ch.hidden) return;
     const pal = makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, blend);
-    const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant };
+    const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant, layout: S };
     const out = renderPiece(kind, ps, ch, args);
     outs[slot] = { out, ch, ps, args };
     if (!draw) return;
@@ -279,8 +288,20 @@ export function compose(inp: ComposeInput): string {
     }
     pieces += out.svg;
   };
-  // Moldura em volta da carta é opcional: por padrão a carta é full art, sem borda.
-  if (look.pieces?.frame && !look.pieces.frame.hidden) add('frame', S.card);
+  // Moldura: nos estilos "de modelo" faz parte do visual (ligada por padrão);
+  // nos outros é opcional e a carta é full art, sem borda.
+  if (frameOn(look)) add('frame', S.card);
+  const F0 = outs.frame?.out;
+  if (F0?.under || F0?.artClip) {
+    // fundo da carta por baixo; a arte só dentro da janela da moldura
+    let inside = artImg || (F0.artClip ? drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 200, CARD_H * 0.3 - 200, 400, { color: lighten(tint, 0.25), opacity: 0.12 }) : '');
+    if (F0.artClip && inside) {
+      const wid = defs.add('artwin', (id) => `<clipPath id="${id}"><path d="${F0.artClip}"/></clipPath>`);
+      inside = (artImg ? '' : `<path d="${F0.artClip}" fill="${defs.radial([[0, darken(tint, 0.35)], [1, darken(tint, 0.8)]], 0.5, 0.4, 0.7)}"/>`) +
+        `<g clip-path="url(#${wid})">${inside}</g>`;
+    }
+    art = (F0.under ?? art.replace(artImg, '')) + inside;
+  }
   // Selo de custo: arranja os símbolos e alarga o selo (e encurta o cabeçalho) se precisar
   let costPlan: CostPlan | undefined;
   const costPick = choose(look, 'cost');
@@ -326,14 +347,14 @@ export function compose(inp: ComposeInput): string {
 
   const H = outs.header;
   // o nome pode encolher mais: com vários custos/classes os selos largos estreitam a barra
-  if (H) text += centered(defs, inp.name, textOf(H.out, H.ch), sz.title, H.out.content, 'center', 0.4);
+  if (H) text += centered(defs, inp.name, textOf(H.out, H.ch), sz.title, H.out.content, H.out.align ?? 'center', 0.4);
 
   const TB = outs.typeBar;
   if (TB) {
-    text += centered(defs, inp.typeLine, textOf(TB.out, TB.ch), sz.type, TB.out.content, 'left');
+    text += centered(defs, inp.typeLine, textOf(TB.out, TB.ch), sz.type, TB.out.content, TB.out.align ?? 'left');
     if (TB.out.gem) {
       const color = RARITY_COLORS[inp.rarity] ?? RARITY_COLORS.common;
-      text += TB.ps.gemRender ? TB.ps.gemRender(TB.out.gem, color) : rarityGem(TB.out.gem, inp.rarity);
+      text += TB.ps.gemRender ? TB.ps.gemRender(TB.out.gem, color, defs) : rarityGem(TB.out.gem, inp.rarity);
     }
   }
 

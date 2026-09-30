@@ -2,6 +2,7 @@ import type { Defs } from '../defs';
 import type { IconStyle } from '../icons/render';
 import type { Palette, MetalKind } from '../palette';
 import type { Box } from '../shapes';
+import type { Skeleton } from '../layout';
 import type { TextLook } from '../text';
 
 /** As peças que compõem uma carta. Cada uma pode vir de um estilo diferente. */
@@ -20,6 +21,8 @@ export interface PieceArgs {
   opacity: number;
   /** ATK ou DEF (placas de combate). */
   variant?: 'atk' | 'def';
+  /** Esqueleto da carta (a moldura usa para recortar a janela da arte). */
+  layout?: Skeleton;
 }
 
 export interface PieceOut {
@@ -39,6 +42,12 @@ export interface PieceOut {
   pixelIcons?: number;
   /** Selo de custo: cada símbolo vai escuro sobre uma esfera na cor do recurso (esferas de energia). */
   costOrbs?: boolean;
+  /** Alinhamento do texto de uma linha (nome: centro; tipo: esquerda, se não disser). */
+  align?: 'left' | 'center';
+  /** Moldura: desenho que vai POR BAIXO da arte (fundo da carta). */
+  under?: string;
+  /** Moldura: janela da arte (d); a arte só aparece dentro dela. */
+  artClip?: string;
 }
 
 export interface PieceStyle {
@@ -52,7 +61,7 @@ export interface PieceStyle {
   /** Caixa de regras: divisor entre regras e texto de ambientação. */
   divider?(a: PieceArgs, x: number, y: number, w: number): string;
   /** Barra de tipo: joia de raridade no estilo da peça (senão, joia lapidada). */
-  gemRender?(box: Box, color: string): string;
+  gemRender?(box: Box, color: string, defs: Defs): string;
   /** Caixa de regras: aparência do texto de ambientação. */
   flavor?: (pal: Palette) => TextLook;
 }
@@ -65,4 +74,14 @@ export interface StyleInfo {
   icons: IconStyle;
   /** Estilo de pixel art: ao escolhê-lo, a arte também é pixelada (dá para desligar). */
   pixelArt?: boolean;
+  /**
+   * Esqueleto próprio (onde cada peça fica), recebendo a altura que a caixa de
+   * regras precisa. Estilos inspirados em modelos prontos têm arranjos próprios
+   * (nome no meio da carta, arte em janela...). Sem isto, usa o esqueleto padrão.
+   */
+  layout?: (rulesH: number) => Partial<Skeleton>;
+  /** Altura máxima da caixa de regras neste estilo. */
+  rulesMax?: number;
+  /** A moldura faz parte do estilo: aparece por padrão (dá para desligar). */
+  frame?: boolean;
 }
