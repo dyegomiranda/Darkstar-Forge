@@ -40,7 +40,7 @@ function newPlayer(hero: HeroDef, deck: CardRef[]): PlayerState {
   board[hero.row][hero.col] = heroUnit(hero);
   return {
     hero, vigor: hero.vigor, maxVigor: hero.vigor, mana: hero.mana, maxMana: hero.mana, level: 1, xp: 0, pendingLevels: 0,
-    deck, hand: [], discard: [], board, struck: false, moved: false, hitHero: false, plays: 0,
+    deck, hand: [], discard: [], recent: [], board, struck: false, moved: false, hitHero: false, plays: 0,
   };
 }
 
@@ -259,8 +259,8 @@ function shift(s: GameState, pos: Pos, toRow?: number): Pos | null {
   return { p: pos.p, row, col };
 }
 
-function summon(s: GameState, p: 0 | 1, d: UnitDef, at: Pos) {
-  const u: Unit = { id: `u${++s.seq}`, name: d.name, atk: d.atk, def: d.def, dmg: 0, keys: d.keys ?? [], icon: d.icon, isHero: false, exhausted: !(d.keys ?? []).includes('rapido'), afflicted: false, marked: false, warded: false, buff: 0 };
+function summon(s: GameState, p: 0 | 1, d: UnitDef, at: Pos, src?: string) {
+  const u: Unit = { src, id: `u${++s.seq}`, name: d.name, atk: d.atk, def: d.def, dmg: 0, keys: d.keys ?? [], icon: d.icon, isHero: false, exhausted: !(d.keys ?? []).includes('rapido'), afflicted: false, marked: false, warded: false, buff: 0 };
   s.players[p].board[at.row][at.col] = u;
   log(s, `${s.players[p].hero.name} invoca ${d.name[0]} (${d.atk}/${d.def}).`);
 }
@@ -298,7 +298,7 @@ function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: '
   if (then === 'push' && !t.isHero) shift(s, target);
 }
 
-function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos) {
+function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: string) {
   const pl = s.players[p];
   switch (e.k) {
     case 'dmg': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { damage(s, pos, e.n, p, e.via); if (s.winner !== undefined) return; } break;
@@ -324,7 +324,7 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos) {
     case 'summon': {
       const n = e.n ?? 1;
       const slots = [chosen, ...emptySlots(s, p)].filter((x): x is Pos => !!x && !unitAt(s, x));
-      for (let i = 0; i < n && i < slots.length; i++) summon(s, p, e.unit, slots[i]);
+      for (let i = 0; i < n && i < slots.length; i++) summon(s, p, e.unit, slots[i], src);
       break;
     }
     case 'draw': draw(s, p, e.n); break;
@@ -333,7 +333,7 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos) {
     case 'selfdmg': { const h = unitAt(s, heroPos(s, p))!; h.dmg += e.n; log(s, `${pl.hero.name} perde ${e.n} PV.`); if (h.dmg >= h.def) s.winner = other(p); break; }
     case 'advance': { const hp = heroPos(s, p); if (hp.row !== 0 && shift(s, hp, 0)) log(s, `${pl.hero.name} avança.`); break; }
     case 'stance': {
-      if (pl.stance) pl.discard.push({ uid: `st${++s.seq}`, cardId: pl.stance.cardId });
+      if (pl.stance?.cardId) pl.discard.push({ uid: pl.stance.uid ?? `st${++s.seq}`, cardId: pl.stance.cardId });
       pl.stance = { cardId: '', mods: e.mods };
       break;
     }
@@ -348,6 +348,9 @@ function startTurn(s: GameState, first = false) {
   pl.plays = 0;
   for (const f of figures(s, p)) f.u.exhausted = false;
   log(s, `— Turno ${s.turn}: ${pl.hero.name} —`);
+  // as habilidades usadas no turno anterior vão para o cemitério
+  pl.discard.push(...pl.recent);
+  pl.recent = [];
   // aflição: 1 de dano em cada figura afligida do jogador da vez (o XP vai para o outro lado)
   for (const f of figures(s, p)) {
     if (f.u.afflicted) { log(s, `${nm(f.u)} sofre a Aflição.`); damage(s, f.pos, 1, other(p)); if (s.winner !== undefined) return; }
@@ -391,11 +394,11 @@ export function apply(s: GameState, a: Action): string | null {
       if (d.game.effects.some((e) => e.k === 'strike')) pl.struck = true;
       log(s, `${pl.hero.name} usa ${d.name[0]}.`);
       for (const e of d.game.effects) {
-        applyEffect(s, p, e, ch?.kind === 'slot' ? a.slot : a.target);
+        applyEffect(s, p, e, ch?.kind === 'slot' ? a.slot : a.target, d.id);
         if (s.winner !== undefined) return null;
       }
-      if (d.game.kind === 'postura') pl.stance!.cardId = d.id;
-      else pl.discard.push(ref);
+      if (d.game.kind === 'postura') pl.stance = { ...pl.stance!, cardId: d.id, uid: ref.uid };
+      else pl.recent.push(ref);
       return null;
     }
     case 'strike': {

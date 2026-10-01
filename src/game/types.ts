@@ -128,6 +128,8 @@ export interface Unit {
   warded: boolean;
   /** Bônus de ATK até o fim do turno. */
   buff: number;
+  /** Carta de onde a invocação veio (para ver a carta ao passar o mouse). */
+  src?: string;
 }
 
 export interface CardRef { uid: string; cardId: string }
@@ -145,9 +147,11 @@ export interface PlayerState {
   deck: CardRef[];
   hand: CardRef[];
   discard: CardRef[];
+  /** Cartas usadas desde o começo do último turno do jogador (ficam à vista do oponente; depois vão para o cemitério). */
+  recent: CardRef[];
   /** Campo: [fileira][coluna]; fileira 0 = frente. */
   board: (Unit | null)[][];
-  stance?: { cardId: string; mods: StanceMods };
+  stance?: { cardId: string; uid?: string; mods: StanceMods };
   struck: boolean;
   moved: boolean;
   /** Já feriu o herói inimigo neste turno (XP). */
