@@ -7,7 +7,7 @@ import type { Card, Deck, Edition, Lang } from '../model/types';
 import type { ComposeInput, Look } from './compose';
 
 /** Muda quando o desenho muda (invalida o cache de imagens). */
-export const RENDER_VERSION = 'r9';
+export const RENDER_VERSION = 'r10';
 
 /** Tema final = tema do deck + ajustes da carta (a carta ganha). */
 export function mergeLook(base: Look, over?: Partial<Look>): Look {
@@ -57,7 +57,7 @@ const pad = (n: number) => String(n).padStart(3, '0');
 
 export function footerText(card: Card, ctx: CardContext): string {
   const code = ctx.edition?.code ?? '';
-  return `${pad(card.n)}/${pad(DECK_SIZE)} · ${ctx.lang === 'pt-BR' ? 'PT-BR' : 'EN'}${code ? ` · ${code}` : ''}`;
+  return `${pad(card.n)}/${pad(ctx.edition?.deckSize ?? DECK_SIZE)} · ${ctx.lang === 'pt-BR' ? 'PT-BR' : 'EN'}${code ? ` · ${code}` : ''}`;
 }
 
 export function typeLine(card: Card, lang: Lang): string {
@@ -76,6 +76,7 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     colorId: card.colors[0] ?? ctx.deck.colors[0],
     classIds: card.colors.length ? [...card.colors] : [ctx.deck.colors[0]],
     art: src ? { src, zoom: card.art.zoom, x: card.art.x, y: card.art.y, mirror: card.art.mirror } : undefined,
+    artIcon: card.art.icon,
     name: t.name,
     typeLine: typeLine(card, ctx.lang),
     rules: t.rules,

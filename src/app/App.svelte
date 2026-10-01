@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { LibraryBig, ScrollText, Settings2, PenTool, Check, CloudAlert, LoaderCircle, SquareStack } from '@lucide/svelte';
+  import { LibraryBig, ScrollText, Settings2, PenTool, Check, CloudAlert, LoaderCircle, SquareStack, Swords } from '@lucide/svelte';
+  import Game from '../ui/game/Game.svelte';
   import Back from '../ui/back/Back.svelte';
   import PdfDialog from '../ui/common/PdfDialog.svelte';
   import { app, LAST_EDITION } from '../store/project.svelte';
@@ -33,6 +34,7 @@
     ...(lastCard && app.cards[lastCard] ? [{ id: 'editor', icon: PenTool, label: L('Editor', 'Editor'), go: () => router.editor(lastCard!) }] : []),
     { id: 'back', icon: SquareStack, label: L('Verso', 'Back'), go: () => router.go('/verso') },
     { id: 'sheet', icon: ScrollText, label: L('Ficha', 'Sheet'), go: () => router.go('/ficha') },
+    { id: 'game', icon: Swords, label: L('Mesa', 'Table'), go: () => router.go('/mesa') },
     { id: 'settings', icon: Settings2, label: L('Ajustes', 'Settings'), go: () => router.go('/ajustes') },
   ]);
 
@@ -80,6 +82,8 @@
       {#key router.route.id}<Editor id={router.route.id} />{/key}
     {:else if router.route.name === 'back'}
       <Back />
+    {:else if router.route.name === 'game'}
+      <Game />
     {:else if router.route.name === 'sheet'}
       <Sheet />
     {:else}

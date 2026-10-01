@@ -5,6 +5,9 @@
  */
 import seedCards from '../data/seed-cards.json';
 import pfCards from '../data/pf-cards.json';
+import { PROTO_DECKS } from '../game/decks';
+import { effectsText } from '../game/text';
+import { ATTR_NAMES, KIND_NAMES } from '../game/types';
 import type { Look } from '../render/compose';
 import { CLASS_COLORS, COLORS } from './catalog';
 import { normalizeCost } from './cost';
@@ -73,19 +76,49 @@ export function pfCollection(): { edition: Edition; decks: Deck[]; cards: Card[]
   };
 }
 
+export const PROTO_ID = 'proto1';
+
+/** Coleção "Protótipo": 4 decks de 40 cartas com efeitos que a Mesa de teste entende. */
+export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Card[] } {
+  const now = Date.now();
+  const decks: Deck[] = PROTO_DECKS.map((d, i): Deck => ({
+    id: `proto-${d.color}`, editionId: PROTO_ID, name: deckName(d.color), kind: 'class', colors: [d.color], look: defaultLook(), order: i,
+  }));
+  const cards: Card[] = PROTO_DECKS.flatMap((d) => d.cards.map((pc, i): Card => {
+    const g = pc.game;
+    const req = (lang: 0 | 1) => [`Nv ${g.level}`, ...(g.attr ? [`${ATTR_NAMES[g.attr[0]][lang]} ${g.attr[1]}`] : [])].join(' · ');
+    const summon = g.effects.find((e) => e.k === 'summon');
+    const cost = [...(g.vigor ? [{ resource: 'vigor' as const, amount: g.vigor, show: 'number' as const }] : []),
+      ...(g.mana ? [{ resource: 'mana' as const, amount: g.mana, show: 'number' as const }] : [])];
+    return {
+      id: newId('card'), deckId: `proto-${d.color}`, n: i + 1,
+      text: {
+        'pt-BR': { name: pc.name[0], type: KIND_NAMES[g.kind][0], subtype: `${pc.cls[0]} · ${req(0)}`, rules: effectsText(g.effects, 'pt-BR'), flavor: '' },
+        'en-US': { name: pc.name[1], type: KIND_NAMES[g.kind][1], subtype: `${pc.cls[1]} · ${req(1).replace('Nv', 'Lv')}`, rules: effectsText(g.effects, 'en-US'), flavor: '' },
+      },
+      colors: [d.color], cost,
+      stats: summon && summon.k === 'summon' ? { atk: summon.unit.atk, def: summon.unit.def } : null,
+      rarity: pc.rarity, mechanics: [], tags: [g.kind], costMode: 'manual', rarityMode: 'manual',
+      art: { zoom: 1, x: 0, y: 0, mirror: false, icon: pc.icon }, game: structuredClone(g), createdAt: now, updatedAt: now,
+    };
+  }));
+  return { edition: { id: PROTO_ID, name: 'Protótipo — Mesa de teste', code: 'PROTO', deckSize: 40 }, decks, cards };
+}
+
 export function seedProject(): { project: Project; cards: Card[] } {
   const pf = pfCollection();
-  const decks = [...editionDecks(EDITION_ID), ...pf.decks];
-  const cards = [...toCards(seedCards as SeedCard[], '', 'manual'), ...pf.cards];
+  const proto = protoCollection();
+  const decks = [...editionDecks(EDITION_ID), ...pf.decks, ...proto.decks];
+  const cards = [...toCards(seedCards as SeedCard[], '', 'manual'), ...pf.cards, ...proto.cards];
   const project: Project = {
     version: PROJECT_VERSION,
     name: 'Darkstar',
     lang: 'pt-BR',
-    editions: [{ id: EDITION_ID, name: '1ª Edição', code: '1ª Ed.' }, pf.edition],
+    editions: [{ id: EDITION_ID, name: '1ª Edição', code: '1ª Ed.' }, pf.edition, proto.edition],
     decks,
     characters: [],
     themes: [],
-    seeded: [PF_ID],
+    seeded: [PF_ID, PROTO_ID],
   };
   return { project, cards };
 }

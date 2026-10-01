@@ -112,6 +112,20 @@ export interface Look {
   blend?: BlendMode;
 }
 
+/**
+ * Arte provisória (cartas de teste): luz na cor da classe, anéis finos e o
+ * símbolo grande no centro da área da arte, com brilho.
+ */
+function placeholderArt(defs: Defs, icon: string, tint: string): string {
+  const cx = CARD_W / 2, cy = CARD_H * 0.34, size = 400;
+  const fill = defs.linear([[0, lighten(tint, 0.75)], [0.55, lighten(tint, 0.25)], [1, darken(tint, 0.15)]]);
+  let rings = '';
+  for (const r of [230, 290, 360]) rings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${lighten(tint, 0.4)}" stroke-width="1.5" opacity="${(0.32 - r / 1600).toFixed(2)}"/>`;
+  return `<rect width="${CARD_W}" height="${CARD_H}" fill="${defs.radial([[0, lighten(tint, 0.05)], [0.45, darken(tint, 0.45)], [1, '#07060a']], 0.5, 0.34, 0.75)}"/>` +
+    rings +
+    `<g filter="${defs.glow(lighten(tint, 0.3), 14, 0.55)}" opacity=".95">${drawGlyph(defs, icon, 'chapado', cx - size / 2, cy - size / 2, size, { color: '#ffffff' }).replace(/fill="#ffffff"/g, `fill="${fill}"`)}</g>`;
+}
+
 /** A moldura aparece? Nos estilos com moldura própria, sim (a menos que desligada). */
 export function frameOn(look: Look): boolean {
   const f = look.pieces?.frame;
@@ -135,6 +149,8 @@ export interface ComposeInput {
   /** Deck (define o símbolo de classe padrão). */
   colorId: string;
   art?: { src: string; zoom?: number; x?: number; y?: number; mirror?: boolean };
+  /** Arte provisória: símbolo da biblioteca sobre fundo na cor da classe. */
+  artIcon?: string;
   name: string;
   typeLine: string;
   rules: string;
@@ -280,7 +296,7 @@ export function compose(inp: ComposeInput): string {
   // sem arte: fundo na cor da classe com o símbolo em marca-d'água (nunca um retângulo vazio)
   const tint = vivid(colors[0] ?? "#6b5a4a");
   let art = `<rect width="${CARD_W}" height="${CARD_H}" fill="${defs.radial([[0, darken(tint, 0.45)], [0.6, darken(tint, 0.78)], [1, '#0b0909']], 0.5, 0.42, 0.75)}"/>` +
-    (inp.art?.src ? '' : drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 230, CARD_H * 0.36 - 230, 460, { color: lighten(tint, 0.2), opacity: 0.1 }));
+    (inp.art?.src ? '' : inp.artIcon ? placeholderArt(defs, inp.artIcon, tint) : drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 230, CARD_H * 0.36 - 230, 460, { color: lighten(tint, 0.2), opacity: 0.1 }));
   let artImg = '';
   if (inp.art?.src) {
     const z = inp.art.zoom ?? 1;

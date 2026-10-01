@@ -54,6 +54,7 @@
           <button class="btn sm icon" title={L('Duplicar', 'Duplicate')} onclick={() => onduplicate(c)}><Copy size={15} /></button>
           <button class="btn sm icon danger" title={L('Excluir', 'Delete')} onclick={() => ondelete(c)}><Trash2 size={15} /></button>
         </div>
+        {#if (c.game?.copies ?? 1) > 1}<span class="copies" title={L('Cópias no deck', 'Copies in deck')}>×{c.game?.copies}</span>{/if}
         <div class="cap"><span class="n">#{String(c.n).padStart(3, '0')}</span><span class="nm">{c.text[app.lang].name}</span></div>
       </div>
     {/each}
@@ -69,6 +70,7 @@
   .tile:hover { z-index: 3; }
   .tile:hover .face { transform: translateY(-8px) scale(1.045); box-shadow: 0 24px 46px rgb(0 0 0 / .7); }
   .tile.sel .face { box-shadow: 0 0 0 3px var(--accent), 0 14px 34px rgb(0 0 0 / .6); }
+  .copies { position: absolute; top: 8px; left: 42px; padding: 2px 8px; border-radius: 8px; background: rgb(12 10 10 / .8); color: #f3e6c4; font: 700 13px var(--ui); pointer-events: none; }
   .check { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px;
     background: rgb(12 10 10 / .75); opacity: 0; transition: opacity var(--t); cursor: pointer; }
   .tile:hover .check, .tile.sel .check { opacity: 1; }
