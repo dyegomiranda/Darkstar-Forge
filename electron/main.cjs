@@ -12,13 +12,30 @@ const { pathToFileURL } = require('node:url');
 const DEV_URL = process.env.FORGE_DEV_URL; // ex.: http://localhost:5173 (desenvolvimento)
 const DIST = path.join(__dirname, '..', 'dist');
 
+// a música do jogo pode começar sem esperar um clique
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, codeCache: true } },
 ]);
 
+const COMFY = process.env.FORGE_COMFY_URL || 'http://127.0.0.1:8188';
+
+async function comfy(req, rest) {
+  try {
+    const init = { method: req.method, headers: {} };
+    if (req.method !== 'GET' && req.method !== 'HEAD') { init.body = await req.arrayBuffer(); init.headers['Content-Type'] = 'application/json'; }
+    return await net.fetch(COMFY + rest, init);
+  } catch {
+    return new Response('ComfyUI fora do ar', { status: 502 });
+  }
+}
+
 function serveApp() {
   protocol.handle('app', (req) => {
-    const { pathname } = new URL(req.url);
+    const { pathname, search } = new URL(req.url);
+    // atalho para o ComfyUI do próprio computador (gerar artes de dentro do app)
+    if (pathname.startsWith('/__comfy/')) return comfy(req, pathname.slice('/__comfy'.length) + search);
     const rel = decodeURIComponent(pathname === '/' ? '/index.html' : pathname);
     const file = path.normalize(path.join(DIST, rel));
     if (!file.startsWith(DIST)) return new Response('Proibido', { status: 403 });

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import lpcCredits from '../../data/lpc-credits.json';
+  const lpcAuthors = [...new Set(Object.values(lpcCredits as Record<string, { authors: string[] }>).flatMap((c) => c.authors))].sort((a, b) => a.localeCompare(b));
   import { onMount } from 'svelte';
   import { Download, Upload, FileSpreadsheet, HardDrive, RotateCcw, Award, BookOpen, Layers, Image as ImageIcon, Trash } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
@@ -147,6 +149,8 @@
       <p><b>Darkstar Forge</b> — {L('software livre sob a licença GPL-3.0. A propriedade intelectual de Darkstar (nome, marca, artes, textos) não está coberta pela GPL.', 'free software under the GPL-3.0 license. Darkstar intellectual property (name, logo, art, texts) is not covered by the GPL.')}</p>
       <p>{L('Símbolos', 'Symbols')}: <a href="https://game-icons.net" target="_blank" rel="noreferrer">game-icons.net</a>, {L('licença', 'license')} <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a> — {L('autores', 'by')} {iconAuthors.join(', ')}.</p>
       <p>{L('Fontes (SIL Open Font License)', 'Fonts (SIL Open Font License)')}: EB Garamond, Cinzel, Cormorant Garamond, Marcellus, Noto Sans, Pixelify Sans, Silkscreen, Grenze Gotisch, Barlow Condensed, Uncial Antiqua, Inter.</p>
+      <p>{L('Bonecos dos heróis (peças em pixel art)', 'Hero dolls (pixel art parts)')}: <a href="https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator" target="_blank" rel="noreferrer">Universal LPC Spritesheet Character Generator</a> / Liberated Pixel Cup, {L('licenças', 'licenses')} CC-BY-SA 3.0, GPL 3.0 {L('e', 'and')} OGA-BY 3.0 — {L('artistas', 'artists')}: {lpcAuthors.join(', ')}. {L('A lista por peça, com as fontes, está no arquivo', 'The per-part list, with sources, is in the file')} <code>src/data/lpc-credits.json</code>.</p>
+      <p>{L('Música e sons: sintetizados pelo próprio programa.', 'Music and sounds: synthesized by the program itself.')}</p>
       <p class="muted small">{L('Regras inspiradas no Pathfinder 2e (Paizo) e D&D 5e, adaptadas; nenhum texto oficial é reproduzido.', 'Rules inspired by Pathfinder 2e (Paizo) and D&D 5e, adapted; no official text is reproduced.')}</p>
     </section>
   </div>

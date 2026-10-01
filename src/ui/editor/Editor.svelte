@@ -40,8 +40,11 @@
 
   function save() {
     if (!ed) return;
-    ed.save();
-    ui.toast(L('Carta salva', 'Card saved'));
+    const theme = ed.themeDirty;
+    const others = ed.save();
+    if (!theme) ui.toast(L('Carta salva', 'Card saved'));
+    else ui.toast(L(`Tema aplicado${others ? ` — ${others} cartas deixaram os ajustes próprios nessas peças e passaram a seguir o tema` : ''}`,
+      `Theme applied${others ? ` — ${others} cards dropped their own tweaks on those pieces to follow the theme` : ''}`), 'ok', 5000);
   }
 
   async function remove() {
@@ -109,7 +112,8 @@
         <span class="dirty">{L('Não salvo', 'Unsaved')}</span>
         <button class="btn sm" onclick={() => ed.discard()}><RotateCcw size={15} /> {L('Descartar', 'Discard')}</button>
       {/if}
-      <button class="btn sm primary" disabled={!ed.dirty} onclick={save}><Save size={15} /> {L('Salvar', 'Save')} <span class="kbd">Ctrl S</span></button>
+      <button class="btn sm primary" disabled={!ed.dirty} onclick={save}><Save size={15} />
+        {ed.themeDirty ? L(`Salvar e aplicar (${ed.scopeCount} cartas)`, `Save & apply (${ed.scopeCount} cards)`) : L('Salvar', 'Save')} <span class="kbd">Ctrl S</span></button>
     </header>
 
     <div class="body">

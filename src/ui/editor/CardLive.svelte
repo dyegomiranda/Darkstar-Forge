@@ -6,7 +6,7 @@
   import { compose } from '../../render/compose';
   import { cardInput, lookMediaIds, mergeLook } from '../../render/card';
   import { CARD_W } from '../../render/layout';
-  import { ensureCardMedia, ctxFor } from '../common/cardCtx';
+  import { ensureCardMedia } from '../common/cardCtx';
   import type { EditorState } from './editor.svelte';
 
   let { ed }: { ed: EditorState } = $props();
@@ -26,7 +26,7 @@
   // máximo uma vez por quadro de tela (sem fila de trabalho atrasado)
   const input = $derived.by(() => {
     void mediaReady;
-    const ctx = ctxFor(ed.draft);
+    const ctx = ed.ctx();
     // idioma do texto = idioma escolhido no editor
     return ctx ? cardInput(ed.draft, { ...ctx, lang: ed.lang }) : null;
   });
@@ -68,7 +68,7 @@
 </div>
 
 <style>
-  .live { width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.5% / 3.2%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .04); touch-action: none; user-select: none; }
+  .live { width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .04); touch-action: none; user-select: none; }
   .live.grab { cursor: grab; }
   .live.grab:active { cursor: grabbing; }
   .live :global(svg) { width: 100%; height: 100%; display: block; }

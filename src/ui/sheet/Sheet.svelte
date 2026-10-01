@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Printer, Trash2, Minus, UserRound, X, Heart, Upload } from '@lucide/svelte';
+  import { Plus, Printer, Trash2, Minus, UserRound, X, Heart, Upload, ArrowLeft, Pencil, Swords, Shield, Sparkles } from '@lucide/svelte';
   import racesData from '../../data/races.json';
   import { app } from '../../store/project.svelte';
   import { importImage, ensureMedia, mediaUrl } from '../../store/media';
@@ -13,6 +13,16 @@
   import { vivid } from '../../render/palette';
   import Glyph from '../common/Glyph.svelte';
   import CardImage from '../common/CardImage.svelte';
+  import HeroPortrait from '../common/HeroPortrait.svelte';
+  import AvatarEditor from '../../avatar/AvatarEditor.svelte';
+  import AvatarSprite from '../../avatar/AvatarSprite.svelte';
+  import { defaultAvatar, portrait as avatarPortrait, type Avatar } from '../../avatar/lpc';
+  import { router } from '../../app/router.svelte';
+  import { HERO_BASES, gearInfo } from '../../game/decks';
+  import { ATTRS, ATTR_NAMES, GEAR_SLOTS, type GearItem, type GearSlot, type HeroBase, type Via } from '../../game/types';
+  import { deckCount, heroColor, heroDef } from '../game/heroes';
+
+  let { id }: { id?: string } = $props();
 
   interface Race { id: string; name: Record<string, string>; boosts: Partial<Record<Stat, number>>; flaws: Partial<Record<Stat, number>>; hp: number; desc: Record<string, string> }
   const RACES = racesData as Race[];
@@ -46,31 +56,63 @@
   const mod = (v: number) => Math.floor((v - 10) / 2);
   const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
-  let current = $state(0);
   let picking = $state<Slot | null>(null);
   let portraitInput: HTMLInputElement;
+  let creating = $state(false);
 
   const chars = $derived(app.project?.characters ?? []);
-  const ch = $derived(chars[current]);
+  /** Herói aberto (pela rota #/heroi/<id>); sem id, mostra a galeria de heróis. */
+  const current = $derived(id ? chars.findIndex((c) => c.id === id) : -1);
+  const ch = $derived(current >= 0 ? chars[current] : undefined);
+  /** A ficha foi aberta pelo "Editar" da seleção da Mesa: o voltar leva de volta para lá. */
+  const backToTable = router.returnTo === '/mesa';
+  const open = (cid?: string) => router.go(cid ? `/heroi/${encodeURIComponent(cid)}` : '/heroi');
 
   function edit(fn: (c: Character) => void) {
     app.updateProject((p) => { const c = p.characters[current]; if (c) fn(c); });
   }
 
-  function addChar() {
+  /** Novo herói a partir de um dos 4 modelos (deck, arma e equipamento do modelo; depois é só editar). */
+  function addChar(base: HeroBase) {
+    const cid = newId('char');
+    const color = base.deckId.replace('proto-', '') as ColorId;
     app.updateProject((p) => {
-      p.characters.push({ id: newId('char'), name: L('Aventureiro', 'Adventurer'), raceId: '', classColors: ['red'], level: 1, hp: 30, stats: baseStats(), slots: {}, notes: '' });
+      p.characters.push({
+        id: cid, name: L('Novo herói', 'New hero'), raceId: '', classColors: [color], level: 1, hp: 30, stats: baseStats(), slots: {}, notes: '',
+        play: { ...structuredClone(base), id: cid },
+      });
     });
-    current = chars.length - 1;
+    creating = false;
+    open(cid);
   }
 
-  async function removeChar() {
-    if (!ch) return;
-    const r = await ui.confirm({ title: L('Excluir personagem?', 'Delete character?'), text: `“${ch.name}”`, ok: L('Excluir', 'Delete'), danger: true });
+  async function removeChar(target = ch) {
+    if (!target) return;
+    const r = await ui.confirm({ title: L('Excluir herói?', 'Delete hero?'), text: `“${target.name}”`, ok: L('Excluir', 'Delete'), danger: true });
     if (r !== 'ok') return;
-    app.updateProject((p) => { p.characters.splice(current, 1); });
-    current = Math.max(0, current - 1);
+    app.updateProject((p) => { p.characters = p.characters.filter((c) => c.id !== target.id); });
+    if (id) open();
   }
+
+  // ───── dados de jogo (Mesa de teste) ─────
+  const VIAS: { id: Via; pt: string; en: string }[] = [{ id: 'melee', pt: 'Corpo a corpo', en: 'Melee' }, { id: 'ranged', pt: 'À distância', en: 'Ranged' }, { id: 'magic', pt: 'Mágico', en: 'Magic' }];
+  const SLOT_IDS: GearSlot[] = ['head', 'chest', 'hands', 'feet', 'trinket'];
+  const MODS: { id: 'armor' | 'resist' | 'hp' | 'strike'; pt: string; en: string; max: number }[] = [
+    { id: 'hp', pt: 'Vida', en: 'Life', max: 6 }, { id: 'armor', pt: 'Armadura', en: 'Armor', max: 3 },
+    { id: 'resist', pt: 'Resist. mágica', en: 'Magic resist', max: 3 }, { id: 'strike', pt: 'Golpe', en: 'Strike', max: 2 },
+  ];
+  const gameDecks = $derived(app.decks.filter((d) => app.cardsOf(d.id).some((c) => c.game)));
+  function play(fn: (b: HeroBase) => void) { edit((c) => { if (c.play) fn(c.play); }); }
+  function gearOf(b: HeroBase, slot: GearSlot): GearItem | undefined { return b.gear.find((g) => g.slot === slot); }
+  function setGear(slot: GearSlot, fn: (g: GearItem) => void) {
+    play((b) => {
+      let it = b.gear.find((g) => g.slot === slot);
+      if (!it) { it = { slot, name: [L(GEAR_SLOTS[slot][0], GEAR_SLOTS[slot][1]), GEAR_SLOTS[slot][1]], info: ['—', '—'] }; b.gear.push(it); }
+      fn(it);
+      it.info = gearInfo(it);
+    });
+  }
+  function enablePlay(base: HeroBase) { edit((c) => { c.play = { ...structuredClone(base), id: c.id }; }); }
 
   function setRace(id: string) {
     edit((c) => {
@@ -112,38 +154,70 @@
     edit((c) => { if (card) c.slots[slot] = card.id; else delete c.slots[slot]; });
     picking = null;
   }
+  /** Tira a "foto" do boneco e usa como retrato do herói. */
+  async function snapPortrait() {
+    if (!ch?.avatar) return;
+    const blob = await avatarPortrait($state.snapshot(ch.avatar) as Avatar, heroColor(ch));
+    const mid = await importImage(blob, `${ch.name || 'heroi'}-retrato.png`);
+    edit((c) => { c.portraitMediaId = mid; });
+    ui.toast(L('Retrato atualizado com a foto do boneco.', 'Portrait updated with the doll photo.'), 'ok');
+  }
+  const num = (e: Event, min: number, max: number) => Math.max(min, Math.min(max, Math.round(+(e.currentTarget as HTMLInputElement).value || 0)));
 </script>
 
 <div class="sheet-page">
-  <header class="head no-print">
-    <div class="tabs">
-      {#each chars as c, i (c.id)}
-        <button class:on={i === current} onclick={() => (current = i)}><UserRound size={15} /> {c.name || L('Sem nome', 'Unnamed')}</button>
-      {/each}
-      <button class="add" onclick={addChar}><Plus size={15} /> {L('Novo personagem', 'New character')}</button>
-    </div>
-    <div class="grow"></div>
-    {#if ch}
-      <button class="btn sm" onclick={() => print()}><Printer size={15} /> {L('Imprimir ficha', 'Print sheet')}</button>
-      <button class="btn sm ghost icon" title={L('Excluir personagem', 'Delete character')} onclick={removeChar}><Trash2 size={16} /></button>
-    {/if}
-  </header>
-
   {#if !ch}
-    <div class="empty">
-      <UserRound size={42} />
-      <h2>{L('Nenhum personagem ainda', 'No characters yet')}</h2>
-      <p class="muted">{L('Crie a ficha do seu herói: raça, classes, atributos e equipamentos (as cartas de equipamento do seu projeto).', 'Build your hero sheet: ancestry, classes, attributes and equipment (the equipment cards in your project).')}</p>
-      <button class="btn primary" onclick={addChar}><Plus size={16} /> {L('Criar personagem', 'Create character')}</button>
+    <div class="gallery">
+      <header class="ghead">
+        <div><h1>{L('Heróis', 'Heroes')}</h1>
+          <p class="muted">{L('Cada herói tem uma ficha, um retrato e um deck. Clique num herói para abrir a ficha; os que têm dados de jogo entram na Mesa.', 'Each hero has a sheet, a portrait and a deck. Click a hero to open the sheet; those with game data can enter the Table.')}</p></div>
+        <button class="btn primary" onclick={() => (creating = true)}><Plus size={16} /> {L('Novo herói', 'New hero')}</button>
+      </header>
+      <div class="hgrid">
+        {#each chars as c (c.id)}
+          {@const d = c.play ? heroDef(c) : null}
+          <div class="hcard" style="--c:{heroColor(c)}">
+            <button class="hmain" onclick={() => open(c.id)} title={L('Abrir a ficha', 'Open the sheet')}>
+              <span class="hpic"><HeroPortrait hero={c} size={220} />{#if c.avatar}<span class="hdoll"><AvatarSprite avatar={c.avatar} scale={2} /></span>{/if}</span>
+              <span class="hname display">{c.name || L('Sem nome', 'Unnamed')}</span>
+              <span class="hclass">{d ? L(d.className[0], d.className[1]) : c.classColors.map((col) => COLORS[col].classes[app.lang]).join(' / ')}</span>
+              {#if d}
+                <span class="hstats">
+                  <i><Heart size={13} /> {d.maxHp}</i><i><Swords size={13} /> {d.weapon.dmg}</i><i><Shield size={13} /> {d.armor}</i><i><Sparkles size={13} /> {d.resist}</i>
+                </span>
+                <span class="hdeck">{app.deck(d.deckId)?.name[app.lang] ?? '—'} · {deckCount(c)} {L('cartas', 'cards')}</span>
+              {:else}
+                <span class="hdeck muted">{L('Só ficha (sem dados de jogo)', 'Sheet only (no game data)')}</span>
+              {/if}
+            </button>
+            <div class="hact">
+              <button class="btn sm" onclick={() => open(c.id)}><Pencil size={14} /> {L('Editar', 'Edit')}</button>
+              <button class="btn sm ghost icon" title={L('Excluir herói', 'Delete hero')} onclick={() => removeChar(c)}><Trash2 size={15} /></button>
+            </div>
+          </div>
+        {/each}
+        <button class="hcard new" onclick={() => (creating = true)}><Plus size={34} /><span>{L('Novo herói', 'New hero')}</span></button>
+      </div>
     </div>
   {:else}
     {@const race = raceOf(ch.raceId)}
     {@const mhp = maxHp(ch)}
+    <header class="head no-print">
+      {#if backToTable}
+        <button class="btn sm primary" onclick={() => { router.returnTo = null; router.go('/mesa'); }}><ArrowLeft size={15} /> {L('Voltar à seleção da batalha', 'Back to battle selection')}</button>
+      {/if}
+      <button class="btn sm" onclick={() => { router.returnTo = null; open(); }}><ArrowLeft size={15} /> {L('Heróis', 'Heroes')}</button>
+      <b class="display hd">{ch.name}</b>
+      <div class="grow"></div>
+      <button class="btn sm" onclick={() => print()}><Printer size={15} /> {L('Imprimir ficha', 'Print sheet')}</button>
+      <button class="btn sm ghost icon" title={L('Excluir herói', 'Delete hero')} onclick={() => removeChar()}><Trash2 size={16} /></button>
+    </header>
     <div class="sheet">
       <!-- identidade -->
       <section class="card id">
         <button class="portrait" onclick={() => portraitInput.click()} title={L('Trocar retrato', 'Change portrait')}>
-          {#if portrait}<img src={portrait} alt="" />{:else}<div class="ph"><Upload size={22} /><span>{L('Retrato', 'Portrait')}</span></div>{/if}
+          {#if portrait}<img src={portrait} alt="" />{:else if ch.preset}<span class="pfill"><HeroPortrait hero={ch} size={290} /></span>{:else}<div class="ph"><Upload size={22} /><span>{L('Enviar retrato', 'Upload portrait')}</span></div>{/if}
+          <span class="pchange"><Upload size={13} /> {L('Trocar imagem', 'Change image')}</span>
         </button>
         <input type="file" accept="image/*" hidden bind:this={portraitInput} onchange={(e) => setPortrait((e.currentTarget as HTMLInputElement).files)} />
         <input class="name display" value={ch.name} oninput={(e) => edit((c) => { c.name = (e.currentTarget as HTMLInputElement).value; })} placeholder={L('Nome do herói', 'Hero name')} />
@@ -233,9 +307,105 @@
           {/each}
         </div>
       </section>
+
+      <!-- aparência: o boneco em pixel art -->
+      <section class="card play no-print">
+        <div class="row"><h3 class="section-title grow">{L('Aparência — boneco do herói', 'Appearance — hero doll')}</h3>
+          {#if ch.avatar}<button class="btn sm ghost" onclick={() => edit((c) => { delete c.avatar; })}>{L('Remover o boneco', 'Remove the doll')}</button>{/if}</div>
+        {#if !ch.avatar}
+          <p class="muted">{L('Monte o boneco do herói (gênero, pele, cabelo, roupas, armadura e arma). Ele aparece animado no campo de batalha e pode virar o retrato.', 'Build the hero doll (body, skin, hair, clothes, armor and weapon). It shows up animated on the battlefield and can become the portrait.')}</p>
+          <div class="tpl">
+            <button class="btn" onclick={() => edit((c) => { c.avatar = defaultAvatar('male'); })}>{L('Criar boneco masculino', 'Create male doll')}</button>
+            <button class="btn" onclick={() => edit((c) => { c.avatar = defaultAvatar('female'); })}>{L('Criar boneco feminino', 'Create female doll')}</button>
+          </div>
+        {:else}
+          <AvatarEditor avatar={ch.avatar} color={heroColor(ch)} onchange={(a) => edit((c) => { c.avatar = a; })} onportrait={snapPortrait} />
+        {/if}
+      </section>
+
+      <!-- dados de jogo -->
+      <section class="card play no-print">
+        <div class="row"><h3 class="section-title grow">{L('Jogo — Mesa de teste', 'Game — Test table')}</h3>
+          {#if ch.play}<button class="btn sm ghost" onclick={() => edit((c) => { delete c.play; })}>{L('Remover dados de jogo', 'Remove game data')}</button>{/if}</div>
+        {#if !ch.play}
+          <p class="muted">{L('Este herói ainda não pode entrar na Mesa. Escolha um modelo para começar (deck, arma e equipamento); depois é só ajustar.', 'This hero cannot enter the Table yet. Pick a template to start (deck, weapon and gear); then adjust.')}</p>
+          <div class="tpl">{#each HERO_BASES as b}<button class="btn" onclick={() => enablePlay(b)}>{L(b.className[0], b.className[1])}</button>{/each}</div>
+        {:else}
+          {@const b = ch.play}
+          {@const d = heroDef(ch)}
+          <div class="totals">
+            <span><Heart size={15} /> <b>{d.maxHp}</b> {L('Vida', 'Life')}</span>
+            <span><Swords size={15} /> <b>{d.weapon.dmg}</b> {L('Golpe', 'Strike')}</span>
+            <span><Shield size={15} /> <b>{d.armor}</b> {L('Armadura', 'Armor')}</span>
+            <span><Sparkles size={15} /> <b>{d.resist}</b> {L('Resistência mágica', 'Magic resistance')}</span>
+            <span class="vig">Vigor <b>{b.vigor}</b></span><span class="man">Mana <b>{b.mana}</b></span>
+          </div>
+          <div class="pgrid">
+            <label class="field"><span>{L('Deck', 'Deck')}</span>
+              <select class="select" value={b.deckId} onchange={(e) => play((x) => { x.deckId = (e.currentTarget as HTMLSelectElement).value; })}>
+                {#each gameDecks as dk}<option value={dk.id}>{app.edition(dk.editionId)?.name} — {dk.name[app.lang]}</option>{/each}
+              </select></label>
+            <label class="field"><span>{L('Classe (nome)', 'Class (name)')}</span>
+              <input class="input" value={L(b.className[0], b.className[1])} oninput={(e) => play((x) => { x.className[app.lang === 'pt-BR' ? 0 : 1] = (e.currentTarget as HTMLInputElement).value; })} /></label>
+            <label class="field"><span>{L('Vida base', 'Base life')}</span>
+              <input class="input" type="number" min="10" max="60" value={b.baseHp} oninput={(e) => play((x) => { x.baseHp = num(e, 10, 60); })} /></label>
+            <div class="field"><span>{L('Recursos no nível 1 (3 pontos)', 'Level 1 resources (3 points)')}</span>
+              <div class="split">{#each [0, 1, 2, 3] as v}<button class:on={b.vigor === v} onclick={() => play((x) => { x.vigor = v; x.mana = 3 - v; })}>{v} Vigor · {3 - v} Mana</button>{/each}</div></div>
+            <label class="field"><span>{L('Arma', 'Weapon')}</span>
+              <input class="input" value={L(b.weapon.name[0], b.weapon.name[1])} oninput={(e) => play((x) => { x.weapon.name[app.lang === 'pt-BR' ? 0 : 1] = (e.currentTarget as HTMLInputElement).value; })} /></label>
+            <label class="field"><span>{L('Dano do golpe', 'Strike damage')}</span>
+              <input class="input" type="number" min="1" max="8" value={b.weapon.dmg} oninput={(e) => play((x) => { x.weapon.dmg = num(e, 1, 8); })} /></label>
+            <label class="field"><span>{L('Tipo do golpe', 'Strike type')}</span>
+              <select class="select" value={b.weapon.via} onchange={(e) => play((x) => { x.weapon.via = (e.currentTarget as HTMLSelectElement).value as Via; })}>
+                {#each VIAS as v}<option value={v.id}>{L(v.pt, v.en)}</option>{/each}
+              </select></label>
+          </div>
+          <div class="field"><span>{L('Atributos de jogo (as cartas pedem um mínimo)', 'Game attributes (cards require a minimum)')}</span>
+            <div class="gattrs">
+              {#each ATTRS as a}
+                <div class="ga"><small>{L(ATTR_NAMES[a][0], ATTR_NAMES[a][1])}</small>
+                  <div class="val"><button onclick={() => play((x) => { x.attrs[a] = Math.max(0, x.attrs[a] - 1); })}><Minus size={12} /></button><b>{b.attrs[a]}</b><button onclick={() => play((x) => { x.attrs[a] = Math.min(5, x.attrs[a] + 1); })}><Plus size={12} /></button></div></div>
+              {/each}
+            </div></div>
+          <div class="field"><span>{L('Equipamento vestido (cada peça soma ao herói)', 'Equipped gear (each piece adds to the hero)')}</span>
+            <div class="gearlist">
+              {#each SLOT_IDS as slot}
+                {@const it = gearOf(b, slot)}
+                <div class="grow1">
+                  <small class="gslot">{L(GEAR_SLOTS[slot][0], GEAR_SLOTS[slot][1])}</small>
+                  <input class="input" placeholder={L('(vazio)', '(empty)')} value={it ? L(it.name[0], it.name[1]) : ''} oninput={(e) => setGear(slot, (g) => { g.name[app.lang === 'pt-BR' ? 0 : 1] = (e.currentTarget as HTMLInputElement).value; })} />
+                  {#each MODS as m}
+                    <label class="mod1"><small>{L(m.pt, m.en)}</small>
+                      <input class="input" type="number" min="0" max={m.max} value={it?.[m.id] ?? 0} oninput={(e) => setGear(slot, (g) => { const v = num(e, 0, m.max); if (v) g[m.id] = v; else delete g[m.id]; })} /></label>
+                  {/each}
+                </div>
+              {/each}
+            </div></div>
+        {/if}
+      </section>
     </div>
   {/if}
 </div>
+
+{#if creating}
+  <div class="backdrop" role="presentation" onclick={() => (creating = false)}>
+    <div class="picker" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && (creating = false)}>
+      <div class="row"><h3 class="grow">{L('Novo herói: escolha um modelo', 'New hero: pick a template')}</h3>
+        <button class="btn sm ghost icon" onclick={() => (creating = false)}><X size={16} /></button></div>
+      <p class="muted">{L('O modelo define o deck, a arma e o equipamento iniciais. Você pode mudar tudo depois na ficha.', 'The template sets the starting deck, weapon and gear. You can change everything later.')}</p>
+      <div class="tplgrid">
+        {#each HERO_BASES as b}
+          {@const tc = chars.find((c) => c.preset === b.id)}
+          <button class="tplc" onclick={() => addChar(b)}>
+            <HeroPortrait hero={tc ?? { id: '', name: '', raceId: '', classColors: [b.deckId.replace('proto-', '') as ColorId], level: 1, hp: 1, stats: baseStats(), slots: {}, notes: '', play: b }} size={110} />
+            <b>{L(b.className[0], b.className[1])}</b>
+            <small>{L(b.weapon.name[0], b.weapon.name[1])} · {b.vigor} Vigor · {b.mana} Mana</small>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if picking && ch}
   {@const opts = slotOptions(picking)}
@@ -267,6 +437,54 @@
   .empty { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 12vh 20px; color: var(--muted); }
   .empty h2 { color: var(--text); }
   .empty p { max-width: 460px; }
+
+  .gallery { padding: 28px 32px 60px; max-width: 1500px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .ghead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .ghead h1 { font-size: 28px; }
+  .ghead p { max-width: 640px; margin-top: 4px; }
+  .hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+  .hcard { position: relative; display: flex; flex-direction: column; border-radius: 18px; border: 1px solid var(--line); overflow: hidden;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c, #555) 16%, var(--surface)), #131010 70%); box-shadow: var(--shadow); transition: transform var(--t), border-color var(--t); }
+  .hcard:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c, #888) 70%, #fff 0%); }
+  .hmain { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 14px 10px; border: 0; background: none; color: var(--text); cursor: pointer; font: inherit; }
+  .hpic { border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 14px 30px rgb(0 0 0 / .55); line-height: 0; }
+  .hpic { position: relative; }
+  .hdoll { position: absolute; right: -6px; bottom: -4px; filter: drop-shadow(0 4px 6px rgb(0 0 0 / .8)); }
+  .hname { font-size: 21px; color: var(--accent-2); margin-top: 6px; }
+  .hclass { font-size: 12.5px; color: var(--text-2); }
+  .hstats { display: flex; gap: 10px; font: 600 13px var(--ui); color: var(--text-2); }
+  .hstats i { font-style: normal; display: inline-flex; gap: 4px; align-items: center; }
+  .hdeck { font-size: 11.5px; color: var(--muted); }
+  .hact { display: flex; gap: 6px; justify-content: center; padding: 0 12px 14px; }
+  .hcard.new { min-height: 300px; align-items: center; justify-content: center; gap: 8px; border-style: dashed; color: var(--muted); cursor: pointer; font: 500 14px var(--ui); background: none; }
+  .hcard.new:hover { color: var(--accent-2); border-color: var(--accent); }
+  .hd { font-size: 18px; color: var(--accent-2); margin-left: 6px; }
+  .pfill { position: absolute; inset: 0; display: grid; place-items: center; }
+  .pfill :global(.hp) { width: 100% !important; height: 100% !important; border-radius: 0; }
+  .pchange { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: inline-flex; gap: 5px; align-items: center; font: 500 11px var(--ui); padding: 3px 9px; border-radius: 99px; background: rgb(0 0 0 / .65); color: #eee; opacity: 0; transition: opacity var(--t); white-space: nowrap; }
+  .portrait:hover .pchange { opacity: 1; }
+  .play { grid-column: 1 / -1; }
+  .totals { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 10px 14px; border-radius: 12px; background: var(--bg-2); border: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
+  .totals span { display: inline-flex; gap: 5px; align-items: center; }
+  .totals b { color: var(--text); font-size: 15px; }
+  .totals .vig b { color: #e5866f; } .totals .man b { color: #7fb0ff; }
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .split { display: flex; gap: 4px; flex-wrap: wrap; }
+  .split button { padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text-2); font: 500 12px var(--ui); cursor: pointer; }
+  .split button.on { border-color: var(--accent); color: var(--accent-2); background: var(--accent-soft); }
+  .gattrs { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ga { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .ga small { font: 600 11px var(--display); letter-spacing: .1em; color: var(--accent); }
+  .gearlist { display: flex; flex-direction: column; gap: 6px; }
+  .grow1 { display: grid; grid-template-columns: 80px minmax(140px, 1fr) repeat(4, 96px); gap: 8px; align-items: end; }
+  .gslot { color: var(--muted); font-size: 12px; padding-bottom: 9px; }
+  .mod1 { display: flex; flex-direction: column; gap: 2px; }
+  .mod1 small { font-size: 10.5px; color: var(--muted); }
+  .tpl { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tplgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .tplc { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); cursor: pointer; font: inherit; }
+  .tplc:hover { border-color: var(--accent); }
+  .tplc small { color: var(--muted); font-size: 11.5px; text-align: center; }
 
   .sheet { display: grid; grid-template-columns: 330px 1fr 380px; gap: 18px; padding: 24px 28px 60px; max-width: 1500px; margin: 0 auto; }
   .card { background: linear-gradient(180deg, var(--surface), #141111); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px;

@@ -34,11 +34,11 @@ function outline(defs: Defs, color: string, r: number): string {
 function bevel(defs: Defs): string {
   return defs.url('gi-bevel', (id) =>
     `<filter id="${id}" ${REGION} color-interpolation-filters="sRGB">` +
-    `<feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b"/>` +
-    `<feSpecularLighting in="b" surfaceScale="6" specularConstant=".95" specularExponent="22" lighting-color="#fff" result="s">` +
+    `<feGaussianBlur in="SourceAlpha" stdDeviation="3.5" result="b"/>` +
+    `<feSpecularLighting in="b" surfaceScale="4" specularConstant=".9" specularExponent="24" lighting-color="#fff" result="s">` +
     `<feDistantLight azimuth="235" elevation="42"/></feSpecularLighting>` +
     `<feComposite in="s" in2="SourceAlpha" operator="in" result="si"/>` +
-    `<feOffset in="b" dx="-4" dy="-6" result="o"/>` +
+    `<feOffset in="b" dx="-2" dy="-3" result="o"/>` +
     `<feComposite in="SourceAlpha" in2="o" operator="arithmetic" k2="1" k3="-1" result="edge"/>` +
     `<feFlood flood-color="#000" flood-opacity=".5"/><feComposite in2="edge" operator="in" result="dk"/>` +
     `<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="dk"/></feMerge>` +
@@ -97,7 +97,7 @@ export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y
   let inner = '';
 
   if (style === 'emblema') {
-    inner = `<g filter="${dropShadow(defs)}"><g filter="${outline(defs, dark, 12)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
+    inner = `<g filter="${dropShadow(defs)}"><g filter="${outline(defs, dark, 6)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
   } else if (style === 'medalhao') {
     const ring = o.ring ?? '#c9a45c';
     const enamel = o.enamel ?? mix(darken(color, 0.72), '#0d0b10', 0.35);
@@ -108,7 +108,7 @@ export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y
       `<g filter="${dropShadow(defs)}"><g filter="${bevel(defs)}"><path d="${rim}" fill-rule="evenodd" fill="${metal(defs, ring)}"/></g></g>` +
       `<path d="${disc}" fill="${defs.radial([[0, lighten(enamel, 0.25)], [0.75, enamel], [1, darken(enamel, 0.5)]], 0.5, 0.4, 0.65)}"/>` +
       `<path d="M${c - 196} ${c}a196 196 0 1 0 392 0a196 196 0 1 0-392 0Z" fill="none" stroke="${lighten(ring, 0.3)}" stroke-width="5" opacity=".55"/>` +
-      `<g transform="translate(${U * 0.19} ${U * 0.19}) scale(.62)"><g filter="${outline(defs, dark, 10)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
+      `<g transform="translate(${U * 0.19} ${U * 0.19}) scale(.62)"><g filter="${outline(defs, dark, 5)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
   } else if (style === 'chapado') {
     inner = path(color);
   } else {

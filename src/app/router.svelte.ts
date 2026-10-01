@@ -1,16 +1,18 @@
-/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/verso, #/ficha, #/ajustes. */
+/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/verso, #/ficha, #/mesa, #/ajustes. */
 export type Route =
   | { name: 'library'; deck?: string }
   | { name: 'editor'; id: string }
   | { name: 'back' }
-  | { name: 'sheet' }
+  | { name: 'sheet'; id?: string }
+  | { name: 'game' }
   | { name: 'settings' };
 
 function parse(hash: string): Route {
   const [, a, b] = hash.replace(/^#/, '').split('/');
   if (a === 'carta' && b) return { name: 'editor', id: decodeURIComponent(b) };
   if (a === 'verso') return { name: 'back' };
-  if (a === 'ficha') return { name: 'sheet' };
+  if (a === 'ficha' || a === 'heroi') return { name: 'sheet', id: b ? decodeURIComponent(b) : undefined };
+  if (a === 'mesa') return { name: 'game' };
   if (a === 'ajustes') return { name: 'settings' };
   return { name: 'library', deck: b ? decodeURIComponent(b) : undefined };
 }
@@ -19,6 +21,8 @@ class Router {
   route = $state<Route>(parse(location.hash));
   /** Pergunta antes de sair (ex.: editor com alterações). Devolve false para cancelar. */
   guard: (() => Promise<boolean>) | null = null;
+  /** Para onde o botão "voltar" de uma tela deve ir (ex.: ficha aberta a partir da seleção da Mesa). */
+  returnTo: string | null = null;
   #last = location.hash;
 
   constructor() {

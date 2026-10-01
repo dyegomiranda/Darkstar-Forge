@@ -90,7 +90,12 @@
   });
   const maxCurve = $derived(Math.max(1, ...curve));
 
-  function count(id: string) { return app.cardsOf(id).length; }
+  /** Cartas no deck, contando as cópias (cartas da Mesa de teste podem ter várias). */
+  function count(id: string) { return app.cardsOf(id).reduce((n, c) => n + (c.game?.copies ?? 1), 0); }
+  /** Tamanho do deck na coleção do deck. */
+  const sizeOf = (deckId: string) => app.edition(app.deck(deckId)?.editionId)?.deckSize ?? DECK_SIZE;
+  const target = $derived(deck ? sizeOf(deck.id) : DECK_SIZE);
+  const deckCount = $derived(deck ? count(deck.id) : base.length);
 
   function toggle(c: Card, range: boolean) {
     const next = new Set(selected);
@@ -107,7 +112,7 @@
   function onhover(c: Card | null, el?: HTMLElement) {
     clearTimeout(hoverTimer);
     if (!c || !el) { hover = null; return; }
-    hoverTimer = setTimeout(() => { hover = { card: c, rect: el.getBoundingClientRect() }; }, 550);
+    hoverTimer = setTimeout(() => { hover = { card: c, rect: el.getBoundingClientRect() }; }, 380);
   }
 
   // ── artes em lote ──
@@ -234,7 +239,7 @@
       <button class="deck" class:on={deck?.id === d.id} onclick={() => { selected = new Set(); router.library(d.id); }}>
         <span class="emb" style="--c:{colorHex(d.colors[0])}"><Glyph id={classIcon(d.colors[0])} size={19} color={lighten(vivid(colorHex(d.colors[0])), 0.35)} /></span>
         <span class="dn">{COLORS[d.colors[0]].classes[lang]}<small>{COLORS[d.colors[0]].name[lang]}</small></span>
-        <span class="cnt" class:ok={n === DECK_SIZE} class:warn={n !== DECK_SIZE && d.kind === 'class'}>{n}{d.kind === 'class' ? `/${DECK_SIZE}` : ''}</span>
+        <span class="cnt" class:ok={n === sizeOf(d.id)} class:warn={n !== sizeOf(d.id) && d.kind === 'class'}>{n}{d.kind === 'class' ? `/${sizeOf(d.id)}` : ''}</span>
       </button>
     {/each}
   </aside>
@@ -246,8 +251,8 @@
         <p class="muted">
           {filtered.length}{filtering ? ` ${L('de', 'of')} ${base.length}` : ''} {L('cartas', 'cards')}
           {#if deck && deck.kind === 'class'}
-            · {#if base.length === DECK_SIZE}<span class="ok-t"><CircleCheck size={13} /> {L('deck completo', 'deck complete')}</span>
-            {:else}<span class="warn-t"><TriangleAlert size={13} /> {base.length < DECK_SIZE ? L(`faltam ${DECK_SIZE - base.length}`, `${DECK_SIZE - base.length} missing`) : L(`${base.length - DECK_SIZE} a mais`, `${base.length - DECK_SIZE} too many`)}</span>{/if}
+            · {#if deckCount === target}<span class="ok-t"><CircleCheck size={13} /> {L('deck completo', 'deck complete')}</span>
+            {:else}<span class="warn-t"><TriangleAlert size={13} /> {deckCount < target ? L(`faltam ${target - deckCount}`, `${target - deckCount} missing`) : L(`${deckCount - target} a mais`, `${deckCount - target} too many`)}</span>{/if}
           {/if}
         </p>
       </div>

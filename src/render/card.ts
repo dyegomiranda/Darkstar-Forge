@@ -7,7 +7,7 @@ import type { Card, Deck, Edition, Lang } from '../model/types';
 import type { ComposeInput, Look } from './compose';
 
 /** Muda quando o desenho muda (invalida o cache de imagens). */
-export const RENDER_VERSION = 'r5';
+export const RENDER_VERSION = 'r10';
 
 /** Tema final = tema do deck + ajustes da carta (a carta ganha). */
 export function mergeLook(base: Look, over?: Partial<Look>): Look {
@@ -17,8 +17,8 @@ export function mergeLook(base: Look, over?: Partial<Look>): Look {
     pieces[k as keyof typeof pieces] = { ...pieces[k as keyof typeof pieces], ...v } as never;
   }
   const icons = { ...base.icons, ...over.icons };
-  for (const k of ['cost', 'class', 'atk', 'def'] as const) {
-    if (base.icons?.[k] || over.icons?.[k]) icons[k] = { ...base.icons?.[k], ...over.icons?.[k] };
+  for (const k of ['cost', 'class', 'atk', 'def', 'set'] as const) {
+    if (base.icons?.[k] || over.icons?.[k]) icons[k] = { ...base.icons?.[k], ...over.icons?.[k] } as never;
   }
   return { ...base, ...over, style: over.style ?? base.style, pieces, icons };
 }
@@ -57,7 +57,7 @@ const pad = (n: number) => String(n).padStart(3, '0');
 
 export function footerText(card: Card, ctx: CardContext): string {
   const code = ctx.edition?.code ?? '';
-  return `${pad(card.n)}/${pad(DECK_SIZE)} · ${ctx.lang === 'pt-BR' ? 'PT-BR' : 'EN'}${code ? ` · ${code}` : ''}`;
+  return `${pad(card.n)}/${pad(ctx.edition?.deckSize ?? DECK_SIZE)} · ${ctx.lang === 'pt-BR' ? 'PT-BR' : 'EN'}${code ? ` · ${code}` : ''}`;
 }
 
 export function typeLine(card: Card, lang: Lang): string {
@@ -76,6 +76,7 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     colorId: card.colors[0] ?? ctx.deck.colors[0],
     classIds: card.colors.length ? [...card.colors] : [ctx.deck.colors[0]],
     art: src ? { src, zoom: card.art.zoom, x: card.art.x, y: card.art.y, mirror: card.art.mirror } : undefined,
+    artIcon: card.art.icon,
     name: t.name,
     typeLine: typeLine(card, ctx.lang),
     rules: t.rules,
@@ -86,7 +87,9 @@ export function cardInput(card: Card, ctx: CardContext, forKey = false): Compose
     cost: card.cost.map((p) => ({ resource: p.resource, amount: p.amount, show: p.show ?? 'number' })),
     stats: card.stats ? { atk: card.stats.atk, def: card.stats.def } : null,
     rarity: card.rarity,
-    look: withImageSrc(mergeLook(ctx.deck.look, card.look), ctx.mediaUrl, forKey),
+    // cópia simples: o desenho não deve depender de objetos reativos (a
+    // pré-visualização só percebe mudanças que ela mesma leu)
+    look: withImageSrc(JSON.parse(JSON.stringify(mergeLook(ctx.deck.look, card.look))) as Look, ctx.mediaUrl, forKey),
     setIcon: set ? (forKey ? set : ctx.mediaUrl(set)) : '/brand/logo.png',
   };
 }

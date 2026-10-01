@@ -27,7 +27,7 @@ function flat(defs: Defs, pal: Palette, t: (c: string) => string = vivid): strin
  */
 function slab(a: PieceArgs, d: string, fill: string, dx = 7, dy = 7): string {
   return `<path d="${d}" fill="#000" opacity="${+(0.55 * a.opacity).toFixed(3)}" transform="translate(${dx} ${dy})"/>` +
-    `<path d="${d}" fill="${fill}" fill-opacity="${a.opacity}"/>`;
+    `<path d="${d}" fill="${a.fill ?? fill}" fill-opacity="${a.opacity}"/>`;
 }
 
 /** Tinta que contrasta com a cor chapada (amarelo/prata pedem texto escuro). */

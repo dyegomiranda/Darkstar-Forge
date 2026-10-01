@@ -3,14 +3,14 @@
  * escolhido) + textos + símbolos. A mesma saída serve para o editor, a biblioteca
  * (rasterizada e guardada em cache) e a exportação.
  */
-import { darken, lighten, luminance } from './color';
+import { darken, lighten, luminance, mix } from './color';
 import { Defs } from './defs';
 import { piece, styleInfo, type PieceKind, type PieceOut, type PieceStyle, type StyleId } from './elements';
 import { RARITY_COLORS, rarityGem, textShadow } from './elements/common';
 import { ATK_ICON, classIcon, DEF_ICON, isResource, RESOURCE_COLORS, resourceIcon, STEEL } from './icons/glyphs';
 import { drawGlyph, drawStatBadge, pixelSteps, type IconStyle } from './icons/render';
 import type { ResourceId } from '../model/types';
-import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, skeleton } from './layout';
+import { CARD_H, CARD_RADIUS, CARD_W, RULES_MAX_H, RULES_MIN_H, skeleton, type Skeleton } from './layout';
 import { makePalette, MULTICOLOR_GOLD, vivid, type BlendMode, type MetalKind } from './palette';
 import { COST_MAX_W, planCost, type CostItem, type CostPlan } from './costSeal';
 import { DEFAULT_PAD, drawPieceImage, imageBox, imageContent, type PieceImage } from './pieceImage';
@@ -30,6 +30,10 @@ export interface PieceChoice {
   /** Fonte do texto dentro da peça. */
   font?: string;
   hidden?: boolean;
+  /** Tamanho da peça (1 = padrão do esqueleto; 0,5 a 1,6). O conteúdo acompanha. */
+  size?: number;
+  /** Cor do fundo do painel (miolo), no lugar da cor que o estilo usa. */
+  fill?: string;
   /** Imagem do usuário no lugar do desenho do estilo (ver pieceImage.ts). */
   image?: PieceImage;
 }
@@ -44,7 +48,18 @@ export interface IconImage {
 }
 
 /** Escolha de um símbolo: estilo de desenho, qual símbolo e cor (ou uma imagem própria). */
-export interface IconChoice { style?: IconStyle; glyph?: string; color?: string; image?: IconImage }
+export interface IconChoice {
+  style?: IconStyle; glyph?: string; color?: string; image?: IconImage;
+  /** Tamanho do símbolo (1 = padrão do estilo; 0,5 a 1,8). */
+  size?: number;
+}
+
+/** Aumenta/diminui um desenho em volta do centro (cx, cy). */
+function scaled(svg: string, cx: number, cy: number, k?: number): string {
+  if (!svg || !k || Math.abs(k - 1) < 0.005) return svg;
+  const f = (n: number) => +n.toFixed(2);
+  return `<g transform="translate(${f(cx)} ${f(cy)}) scale(${+k.toFixed(3)}) translate(${f(-cx)} ${f(-cy)})">${svg}</g>`;
+}
 
 /** Filtro que pinta a imagem inteira numa cor (mantém só o formato/transparência). */
 function recolorFilter(defs: Defs, color: string): string {
@@ -72,10 +87,14 @@ export interface Look {
     class?: IconChoice;
     atk?: IconChoice;
     def?: IconChoice;
+    /** Selo da edição (só o tamanho). */
+    set?: { size?: number };
     /** 'todas' = um símbolo por classe da carta (padrão); 'primeira' = só o da 1ª classe. */
     classMode?: 'todas' | 'primeira';
     /** 'placa' = símbolo + número numa caixinha; 'emblema' = número dentro do símbolo, sem caixa. */
     statMode?: 'placa' | 'emblema';
+    /** Não mostrar o selo de custo quando o custo for 0 (recursos, equipamentos). */
+    hideZeroCost?: boolean;
   };
   /** Pixelar a arte (tamanho do bloco, em px da carta). Combina com o estilo Pixel. */
   pixelateArt?: number;
@@ -91,6 +110,26 @@ export interface Look {
   tint?: string[];
   /** Como as cores se misturam nas peças. */
   blend?: BlendMode;
+}
+
+/**
+ * Arte provisória (cartas de teste): luz na cor da classe, anéis finos e o
+ * símbolo grande no centro da área da arte, com brilho.
+ */
+function placeholderArt(defs: Defs, icon: string, tint: string): string {
+  const cx = CARD_W / 2, cy = CARD_H * 0.34, size = 400;
+  const fill = defs.linear([[0, lighten(tint, 0.75)], [0.55, lighten(tint, 0.25)], [1, darken(tint, 0.15)]]);
+  let rings = '';
+  for (const r of [230, 290, 360]) rings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${lighten(tint, 0.4)}" stroke-width="1.5" opacity="${(0.32 - r / 1600).toFixed(2)}"/>`;
+  return `<rect width="${CARD_W}" height="${CARD_H}" fill="${defs.radial([[0, lighten(tint, 0.05)], [0.45, darken(tint, 0.45)], [1, '#07060a']], 0.5, 0.34, 0.75)}"/>` +
+    rings +
+    `<g filter="${defs.glow(lighten(tint, 0.3), 14, 0.55)}" opacity=".95">${drawGlyph(defs, icon, 'chapado', cx - size / 2, cy - size / 2, size, { color: '#ffffff' }).replace(/fill="#ffffff"/g, `fill="${fill}"`)}</g>`;
+}
+
+/** A moldura aparece? Nos estilos com moldura própria, sim (a menos que desligada). */
+export function frameOn(look: Look): boolean {
+  const f = look.pieces?.frame;
+  return f ? !f.hidden : !!styleInfo(look.style).frame;
 }
 
 /** Cores efetivas da carta segundo o modo de cor escolhido. */
@@ -110,6 +149,8 @@ export interface ComposeInput {
   /** Deck (define o símbolo de classe padrão). */
   colorId: string;
   art?: { src: string; zoom?: number; x?: number; y?: number; mirror?: boolean };
+  /** Arte provisória: símbolo da biblioteca sobre fundo na cor da classe. */
+  artIcon?: string;
   name: string;
   typeLine: string;
   rules: string;
@@ -154,17 +195,24 @@ function renderPiece(kind: PieceKind, ps: PieceStyle, ch: PieceChoice, args: Par
   }
   return out;
 }
-const RULES_X = 48, RULES_W = 654;
 
 function choose(look: Look, kind: PieceKind): { ps: PieceStyle; ch: PieceChoice } {
-  const ch = look.pieces?.[kind] ?? { style: look.style };
+  const own = look.pieces?.[kind];
+  // peça que o estilo esconde por padrão, se o usuário não disse nada sobre ela
+  const hiddenByStyle = own?.hidden === undefined && !!styleInfo(look.style).hidden?.includes(kind);
+  const ch = own ? (hiddenByStyle ? { ...own, hidden: true } : own) : { style: look.style, ...(hiddenByStyle ? { hidden: true } : {}) };
   return { ps: piece(ch.style ?? look.style, kind), ch };
 }
 
 /** Aplica cor de texto e fonte escolhidas pelo usuário sobre o padrão do estilo. */
 function textOf(out: PieceOut, ch: PieceChoice): TextLook {
-  return { ...out.text, ...(ch.ink ? { color: ch.ink } : {}), ...(ch.font ? { family: ch.font } : {}) };
+  // fundo escolhido e cor de texto não: escolhe claro ou escuro para dar leitura
+  const auto = ch.fill && !ch.ink ? { color: inkFor(ch.fill), glow: undefined } : {};
+  return { ...out.text, ...auto, ...(ch.ink ? { color: ch.ink } : {}), ...(ch.font ? { family: ch.font } : {}) };
 }
+
+/** Cor de texto legível sobre um fundo. */
+export const inkFor = (bg: string) => (luminance(bg) > 0.45 ? '#1d1712' : '#fbf5ec');
 
 /** Estilo de texto final: tamanho + legibilidade (sombra dura, brilho ou sombra suave). */
 function styled(defs: Defs, look: TextLook, size: number): { st: TextStyle; filter?: string } {
@@ -204,14 +252,22 @@ export function compose(inp: ComposeInput): string {
   const knownIcon = isResource;
 
   // 1) Altura da caixa de regras: mede o texto com as margens internas do estilo escolhido.
+  const info = styleInfo(look.style);
+  const rulesMax = info.rulesMax ?? RULES_MAX_H;
+  const layoutFor = (h: number): Skeleton => ({ ...skeleton(h), ...info.layout?.(Math.max(RULES_MIN_H, Math.min(rulesMax, h))) });
+  const probeRules = layoutFor(400).rules;
   const rulesPick = choose(look, 'rules');
   const probe = renderPiece('rules', rulesPick.ps, rulesPick.ch, {
-    box: { x: RULES_X, y: 0, w: RULES_W, h: 400 }, pal: makePalette(colors, undefined, blend), defs: new Defs("probe"), opacity: 1,
+    box: { x: probeRules.x, y: 0, w: probeRules.w, h: 400 }, pal: makePalette(colors, undefined, blend), defs: new Defs("probe"), opacity: 1,
   });
   const padT = probe.content.y, padB = 400 - (probe.content.y + probe.content.h);
   const innerW = probe.content.w;
   const rulesLook = textOf(probe, rulesPick.ch);
-  const flavorLook = { ...(rulesPick.ps.flavor?.(makePalette(colors, undefined, blend)) ?? { ...rulesLook, italic: true }), ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}) };
+  const flavorLook = {
+    ...(rulesPick.ps.flavor?.(makePalette(colors, undefined, blend)) ?? { ...rulesLook, italic: true }),
+    ...(rulesPick.ch.fill && !rulesPick.ch.ink ? { color: mix(inkFor(rulesPick.ch.fill), rulesPick.ch.fill, 0.28), glow: undefined } : {}),
+    ...(rulesPick.ch.font ? { family: rulesPick.ch.font } : {}),
+  };
 
   let rulesSize = sz.rules, flavorSize = sz.flavor;
   const layoutText = () => {
@@ -223,19 +279,24 @@ export function compose(inp: ComposeInput): string {
     return { rs, fs, rl, fl, gap, need: blockHeight(rl, rs) + gap + blockHeight(fl, fs) };
   };
   let T = layoutText();
-  while (T.need + padT + padB > RULES_MAX_H && rulesSize > RULES_MIN_FONT) {
+  while (T.need + padT + padB > rulesMax && rulesSize > RULES_MIN_FONT) {
     rulesSize -= 1;
     flavorSize = Math.max(RULES_MIN_FONT, flavorSize - 1);
     T = layoutText();
   }
-  const S = skeleton(Math.ceil(T.need + padT + padB));
+  const S = layoutFor(Math.ceil(T.need + padT + padB));
+  // tamanho escolhido por peça: a caixa cresce/encolhe em volta do centro
+  const resize = (b: Box, k?: number): Box => (!k || Math.abs(k - 1) < 0.005 ? b : { x: b.x + (b.w * (1 - k)) / 2, y: b.y + (b.h * (1 - k)) / 2, w: b.w * k, h: b.h * k });
+  for (const k of ['cost', 'class', 'set', 'header', 'typeBar', 'footer'] as const) S[k] = resize(S[k], look.pieces?.[k]?.size);
+  S.atk = resize(S.atk, look.pieces?.stat?.size);
+  S.def = resize(S.def, look.pieces?.stat?.size);
 
   // 2) Arte (cobre a carta inteira: full art)
   const clip = defs.add('cardclip', (id) => `<clipPath id="${id}"><path d="${roundRect(S.card, CARD_RADIUS)}"/></clipPath>`);
   // sem arte: fundo na cor da classe com o símbolo em marca-d'água (nunca um retângulo vazio)
   const tint = vivid(colors[0] ?? "#6b5a4a");
   let art = `<rect width="${CARD_W}" height="${CARD_H}" fill="${defs.radial([[0, darken(tint, 0.45)], [0.6, darken(tint, 0.78)], [1, '#0b0909']], 0.5, 0.42, 0.75)}"/>` +
-    (inp.art?.src ? '' : drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 230, CARD_H * 0.36 - 230, 460, { color: lighten(tint, 0.2), opacity: 0.1 }));
+    (inp.art?.src ? '' : inp.artIcon ? placeholderArt(defs, inp.artIcon, tint) : drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 230, CARD_H * 0.36 - 230, 460, { color: lighten(tint, 0.2), opacity: 0.1 }));
   let artImg = '';
   if (inp.art?.src) {
     const z = inp.art.zoom ?? 1;
@@ -256,7 +317,7 @@ export function compose(inp: ComposeInput): string {
     const { ps, ch } = choose(look, kind);
     if (ch.hidden) return;
     const pal = makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, blend);
-    const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant };
+    const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant, layout: S, fill: ch.fill };
     const out = renderPiece(kind, ps, ch, args);
     outs[slot] = { out, ch, ps, args };
     if (!draw) return;
@@ -266,12 +327,25 @@ export function compose(inp: ComposeInput): string {
     }
     pieces += out.svg;
   };
-  // Moldura em volta da carta é opcional: por padrão a carta é full art, sem borda.
-  if (look.pieces?.frame && !look.pieces.frame.hidden) add('frame', S.card);
+  // Moldura: nos estilos "de modelo" faz parte do visual (ligada por padrão);
+  // nos outros é opcional e a carta é full art, sem borda.
+  if (frameOn(look)) add('frame', S.card);
+  const F0 = outs.frame?.out;
+  if (F0?.under || F0?.artClip) {
+    // fundo da carta por baixo; a arte só dentro da janela da moldura
+    let inside = artImg || (F0.artClip ? drawGlyph(defs, classIcon(inp.colorId), 'chapado', CARD_W / 2 - 200, CARD_H * 0.3 - 200, 400, { color: lighten(tint, 0.25), opacity: 0.12 }) : '');
+    if (F0.artClip && inside) {
+      const wid = defs.add('artwin', (id) => `<clipPath id="${id}"><path d="${F0.artClip}"/></clipPath>`);
+      inside = (artImg ? '' : `<path d="${F0.artClip}" fill="${defs.radial([[0, darken(tint, 0.35)], [1, darken(tint, 0.8)]], 0.5, 0.4, 0.7)}"/>`) +
+        `<g clip-path="url(#${wid})">${inside}</g>`;
+    }
+    art = (F0.under ?? art.replace(artImg, '')) + inside;
+  }
   // Selo de custo: arranja os símbolos e alarga o selo (e encurta o cabeçalho) se precisar
   let costPlan: CostPlan | undefined;
   const costPick = choose(look, 'cost');
-  if (inp.cost?.length && !costPick.ch.hidden) {
+  const zero = (look.icons?.hideZeroCost ?? info.hideZeroCost ?? false) && (inp.cost ?? []).every((p) => !p.amount);
+  if (inp.cost?.length && !costPick.ch.hidden && !zero) {
     const probeOut = renderPiece('cost', costPick.ps, costPick.ch, { box: S.cost, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 });
     const c0 = probeOut.content;
     const tl = textOf(probeOut, costPick.ch);
@@ -297,6 +371,17 @@ export function compose(inp: ComposeInput): string {
       if (over > 0) S.header = { ...S.header, w: S.header.w - over };
     }
   }
+  // sem selo de custo ou de classe: a barra do nome ocupa o lugar dele (se estiver na mesma linha)
+  const sameRow = (a: Box, b: Box) => a.y < b.y + b.h && b.y < a.y + a.h;
+  const H0 = S.header;
+  if (!costPlan && sameRow(S.cost, H0) && S.cost.x < H0.x) {
+    const x = Math.max(S.cost.x, 24);
+    S.header = { ...S.header, x, w: S.header.w + (H0.x - x) };
+  }
+  if ((classPick.ch.hidden || choose(look, 'class').ch.hidden) && sameRow(S.class, H0) && S.class.x > H0.x) {
+    const right = Math.min(S.class.x + S.class.w, CARD_W - 24);
+    S.header = { ...S.header, w: right - S.header.x };
+  }
   add('rules', S.rules);
   add('typeBar', S.typeBar);
   add('header', S.header);
@@ -313,14 +398,14 @@ export function compose(inp: ComposeInput): string {
 
   const H = outs.header;
   // o nome pode encolher mais: com vários custos/classes os selos largos estreitam a barra
-  if (H) text += centered(defs, inp.name, textOf(H.out, H.ch), sz.title, H.out.content, 'center', 0.4);
+  if (H) text += centered(defs, inp.name, textOf(H.out, H.ch), sz.title, H.out.content, H.out.align ?? 'center', 0.4);
 
   const TB = outs.typeBar;
   if (TB) {
-    text += centered(defs, inp.typeLine, textOf(TB.out, TB.ch), sz.type, TB.out.content, 'left');
+    text += centered(defs, inp.typeLine, textOf(TB.out, TB.ch), sz.type, TB.out.content, TB.out.align ?? 'left');
     if (TB.out.gem) {
       const color = RARITY_COLORS[inp.rarity] ?? RARITY_COLORS.common;
-      text += TB.ps.gemRender ? TB.ps.gemRender(TB.out.gem, color) : rarityGem(TB.out.gem, inp.rarity);
+      text += TB.ps.gemRender ? TB.ps.gemRender(TB.out.gem, color, defs) : rarityGem(TB.out.gem, inp.rarity);
     }
   }
 
@@ -345,6 +430,8 @@ export function compose(inp: ComposeInput): string {
   const C = outs.cost;
   if (C && costPlan && inp.cost) {
     const c = C.out.content;
+    const before = text;
+    text = '';
     const x0 = c.x + (c.w - costPlan.width) / 2;
     const first = inp.cost[0].resource;
     for (const u of costPlan.units) {
@@ -362,12 +449,15 @@ export function compose(inp: ComposeInput): string {
       } else if (glyph) text += pix(C.out, symbol(defs, pick, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, color));
       if (u.num) text += centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 });
     }
+    text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, look.icons?.cost?.size);
   }
 
   const K = outs.class;
   if (K) {
     const c = K.out.content;
     const pick = look.icons?.class;
+    const before = text;
+    text = '';
     const style = iconStyleFor('class', pick);
     if (classPlan) {
       // várias classes: cada símbolo na cor da sua classe (a escolha da Aparência vale para a 1ª)
@@ -384,12 +474,13 @@ export function compose(inp: ComposeInput): string {
       const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
       text += pix(K.out, symbol(defs, pick, glyph, style, c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, color));
     }
+    text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, pick?.size);
   }
 
   const SET = outs.set;
   if (SET && inp.setIcon) {
     const c = SET.out.content;
-    text += `<image href="${inp.setIcon}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" preserveAspectRatio="xMidYMid meet"/>`;
+    text += scaled(`<image href="${inp.setIcon}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" preserveAspectRatio="xMidYMid meet"/>`, c.x + c.w / 2, c.y + c.h / 2, look.icons?.set?.size);
   }
 
   const F = outs.footer;
@@ -409,15 +500,16 @@ export function compose(inp: ComposeInput): string {
       const b = P.args.box;
       const s = b.h * 1.42;
       const cx = b.x + b.w / 2, cy = b.y + b.h / 2 - 4;
-      text += pick?.image?.src
+      const badge = (pick?.image?.src
         ? symbol(defs, pick, glyph, style, cx - s / 2, cy - s / 2, s, color)
-        : drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c');
-      text += centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
+        : drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c')) +
+        centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
+      text += scaled(badge, cx, cy, pick?.size);
       continue;
     }
     const c = P.out.content;
     const iconS = c.h * 0.98;
-    text += symbol(defs, pick, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, color);
+    text += scaled(symbol(defs, pick, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, color), c.x + iconS / 2, c.y + c.h / 2, pick?.size);
     text += centered(defs, num, tl, sz.stat * (c.h / 56), { x: c.x + iconS, y: c.y, w: c.w - iconS, h: c.h });
   }
 

@@ -8,3 +8,6 @@ Captura*.png
 # imagens de conferência geradas pelo mostruário em desenvolvimento
 .snaps/
 __pycache__/
+artes-proto/
+artes-pf/
+artes-proto-antigas/

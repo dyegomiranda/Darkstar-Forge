@@ -6,11 +6,13 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { PF_ID, pfCollection, seedProject } from '../model/seed';
+import { PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
+import { PRESET_AVATARS } from '../avatar/presets';
+import { importImage } from './media';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -54,6 +56,34 @@ class ProjectState {
     const eds = this.project!.editions;
     this.editionId = eds.some((e) => e.id === last) ? last : eds[0]?.id ?? '';
     this.ready = true;
+    void this.#addProtoArt();
+  }
+
+  /**
+   * Artes em pixel art das cartas do Protótipo (vêm junto com o app, em art/proto/).
+   * Só entram em cartas que ainda não têm imagem; roda uma vez.
+   */
+  async #addProtoArt(): Promise<void> {
+    const MARK = 'proto-art-1';
+    const p = this.project!;
+    if (p.seeded?.includes(MARK)) return;
+    const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const cache = new Map<string, string | null>();
+    for (const c of Object.values(this.cards)) {
+      if (!c.game || !c.deckId.startsWith('proto-') || c.art.mediaId) continue;
+      const key = slug(c.text['en-US'].name);
+      if (!cache.has(key)) {
+        try {
+          const r = await fetch(new URL(`art/proto/${key}.webp`, document.baseURI));
+          cache.set(key, r.ok ? await importImage(await r.blob(), `${key}.webp`) : null);
+        } catch { cache.set(key, null); }
+      }
+      const id = cache.get(key);
+      if (!id) continue;
+      this.putCard({ ...this.cards[c.id], art: { ...c.art, mediaId: id, zoom: 1, x: 0, y: 0 } });
+    }
+    // só marca como feito quando todas as artes existem (enquanto o conjunto estiver incompleto, tenta de novo ao abrir)
+    if (cache.size && ![...cache.values()].some((v) => v === null)) this.updateProject((pr) => { pr.seeded = [...(pr.seeded ?? []), MARK]; });
   }
 
   /** Projeto de versão antiga: regrava as cartas já convertidas (custo em lista). */
@@ -72,14 +102,49 @@ class ProjectState {
    */
   #addMissingCollections(): void {
     const p = this.project!;
-    if (p.seeded?.includes(PF_ID)) return;
-    p.seeded = [...(p.seeded ?? []), PF_ID];
-    if (!p.editions.some((e) => e.id === PF_ID)) {
-      const pf = pfCollection();
-      p.editions.push(pf.edition);
-      p.decks.push(...pf.decks);
-      for (const c of pf.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+    let changed = false;
+    for (const [id, make] of [[PF_ID, pfCollection], [PROTO_ID, protoCollection]] as const) {
+      if (p.seeded?.includes(id)) continue;
+      p.seeded = [...(p.seeded ?? []), id];
+      changed = true;
+      if (p.editions.some((e) => e.id === id)) continue;
+      const col = make();
+      p.editions.push(col.edition);
+      p.decks.push(...col.decks);
+      for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
     }
+    // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
+    const RULES = 'proto-rules-3';
+    if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
+      p.seeded = [...(p.seeded ?? []), RULES];
+      changed = true;
+      const mine = Object.values(this.cards).filter((c) => c.deckId.startsWith('proto-'));
+      for (const fresh of protoCollection().cards) {
+        const old = mine.find((c) => c.deckId === fresh.deckId && c.n === fresh.n);
+        if (!old) {
+          if (p.decks.some((d) => d.id === fresh.deckId)) { this.cards[fresh.id] = fresh; this.#dirtyCards.add(fresh.id); }
+          continue;
+        }
+        const next: Card = { ...old, text: fresh.text, cost: fresh.cost, stats: fresh.stats, rarity: fresh.rarity, tags: fresh.tags, game: fresh.game, art: { ...old.art, icon: fresh.art.icon } };
+        this.cards[old.id] = next;
+        this.#dirtyCards.add(old.id);
+      }
+    }
+    // heróis prontos viram fichas (uma vez; se o usuário apagar, não voltam)
+    const HEROES_MARK = 'proto-heroes-1';
+    if (!p.seeded?.includes(HEROES_MARK)) {
+      p.seeded = [...(p.seeded ?? []), HEROES_MARK];
+      changed = true;
+      for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id)) p.characters.push(h);
+    }
+    // os heróis prontos ganham o boneco em pixel art (uma vez; quem já tem boneco fica como está)
+    const AVATARS_MARK = 'proto-avatars-1';
+    if (!p.seeded?.includes(AVATARS_MARK)) {
+      p.seeded = [...(p.seeded ?? []), AVATARS_MARK];
+      changed = true;
+      for (const c of p.characters) if (c.preset && !c.avatar && PRESET_AVATARS[c.preset]) c.avatar = structuredClone(PRESET_AVATARS[c.preset]);
+    }
+    if (!changed) return;
     this.#projectDirty = true;
     this.#schedule();
   }

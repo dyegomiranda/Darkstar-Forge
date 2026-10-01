@@ -6,7 +6,8 @@ import type { Box } from './shapes';
 
 export const CARD_W = 750;
 export const CARD_H = 1050;
-export const CARD_RADIUS = 34;
+/** Raio dos cantos: 3 mm na carta de 63 mm (padrão do Magic). */
+export const CARD_RADIUS = 36;
 
 export interface Skeleton {
   card: Box;

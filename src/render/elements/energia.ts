@@ -5,7 +5,7 @@
  * (símbolo preto sobre esfera colorida) e barras pretas com curvas prateadas.
  */
 import { darken, lighten, mix } from '../color';
-import { CARD_RADIUS } from '../layout';
+import { CARD_RADIUS, CARD_W, type Skeleton } from '../layout';
 import { vivid, type Palette } from '../palette';
 import { bezier, circle, inset, pill, poly, roundRect, tapered, type Box, type Pt } from '../shapes';
 import type { TextLook } from '../text';
@@ -56,113 +56,121 @@ function energy(a: PieceArgs, box: Box, small = false): PieceOut {
 
 const text = (color = INK, weight = 700): TextLook => ({ family: SANS, weight, color });
 
+// ───────────── esqueleto (arranjo da referência) ─────────────
+// custo pequeno no canto (onde fica o "BÁSICO"); nome grande à esquerda; esfera
+// do tipo no canto direito; cunha prateada em "V"; pílula vermelha da
+// habilidade (tipo); regras numa faixa clara; barra preta com ATK/DEF.
+const B = 14; // borda preta
+export function energiaLayout(rulesH: number): Partial<Skeleton> {
+  const rules = { x: 34, y: 930 - rulesH, w: 682, h: rulesH };
+  return {
+    cost: { x: 26, y: 26, w: 96, h: 66 },
+    header: { x: 124, y: 26, w: 510, h: 66 },
+    class: { x: 646, y: 22, w: 76, h: 76 },
+    typeBar: { x: 34, y: rules.y - 54, w: 682, h: 48 },
+    rules,
+    atk: { x: 40, y: 950, w: 170, h: 50 },
+    def: { x: 218, y: 950, w: 170, h: 50 },
+    set: { x: 672, y: 994, w: 40, h: 40 },
+    footer: { x: 34, y: 1004, w: 420, h: 26 },
+  };
+}
+
 export const energia: PieceStyle[] = [
   {
+    // nome: faixa em degradê da cor do tipo para o branco, letra preta grossa e inclinada
     style: 'energia', kind: 'header', opacity: 1, metal: 'silver',
     render(a) {
-      const { defs, pal } = a;
-      const b = inset(a.box, -4, 12);
-      const r = b.h / 2;
-      const c = typeColor(pal);
-      // barra reta à esquerda e arredondada à direita, do tipo para o branco
-      const d = `M${b.x} ${b.y}H${b.x + b.w - r}A${r} ${r} 0 0 1 ${b.x + b.w - r} ${b.y + b.h}H${b.x}Z`;
-      const svg =
-        `<g filter="${defs.shadow(2, 4, 0.5)}"><path d="${d}" fill="${BLACK}" transform="translate(0 3)"/></g>` +
-        `<g opacity="${a.opacity}"><path d="${d}" fill="${defs.linear([[0, c], [0.42, lighten(c, 0.35)], [0.75, '#eeeeef'], [1, '#d9d9dc']], 'h')}"/>` +
-        (pal.hybrid ? `<path d="${d}" fill="${defs.hue(pal, (k) => vivid(k), 0.55)}"/>` : '') +
-        `<path d="${d}" fill="${defs.linear([[0, '#fff', 0.5], [0.45, '#fff', 0.05], [1, '#000', 0.12]])}"/></g>` +
-        `<path d="${d}" fill="none" stroke="${darken(c, 0.5)}" stroke-width="1.2" opacity=".5"/>`;
-      return { svg, content: { x: b.x + 48, y: b.y + 2, w: b.w - 90, h: b.h - 4 }, text: text() };
+      const b = a.box;
+      const c = typeColor(a.pal);
+      const d = `M${b.x} ${b.y + 8}H${b.x + b.w - 20}L${b.x + b.w} ${b.y + b.h / 2}L${b.x + b.w - 20} ${b.y + b.h - 8}H${b.x}Z`;
+      const svg = `<g opacity="${a.opacity}"><path d="${d}" fill="${a.fill ?? a.defs.linear([[0, lighten(c, 0.15), 0.95], [0.55, lighten(c, 0.6), 0.9], [1, '#ffffff', 0.85]], 'h')}"/></g>` +
+        `<path d="M${b.x} ${b.y + b.h - 10}H${b.x + b.w - 22}" stroke="${darken(c, 0.35)}" stroke-width="2" opacity=".5"/>`;
+      return { svg, content: { x: b.x + 14, y: b.y + 6, w: b.w - 40, h: b.h - 12 }, text: { family: SANS, weight: 800, italic: true, color: INK }, align: 'left' };
     },
   },
   {
+    // custo: plaquinha preta com as esferas de energia (como o "BÁSICO" da referência)
     style: 'energia', kind: 'cost', opacity: 1, metal: 'silver',
     render(a) {
-      // placa clara onde as esferas/símbolos de custo aparecem (como a fileira de energias de um ataque)
-      const { cx, cy } = center(a.box);
-      const R = Math.min(a.box.w, a.box.h) / 2 - 8;
-      const ext = Math.max(0, (a.box.w - a.box.h) / 2);
-      const svg =
-        `<g filter="${a.defs.shadow(2, 4, 0.55)}"><path d="${pill(cx, cy, R + 5, ext)}" fill="${BLACK}"/></g>` +
-        `<path d="${pill(cx, cy, R, ext)}" fill="${a.defs.radial([[0, '#ffffff'], [0.7, '#e6e6e9'], [1, '#b9b9bf']], 0.4, 0.3, 0.8)}" opacity="${a.opacity}"/>`;
-      const ci = R * 0.8;
-      return { svg, content: { x: cx - ci - ext, y: cy - ci, w: 2 * (ci + ext), h: 2 * ci }, text: text(), costOrbs: true };
+      const b = a.box;
+      const d = `M${b.x} ${b.y + 6}H${b.x + b.w - 12}L${b.x + b.w} ${b.y + b.h / 2}L${b.x + b.w - 12} ${b.y + b.h - 6}H${b.x}Z`;
+      const svg = `<g filter="${a.defs.shadow(2, 3, 0.6)}"><path d="${d}" fill="${BLACK}" opacity="${a.opacity}"/></g>` +
+        `<path d="${d}" fill="none" stroke="#c9ccd4" stroke-width="1.5" opacity=".7"/>`;
+      return { svg, content: inset(b, 10, 10), text: text('#ffffff', 800), costOrbs: true };
     },
   },
   { style: 'energia', kind: 'class', opacity: 1, metal: 'silver', render: (a) => energy(a, a.box) },
   {
     style: 'energia', kind: 'set', opacity: 1, metal: 'silver',
-    render(a) {
-      const { cx, cy } = center(a.box);
-      const r = Math.min(a.box.w, a.box.h) / 2 - 6;
-      const svg = `<path d="${circle(cx, cy, r + 3)}" fill="${BLACK}"/>` + metalSolid(a.defs, a.pal, circle(cx, cy, r) + circle(cx, cy, r - 4), 0.8) +
-        `<path d="${circle(cx, cy, r - 4)}" fill="#1b1b1f"/>`;
-      return { svg, content: inset(a.box, 16), text: text('#fff') };
-    },
+    render: (a) => ({ svg: '', content: a.box, text: text('#ffffff') }),
   },
   {
+    // habilidade: pílula vermelha com o tipo, e um fio até a borda
     style: 'energia', kind: 'typeBar', opacity: 1, metal: 'silver',
     render(a) {
-      const b = inset(a.box, 14, 12);
-      const r = b.h / 2;
-      return {
-        svg: blackBar(a, b), content: { x: b.x + r * 1.6, y: b.y + 1, w: b.w - r * 3.2 - 34, h: b.h - 2 },
-        text: { family: SANS, weight: 600, color: '#ffffff' }, gem: { x: b.x + b.w - r * 1.6 - 28, y: b.y + b.h / 2 - 12, w: 24, h: 24 },
-      };
+      const b = a.box;
+      const { cy } = center(b);
+      const w = Math.min(b.w - 80, 440);
+      const pillD = `M${b.x + 18} ${b.y + 6}H${b.x + w}L${b.x + w + 18} ${cy}L${b.x + w} ${b.y + b.h - 6}H${b.x + 18}L${b.x} ${cy}Z`;
+      const svg = `<g filter="${a.defs.shadow(2, 3, 0.5)}"><path d="${pillD}" fill="${a.defs.linear([[0, '#e5363a'], [1, '#a3141a']])}" opacity="${a.opacity}"/></g>` +
+        `<path d="${pillD}" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>` +
+        `<rect x="${b.x + w + 24}" y="${cy - 1}" width="${b.w - w - 64}" height="2" fill="${a.defs.linear([[0, '#e5363a', 0.8], [1, '#e5363a', 0]], 'h')}"/>`;
+      return { svg, content: { x: b.x + 26, y: b.y + 6, w: w - 20, h: b.h - 12 }, text: { family: SANS, weight: 800, italic: true, color: '#ffffff' }, gem: { x: b.x + b.w - 32, y: cy - 14, w: 28, h: 28 } };
     },
   },
   {
-    style: 'energia', kind: 'rules', opacity: 0.86, metal: 'silver',
+    // regras: faixa clara translúcida (cor do tipo bem clara), letra preta
+    style: 'energia', kind: 'rules', opacity: 0.88, metal: 'silver',
     render(a) {
-      const { defs, pal } = a;
       const b = a.box;
-      const c = typeColor(pal);
-      // texto direto sobre a arte: véu claro que vira a cor do tipo embaixo
-      const d = roundRect(b, 14);
-      const svg =
-        `<g opacity="${a.opacity}"><path d="${d}" fill="${defs.linear([[0, '#ffffff', 0.9], [0.7, mix(c, '#ffffff', 0.7), 0.92], [1, mix(c, '#ffffff', 0.45), 0.95]])}"/></g>` +
-        `<path d="${d}" fill="none" stroke="${BLACK}" stroke-width="2" opacity=".55"/>`;
-      return { svg, content: inset(b, 28, 22), text: text(INK, 400) };
+      const c = typeColor(a.pal);
+      const d = roundRect(b, 10);
+      const svg = `<g opacity="${a.opacity}"><path d="${d}" fill="${a.fill ?? a.defs.linear([[0, mix(lighten(c, 0.82), '#fff', 0.4), 0.82], [1, mix(lighten(c, 0.7), '#fff', 0.2), 0.95]])}"/></g>` +
+        `<path d="${d}" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>`;
+      return { svg, content: inset(b, 24, 20), text: { family: SANS, weight: 500, color: INK } };
     },
     divider(a, x, y, w) {
-      return `<rect x="${x}" y="${y - 1}" width="${w}" height="2" rx="1" fill="${BLACK}" opacity=".35"/>`;
+      return `<rect x="${x}" y="${y - 0.8}" width="${w}" height="1.6" fill="${INK}" opacity=".35"/>`;
     },
-    flavor: (pal) => ({ family: SANS, weight: 400, italic: true, color: mix(darken(vivid(pal.base), 0.55), INK, 0.4) }),
+    flavor: () => ({ family: SANS, weight: 400, italic: true, color: '#3a3a40' }),
   },
   {
+    // ATK/DEF: células na barra preta de baixo (como fraqueza/resistência)
     style: 'energia', kind: 'stat', opacity: 1, metal: 'silver',
     render(a) {
-      const b = inset(a.box, 2, 6);
-      const { cx, cy } = center(b);
-      const ring = pill(cx, cy, b.h / 2 - 2, b.w / 2 - b.h / 2);
-      return { svg: blackBar(a, b, false) + `<path d="${ring}" fill="none" stroke="#c9ccd2" stroke-width="2" opacity=".8"/>`, content: inset(b, 16, 4), text: text('#ffffff') };
+      const b = a.box;
+      const r = (b.h - 8) / 2;
+      const svg = `<rect x="${b.x}" y="${b.y + 4}" width="${b.w}" height="${b.h - 8}" rx="${r}" fill="#26262c" opacity="${a.opacity}"/>` +
+        `<rect x="${b.x}" y="${b.y + 4}" width="${b.w}" height="${b.h - 8}" rx="${r}" fill="none" stroke="#8e929c" stroke-width="1.2" opacity=".7"/>`;
+      return { svg, content: inset(b, 16, 6), text: text('#ffffff', 800) };
     },
   },
   {
     style: 'energia', kind: 'footer', opacity: 1, metal: 'silver',
-    render(a) {
-      const b = inset(a.box, 0, 2);
-      return { svg: blackBar(a, b, false), content: inset(b, 16, 4), text: text('#e9e9ec', 400) };
-    },
+    render: (a) => ({ svg: '', content: a.box, text: { family: SANS, weight: 500, color: '#d6d7dc' } }),
   },
   {
     style: 'energia', kind: 'frame', opacity: 1, metal: 'silver',
     render(a) {
       const b = a.box;
-      const T = 22;
-      const outer = roundRect(b, CARD_RADIUS), inner = roundRect(inset(b, T), 8);
-      // "V" prateado no canto de cima à esquerda e curva no canto de baixo à direita
-      const tip: Pt = [b.x + 34, b.y + 250];
-      const vL = bezier([b.x + 16, b.y + 24], [b.x + 18, b.y + 90], [b.x + 26, b.y + 170], tip, 20);
-      const vR = bezier([b.x + 210, b.y + 18], [b.x + 140, b.y + 70], [b.x + 70, b.y + 170], tip, 20);
-      const vR2 = bezier([b.x + 250, b.y + 18], [b.x + 170, b.y + 80], [b.x + 90, b.y + 170], [b.x + 50, b.y + 238], 20);
-      const br = bezier([b.x + b.w - 16, b.y + b.h - 250], [b.x + b.w - 14, b.y + b.h - 120], [b.x + b.w - 90, b.y + b.h - 22], [b.x + b.w - 250, b.y + b.h - 16], 24);
+      const outer = roundRect(b, CARD_RADIUS);
+      const win = roundRect(inset(b, B), CARD_RADIUS - B);
+      const silver = { ...a.pal, metal: a.pal.metal === 'deck' ? 'silver' as const : a.pal.metal };
+      // cunha prateada em "V" no canto de cima, logo abaixo do nome
+      const v = poly([[B, 100], [104, 100], [178, 300], [138, 300], [72, 124], [B, 124]]) + poly([[B, 136], [52, 136], [96, 262], [B, 330]]);
+      const bottomBar = `M${B} 940H${CARD_W - B}V${1050 - B}H${B}Z`;
+      const curve = bezier([B, 946], [250, 930], [500, 954], [CARD_W - B, 936], 30);
       const svg =
-        `<path d="${outer + inner}" fill-rule="evenodd" fill="${BLACK}"/>` +
-        `<path d="${outer + inner}" fill-rule="evenodd" fill="${a.defs.linear([[0, '#fff', 0.08], [0.5, '#fff', 0], [1, '#fff', 0.05]], 'd')}"/>` +
-        `<path d="${poly([[b.x + 12, b.y + 20], [b.x + 230, b.y + 14], tip])}" fill="${BLACK}"/>` +
-        swoosh(a, vL, 16, 3) + swoosh(a, vR, 18, 3) + swoosh(a, vR2, 7, 1) + swoosh(a, br, 5, 14);
-      return { svg, content: inset(b, T), text: text('#fff') };
+        `<path d="${outer + win}" fill-rule="evenodd" fill="${BLACK}"/>` +
+        `<path d="${roundRect(inset(b, B - 3), CARD_RADIUS - B + 3)}" fill="none" stroke="#d7dae2" stroke-width="3"/>` +
+        `<path d="${roundRect(inset(b, B - 6), CARD_RADIUS - B + 6)}" fill="none" stroke="#7d818c" stroke-width="1"/>` +
+        // sombra atrás do nome, para ler sobre qualquer arte
+        `<rect x="${B}" y="${B}" width="${CARD_W - 2 * B}" height="104" fill="${a.defs.linear([[0, '#000', 0.6], [1, '#000', 0]])}"/>` +
+        `<g filter="${a.defs.shadow(2, 3, 0.6)}">${metalSolid(a.defs, silver, v, 1.2)}</g>` +
+        // barra preta de baixo com a curva prateada
+        `<path d="${bottomBar}" fill="${BLACK}" opacity=".95"/>` + swoosh(a, curve, 5, 2);
+      return { svg, content: inset(b, B), text: text(), artClip: win };
     },
   },
 ];

@@ -7,11 +7,11 @@
  * Desenhado pixel a pixel pelo motor de ./pxengine.
  */
 import { darken, lighten, mix } from '../color';
-import { CARD_RADIUS } from '../layout';
+import { CARD_RADIUS, CARD_W, type Skeleton } from '../layout';
 import { METALS, vivid, type Palette } from '../palette';
-import { inset, pixelArt, type Box } from '../shapes';
+import { inset, pixelArt, rect, roundRect, type Box } from '../shapes';
 import type { TextLook } from '../text';
-import { center } from './common';
+import { center, shades4 } from './common';
 import { band, boxSdf, g, hardShadow, lit, noise, OUT, P, pillSdf, raster, type Paint, type Sdf } from './pxengine';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
@@ -45,7 +45,7 @@ function slot(a: PieceArgs, b: Box, radius = 2 * P, thin = false): string {
     if (d < P) return [OUT, 'r'];
     if (d < 2 * P) return [lit(light, t), 'r'];
     if (!thin && d < 3 * P) return [lit(light, sunk(t)), 'r'];
-    return [band(y, b, SLOT), 'f'];
+    return [band(y, b, a.fill ? shades4(a.fill) : SLOT), 'f'];
   };
   return hardShadow(b, sdf, a.opacity) + raster(b, sdf, paint, a.opacity);
 }
@@ -67,6 +67,41 @@ function medallion(a: PieceArgs, cx: number, cy: number, r: number, ext: number)
     return [band(y, b, [lighten(core, 0.12), core, darken(core, 0.15), darken(core, 0.28)]), 'f'];
   };
   return raster(b, sdf, paint, a.opacity);
+}
+
+/** Cantoneira dourada em "L" (canto de cima-esquerda; as outras são espelhadas). */
+const BRACKET = [
+  'OOOOOOOOO',
+  'OYYYYYYGO',
+  'OYGGGGGDO',
+  'OYGDOOOOO',
+  'OYGDO....',
+  'OYGDO....',
+  'OGGDO....',
+  'OGDDO....',
+  'OOOOO....',
+];
+const flipX = (rows: string[]) => rows.map((r) => [...r].reverse().join(''));
+const flipY = (rows: string[]) => [...rows].reverse();
+
+// ───────────── esqueleto (arranjo da referência) ─────────────
+// borda grossa; arte em janela; placa do nome; linha de tipo; fileira de três
+// placas (custo, ATK, DEF); caixa de texto de pedra; rodapé e edição na borda.
+export function acoLayout(rulesH: number): Partial<Skeleton> {
+  const h = g(rulesH);
+  const rules = { x: 48, y: 996 - h, w: 654, h };
+  const statsY = rules.y - 66;
+  const typeBar = { x: 60, y: statsY - 48, w: 630, h: 42 };
+  const header = { x: 54, y: typeBar.y - 78, w: 642, h: 72 };
+  return {
+    rules, typeBar, header,
+    cost: { x: 60, y: statsY, w: 198, h: 60 },
+    atk: { x: 276, y: statsY, w: 198, h: 60 },
+    def: { x: 492, y: statsY, w: 198, h: 60 },
+    class: { x: 600, y: 66, w: 84, h: 84 },
+    set: { x: 351, y: 1004, w: 48, h: 42 },
+    footer: { x: 54, y: 1008, w: 270, h: 30 },
+  };
 }
 
 const txt = (color: string, weight = 500, hard = false): TextLook => ({ family: FONT, weight, color, hard });
@@ -101,7 +136,7 @@ export const aco: PieceStyle[] = [
       const t = trim(a.pal);
       const b = inset(a.box, 2, 6);
       const sdf = boxSdf(b, 2 * P);
-      const panel = [lighten(t.light, 0.2), t.light, mix(t.light, t.mid, 0.4), mix(t.light, t.mid, 0.6)];
+      const panel = a.fill ? shades4(a.fill) : [lighten(t.light, 0.2), t.light, mix(t.light, t.mid, 0.4), mix(t.light, t.mid, 0.6)];
       const paint: Paint = (d, light, _x, y) => {
         if (d < P) return [OUT, 'r'];
         if (d < 2 * P) return [lit(light, t), 'r'];
@@ -113,7 +148,13 @@ export const aco: PieceStyle[] = [
       return { svg, content: inset(b, 7 * P, 4 * P), text: txt(mix('#20242b', t.deep, 0.3), 700) };
     },
   },
-  { style: 'aco', kind: 'cost', opacity: 1, metal: 'silver', render: (a) => badge(a) },
+  {
+    style: 'aco', kind: 'cost', opacity: 1, metal: 'silver',
+    render: (a) => {
+      const b = inset(a.box, 2, 2);
+      return { svg: slot(a, b, 2 * P, true), content: inset(b, 3 * P, P), text: num('#e6ebf0') };
+    },
+  },
   { style: 'aco', kind: 'class', opacity: 1, metal: 'silver', render: (a) => badge(a) },
   { style: 'aco', kind: 'set', opacity: 1, metal: 'silver', render: (a) => badge(a, true) },
   {
@@ -142,7 +183,7 @@ export const aco: PieceStyle[] = [
         const n = noise(Math.floor(x / P), Math.floor(y / P));
         if (n > 0.975) return ['#a59e8c', 'f'];
         if (n < 0.012) return ['#d6d0c1', 'f'];
-        return [band(y, b, STONE), 'f'];
+        return [band(y, b, a.fill ? shades4(a.fill) : STONE), 'f'];
       };
       const svg = hardShadow(b, sdf, a.opacity) + raster(b, sdf, paint, a.opacity);
       return { svg, content: inset(b, 7 * P, 6 * P), text: txt('#2b2a26') };
@@ -164,34 +205,46 @@ export const aco: PieceStyle[] = [
   },
   {
     style: 'aco', kind: 'footer', opacity: 1, metal: 'silver',
-    render: (a) => {
-      const b = inset(a.box, 0, -2);
-      return { svg: slot(a, b, P, true), content: inset(b, 2 * P, P), text: num('#c9d0d8') };
-    },
+    render: (a) => ({ svg: '', content: a.box, text: num('#dfe5ec') }),
   },
   {
     style: 'aco', kind: 'frame', opacity: 1, metal: 'silver',
     render(a) {
       const t = trim(a.pal);
       const b = a.box;
-      const T = 5 * P;
+      const S = a.layout;
+      const T = 6 * P;
       const outer = boxSdf(b, CARD_RADIUS);
-      const band5: Sdf = (x, y) => { const d = outer(x, y); return d < T ? d : -1; };
-      const frame = raster(b, band5, (d, light) => {
+      // borda grossa de pedra/aço: contorno, aro iluminado, miolo com manchas, filete escuro
+      const ring: Sdf = (x, y) => { const d = outer(x, y); return d < T ? d : -1; };
+      const stone = [t.light, mix(t.light, t.mid, 0.5), t.mid, mix(t.mid, t.dark, 0.5)];
+      const frame = raster(b, ring, (d, light, x, y) => {
         if (d < P) return [OUT, 'r'];
         if (d < 2 * P) return [lit(light, { light: t.hi, mid: t.light, dark: t.mid }), 'r'];
-        if (d < 3 * P) return [t.mid, 'r'];
-        if (d < 4 * P) return [t.dark, 'r'];
+        if (d < 5 * P) {
+          const n = noise(Math.floor(x / P), Math.floor(y / P));
+          return [n > 0.9 ? t.dark : n < 0.08 ? t.light : stone[Math.floor(((d - 2 * P) / (3 * P)) * 3) + (n > 0.6 ? 1 : 0)] ?? t.mid, 'r'];
+        }
         return [OUT, 'r'];
       });
-      const cols = { O: OUT, W: t.hi, L: t.light, M: t.mid, D: t.deep };
-      const cx = g(b.x + b.w / 2 - 7 * P);
-      const orn =
-        pixelArt(TAB, cx, b.y + 4 * P, P, cols) +
-        pixelArt(TAB.slice().reverse(), cx, b.y + b.h - 8 * P, P, cols) +
-        [[b.x + 2 * P, b.y + 8 * P], [b.x + b.w - 6 * P, b.y + 8 * P], [b.x + 2 * P, b.y + b.h - 12 * P], [b.x + b.w - 6 * P, b.y + b.h - 12 * P]]
-          .map(([x, y]) => pixelArt(STUD, g(x), g(y), P, cols)).join('');
-      return { svg: frame + orn, content: inset(b, T), text: txt(t.hi) };
+      // janela da arte: aro afundado de 2 pixels
+      const win = S ? { x: T + 2 * P, y: T + 2 * P, w: CARD_W - 2 * (T + 2 * P), h: g(S.header.y + S.header.h / 2) - (T + 2 * P) } : inset(b, T + 2 * P);
+      const wo = inset(win, -2 * P);
+      const wsdf = boxSdf(wo, P);
+      const winRing = raster(wo, (x, y) => { const d = wsdf(x, y); return d < 2 * P ? d : -1; }, (d, light) =>
+        d < P ? [lit(-light, { light: t.hi, mid: t.mid, dark: t.deep }), 'r'] : [OUT, 'r']);
+      const under = `<path d="${roundRect(b, CARD_RADIUS)}" fill="${mix('#262a31', vivid(a.pal.base), 0.12)}"/>`;
+      // cantoneiras douradas: cantos da carta, da janela da arte e da caixa de regras
+      const gold = { O: OUT, Y: '#f6cf5a', G: '#d9982e', D: '#98601c' };
+      const corners = (bx: Box, inside: boolean) => {
+        const o = inside ? 0 : 0;
+        const x0 = g(bx.x) - o, y0 = g(bx.y) - o, x1 = g(bx.x + bx.w) - 9 * P + o, y1 = g(bx.y + bx.h) - 9 * P + o;
+        return pixelArt(BRACKET, x0, y0, P, gold) + pixelArt(flipX(BRACKET), x1, y0, P, gold) +
+          pixelArt(flipY(BRACKET), x0, y1, P, gold) + pixelArt(flipY(flipX(BRACKET)), x1, y1, P, gold);
+      };
+      const rulesB = S?.rules;
+      const svg = frame + winRing + corners(inset(b, 2 * P), false) + corners(wo, true) + (rulesB ? corners(rulesB, true) : '');
+      return { svg, content: inset(b, T), text: txt(t.hi), under, artClip: rect(win) };
     },
   },
 ];

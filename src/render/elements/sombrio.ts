@@ -5,16 +5,19 @@
  * Desenhado pixel a pixel pelo motor de ./pxengine.
  */
 import { darken, mix } from '../color';
-import { CARD_RADIUS } from '../layout';
+import { CARD_RADIUS, CARD_W, type Skeleton } from '../layout';
 import { vivid } from '../palette';
-import { bezier, inset, pixelArt, type Box, type Pt } from '../shapes';
+import { bezier, inset, pixelArt, roundRect, type Box, type Pt } from '../shapes';
 import { band, boxSdf, deckShades, g, hardShadow, hornSdf, lit, noise, OUT, P, pillSdf, plate, polySdf, raster, type Paint, type Sdf } from './pxengine';
 import type { TextLook } from '../text';
-import { center } from './common';
+import { center, shades4 } from './common';
 import type { PieceArgs, PieceOut, PieceStyle } from './types';
 
-const IRON = { hi: '#6d6776', light: '#4d4856', mid: '#37333e', dark: '#27242d', deep: '#1b1920' };
-const BONE = { hi: '#f3e9cb', light: '#d8c496', mid: '#a98f63', dark: '#6f5a3c' };
+/** Ardósia azulada (ferro escuro da referência). */
+const IRON = { hi: '#6e7892', light: '#4c5570', mid: '#353c52', dark: '#272d3f', deep: '#1c2130' };
+/** Filetes dourados (ouro pálido da referência). */
+const GOLD = { hi: '#fbeab6', light: '#e3c47e', mid: '#b8914b', dark: '#7d5f2c' };
+const BONE = GOLD;
 const PARCH = ['#f2e5c3', '#eadab3', '#e0cda2', '#d2bc8e'];
 const INK_DARK = '#3a2a1b';
 const FONT = 'Pixelify Sans';
@@ -57,7 +60,7 @@ function ribbon(a: PieceArgs): PieceOut {
   }).join('');
   const sdf = boxSdf(body, 2 * P);
   const svg = tails + hardShadow(body, sdf, a.opacity) +
-    raster(body, sdf, plate(sdf, BONE, (x, y) => band(y, body, deckShades(a.pal, x, body, 0.1)), P), a.opacity);
+    raster(body, sdf, plate(sdf, BONE, (x, y) => band(y, body, a.fill ? shades4(a.fill) : deckShades(a.pal, x, body, 0.1)), P), a.opacity);
   return { svg, content: inset(body, 5 * P, 2 * P), text: txt('#ffffff', 700) };
 }
 
@@ -65,8 +68,43 @@ function ribbon(a: PieceArgs): PieceOut {
 function ironPlate(a: PieceArgs, b: Box, radius: number, rimW = P): { svg: string; inner: Box } {
   const sdf = boxSdf(b, radius);
   const svg = hardShadow(b, sdf, a.opacity) +
-    raster(b, sdf, plate(sdf, BONE, (_x, y) => band(y, b, [IRON.light, IRON.mid, IRON.dark, IRON.deep]), rimW), a.opacity);
+    raster(b, sdf, plate(sdf, BONE, (_x, y) => band(y, b, a.fill ? shades4(a.fill) : [IRON.light, IRON.mid, IRON.dark, IRON.deep]), rimW), a.opacity);
   return { svg, inner: inset(b, rimW + 2 * P, rimW + P) };
+}
+
+/** Voluta dourada na base do arco. */
+const CURL = [
+  '..OOOO..',
+  '.OYGGGO.',
+  'OYOOOGDO',
+  'OGO.OGDO',
+  'OGOOGDO.',
+  'OGGDDO..',
+  '.OGDO...',
+  '.OGO....',
+  '.OGO....',
+  'OGGDO...',
+  'OGDDO...',
+  '.OOO....',
+];
+
+// ───────────── esqueleto (arranjo da referência) ─────────────
+// selos redondos nos cantos de cima; arte em arco; fita do nome sobre a base
+// da arte; ATK e DEF dos lados com o tipo no meio; pergaminho rasgado.
+export function sombrioLayout(rulesH: number): Partial<Skeleton> {
+  const h = g(rulesH);
+  const rules = { x: 66, y: 996 - h, w: 618, h };
+  const typeBar = { x: 192, y: rules.y - 66, w: 366, h: 58 };
+  const header = { x: 70, y: typeBar.y - 84, w: 610, h: 76 };
+  return {
+    rules, typeBar, header,
+    cost: { x: 24, y: 24, w: 102, h: 102 },
+    class: { x: 624, y: 24, w: 102, h: 102 },
+    atk: { x: 42, y: typeBar.y, w: 148, h: 58 },
+    def: { x: 560, y: typeBar.y, w: 148, h: 58 },
+    set: { x: 351, y: 1002, w: 48, h: 42 },
+    footer: { x: 48, y: 1008, w: 280, h: 30 },
+  };
 }
 
 const GEM = ['...O...', '..OWO..', '.OWCCO.', 'OWCCCDO', '.OCCDO.', '..ODO..', '...O...'];
@@ -92,16 +130,16 @@ export const sombrio: PieceStyle[] = [
     style: 'sombrio', kind: 'rules', opacity: 1, metal: 'deck',
     render(a) {
       const b = a.box;
-      const { svg: frame } = ironPlate(a, b, 3 * P, P);
-      // pergaminho de bordas rasgadas por dentro da moldura de ferro
-      const pb = inset(b, 4 * P, 3 * P);
+      // pergaminho de bordas rasgadas, direto sobre a ardósia (contorno escuro de 1 pixel)
+      const pb = inset(b, P, P);
       const base = boxSdf(pb, P);
       const torn: Sdf = (x, y) => base(x, y) - (noise(Math.floor(x / P), Math.floor(y / P)) > 0.62 ? P : 0);
       const paint: Paint = (d, light, _x, y) => {
-        if (d < P) return [light < -0.2 ? '#8f7650' : '#b9a172', 'f'];
-        return [band(y, pb, PARCH), 'f'];
+        if (d < P) return [OUT, 'r'];
+        if (d < 2 * P) return [light < -0.2 ? '#9a8058' : '#c7ae7c', 'f'];
+        return [band(y, pb, a.fill ? shades4(a.fill) : PARCH), 'f'];
       };
-      const svg = frame + raster(pb, torn, paint, a.opacity);
+      const svg = hardShadow(pb, torn, a.opacity) + raster(pb, torn, paint, a.opacity);
       return { svg, content: inset(pb, 3 * P, 2.5 * P), text: { family: FONT, weight: 500, color: INK_DARK } };
     },
     divider(a, x, y, w) {
@@ -130,34 +168,50 @@ export const sombrio: PieceStyle[] = [
     style: 'sombrio', kind: 'frame', opacity: 1, metal: 'deck',
     render(a) {
       const b = a.box;
-      const T = 5 * P;
-      const outer = boxSdf(b, CARD_RADIUS);
-      const frame = raster(b, (x, y) => {
-        const d = outer(x, y);
-        return d < T ? d : -1;
-      }, (d, light) => {
-        if (d < P) return [OUT, 'r'];
-        if (d < 2 * P) return [lit(light, { light: IRON.hi, mid: IRON.light, dark: IRON.dark }), 'r'];
-        if (d < 4 * P) return [d < 3 * P ? IRON.mid : IRON.dark, 'r'];
-        return [lit(light, BONE), 'r'];
-      });
-      // chifres de osso saindo dos cantos, curvando para dentro
-      let horns = '';
-      const corner = (sx: 1 | -1, sy: 1 | -1) => {
-        const ox = sx > 0 ? b.x : b.x + b.w, oy = sy > 0 ? b.y : b.y + b.h;
-        const along: Pt[] = bezier([ox + sx * 6 * P, oy + sy * 4 * P], [ox + sx * 22 * P, oy + sy * 3 * P], [ox + sx * 30 * P, oy + sy * 8 * P], [ox + sx * 33 * P, oy + sy * 13 * P], 14);
-        const down: Pt[] = bezier([ox + sx * 4 * P, oy + sy * 6 * P], [ox + sx * 3 * P, oy + sy * 22 * P], [ox + sx * 8 * P, oy + sy * 30 * P], [ox + sx * 13 * P, oy + sy * 33 * P], 14);
-        for (const pts of [along, down]) {
-          const sdf = hornSdf(pts, 5 * P, 1.2 * P);
-          const hb = { x: Math.min(...pts.map((p) => p[0])) - 4 * P, y: Math.min(...pts.map((p) => p[1])) - 4 * P, w: 0, h: 0 };
-          hb.w = Math.max(...pts.map((p) => p[0])) + 4 * P - hb.x; hb.h = Math.max(...pts.map((p) => p[1])) + 4 * P - hb.y;
-          // contorno = a mesma forma um pixel maior, por baixo; osso inteiro por cima
-          horns += raster(hb, (x, y) => sdf(x, y) + P, () => [OUT, 'r']) +
-            raster(hb, sdf, (d, light) => [d < 1.5 * P ? lit(light, BONE) : lit(light, { light: BONE.hi, mid: BONE.light, dark: BONE.mid }), 'r']);
+      const S = a.layout;
+      const T = 4 * P;
+      const tint = vivid(a.pal.base);
+      const slate = (c: string) => mix(c, tint, 0.14);
+      // janela da arte em arco
+      const bottom = S ? g(S.header.y + S.header.h / 2) : 640;
+      const x0 = 9 * P, x1 = CARD_W - 9 * P, y0 = 9 * P, rise = 26 * P, cx = CARD_W / 2;
+      const archPts: Pt[] = [[x0, bottom], [x0, y0 + rise],
+        ...bezier([x0, y0 + rise], [x0, y0 + rise * 0.3], [cx - (cx - x0) * 0.55, y0], [cx, y0], 18).slice(1),
+        ...bezier([cx, y0], [cx + (x1 - cx) * 0.55, y0], [x1, y0 + rise * 0.3], [x1, y0 + rise], 18).slice(1),
+        [x1, bottom]];
+      const archD = `M${archPts.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join('L')}Z`;
+      const inside = polySdf(archPts);
+      // fundo de ardósia com teia de linhas
+      let web = '';
+      for (const [ox, oy] of [[0, 1050], [750, 1050], [0, 0], [750, 0]]) {
+        for (let k = 0; k < 7; k++) {
+          const ang = (k / 6) * (Math.PI / 2);
+          const dx = ox === 0 ? 1 : -1, dy = oy === 0 ? 1 : -1;
+          web += `M${ox} ${oy}L${ox + dx * Math.cos(ang) * 420} ${oy + dy * Math.sin(ang) * 420}`;
         }
-      };
-      corner(1, 1); corner(-1, 1); corner(1, -1); corner(-1, -1);
-      return { svg: frame + horns, content: inset(b, T), text: txt() };
+        for (const r of [120, 220, 320]) web += `M${ox + (ox ? -r : r)} ${oy}A${r} ${r} 0 0 ${ox === oy ? 1 : 0} ${ox} ${oy + (oy ? -r : r)}`;
+      }
+      const under = `<path d="${roundRect(b, CARD_RADIUS)}" fill="${slate(IRON.mid)}"/>` +
+        `<path d="${web}" fill="none" stroke="${slate(IRON.deep)}" stroke-width="3" opacity=".75"/>`;
+      // borda: contorno, filete dourado, ardósia, filete dourado de dentro
+      const outer = boxSdf(b, CARD_RADIUS);
+      const frame = raster(b, (x, y) => { const d = outer(x, y); return d < T ? d : -1; }, (d, light) => {
+        if (d < P) return [OUT, 'r'];
+        if (d < 2 * P) return [lit(light, GOLD), 'r'];
+        if (d < 3 * P) return [slate(IRON.light), 'r'];
+        return [lit(light, { light: GOLD.mid, mid: GOLD.dark, dark: GOLD.dark }), 'r'];
+      });
+      // aro dourado do arco (2 pixels de ouro + contorno)
+      const wb = { x: x0 - 4 * P, y: y0 - 4 * P, w: x1 - x0 + 8 * P, h: bottom - y0 + 4 * P };
+      const rim = raster(wb, (x, y) => { const d = -inside(x, y); return d >= 0 && d < 3 * P ? 3 * P - d : -1; }, (d, light) => {
+        if (d > 2 * P) return [OUT, 'r'];
+        if (d > P) return [lit(-light, GOLD), 'r'];
+        return [OUT, 'r'];
+      });
+      // arremates dourados na base do arco, dos dois lados
+      const cols = { O: OUT, Y: GOLD.hi, G: GOLD.light, D: GOLD.mid };
+      const orn = pixelArt(CURL, g(x0 - 3 * P), g(bottom - 13 * P), P, cols) + pixelArt(CURL.map((r) => [...r].reverse().join('')), g(x1 - 7 * P), g(bottom - 13 * P), P, cols);
+      return { svg: frame + rim + orn, content: inset(b, T), text: txt(), under, artClip: archD };
     },
   },
 ];

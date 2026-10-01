@@ -12,6 +12,9 @@
   import { vivid } from '../../render/palette';
   import Glyph from '../common/Glyph.svelte';
   import type { EditorState } from './editor.svelte';
+  import { ATTRS, ATTR_NAMES, KIND_NAMES, type Attr } from '../../game/types';
+  import { effectsText } from '../../game/text';
+  import { protoWeapon } from '../../model/seed';
 
   let { ed }: { ed: EditorState } = $props();
 
@@ -94,9 +97,14 @@
     <span class="section-title">{L('Deck e classe', 'Deck & class')}</span>
     <label class="field"><span>{L('Deck', 'Deck')}</span>
       <select class="select" bind:value={d.deckId} onchange={() => ed.touch()}>
-        {#each app.decks as dk}<option value={dk.id}>{dk.name[app.lang]}</option>{/each}
+        {#each app.project?.editions ?? [] as edn (edn.id)}
+          <optgroup label={L(`Coleção: ${edn.name}`, `Collection: ${edn.name}`)}>
+            {#each app.decksOf(edn.id) as dk (dk.id)}<option value={dk.id}>{dk.name[app.lang]}</option>{/each}
+          </optgroup>
+        {/each}
       </select>
     </label>
+    <p class="muted small">{L('Trocar o deck move a carta para ele: ela passa a usar o tema (aparência) desse deck.', 'Changing the deck moves the card there: it takes on that deck\'s theme (look).')}</p>
     <div class="field">
       <span>{L('Cores / classes da carta (até 5, na ordem dos cliques)', 'Card colors / classes (up to 5, in click order)')}</span>
       <div class="colors">
@@ -111,6 +119,34 @@
       <span class="muted small">{L('Como as cores aparecem (mistura, dourado multicor, cor livre): aba Aparência.', 'How colors show (blend, multicolor gold, free color): Look tab.')}</span>
     </div>
   </section>
+
+  {#if d.game}
+    {@const gm = d.game}
+    <section class="stack s mesa">
+      <span class="section-title">{L('Mesa de teste (jogo)', 'Test table (game)')}</span>
+      <p class="muted small">{L(`${KIND_NAMES[gm.kind][0]}. O custo (Vigor/Mana) e o ATK/DEF de invocações vêm dos campos abaixo.`, `${KIND_NAMES[gm.kind][1]}. Cost (Vigor/Mana) and summon ATK/DEF come from the fields below.`)}</p>
+      <div class="grid3">
+        <label class="field"><span>{L('Cópias no deck', 'Copies in deck')}</span>
+          <input class="input" type="number" min="1" max="4" value={gm.copies} oninput={(e) => { gm.copies = Math.max(1, Math.min(4, +(e.currentTarget as HTMLInputElement).value || 1)); ed.touch(); }} /></label>
+        <label class="field"><span>{L('Nível exigido', 'Required level')}</span>
+          <input class="input" type="number" min="1" max="8" value={gm.level} oninput={(e) => { gm.level = Math.max(1, Math.min(8, +(e.currentTarget as HTMLInputElement).value || 1)); ed.touch(); }} /></label>
+        <label class="field"><span>{L('Atributo exigido', 'Required attribute')}</span>
+          <div class="row">
+            <select class="select" value={gm.attr?.[0] ?? ''} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value as Attr | ''; gm.attr = v ? [v, gm.attr?.[1] ?? 2] : undefined; ed.touch(); }}>
+              <option value="">{L('Nenhum', 'None')}</option>
+              {#each ATTRS as a}<option value={a}>{L(ATTR_NAMES[a][0], ATTR_NAMES[a][1])}</option>{/each}
+            </select>
+            {#if gm.attr}<input class="input num" type="number" min="1" max="5" value={gm.attr[1]} oninput={(e) => { gm.attr = [gm.attr![0], Math.max(1, Math.min(5, +(e.currentTarget as HTMLInputElement).value || 1))]; ed.touch(); }} />{/if}
+          </div>
+        </label>
+      </div>
+      <div class="field"><span>{L('O que faz (efeitos)', 'What it does (effects)')}</span>
+        <p class="effects">{effectsText(gm.effects, ed.lang, protoWeapon(d.deckId), gm.react)}</p>
+        <button class="btn sm ghost" onclick={() => { for (const l of ['pt-BR', 'en-US'] as const) d.text[l].rules = effectsText(gm.effects, l, protoWeapon(d.deckId), gm.react); ed.touch(); }}>{L('Usar este texto nas regras da carta', 'Use this text as the card rules')}</button>
+        <span class="muted small">{L('A edição dos efeitos em blocos vem na próxima etapa.', 'Block-based effect editing comes next.')}</span>
+      </div>
+    </section>
+  {/if}
 
   <section class="stack s">
     <div class="row between">
@@ -273,4 +309,7 @@
   .pts { font: 600 12px var(--ui); color: var(--accent); min-width: 26px; text-align: right; }
   .x { border: 0; background: none; color: inherit; cursor: pointer; display: grid; padding: 0; }
   .tagin { width: 170px; height: 28px; font-size: 12.5px; border-radius: 99px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .num { width: 64px; }
+  .effects { margin: 0; padding: 9px 11px; border-radius: 9px; background: var(--bg-2); border: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
 </style>

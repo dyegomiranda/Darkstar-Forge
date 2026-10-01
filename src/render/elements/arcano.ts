@@ -30,7 +30,7 @@ function enamel(a: PieceArgs, d: string, b: Box, seed: number, stars = 1): strin
     const x = b.x + rnd() * b.w, y = b.y + rnd() * b.h, r = rnd() < 0.08 ? 1.6 : 0.5 + rnd() * 0.7;
     dots += `<path d="${circle(x, y, r)}" fill="#fff" opacity="${(0.25 + rnd() * 0.6).toFixed(2)}"/>`;
   }
-  return `<g opacity="${a.opacity}"><path d="${d}" fill="${defs.hue(pal, night)}"/>` +
+  return `<g opacity="${a.opacity}"><path d="${d}" fill="${a.fill ?? defs.hue(pal, night)}"/>` +
     `<path d="${d}" fill="${defs.radial([[0, lighten(vivid(pal.base), 0.1), 0.35], [0.7, pal.base, 0.05], [1, '#000', 0.4]], 0.5, 0.45, 0.7)}"/>` +
     `<g clip-path="url(#${cid})">${dots}</g></g>`;
 }

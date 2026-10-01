@@ -4,7 +4,7 @@
   ← → muda de carta · 1 2 3… escolhe a versão · 0 = nenhuma · Esc fecha.
 -->
 <script lang="ts">
-  import { Check, X, Maximize2, ChevronLeft, ChevronRight, Image as ImageIcon, RectangleVertical } from '@lucide/svelte';
+  import { Check, X, Maximize2, ChevronLeft, ChevronRight, Image as ImageIcon, RectangleVertical, Sparkles, LoaderCircle } from '@lucide/svelte';
   import { onDestroy } from 'svelte';
   import { L } from '../../app/i18n.svelte';
   import { app } from '../../store/project.svelte';
@@ -13,6 +13,8 @@
   import { ctxFor, ensureCardMedia } from '../common/cardCtx';
   import type { ArtGroup } from '../../export/artImport';
   import type { Card } from '../../model/types';
+  import { comfyReady, generateArt, promptFor } from '../../export/comfy';
+  import { ui } from '../../app/ui.svelte';
 
   let { groups, onconfirm, oncancel }: {
     groups: ArtGroup[];
@@ -24,6 +26,42 @@
   const urls = new Map<File, string>();
   const url = (f: File) => { let u = urls.get(f); if (!u) { u = URL.createObjectURL(f); urls.set(f, u); } return u; };
   onDestroy(() => { for (const u of urls.values()) URL.revokeObjectURL(u); });
+
+  // ── gerar mais variações pelo ComfyUI (quando nenhuma serviu) ──
+  /** Imagens novas geradas nesta janela, por carta (somam-se às que vieram da pasta). */
+  let extra = $state<Record<string, File[]>>({});
+  const filesOf = (g: ArtGroup): File[] => [...g.files, ...(extra[g.card.id] ?? [])];
+  /** Carta com a caixa de prompt aberta e o texto de cada uma. */
+  let asking = $state<string | null>(null);
+  let promptText = $state<Record<string, string>>({});
+  /** Quantas imagens ainda estão sendo geradas, por carta. */
+  let busy = $state<Record<string, number>>({});
+  let closed = false;
+  onDestroy(() => { closed = true; });
+
+  function openPrompt(g: ArtGroup) {
+    promptText[g.card.id] ??= promptFor(g.card);
+    asking = asking === g.card.id ? null : g.card.id;
+  }
+
+  async function more(g: ArtGroup, n = 2) {
+    const id = g.card.id;
+    if (!(await comfyReady())) { ui.toast(L('Não achei o ComfyUI. Abra o ComfyUI e tente de novo.', 'ComfyUI not found. Open ComfyUI and try again.'), 'error', 7000); return; }
+    asking = null;
+    busy[id] = (busy[id] ?? 0) + n;
+    const base = `${g.card.deckId}_${String(g.card.n).padStart(3, '0')}`;
+    for (let i = 0; i < n; i++) {
+      try {
+        const f = await generateArt(promptText[id] ?? promptFor(g.card), `${base}__g${Date.now()}.png`, () => closed);
+        extra[id] = [...(extra[id] ?? []), f];
+      } catch (e) {
+        if (!closed) ui.toast(L('Não consegui gerar: ', 'Could not generate: ') + (e instanceof Error ? e.message : String(e)), 'error', 8000);
+        busy[id] = Math.max(0, (busy[id] ?? 0) - (n - i));
+        return;
+      }
+      busy[id] = Math.max(0, (busy[id] ?? 0) - 1);
+    }
+  }
 
   // ── escolhas guardadas: reabrir com os mesmos arquivos traz as escolhas de volta ──
   const SAVED = 'darkstar.escolhasArte';
@@ -43,14 +81,14 @@
   // grava a cada mudança (sobrevive a fechar a janela ou o programa)
   $effect(() => {
     const out = { ...saved };
-    for (const g of groups) { const i = pick[g.card.id]; out[g.card.id] = i >= 0 ? g.files[i].name : ''; }
+    for (const g of groups) { const i = pick[g.card.id]; out[g.card.id] = i >= 0 ? filesOf(g)[i]?.name ?? '' : ''; }
     try { localStorage.setItem(SAVED, JSON.stringify(out)); } catch { /* sem armazenamento local */ }
   });
   const chosen = $derived(groups.filter((g) => pick[g.card.id] >= 0).length);
   const nameOf = (c: Card) => c.text[app.lang]?.name ?? c.text['pt-BR'].name;
 
   function confirm() {
-    onconfirm(groups.filter((g) => pick[g.card.id] >= 0).map((g) => ({ card: g.card, file: g.files[pick[g.card.id]] })));
+    onconfirm(groups.filter((g) => pick[g.card.id] >= 0 && filesOf(g)[pick[g.card.id]]).map((g) => ({ card: g.card, file: filesOf(g)[pick[g.card.id]] })));
   }
 
   // ── visualização ampliada ──
@@ -83,7 +121,7 @@
     if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
     else if (e.key === '0') pick[zg.card.id] = -1;
-    else if (/^[1-9]$/.test(e.key) && +e.key <= zg.files.length) pick[zg.card.id] = +e.key - 1;
+    else if (/^[1-9]$/.test(e.key) && +e.key <= filesOf(zg).length) pick[zg.card.id] = +e.key - 1;
   }
 </script>
 
@@ -105,15 +143,30 @@
           <div class="name">
             <b>{nameOf(g.card)}</b><small>#{String(g.card.n).padStart(3, '0')}</small>
             <button class="btn sm" onclick={() => (zoom = gi)}><Maximize2 size={14} /> {L('Ver grande', 'View large')}</button>
+            <button class="btn sm" disabled={!!busy[g.card.id]} onclick={() => openPrompt(g)} title={L('Nenhuma serviu? Gera novas variações pelo ComfyUI (ele precisa estar aberto).', 'None works? Generates new variations with ComfyUI (it must be open).')}>
+              {#if busy[g.card.id]}<LoaderCircle size={14} class="spin" /> {L(`Gerando ${busy[g.card.id]}…`, `Generating ${busy[g.card.id]}…`)}{:else}<Sparkles size={14} /> {L('Gerar mais', 'Generate more')}{/if}</button>
           </div>
           <div class="opts">
-            {#each g.files as f, i}
+            {#if asking === g.card.id}
+              <div class="ask">
+                <span class="label">{L('Descrição da cena (em inglês). Ajuste o que quiser antes de gerar:', 'Scene description (in English). Tweak it before generating:')}</span>
+                <textarea class="textarea" rows="4" bind:value={promptText[g.card.id]}></textarea>
+                <div class="askrow">
+                  <button class="btn sm primary" onclick={() => more(g, 2)}><Sparkles size={14} /> {L('Gerar 2 variações', 'Generate 2 variations')}</button>
+                  <button class="btn sm" onclick={() => more(g, 4)}>{L('Gerar 4', 'Generate 4')}</button>
+                  <button class="btn sm ghost" onclick={() => { promptText[g.card.id] = promptFor(g.card); }}>{L('Voltar ao texto original', 'Reset text')}</button>
+                  <span class="muted small">{L('~40 s por imagem; o estilo pixel art entra sozinho.', '~40 s per image; the pixel art style is added automatically.')}</span>
+                </div>
+              </div>
+            {/if}
+            {#each filesOf(g) as f, i}
               <button class="opt" class:on={pick[g.card.id] === i} title={f.name} onclick={() => (pick[g.card.id] = i)} ondblclick={() => (zoom = gi)}>
                 <img src={url(f)} alt={f.name} loading="lazy" />
                 <span class="num">{i + 1}</span>
                 {#if pick[g.card.id] === i}<span class="tick"><Check size={14} /></span>{/if}
               </button>
             {/each}
+            {#each Array(busy[g.card.id] ?? 0) as _}<span class="opt wait"><LoaderCircle size={22} class="spin" /><span>{L('gerando…', 'generating…')}</span></span>{/each}
             <button class="opt none" class:on={pick[g.card.id] === -1} onclick={() => (pick[g.card.id] = -1)}><X size={16} /><span>{L('Nenhuma', 'None')}</span></button>
           </div>
         </div>
@@ -141,8 +194,8 @@
       </div>
       <button class="btn primary" onclick={() => (zoom = null)}><Check size={16} /> {L('Voltar à lista', 'Back to list')}</button>
     </header>
-    <div class="big">
-      {#each zg.files as f, i (f)}
+    <div class="big" style="--n:{filesOf(zg).length}">
+      {#each filesOf(zg) as f, i (f)}
         <button class="bopt" class:on={pick[zg.card.id] === i} onclick={() => (pick[zg.card.id] = i)} title={f.name}>
           {#if mode === 'carta'}<div class="cardsvg">{@html cardWith(zg, f, i)}</div>{:else}<img src={url(f)} alt={f.name} />{/if}
           <span class="blabel">{#if pick[zg.card.id] === i}<Check size={15} /> {L('Escolhida', 'Chosen')}{:else}{L(`Versão ${i + 1}`, `Version ${i + 1}`)} · {L('clique para escolher', 'click to choose')}{/if}</span>
@@ -179,6 +232,12 @@
   .num { position: absolute; left: 5px; top: 5px; min-width: 20px; height: 20px; border-radius: 6px; background: rgb(0 0 0 / .65); color: #fff; font: 600 11px/20px var(--ui); text-align: center; }
   .tick { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
   .none { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-size: 12px; }
+  .ask { flex-basis: 100%; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line-2); }
+  .ask textarea { font-size: 12.5px; }
+  .askrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .opt.wait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 12px; cursor: default; border-style: dashed; }
+  .name :global(.spin), .opt :global(.spin) { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .dialog > footer { display: flex; align-items: center; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--line); }
 
   .zoom { position: fixed; inset: 0; z-index: 60; background: var(--bg, #0b0a0c); display: flex; flex-direction: column; }
@@ -191,8 +250,10 @@
   .bopt:hover { border-color: var(--line-2); }
   .bopt.on { border-color: var(--accent); background: var(--accent-soft); }
   .bopt img { flex: 1; min-height: 0; max-width: 100%; height: 100%; object-fit: contain; border-radius: 8px; display: block; }
-  .cardsvg { flex: 1; min-height: 0; aspect-ratio: 750 / 1050; display: flex; }
-  .cardsvg :global(svg) { width: 100%; height: 100%; display: block; }
+  /* a carta ocupa a altura disponível e a largura sai da proporção (o SVG não impõe o próprio tamanho) */
+  /* altura = o que cabe na tela (ou menos, se forem muitas versões lado a lado); a largura sai da proporção da carta */
+  .cardsvg { position: relative; flex: none; height: min(calc(100vh - 215px), calc((100vw - 60px) / var(--n, 4) * 1.4 - 50px)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; }
+  .cardsvg :global(svg) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .blabel { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--ui); color: var(--text-2); }
   .bopt.on .blabel { color: var(--accent-2); font-weight: 600; }
   .zoom > footer { display: flex; align-items: center; gap: 14px; justify-content: space-between; padding: 10px 18px 14px; border-top: 1px solid var(--line); }
