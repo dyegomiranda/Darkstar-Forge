@@ -9,7 +9,7 @@
   import { onDestroy, tick } from 'svelte';
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { Swords, Move, Flag, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound } from '@lucide/svelte';
+  import { Swords, Move, Flag, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Volume2, VolumeX } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
@@ -26,6 +26,9 @@
   import { rasterize } from '../../render/raster';
   import { backInput } from '../back/backCtx';
   import { characterOf, deckCards, deckCount, heroDef, playable } from './heroes';
+  import AvatarSprite from '../../avatar/AvatarSprite.svelte';
+  import { chip } from '../../audio/chip';
+  import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
 
   // ───────────── preparação ─────────────
   const OPTS_KEY = 'darkstar.mesa';
@@ -63,7 +66,25 @@
   let warn = $state(false);
   let botBusy = $state(false);
 
-  function say(text: string, isWarn = false) { msg = text; warn = isWarn; }
+  function say(text: string, isWarn = false) { msg = text; warn = isWarn; if (text && isWarn) chip.sfx('error'); }
+
+  // ───────────── som: música da seleção → música de batalha; pistas sonoras nos acontecimentos ─────────────
+  let muted = $state(chip.muted);
+  let musicVol = $state(chip.musicVol);
+  let sfxVol = $state(chip.sfxVol);
+  function toggleMute() { muted = !muted; chip.setMute(muted); }
+  $effect(() => { chip.setMusicVol(musicVol); });
+  $effect(() => { chip.setSfxVol(sfxVol); });
+  // seleção, posicionamento e mão inicial: tema calmo; começou o 1º turno: tema de batalha; fim de partida: silêncio
+  $effect(() => {
+    const inMatch = step === 'play' && !!g;
+    chip.music(!inMatch || g!.setup ? 'menu' : g!.winner !== undefined ? null : 'battle');
+  });
+  let ended = false;
+  $effect(() => { const w = g?.winner; if (w !== undefined && !ended) { ended = true; setTimeout(() => chip.sfx(w === me ? 'victory' : 'defeat'), 900); } if (w === undefined) ended = false; });
+  // carta entrando na mão
+  let handCount = 0;
+  $effect(() => { const n = g?.players[me].hand.length ?? 0; if (n > handCount && step === 'play') chip.sfx('draw'); handCount = n; });
 
   function toPlace() {
     if (!myHero) return;
@@ -85,6 +106,7 @@
     lastFx = 0;
     lastLine = '';
     floats = [];
+    heroAnim = ['idle', 'idle'];
     // o bot decide a mão dele já; a minha aparece em destaque depois do anúncio de quem começa
     const b = other(me);
     for (let i = 0; i < 5 && g.setup && !g.setup.kept[b]; i++) apply(g, botMulligan($state.snapshot(g) as GameState, b));
@@ -221,7 +243,7 @@
     const ch = choiceOf(g.defs[ref.cardId].game.effects);
     if (!ch) void act({ t: 'play', uid });
     else if (sel?.kind === 'card' && sel.uid === uid) { sel = null; say(''); }
-    else { sel = { kind: 'card', uid }; ask(promptOf(g.defs[ref.cardId].game.effects)); }
+    else { sel = { kind: 'card', uid }; chip.sfx('select'); ask(promptOf(g.defs[ref.cardId].game.effects)); }
   }
 
   function clickSlot(pos: Pos) {
@@ -279,7 +301,7 @@
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   let alive = true;
-  onDestroy(() => { alive = false; if (backUrl) URL.revokeObjectURL(backUrl); });
+  onDestroy(() => { alive = false; chip.music(null, 0.8); if (backUrl) URL.revokeObjectURL(backUrl); });
 
   async function runBot() {
     if (!g || botBusy) return;
@@ -451,6 +473,13 @@
     b.animate([{ transform: `translate(-50%, -50%) ${rot} scale(.6)` }, { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) ${rot} scale(1.15)` }], { duration: 460, easing: 'ease-in' }).onfinish = () => b.remove();
   }
 
+  // ───────────── boneco do herói: a animação de cada lado ─────────────
+  let heroAnim = $state<[Anim, Anim]>(['idle', 'idle']);
+  const avatarOf = (p: 0 | 1) => (g ? characterOf(g.players[p].hero.id)?.avatar : undefined);
+  /** Toca uma animação do boneco (ele volta a ficar parado quando ela termina). */
+  function animate(p: 0 | 1, a: Anim) { if (avatarOf(p)) heroAnim[p] = a; }
+  function animEnd(p: 0 | 1) { if (heroAnim[p] !== 'hurt') heroAnim[p] = 'idle'; }
+
   const FX_MS: Partial<Record<Fx['k'], number>> = { attack: 420, turn: 1000, xp: 120, gain: 200, level: 1300, react: 1200, countered: 900 };
 
   /** Mostra o que aconteceu desde a última vez, em sequência. */
@@ -490,6 +519,7 @@
     if (!g) return;
     switch (e.k) {
       case 'turn': {
+        chip.sfx('turn');
         const mine = e.p === me;
         banner = { key: ++fxKey, mine, title: mine ? L('Seu turno', 'Your turn') : L(`Turno de ${g.players[e.p].hero.name}`, `${g.players[e.p].hero.name}'s turn`), sub: L(`Turno ${e.turn}`, `Turn ${e.turn}`) };
         const k = banner.key;
@@ -497,20 +527,34 @@
         break;
       }
       // a carta do oponente aparece grande ao lado (se eu posso responder, ela já está na janela de resposta)
-      case 'play': if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}`); break;
-      case 'react': showCard(e.cardId, e.p === me ? L('Você reage com', 'You react with') : `${g.players[e.p].hero.name} ${L('reage com', 'reacts with')}`, 'react', 2200); break;
-      case 'countered': showCard(e.cardId, L('Anulada!', 'Countered!'), 'countered', 1800); break;
-      case 'attack': { const a = before.get(e.from) ?? rectOf(e.from), b = rectOf(e.to); if (a && b) attackAnim(a, b, elOf(e.from), e.via); break; }
+      case 'play':
+        chip.sfx('card');
+        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}`);
+        // cartas que não são um golpe: o boneco conjura (o golpe tem a sua própria animação, logo depois)
+        if (!g.defs[e.cardId]?.game.effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
+        break;
+      case 'react': chip.sfx('card'); animate(e.p, 'spellcast'); showCard(e.cardId, e.p === me ? L('Você reage com', 'You react with') : `${g.players[e.p].hero.name} ${L('reage com', 'reacts with')}`, 'react', 2200); break;
+      case 'countered': chip.sfx('counter'); showCard(e.cardId, L('Anulada!', 'Countered!'), 'countered', 1800); break;
+      case 'attack': {
+        const a = before.get(e.from) ?? rectOf(e.from), b = rectOf(e.to);
+        if (a && b) attackAnim(a, b, elOf(e.from), e.via);
+        chip.sfx(e.via === 'melee' ? 'slash' : e.via === 'ranged' ? 'arrow' : 'magic');
+        const hp = sideOfHero(e.from), av = hp !== null ? avatarOf(hp) : undefined;
+        // o boneco usa o ataque da arma que segura; sem arma, o tipo do golpe decide
+        if (hp !== null && av) animate(hp, weaponAnim(av, e.via === 'melee' ? 'slash' : e.via === 'ranged' ? 'shoot' : 'spellcast'));
+        break;
+      }
       case 'dmg': {
         const sub = [e.armor ? (e.via === 'magic' ? L(`resistência absorveu ${e.armor}`, `resistance absorbed ${e.armor}`) : L(`armadura absorveu ${e.armor}`, `armor absorbed ${e.armor}`)) : '', e.marked ? L('+1 Marcado', '+1 Marked') : '', e.armor ? '' : L(VIA[e.via][0], VIA[e.via][1])].filter(Boolean).join(' · ');
+        chip.sfx('hit');
         float(rectOf(e.id) ?? before.get(e.id), `−${e.amount}`, 'dmg', sub, true);
         hitFlash(elOf(e.id), 'rgb(200 40 30 / .45)');
         const hp = sideOfHero(e.id);
         if (hp !== null) hitFlash(document.getElementById(`hp-${hp}`), 'rgb(200 40 30 / .35)');
         break;
       }
-      case 'blocked': float(rectOf(e.id), L('Bloqueado', 'Blocked'), 'ward', L('a Proteção anulou o dano', 'the ward prevented it')); hitFlash(elOf(e.id), 'rgb(90 150 255 / .4)'); break;
-      case 'heal': float(rectOf(e.id), `+${e.amount}`, 'heal', L('cura', 'heal'), true); hitFlash(elOf(e.id), 'rgb(60 190 110 / .35)'); break;
+      case 'blocked': chip.sfx('block'); float(rectOf(e.id), L('Bloqueado', 'Blocked'), 'ward', L('a Proteção anulou o dano', 'the ward prevented it')); hitFlash(elOf(e.id), 'rgb(90 150 255 / .4)'); break;
+      case 'heal': chip.sfx('heal'); float(rectOf(e.id), `+${e.amount}`, 'heal', L('cura', 'heal'), true); hitFlash(elOf(e.id), 'rgb(60 190 110 / .35)'); break;
       case 'status': {
         const m = {
           afflict: [L('Afligido', 'Afflicted'), L('−1 PV por turno', '−1 HP per turn'), 'curse'],
@@ -519,18 +563,20 @@
           push: [L('Empurrado!', 'Pushed!'), L('mudou de fileira', 'changed rows'), 'info'],
           cleanse: [L('Curado', 'Cleansed'), L('sai Aflição e Marca', 'Affliction and Mark removed'), 'heal'],
         }[e.s];
+        chip.sfx(e.s === 'push' ? 'push' : e.s === 'ward' ? 'ward' : e.s === 'cleanse' ? 'heal' : 'curse');
         float(rectOf(e.id), m[0], m[2], m[1] || undefined, e.s === 'push');
         if (e.s === 'push') elOf(e.id)?.animate([{ boxShadow: '0 0 0 3px #7fb0ff, 0 0 26px #7fb0ff' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 900 });
         break;
       }
-      case 'death': float(before.get(e.id) ?? rectOf(e.id), L('Derrotado', 'Defeated'), 'death', undefined, true); break;
-      case 'summon': { const el = elOf(e.id); el?.animate([{ boxShadow: '0 0 0 3px #f0c45a, 0 0 30px #f0c45a' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 800 }); break; }
+      case 'death': { chip.sfx('death'); float(before.get(e.id) ?? rectOf(e.id), L('Derrotado', 'Defeated'), 'death', undefined, true); const hp = sideOfHero(e.id); if (hp !== null) animate(hp, 'hurt'); break; }
+      case 'summon': { chip.sfx('summon'); const el = elOf(e.id); el?.animate([{ boxShadow: '0 0 0 3px #f0c45a, 0 0 30px #f0c45a' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 800 }); break; }
       case 'xp': {
         const why = { turn: L('novo turno', 'new turn'), kill: L('criatura derrotada', 'creature defeated'), hit: L('feriu o herói', 'hit the hero') }[e.why];
         float(document.getElementById(`xp-${e.p}`)?.getBoundingClientRect(), `+${e.amount} XP`, 'xp', why);
         break;
       }
       case 'level': {
+        chip.sfx('levelup');
         const pl = g.players[e.p];
         levelFx = { key: ++fxKey, name: pl.hero.name, level: pl.level + pl.pendingLevels, mine: e.p === me };
         const k = levelFx.key;
@@ -685,6 +731,11 @@
           <label class="toggle"><input type="checkbox" bind:checked={limit} /> <span><b>{L('Modo B', 'Mode B')}</b><small>{L('no máximo 3 habilidades por turno', 'at most 3 abilities per turn')}</small></span></label>
           <label class="toggle"><input type="checkbox" bind:checked={showLog} /> <span><b>{L('Registro da batalha', 'Battle log')}</b><small>{L('botão flutuante com tudo o que aconteceu', 'floating button with everything that happened')}</small></span></label>
         </div>
+        <div class="snd">
+          <button class="btn sm ghost icon" onclick={toggleMute} title={muted ? L('Ligar o som', 'Unmute') : L('Silenciar', 'Mute')}>{#if muted}<VolumeX size={16} />{:else}<Volume2 size={16} />{/if}</button>
+          <label><small>{L('Música', 'Music')}</small><input type="range" min="0" max="1" step="0.05" bind:value={musicVol} disabled={muted} /></label>
+          <label><small>{L('Sons', 'Sounds')}</small><input type="range" min="0" max="1" step="0.05" bind:value={sfxVol} disabled={muted} /></label>
+        </div>
         <button class="btn primary big" disabled={!ready} onclick={toPlace}><Swords size={18} /> {heroOff ? L('Começar partida', 'Start match') : L('Continuar', 'Continue')}</button>
       </footer>
     {/if}
@@ -779,6 +830,7 @@
           </div>
           {#if mine}
             <div class="grow"></div>
+            <button class="btn sm ghost icon" use:tip={muted ? L('Som desligado: clique para ligar.', 'Sound off: click to turn on.') : L('Som ligado: clique para silenciar (o volume fica na tela de seleção).', 'Sound on: click to mute (volume is on the selection screen).')} onclick={toggleMute}>{#if muted}<VolumeX size={15} />{:else}<Volume2 size={15} />{/if}</button>
             <button class="btn sm ghost icon" use:tip={L('Trocar heróis: sai desta partida.', 'Change heroes: leaves this match.')} onclick={leave}><RotateCcw size={15} /></button>
             <button class="btn sm" class:lit={canStrike} disabled={!myTurn} onclick={startStrike} use:tip={myTurn ? strikeInfo().why : ''}><Swords size={15} /> {L('Golpear', 'Strike')}</button>
             {#if !g!.heroOff}<button class="btn sm" disabled={!myTurn || pl.moved} onclick={startMove}><Move size={15} /> {L('Mover', 'Move')}</button>{/if}
@@ -801,7 +853,12 @@
 
       <!-- ───── o herói (miniatura com o retrato) ───── -->
       {#snippet heroBody(u: Unit, p: 0 | 1)}
-        <span class="mini"><HeroPortrait hero={characterOf(g!.players[p].hero.id)} size={120} /></span>
+        {@const av = avatarOf(p)}
+        {#if av}
+          <span class="doll" class:tall={g!.heroOff}><AvatarSprite avatar={av} anim={heroAnim[p]} dir={p === me ? 'n' : 's'} scale={g!.heroOff ? 3 : 2} loop={heroAnim[p] === 'idle'} onend={() => animEnd(p)} /></span>
+        {:else}
+          <span class="mini"><HeroPortrait hero={characterOf(g!.players[p].hero.id)} size={120} /></span>
+        {/if}
         <span class="unit" in:recvU={{ key: u.id }} out:sendU={{ key: u.id }}>
           <span class="u-nm">{L(u.name[0], u.name[1])}</span>
           <span class="u-st"><span class="atk" class:used={g!.players[p].struck && g!.active === p}><Swords size={13} /> {strikeDmg(p)}</span><span class="def"><Heart size={13} /> {life(u)}/{u.def}</span></span>
@@ -1208,6 +1265,10 @@
   .vs-opts .toggle span { display: flex; flex-direction: column; }
   .vs-opts .toggle b { font-size: 13px; }
   .vs-opts .toggle small { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+  .snd { display: flex; align-items: center; gap: 10px; }
+  .snd label { display: flex; flex-direction: column; gap: 2px; }
+  .snd small { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .snd input { width: 84px; accent-color: var(--accent); }
   .btn.big { height: 46px; padding: 0 26px; font-size: 15px; }
   .dim { opacity: .45; pointer-events: none; }
   .place-help { align-items: center; }
@@ -1252,7 +1313,10 @@
   .slot { height: var(--row); border-radius: 12px; border: 1px dashed rgb(255 255 255 / .1); background: rgb(255 255 255 / .02); color: var(--text); display: grid; place-items: center; cursor: pointer; font: inherit; position: relative; padding: 4px; overflow: hidden; }
   .slot.off { width: calc(var(--row) * 1.35); height: auto; flex: none; }
   .slot:has(.unit) { border: 1px solid rgb(255 255 255 / .14); background: linear-gradient(180deg, color-mix(in srgb, var(--c) 32%, #15120f), #15120f 85%); box-shadow: 0 6px 16px rgb(0 0 0 / .5); }
-  .slot.hero { border: 2px solid var(--c); }
+  .slot.hero { border: 2px solid var(--c); overflow: visible; z-index: 3; }
+  /* o boneco fica de pé sobre a casa (passa da borda de cima) */
+  .doll { position: absolute; left: 50%; bottom: 30%; transform: translateX(-50%); line-height: 0; z-index: 0; filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)); }
+  .doll.tall { bottom: 26%; }
   .slot.hero.ready { animation: readyPulse 1.6s ease-in-out infinite; }
   @keyframes readyPulse { 50% { box-shadow: 0 0 0 2px #f0c45a, 0 0 22px rgb(240 196 90 / .55); } }
   .slot.exh { opacity: .55; }

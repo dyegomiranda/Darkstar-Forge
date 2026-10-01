@@ -6,6 +6,7 @@
 import seedCards from '../data/seed-cards.json';
 import pfCards from '../data/pf-cards.json';
 import { HERO_BASES, PROTO_DECKS } from '../game/decks';
+import { PRESET_AVATARS } from '../avatar/presets';
 import { effectsText } from '../game/text';
 import { ATTR_NAMES, KIND_NAMES } from '../game/types';
 import type { Look } from '../render/compose';
@@ -87,7 +88,7 @@ export function presetHeroes(): Character[] {
   return HERO_BASES.map((b): Character => ({
     id: `hero-${b.id}`, name: b.name, raceId: '', classColors: [color(b.deckId)], level: 1, hp: 30,
     stats: { str: 10 + 2 * b.attrs.for, dex: 10 + 2 * b.attrs.des, con: 10 + 2 * b.attrs.con, int: 10 + 2 * b.attrs.int, wis: 10 + 2 * b.attrs.sab, cha: 10 + 2 * b.attrs.car },
-    slots: {}, notes: '', preset: b.id, play: structuredClone(b),
+    slots: {}, notes: '', preset: b.id, play: structuredClone(b), avatar: structuredClone(PRESET_AVATARS[b.id]),
   }));
 }
 
@@ -131,7 +132,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-3', 'proto-heroes-1'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-3', 'proto-heroes-1', 'proto-avatars-1'],
   };
   return { project, cards };
 }

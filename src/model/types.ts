@@ -126,6 +126,8 @@ export interface Character {
   portraitMediaId?: string;
   /** Dados do herói na Mesa de teste (deck, atributos de jogo, arma, equipamento). Com isso ele pode entrar em partida. */
   play?: import('../game/types').HeroBase;
+  /** Boneco em pixel art montado no criador (peças do LPC): vira a miniatura animada e o retrato. */
+  avatar?: import('../avatar/lpc').Avatar;
   /** Herói pronto do Protótipo (usa o retrato que vem com o app enquanto não houver outro). */
   preset?: string;
 }

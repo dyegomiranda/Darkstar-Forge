@@ -12,6 +12,9 @@ const { pathToFileURL } = require('node:url');
 const DEV_URL = process.env.FORGE_DEV_URL; // ex.: http://localhost:5173 (desenvolvimento)
 const DIST = path.join(__dirname, '..', 'dist');
 
+// a música do jogo pode começar sem esperar um clique
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, codeCache: true } },
 ]);

@@ -14,6 +14,9 @@
   import Glyph from '../common/Glyph.svelte';
   import CardImage from '../common/CardImage.svelte';
   import HeroPortrait from '../common/HeroPortrait.svelte';
+  import AvatarEditor from '../../avatar/AvatarEditor.svelte';
+  import AvatarSprite from '../../avatar/AvatarSprite.svelte';
+  import { defaultAvatar, portrait as avatarPortrait, type Avatar } from '../../avatar/lpc';
   import { router } from '../../app/router.svelte';
   import { HERO_BASES, gearInfo } from '../../game/decks';
   import { ATTRS, ATTR_NAMES, GEAR_SLOTS, type GearItem, type GearSlot, type HeroBase, type Via } from '../../game/types';
@@ -149,6 +152,14 @@
     edit((c) => { if (card) c.slots[slot] = card.id; else delete c.slots[slot]; });
     picking = null;
   }
+  /** Tira a "foto" do boneco e usa como retrato do herói. */
+  async function snapPortrait() {
+    if (!ch?.avatar) return;
+    const blob = await avatarPortrait($state.snapshot(ch.avatar) as Avatar, heroColor(ch));
+    const mid = await importImage(blob, `${ch.name || 'heroi'}-retrato.png`);
+    edit((c) => { c.portraitMediaId = mid; });
+    ui.toast(L('Retrato atualizado com a foto do boneco.', 'Portrait updated with the doll photo.'), 'ok');
+  }
   const num = (e: Event, min: number, max: number) => Math.max(min, Math.min(max, Math.round(+(e.currentTarget as HTMLInputElement).value || 0)));
 </script>
 
@@ -165,7 +176,7 @@
           {@const d = c.play ? heroDef(c) : null}
           <div class="hcard" style="--c:{heroColor(c)}">
             <button class="hmain" onclick={() => open(c.id)} title={L('Abrir a ficha', 'Open the sheet')}>
-              <span class="hpic"><HeroPortrait hero={c} size={220} /></span>
+              <span class="hpic"><HeroPortrait hero={c} size={220} />{#if c.avatar}<span class="hdoll"><AvatarSprite avatar={c.avatar} scale={2} /></span>{/if}</span>
               <span class="hname display">{c.name || L('Sem nome', 'Unnamed')}</span>
               <span class="hclass">{d ? L(d.className[0], d.className[1]) : c.classColors.map((col) => COLORS[col].classes[app.lang]).join(' / ')}</span>
               {#if d}
@@ -290,6 +301,21 @@
             </button>
           {/each}
         </div>
+      </section>
+
+      <!-- aparência: o boneco em pixel art -->
+      <section class="card play no-print">
+        <div class="row"><h3 class="section-title grow">{L('Aparência — boneco do herói', 'Appearance — hero doll')}</h3>
+          {#if ch.avatar}<button class="btn sm ghost" onclick={() => edit((c) => { delete c.avatar; })}>{L('Remover o boneco', 'Remove the doll')}</button>{/if}</div>
+        {#if !ch.avatar}
+          <p class="muted">{L('Monte o boneco do herói (gênero, pele, cabelo, roupas, armadura e arma). Ele aparece animado no campo de batalha e pode virar o retrato.', 'Build the hero doll (body, skin, hair, clothes, armor and weapon). It shows up animated on the battlefield and can become the portrait.')}</p>
+          <div class="tpl">
+            <button class="btn" onclick={() => edit((c) => { c.avatar = defaultAvatar('male'); })}>{L('Criar boneco masculino', 'Create male doll')}</button>
+            <button class="btn" onclick={() => edit((c) => { c.avatar = defaultAvatar('female'); })}>{L('Criar boneco feminino', 'Create female doll')}</button>
+          </div>
+        {:else}
+          <AvatarEditor avatar={ch.avatar} color={heroColor(ch)} onchange={(a) => edit((c) => { c.avatar = a; })} onportrait={snapPortrait} />
+        {/if}
       </section>
 
       <!-- dados de jogo -->
@@ -417,6 +443,8 @@
   .hcard:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c, #888) 70%, #fff 0%); }
   .hmain { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 14px 10px; border: 0; background: none; color: var(--text); cursor: pointer; font: inherit; }
   .hpic { border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 14px 30px rgb(0 0 0 / .55); line-height: 0; }
+  .hpic { position: relative; }
+  .hdoll { position: absolute; right: -6px; bottom: -4px; filter: drop-shadow(0 4px 6px rgb(0 0 0 / .8)); }
   .hname { font-size: 21px; color: var(--accent-2); margin-top: 6px; }
   .hclass { font-size: 12.5px; color: var(--text-2); }
   .hstats { display: flex; gap: 10px; font: 600 13px var(--ui); color: var(--text-2); }

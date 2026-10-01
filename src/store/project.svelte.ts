@@ -11,6 +11,7 @@ import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
+import { PRESET_AVATARS } from '../avatar/presets';
 import { importImage } from './media';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -135,6 +136,13 @@ class ProjectState {
       p.seeded = [...(p.seeded ?? []), HEROES_MARK];
       changed = true;
       for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id)) p.characters.push(h);
+    }
+    // os heróis prontos ganham o boneco em pixel art (uma vez; quem já tem boneco fica como está)
+    const AVATARS_MARK = 'proto-avatars-1';
+    if (!p.seeded?.includes(AVATARS_MARK)) {
+      p.seeded = [...(p.seeded ?? []), AVATARS_MARK];
+      changed = true;
+      for (const c of p.characters) if (c.preset && !c.avatar && PRESET_AVATARS[c.preset]) c.avatar = structuredClone(PRESET_AVATARS[c.preset]);
     }
     if (!changed) return;
     this.#projectDirty = true;
