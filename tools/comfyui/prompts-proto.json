@@ -85,6 +85,11 @@
   "prompt": "a glowing red healing potion in an ornate round glass flask with a cork and a wax seal, sparkles and soft red light, standing on a wooden alchemist table with herbs, a mortar, scrolls and candles, shelves of colorful jars behind."
  },
  {
+  "id": "proto-red_018",
+  "seed": 18,
+  "prompt": "a fierce red-braided barbarian woman in a horned iron helmet and chain mail armor with a huge double-bladed greataxe parrying an incoming sword with the haft of her greataxe, a bright burst of sparks at the clash point, then countering, castle courtyard."
+ },
+ {
   "id": "proto-blue_001",
   "seed": 101,
   "prompt": "a young battle mage man with short dark hair in deep blue and silver robes, glowing cyan arcane runes on his gauntlets snapping his fingers, a tiny crackling blue-white spark shooting from his hand, wizard library with tall bookshelves."
@@ -170,6 +175,11 @@
   "prompt": "a glowing red healing potion in an ornate round glass flask with a cork and a wax seal, sparkles and soft red light, standing on a wooden alchemist table with herbs, a mortar, scrolls and candles, shelves of colorful jars behind."
  },
  {
+  "id": "proto-blue_018",
+  "seed": 118,
+  "prompt": "a young battle mage man with short dark hair in deep blue and silver robes, glowing cyan arcane runes on his gauntlets raising one hand and shattering an incoming enemy spell into fragments of blue glass-like light, a glowing counterspell rune in front of his palm, arcane hall."
+ },
+ {
   "id": "proto-green_001",
   "seed": 201,
   "prompt": "an elven ranger woman with a green hood, leather armor and an elegant longbow drawing and loosing an arrow in one fast motion, the arrow just leaving the bow with a streak of wind, autumn forest."
@@ -248,6 +258,11 @@
   "id": "proto-green_016",
   "seed": 216,
   "prompt": "a glowing red healing potion in an ornate round glass flask with a cork and a wax seal, sparkles and soft red light, standing on a wooden alchemist table with herbs, a mortar, scrolls and candles, shelves of colorful jars behind."
+ },
+ {
+  "id": "proto-green_017",
+  "seed": 217,
+  "prompt": "an elven ranger woman with a green hood, leather armor and an elegant longbow leaping sideways in an acrobatic dodge, an enemy arrow and a sword slash missing her, motion blur, leaves flying, forest."
  },
  {
   "id": "proto-black_001",
@@ -333,5 +348,30 @@
   "id": "proto-black_017",
   "seed": 317,
   "prompt": "a glowing red healing potion in an ornate round glass flask with a cork and a wax seal, sparkles and soft red light, standing on a wooden alchemist table with herbs, a mortar, scrolls and candles, shelves of colorful jars behind."
+ },
+ {
+  "id": "proto-black_018",
+  "seed": 318,
+  "prompt": "a pale hexblade warlock woman in a black hooded cloak with glowing violet eyes and a black katana struck by an attack while a burst of dark purple thorns of shadow lashes back from her body toward the attacker, violet eyes glowing, ruined cathedral."
+ },
+ {
+  "id": "heroi-brunhild",
+  "seed": 900,
+  "prompt": "character portrait, bust shot from the chest up, facing the viewer, a fierce red-braided barbarian woman in a horned iron helmet and chain mail armor with a huge double-bladed greataxe, confident heroic expression, burning red sky background, centered face."
+ },
+ {
+  "id": "heroi-kael",
+  "seed": 901,
+  "prompt": "character portrait, bust shot from the chest up, facing the viewer, a young battle mage man with short dark hair in deep blue and silver robes, glowing cyan arcane runes on his gauntlets, confident heroic expression, arcane blue library background, centered face."
+ },
+ {
+  "id": "heroi-lyra",
+  "seed": 902,
+  "prompt": "character portrait, bust shot from the chest up, facing the viewer, an elven ranger woman with a green hood, leather armor and an elegant longbow, confident heroic expression, green forest background, centered face."
+ },
+ {
+  "id": "heroi-morgana",
+  "seed": 903,
+  "prompt": "character portrait, bust shot from the chest up, facing the viewer, a pale hexblade warlock woman in a black hooded cloak with glowing violet eyes and a black katana, confident heroic expression, purple moonlit ruins background, centered face."
  }
 ]

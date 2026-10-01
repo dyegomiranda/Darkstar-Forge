@@ -24,6 +24,7 @@ DECKS = {
   f"{B} attacking in a furious flurry, two overlapping red afterimages of her axe slashes, sparks and debris, cave arena",
   f"{B} surrounded by giant ghostly red spirits of ancient horned warrior ancestors rising behind her, glowing runes, mountain shrine with standing stones",
   POTION,
+  f"{B} parrying an incoming sword with the haft of her greataxe, a bright burst of sparks at the clash point, then countering, castle courtyard",
  ],
  'blue': [
   f"{K} snapping his fingers, a tiny crackling blue-white spark shooting from his hand, wizard library with tall bookshelves",
@@ -43,6 +44,7 @@ DECKS = {
   "a giant flaming meteor falling from the night sky toward a valley, long fiery trail, a small robed mage silhouette with raised arms on a cliff in the foreground",
   "a glowing blue mana potion in a tall crystal bottle with a silver stopper, swirling stars inside, blue light, on a wizard desk with crystals, quills and scrolls",
   POTION,
+  f"{K} raising one hand and shattering an incoming enemy spell into fragments of blue glass-like light, a glowing counterspell rune in front of his palm, arcane hall",
  ],
  'green': [
   f"{L} drawing and loosing an arrow in one fast motion, the arrow just leaving the bow with a streak of wind, autumn forest",
@@ -61,6 +63,7 @@ DECKS = {
   "a pack of grey wolves emerging from a moonlit forest and howling, glowing eyes, full moon, fog between the trees",
   "a swirling tornado of thorns, leaves and green energy tearing through a forest clearing, goblin silhouettes thrown into the air, stormy sky",
   POTION,
+  f"{L} leaping sideways in an acrobatic dodge, an enemy arrow and a sword slash missing her, motion blur, leaves flying, forest",
  ],
  'black': [
   f"{M}, mid-swing, slashing the katana diagonally, a huge crescent trail of violet shadow energy and dripping green poison following the blade, the dark silhouette of a falling orc at the edge of the frame, ruined temple under a giant purple moon",
@@ -80,11 +83,16 @@ DECKS = {
   "a legion of skeleton warriors with shields and spears marching out of thick fog, green eerie light, cemetery gates",
   f"{M} raising her katana as glowing ghostly teal souls spiral through the air into the blade, battlefield at night",
   POTION,
+  f"{M} struck by an attack while a burst of dark purple thorns of shadow lashes back from her body toward the attacker, violet eyes glowing, ruined cathedral",
  ],
 }
 jobs = []
 for i, (color, prompts) in enumerate(DECKS.items()):
     for n, p in enumerate(prompts, 1):
         jobs.append({"id": f"proto-{color}_{n:03d}", "seed": i * 100 + n, "prompt": p + "."})
+HEROES = {'brunhild': B, 'kael': K, 'lyra': L, 'morgana': M}
+BG = {'brunhild': 'burning red sky', 'kael': 'arcane blue library', 'lyra': 'green forest', 'morgana': 'purple moonlit ruins'}
+for i, (hid, desc) in enumerate(HEROES.items()):
+    jobs.append({"id": f"heroi-{hid}", "seed": 900 + i, "prompt": f"character portrait, bust shot from the chest up, facing the viewer, {desc}, confident heroic expression, {BG[hid]} background, centered face."})
 json.dump(jobs, open(__import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)), 'prompts-proto.json'), 'w'), indent=1, ensure_ascii=False)
 print(len(jobs))
