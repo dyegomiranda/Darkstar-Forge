@@ -96,3 +96,7 @@ for i, (hid, desc) in enumerate(HEROES.items()):
     jobs.append({"id": f"heroi-{hid}", "seed": 900 + i, "prompt": f"character portrait, bust shot from the chest up, facing the viewer, {desc}, confident heroic expression, {BG[hid]} background, centered face."})
 json.dump(jobs, open(__import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)), 'prompts-proto.json'), 'w'), indent=1, ensure_ascii=False)
 print(len(jobs))
+
+# cópia para o app: o botão "Gerar mais" da janela de escolha das artes usa estes prompts
+_app = __import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)), '..', '..', 'src', 'data', 'art-prompts.json')
+json.dump({j['id']: j['prompt'] for j in jobs if j['id'].startswith('proto-')}, open(_app, 'w'), ensure_ascii=False, indent=0)

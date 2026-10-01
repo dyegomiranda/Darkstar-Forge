@@ -39,7 +39,11 @@ export default defineConfig({
   base: './',
   define: { __APP_VERSION__: JSON.stringify(info.version), __APP_BUILD__: JSON.stringify(info.build) },
   plugins: [svelte(), snaps()],
-  server: { port: 5173, strictPort: true },
+  server: {
+    port: 5173, strictPort: true,
+    // atalho para o ComfyUI local (o botão "Gerar mais" das artes)
+    proxy: { '/__comfy': { target: 'http://127.0.0.1:8188', changeOrigin: true, rewrite: (p) => p.replace(/^\/__comfy/, ''), configure: (proxy) => { proxy.on('proxyReq', (r) => r.removeHeader('origin')); } } },
+  },
   build: {
     rollupOptions: {
       input: { main: resolve(import.meta.dirname, 'index.html'), mostruario: resolve(import.meta.dirname, 'mostruario.html') },
