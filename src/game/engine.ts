@@ -178,7 +178,8 @@ export function cannotPlay(s: GameState, p: 0 | 1, uid: string): string | null {
 export function reactions(s: GameState): CardRef[] {
   if (!s.pending) return [];
   const r = other(s.pending.p), pl = s.players[r];
-  const kind = s.defs[s.pending.ref.cardId].game.kind;
+  // o golpe do herói e o ataque de uma criatura contam como "Ataque"
+  const kind = s.pending.ref ? s.defs[s.pending.ref.cardId].game.kind : 'ataque';
   return pl.hand.filter((c) => {
     const g = s.defs[c.cardId].game;
     if (g.kind !== 'reacao') return false;
@@ -414,7 +415,21 @@ function startTurn(s: GameState, first = false) {
 function resolvePending(s: GameState, countered = false): void {
   const pd = s.pending!;
   s.pending = undefined;
-  const pl = s.players[pd.p], d = s.defs[pd.ref.cardId];
+  const pl = s.players[pd.p];
+  if (!pd.ref) {
+    // golpe básico do herói ou ataque de uma criatura
+    if (countered) { log(s, 'O ataque foi anulado.'); fx(s, { k: 'countered', p: pd.p, cardId: '' }); return; }
+    if (!pd.target || !unitAt(s, pd.target)) return;
+    if (pd.attack === 'strike') { heroStrike(s, pd.p, pd.target, 0, undefined, true); return; }
+    const u = pd.from ? unitAt(s, pd.from) : null;
+    if (!u) return; // a criatura caiu antes de acertar
+    const via: Via = u.keys.includes('distancia') ? 'ranged' : 'melee';
+    log(s, `${nm(u)} ataca ${nm(unitAt(s, pd.target)!)}.`);
+    fx(s, { k: 'attack', from: u.id, to: unitAt(s, pd.target)!.id, via });
+    damage(s, pd.target, u.atk + u.buff, pd.p, via);
+    return;
+  }
+  const d = s.defs[pd.ref.cardId];
   if (countered) {
     log(s, `${d.name[0]} foi anulada.`);
     fx(s, { k: 'countered', p: pd.p, cardId: d.id });
@@ -430,7 +445,7 @@ function resolvePending(s: GameState, countered = false): void {
   else pl.recent.push(pd.ref);
 }
 
-/** Resposta de quem não está na vez a uma carta pendente: usar uma Reação ou aceitar. */
+/** Resposta de quem não está na vez a uma carta ou a um ataque pendente: usar uma Reação ou aceitar. */
 function respond(s: GameState, a: Action): string | null {
   if (a.t === 'pass') { resolvePending(s); return null; }
   if (a.t !== 'react') return 'Responda à carta do oponente primeiro (reagir ou aceitar).';
@@ -537,7 +552,9 @@ export function apply(s: GameState, a: Action): string | null {
       if (pl.struck) return 'O herói já golpeou neste turno.';
       if (!reachable(s, p, strikeVia(s, p), heroPos(s, p)).some((t) => t.p === a.target.p && t.row === a.target.row && t.col === a.target.col)) return 'Fora de alcance.';
       pl.struck = true;
-      heroStrike(s, p, a.target, 0, undefined, true);
+      // o oponente pode reagir ao golpe (se tiver uma Reação que sirva e recursos sobrando)
+      s.pending = { p, target: a.target, attack: 'strike' };
+      if (!reactions(s).length) resolvePending(s);
       return null;
     }
     case 'attack': {
@@ -548,10 +565,8 @@ export function apply(s: GameState, a: Action): string | null {
       const via: Via = u.keys.includes('distancia') ? 'ranged' : 'melee';
       if (!reachable(s, p, via, a.from).some((t) => t.p === a.target.p && t.row === a.target.row && t.col === a.target.col)) return 'Fora de alcance.';
       u.exhausted = true;
-      const t = unitAt(s, a.target)!;
-      log(s, `${nm(u)} ataca ${nm(t)}.`);
-      fx(s, { k: 'attack', from: u.id, to: t.id, via });
-      damage(s, a.target, u.atk + u.buff, p, via);
+      s.pending = { p, target: a.target, attack: 'unit', from: a.from };
+      if (!reactions(s).length) resolvePending(s);
       return null;
     }
     case 'move': {

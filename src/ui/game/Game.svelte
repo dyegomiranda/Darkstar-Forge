@@ -577,7 +577,11 @@
         if (!g.defs[e.cardId]?.game.effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
         break;
       case 'react': chip.sfx('card'); animate(e.p, 'spellcast'); showCard(e.cardId, e.p === me ? L('Você reage com', 'You react with') : `${g.players[e.p].hero.name} ${L('reage com', 'reacts with')}`, 'react', 2200); break;
-      case 'countered': chip.sfx('counter'); showCard(e.cardId, L('Anulada!', 'Countered!'), 'countered', 1800); break;
+      case 'countered':
+        chip.sfx('counter');
+        if (e.cardId) showCard(e.cardId, L('Anulada!', 'Countered!'), 'countered', 1800);
+        else { const hu = heroOf(other(e.p)); float(hu ? rectOf(hu.id) : undefined, L('Ataque anulado!', 'Attack countered!'), 'ward', undefined, true); }
+        break;
       case 'attack': {
         const a = before.get(e.from) ?? rectOf(e.from), b = rectOf(e.to);
         if (a && b) attackAnim(a, b, elOf(e.from), e.via);
@@ -1069,13 +1073,23 @@
 
       <!-- ───── janela de resposta: o oponente jogou uma carta e eu posso reagir ───── -->
       {#if awaiting && g.pending && !fxPlaying}
-        {@const pc = app.cards[g.pending?.ref.cardId ?? '']}
+        {@const pc = app.cards[g.pending?.ref?.cardId ?? '']}
+        {@const atkU = g.pending?.attack === 'unit' && g.pending.from ? unitAt(g, g.pending.from) : null}
+        {@const tgtU = g.pending?.target ? unitAt(g, g.pending.target) : null}
         <div class="respond" in:scale={{ duration: 220, start: 0.9 }}>
-          <div class="rcard">{#if pc}<CardImage card={pc} eager />{/if}</div>
+          {#if pc}
+            <div class="rcard"><CardImage card={pc} eager /></div>
+          {:else}
+            <div class="ratk" style="--c:{colorOf(F.hero)}">
+              {#if atkU}<Glyph id={atkU.icon ?? 'death-skull'} size={96} color="#f3ead6" />{:else}<HeroPortrait hero={characterOf(F.hero.id)} size={150} />{/if}
+              <Swords size={30} />
+            </div>
+          {/if}
           <div class="rside">
-            <span class="rtitle">{F.hero.name} {L('joga', 'plays')}</span>
-            <h3 class="display">{pc ? pc.text[app.lang].name : ''}</h3>
-            <p class="muted">{L('Você tem uma Reação que serve. Use-a agora ou aceite a carta.', 'You have a Reaction that fits. Use it now or accept the card.')}</p>
+            <span class="rtitle">{pc ? `${F.hero.name} ${L('joga', 'plays')}` : L('Ataque inimigo', 'Enemy attack')}</span>
+            <h3 class="display">{pc ? pc.text[app.lang].name : atkU ? L(`${atkU.name[0]} ataca`, `${atkU.name[1]} attacks`) : L(`${F.hero.name} golpeia`, `${F.hero.name} strikes`)}</h3>
+            {#if tgtU}<span class="rtarget">{L('Alvo', 'Target')}: <b>{L(tgtU.name[0], tgtU.name[1])}</b>{#if !pc} · {atkU ? atkU.atk + atkU.buff : strikeDmg(foe)} {L('de dano', 'damage')}{/if}</span>{/if}
+            <p class="muted">{pc ? L('Você tem uma Reação que serve. Use-a agora ou aceite a carta.', 'You have a Reaction that fits. Use it now or accept the card.') : L('Você tem uma Reação que serve. Use-a agora ou aceite o ataque.', 'You have a Reaction that fits. Use it now or accept the attack.')}</p>
             <div class="rreacts">
               {#each reactions(g) as r (r.uid)}
                 <button class="rr" onclick={() => respond({ t: 'react', uid: r.uid })} onmouseenter={(e) => hover(r.cardId, e)} onmouseleave={() => (zoom = null)}>
@@ -1519,6 +1533,10 @@
   .respond { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 44; display: flex; gap: 22px; align-items: center; padding: 20px 24px; border-radius: 18px;
     background: rgb(16 13 12 / .96); border: 1px solid #4f7fd0; box-shadow: 0 0 0 5px rgb(0 0 0 / .45), 0 30px 80px rgb(0 0 0 / .8), 0 0 60px rgb(79 127 208 / .25); }
   .rcard { width: clamp(230px, 19vw, 320px); flex: none; filter: drop-shadow(0 16px 30px rgb(0 0 0 / .8)); }
+  .ratk { width: 190px; height: 230px; flex: none; border-radius: 16px; display: grid; place-items: center; gap: 4px; align-content: center; color: #ff9c8c;
+    background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 50%, #1a1512), #0c0a09 80%); border: 1px solid color-mix(in srgb, var(--c) 55%, #000); }
+  .rtarget { font-size: 13px; color: var(--text-2); }
+  .rtarget b { color: var(--text); }
   .rside { display: flex; flex-direction: column; gap: 10px; max-width: 320px; }
   .rtitle { font: 700 11px var(--ui); letter-spacing: .18em; text-transform: uppercase; color: #a9c8ff; }
   .rside h3 { font-size: 26px; line-height: 1.05; color: #f6ead8; }

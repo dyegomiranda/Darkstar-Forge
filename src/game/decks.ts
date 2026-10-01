@@ -106,7 +106,7 @@ const blue: ProtoDeck = {
   color: 'blue',
   hero: preset({
     id: 'kael', name: 'Kael', className: ['Mago de batalha', 'Battle mage'], deckId: 'proto-blue',
-    attrs: { for: 2, des: 2, con: 1, int: 4, sab: 0, car: 0 }, baseHp: 32,
+    attrs: { for: 2, des: 2, con: 1, int: 4, sab: 0, car: 0 }, baseHp: 35,
     weapon: { name: ['Cajado de carvalho', 'Oak staff'], dmg: 4, via: 'magic' },
     gear: [
       g('head', 'Capuz do arcanista', "Arcanist's hood", { resist: 1 }),

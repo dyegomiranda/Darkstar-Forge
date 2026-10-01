@@ -224,8 +224,11 @@ export interface GameState {
   heroOffFront: boolean;
   /** Antes do 1º turno: troca da mão inicial (mulligan). `mull` = trocas já feitas; `kept` = quem já ficou com a mão. */
   setup?: { mull: [number, number]; kept: [boolean, boolean] };
-  /** Carta jogada esperando a resposta do oponente (Reação ou aceitar). */
-  pending?: { p: 0 | 1; ref: CardRef; target?: Pos; slot?: Pos };
+  /**
+   * Jogada esperando a resposta do oponente (Reação ou aceitar): uma carta (`ref`), o golpe
+   * básico do herói (`attack: 'strike'`) ou o ataque de uma criatura (`attack: 'unit'`, de `from`).
+   */
+  pending?: { p: 0 | 1; ref?: CardRef; target?: Pos; slot?: Pos; attack?: 'strike' | 'unit'; from?: Pos };
   /** Acontecimentos recentes para a mesa animar (números de dano, ataques, começo de turno…). */
   fx: Fx[];
 }
