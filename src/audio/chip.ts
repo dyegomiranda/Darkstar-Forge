@@ -1,6 +1,7 @@
 /**
  * Música e sons em estilo 8-bit, sintetizados na hora (Web Audio): ondas quadradas
  * e triangulares, uma "guitarra" distorcida e ruído para a bateria. Nada de arquivos de áudio.
+ * A música é instrumental de fundo (acordes, arpejos, baixo, guitarra de base e bateria), sem solista.
  *
  *  - music('menu' | 'battle' | null): o clima pedido pela tela (troca com transição suave);
  *  - next() / pause() / resume() / stop(): o tocador (o que o jogador escolhe vale mais que a tela);
@@ -104,6 +105,18 @@ class Chip {
     o.start(t); o.stop(t + dur + 0.03);
   }
 
+  /** Nota longa de fundo: duas ondas triangulares levemente desafinadas, com entrada lenta. */
+  #pad(out: AudioNode, freq: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.35, dur * 0.3));
+    g.gain.setValueAtTime(vol, t + dur * 0.8);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.08);
+    g.connect(out);
+    for (const det of [-5, 5]) { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq; o.detune.value = det; o.connect(g); o.start(t); o.stop(t + dur + 0.1); }
+  }
+
   #burst(out: AudioNode, t: number, dur: number, vol: number, freq: number, type: BiquadFilterType = 'highpass', to?: number) {
     const ctx = this.ctx!;
     const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
@@ -165,9 +178,9 @@ class Chip {
       for (const e of track.ev[p.step] ?? []) {
         const d = e.len * sec;
         switch (e.v) {
-          case 'lead': this.#tone(out, 'square', e.f, t, d * 0.92, 0.15, { vib: e.len >= 6 ? 4 : 0 }); break;
-          case 'harm': this.#tone(out, 'square', e.f, t, d * 0.9, 0.055); break;
-          case 'arp': this.#tone(out, 'square', e.f, t, d * 0.7, 0.065); break;
+          case 'arp': this.#tone(out, 'square', e.f, t, d * 0.7, 0.07); break;
+          // acorde de fundo: entra devagar e fica baixinho
+          case 'pad': this.#pad(out, e.f, t, d, 0.045); break;
           case 'bass': this.#tone(out, 'triangle', e.f, t, d * 0.9, 0.3); break;
           // acorde de força: tônica e quinta em dente de serra, pela distorção
           case 'gtr': this.#tone(p.gtr, 'sawtooth', e.f, t, d * 0.95, 0.5); this.#tone(p.gtr, 'sawtooth', e.f * 1.4983, t, d * 0.95, 0.4); break;
