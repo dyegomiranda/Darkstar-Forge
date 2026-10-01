@@ -3,12 +3,16 @@ Gera as artes das cartas pelo ComfyUI local: Flux dev + LoRA "Modern Pixel Art" 
 Uso: python3 tools/comfyui/gerar_proto.py tools/comfyui/prompts-proto.json [variações=4]   (o ComfyUI precisa estar ligado em 127.0.0.1:8188)
 As imagens saem em artes-proto/<deck>_<número>[__vN].png (nomes que o "Importar artes" do app reconhece); o que já existe é pulado.
 """
-import json, sys, time, urllib.request, urllib.parse, os
+import io, json, sys, time, urllib.request, urllib.parse, os
+try:
+    from PIL import Image
+except ImportError:  # sem a biblioteca de imagem: salva como veio
+    Image = None
 API = 'http://127.0.0.1:8188'
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'artes-proto')
 os.makedirs(OUT, exist_ok=True)
-PRE = "UMEMPART, modern pixel art, "
-COMP = (" Vertical trading card illustration, dynamic action pose, dramatic lighting, vivid colors. The subject fills the upper two thirds of the image; "
+PRE = "UMEMPART, modern pixel art illustration, detailed pixel art, crisp square pixels, limited color palette, "
+COMP = (" Vertical trading card illustration, medium shot from the side, the characters are large and fill the frame, clear readable action, weapons fully visible, dramatic lighting, vivid colors. The action fills the upper two thirds of the image; "
         "the bottom third is darker ground or mist with no important details. No text, no letters, no signature, no watermark, no logo, no border, no frame.")
 
 def wf(prompt, seed, w=768, h=1072):
@@ -25,6 +29,17 @@ def wf(prompt, seed, w=768, h=1072):
       "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
       "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "darkstar"}},
     }
+
+def pixelar(data, grade=4, cores=56):
+    """Garante pixel art de verdade: reduz para pixels de `grade` px, limita a paleta e amplia sem suavizar."""
+    if Image is None: return data
+    im = Image.open(io.BytesIO(data)).convert('RGB')
+    w, h = im.size
+    small = im.resize((w // grade, h // grade), Image.Resampling.BOX)
+    small = small.quantize(colors=cores, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert('RGB')
+    out = io.BytesIO()
+    small.resize((small.width * grade, small.height * grade), Image.Resampling.NEAREST).save(out, 'PNG')
+    return out.getvalue()
 
 def post(path, data):
     req = urllib.request.Request(API + path, data=json.dumps(data).encode(), headers={'Content-Type': 'application/json'})
@@ -47,5 +62,5 @@ for j in jobs:
                 if st.get('status_str') == 'error': print('ERRO', j['id'], str(st)[:400], flush=True); break
                 img = h[pid]['outputs']['9']['images'][0]
                 q = urllib.parse.urlencode({'filename': img['filename'], 'subfolder': img['subfolder'], 'type': img['type']})
-                open(dst, 'wb').write(urllib.request.urlopen(API + '/view?' + q).read())
+                open(dst, 'wb').write(pixelar(urllib.request.urlopen(API + '/view?' + q).read()))
                 print('ok', j['id'], v, round(time.time() - t0), 's', flush=True); break

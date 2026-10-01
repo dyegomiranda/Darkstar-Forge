@@ -221,7 +221,7 @@
       if (u.keys.includes('parede')) { say(L('Esta criatura não ataca.', "This creature can't attack."), true); return; }
       sel = { kind: 'unit', pos };
       ask('any');
-    } else if (sel) { sel = null; say(L('Alvo fora de alcance.', 'Target out of reach.'), true); }
+    } else if (sel) cancel(L('Seleção cancelada (alvo fora de alcance).', 'Selection cancelled (target out of reach).'));
   }
 
   /** Botão "Golpear": o mesmo que clicar no herói. */
@@ -231,6 +231,17 @@
     if (!info.can) { say(info.why, true); return; }
     sel = sel?.kind === 'strike' ? null : { kind: 'strike' };
     if (sel) ask('any'); else say('');
+  }
+
+  /** Desiste da carta/golpe escolhido (Esc, botão direito, clicar fora ou o botão Cancelar). */
+  function cancel(text = '') {
+    if (!sel) return;
+    sel = null;
+    say(text || L('Seleção cancelada.', 'Selection cancelled.'));
+  }
+  function mainClick(e: MouseEvent) {
+    // clique no fundo da mesa (fora de cartas, casas e botões)
+    if (sel && !(e.target as HTMLElement).closest('button, .hc, .slot, .zc, .pile, .respond, .flog')) cancel();
   }
 
   function startMove() {
@@ -263,7 +274,7 @@
     } finally { botBusy = false; }
   }
 
-  function key(e: KeyboardEvent) { if (e.key === 'Escape') { sel = null; say(''); graveOf = null; } }
+  function key(e: KeyboardEvent) { if (e.key === 'Escape') { if (sel) cancel(); else say(''); graveOf = null; } }
 
   // ───────────── mira: seta da origem até o alvo e destaque da área atingida ─────────────
   let hoverPos = $state<Pos | null>(null);
@@ -704,7 +715,8 @@
   {@const P = g.players[me]}
   {@const F = g.players[foe]}
   <div class="table">
-    <div class="main" onmousemove={(e) => { if (sel) mouse = { x: e.clientX, y: e.clientY }; }} role="presentation">
+    <div class="main" onmousemove={(e) => { if (sel) mouse = { x: e.clientX, y: e.clientY }; }} onclick={mainClick}
+      oncontextmenu={(e) => { if (sel) { e.preventDefault(); cancel(); } }} role="presentation">
       <!-- ───── barra de herói ───── -->
       {#snippet bar(p: 0 | 1, mine: boolean)}
         {@const pl = g!.players[p]}
@@ -781,18 +793,21 @@
           class:hero={!!u?.isHero} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
           data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
-          {#if u?.isHero}
-            {@render heroBody(u, p)}
-          {:else if u}
-            <span class="unit" in:recvU={{ key: u.id }} out:sendU={{ key: u.id }}>
-              <span class="u-ic"><Glyph id={u.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>
-              <span class="u-nm">{L(u.name[0], u.name[1])}</span>
-              <span class="u-st"><span class="atk"><Swords size={13} /> {u.atk + u.buff}</span><span class="def"><Heart size={13} /> {life(u)}</span></span>
-            </span>
-            {@render marks(u, p)}
+          <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
+          {#each u ? [u] : [] as x (x.id)}
+            {#if x.isHero}
+              {@render heroBody(x, p)}
+            {:else}
+              <span class="unit" in:recvU={{ key: x.id }} out:sendU={{ key: x.id }}>
+                <span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>
+                <span class="u-nm">{L(x.name[0], x.name[1])}</span>
+                <span class="u-st"><span class="atk"><Swords size={13} /> {x.atk + x.buff}</span><span class="def"><Heart size={13} /> {life(x)}</span></span>
+              </span>
+              {@render marks(x, p)}
+            {/if}
           {:else}
-            <span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>
-          {/if}
+            <span class="empty">{row === -1 ? '' : row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>
+          {/each}
         </button>
       {/snippet}
 
@@ -871,10 +886,11 @@
         {@render field(foe)}
         {@render zone(foe)}
       </div>
-      <div class="mid" class:warn={!!msg && warn}>
+      <div class="mid" class:warn={!!msg && warn} class:aiming={!!sel}>
         {#key msg || caption}
           <span in:fade={{ duration: 160 }}>{msg || caption || (awaiting ? L('O oponente jogou uma carta: reaja ou aceite', 'The opponent played a card: react or accept') : myTurn ? L('Seu turno', 'Your turn') : g.winner === undefined ? L('Turno do bot', "Bot's turn") : '')}</span>
         {/key}
+        {#if sel}<button class="cancel-btn" onclick={() => cancel()}><X size={13} /> {L('Cancelar (Esc ou botão direito)', 'Cancel (Esc or right-click)')}</button>{/if}
       </div>
       <div class="side-field">
         {@render zone(me)}
@@ -928,7 +944,7 @@
 
       <!-- ───── janela de resposta: o oponente jogou uma carta e eu posso reagir ───── -->
       {#if awaiting && g.pending && !fxPlaying}
-        {@const pc = app.cards[g.pending.ref.cardId]}
+        {@const pc = app.cards[g.pending?.ref.cardId ?? '']}
         <div class="respond" in:scale={{ duration: 220, start: 0.9 }}>
           <div class="rcard">{#if pc}<CardImage card={pc} eager />{/if}</div>
           <div class="rside">
@@ -1207,6 +1223,9 @@
   .ztag { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 1; font: 600 10px var(--ui); padding: 1px 6px; border-radius: 6px; background: var(--accent); color: #1a120b; white-space: nowrap; display: inline-flex; gap: 3px; align-items: center; }
   .zhint { font-size: 11px; color: rgb(255 255 255 / .22); text-transform: uppercase; letter-spacing: .08em; }
   .mid { text-align: center; color: var(--accent-2); font-size: 14px; min-height: 26px; flex: none; border-top: 1px solid rgb(255 255 255 / .06); border-bottom: 1px solid rgb(255 255 255 / .06); padding: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mid.aiming { display: flex; justify-content: center; align-items: center; gap: 14px; overflow: visible; }
+  .cancel-btn { display: inline-flex; gap: 4px; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--line-2); background: rgb(22 19 17 / .9); color: var(--text-2); font: 600 12px var(--ui); cursor: pointer; }
+  .cancel-btn:hover { border-color: var(--danger); color: #ffb4a6; }
   .mid.warn { color: #ffb4a6; background: rgb(196 71 58 / .16); border-color: rgb(196 71 58 / .5); font-weight: 600; }
 
   .hand { display: flex; justify-content: center; align-items: flex-end; flex: 1 1 0; min-height: 90px; padding-bottom: 2px; }

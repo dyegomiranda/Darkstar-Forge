@@ -5,9 +5,26 @@
 import prompts from '../data/art-prompts.json';
 import type { Card } from '../model/types';
 
-const PRE = 'UMEMPART, modern pixel art, ';
-const COMP = ' Vertical trading card illustration, dynamic action pose, dramatic lighting, vivid colors. The subject fills the upper two thirds of the image; '
+const PRE = 'UMEMPART, modern pixel art illustration, detailed pixel art, crisp square pixels, limited color palette, ';
+const COMP = ' Vertical trading card illustration, medium shot from the side, the characters are large and fill the frame, clear readable action, weapons fully visible, dramatic lighting, vivid colors. The action fills the upper two thirds of the image; '
   + 'the bottom third is darker ground or mist with no important details. No text, no letters, no signature, no watermark, no logo, no border, no frame.';
+
+/** Garante pixel art de verdade: reduz para pixels de 4 px e amplia sem suavizar. */
+async function pixelate(blob: Blob, grid = 4): Promise<Blob> {
+  const bmp = await createImageBitmap(blob);
+  const w = Math.floor(bmp.width / grid), h = Math.floor(bmp.height / grid);
+  const small = new OffscreenCanvas(w, h);
+  const sc = small.getContext('2d')!;
+  sc.imageSmoothingEnabled = true;
+  sc.imageSmoothingQuality = 'high';
+  sc.drawImage(bmp, 0, 0, w, h);
+  const big = new OffscreenCanvas(w * grid, h * grid);
+  const bc = big.getContext('2d')!;
+  bc.imageSmoothingEnabled = false;
+  bc.drawImage(small, 0, 0, w * grid, h * grid);
+  bmp.close();
+  return big.convertToBlob({ type: 'image/png' });
+}
 
 const api = (path: string) => new URL(`__comfy/${path}`, document.baseURI).toString();
 
@@ -53,7 +70,7 @@ export async function generateArt(prompt: string, name: string, stop?: () => boo
     const img = done.outputs?.['9']?.images?.[0];
     if (!img) throw new Error('O ComfyUI não devolveu imagem.');
     const q = new URLSearchParams({ filename: img.filename, subfolder: img.subfolder, type: img.type });
-    const blob = await (await fetch(api(`view?${q}`))).blob();
+    const blob = await pixelate(await (await fetch(api(`view?${q}`))).blob());
     return new File([blob], name, { type: blob.type || 'image/png' });
   }
   throw new Error('O ComfyUI demorou demais.');

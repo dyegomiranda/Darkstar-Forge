@@ -194,7 +194,7 @@
       </div>
       <button class="btn primary" onclick={() => (zoom = null)}><Check size={16} /> {L('Voltar à lista', 'Back to list')}</button>
     </header>
-    <div class="big">
+    <div class="big" style="--n:{filesOf(zg).length}">
       {#each filesOf(zg) as f, i (f)}
         <button class="bopt" class:on={pick[zg.card.id] === i} onclick={() => (pick[zg.card.id] = i)} title={f.name}>
           {#if mode === 'carta'}<div class="cardsvg">{@html cardWith(zg, f, i)}</div>{:else}<img src={url(f)} alt={f.name} />{/if}
@@ -250,8 +250,10 @@
   .bopt:hover { border-color: var(--line-2); }
   .bopt.on { border-color: var(--accent); background: var(--accent-soft); }
   .bopt img { flex: 1; min-height: 0; max-width: 100%; height: 100%; object-fit: contain; border-radius: 8px; display: block; }
-  .cardsvg { flex: 1; min-height: 0; aspect-ratio: 750 / 1050; display: flex; }
-  .cardsvg :global(svg) { width: 100%; height: 100%; display: block; }
+  /* a carta ocupa a altura disponível e a largura sai da proporção (o SVG não impõe o próprio tamanho) */
+  /* altura = o que cabe na tela (ou menos, se forem muitas versões lado a lado); a largura sai da proporção da carta */
+  .cardsvg { position: relative; flex: none; height: min(calc(100vh - 215px), calc((100vw - 60px) / var(--n, 4) * 1.4 - 50px)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; }
+  .cardsvg :global(svg) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .blabel { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--ui); color: var(--text-2); }
   .bopt.on .blabel { color: var(--accent-2); font-weight: 600; }
   .zoom > footer { display: flex; align-items: center; gap: 14px; justify-content: space-between; padding: 10px 18px 14px; border-top: 1px solid var(--line); }
