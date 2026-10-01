@@ -355,15 +355,12 @@
 
 <svelte:window onkeydown={key} />
 
-{#if step !== 'play' || !g}
+{#if step === 'heroes' || !g && step !== 'place'}
   <div class="setup">
     <header>
       <h1>{L('Mesa de teste', 'Test table')}</h1>
-      <p class="muted">{step === 'heroes'
-        ? L('Escolha o seu herói e o do bot. As cartas vêm da coleção Protótipo; o que você editar vale na próxima partida.', 'Pick your hero and the bot’s. Cards come from the Prototype collection; edits apply to the next match.')
-        : L('Escolha onde o seu herói começa: na frente ele golpeia corpo a corpo e protege quem está atrás; na retaguarda fica protegido de golpes corpo a corpo.', 'Choose where your hero starts: in front it can melee and protects the back row; in the back it is safe from melee.')}</p>
+      <p class="muted">{L('Escolha o seu herói e o do bot. As cartas vêm da coleção Protótipo; o que você editar vale na próxima partida.', 'Pick your hero and the bot’s. Cards come from the Prototype collection; edits apply to the next match.')}</p>
     </header>
-    {#if step === 'heroes'}
       <div class="pick">
         {#each [{ title: L('Você', 'You'), get: () => myHero, set: (h: HeroDef) => (myHero = h) }, { title: 'Bot', get: () => botHero, set: (h: HeroDef) => (botHero = h) }] as side}
           <section>
@@ -389,35 +386,58 @@
         <label class="toggle"><input type="checkbox" bind:checked={limit} /> {L('Modo B: no máximo 3 habilidades por turno', 'Mode B: at most 3 abilities per turn')}</label>
         <button class="btn primary" disabled={!countOf(myHero) || !countOf(botHero)} onclick={toPlace}><Swords size={16} /> {L('Continuar', 'Continue')}</button>
       </div>
-    {:else}
-      <div class="place" style="--c:{colorOf(myHero)}; --f:{colorOf(botHero)}">
-        <span class="pside foe">{L('Campo do inimigo', 'Enemy field')} · {botHero.name}</span>
+  </div>
+{:else if step === 'place'}
+  <!-- posicionamento: mesma estrutura da mesa, para o campo ficar exatamente onde ficará na partida -->
+  <div class="table">
+    <div class="main">
+      <div class="bar ghost" style="--c:{colorOf(botHero)}">
+        <span class="emb sm"><Glyph id={botHero.icon} size={24} color="#f3ead6" /></span>
+        <div class="who"><b>{botHero.name}</b><small>{L('Inimigo (bot)', 'Enemy (bot)')}</small></div>
+      </div>
+      <div class="ohand"></div>
+      <div class="side-field foe ghost">
         {#each [1, 0] as row}
-          <div class="prow ghost">
+          <div class="row">
             {#each [0, 1, 2] as col}
-              <span class="pslot">{#if botHero.row === row && botHero.col === col}<Glyph id={botHero.icon} size={34} color="#f3ead6" /><b>{botHero.name}</b>{:else}<small>{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</small>{/if}</span>
+              <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}">
+                {#if botHero.row === row && botHero.col === col}<span class="unit"><span class="u-ic"><Glyph id={botHero.icon} size={44} color="#f3ead6" /></span><span class="u-nm">{botHero.name}</span></span>
+                {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
+              </span>
             {/each}
           </div>
         {/each}
-        <div class="pmid">{L('▼ Clique numa casa do SEU campo para escolher onde o seu herói começa', '▼ Click a slot on YOUR field to choose where your hero starts')}</div>
+        <div class="zone"><span class="zhint">{L('campo do inimigo', 'enemy field')}</span></div>
+      </div>
+      <div class="mid"><span>{L('▼ Clique numa casa do SEU campo para escolher onde o seu herói começa', '▼ Click a slot on YOUR field to choose where your hero starts')}</span></div>
+      <div class="side-field">
+        <div class="zone"><span class="zhint">{L('seu campo', 'your field')}</span></div>
         {#each [0, 1] as row}
-          <div class="prow">
+          <div class="row">
             {#each [0, 1, 2] as col}
-              <button class="pslot" class:on={myPos.row === row && myPos.col === col} onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
-                {#if myPos.row === row && myPos.col === col}<Glyph id={myHero.icon} size={40} color="#f3ead6" /><b>{myHero.name}</b>{:else}<small>{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</small>{/if}
+              {@const on = myPos.row === row && myPos.col === col}
+              <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
+                {#if on}<span class="unit"><span class="u-ic"><Glyph id={myHero.icon} size={52} color="#f3ead6" /></span><span class="u-nm">{myHero.name}</span></span>
+                {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </button>
             {/each}
           </div>
         {/each}
-        <span class="pside">{L('Seu campo', 'Your field')} · {myHero.name}</span>
       </div>
-      <div class="opts pbtns">
-        <button class="btn" onclick={() => (step = 'heroes')}>{L('Voltar', 'Back')}</button>
-        <button class="btn primary" onclick={start}><Swords size={16} /> {L('Começar partida', 'Start match')}</button>
+      <div class="hand place-help">
+        <p>{L('Na frente, o herói golpeia corpo a corpo e protege quem está atrás. Na retaguarda, fica protegido de golpes corpo a corpo.', 'In front, the hero can melee and protects the back row. In the back, it is safe from melee.')}</p>
       </div>
-    {/if}
+      <div class="bar" style="--c:{colorOf(myHero)}">
+        <span class="emb sm"><Glyph id={myHero.icon} size={24} color="#f3ead6" /></span>
+        <div class="who"><b>{myHero.name}</b><small>{L(myHero.className[0], myHero.className[1])}</small></div>
+        <div class="grow"></div>
+        <button class="btn sm" onclick={() => (step = 'heroes')}>{L('Voltar', 'Back')}</button>
+        <button class="btn sm primary" onclick={start}><Swords size={15} /> {L('Começar partida', 'Start match')}</button>
+      </div>
+    </div>
+    <aside class="log-panel"><span class="section-title">{L('Posicionamento', 'Placement')}</span></aside>
   </div>
-{:else}
+{:else if g}
   {@const P = g.players[me]}
   {@const F = g.players[foe]}
   <div class="table">
@@ -674,17 +694,10 @@
   .emb { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 60%, #000), color-mix(in srgb, var(--c) 22%, #000)); flex: none; }
   .emb.sm { width: 36px; height: 36px; border-radius: 9px; }
   .opts { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
-  .place { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: auto; }
-  .prow { display: flex; gap: 10px; align-items: center; }
-  .prow.ghost { opacity: .4; pointer-events: none; }
-  .prow.ghost .pslot { border-style: dashed; cursor: default; }
-  .pside { font: 600 11px var(--ui); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
-  .pside.foe { color: var(--f); }
-  .pmid { margin: 10px 0; padding: 6px 18px; border-block: 1px solid rgb(255 255 255 / .08); color: var(--accent-2); font-size: 13px; }
-  .pslot small { font-size: 11px; color: rgb(255 255 255 / .3); text-transform: uppercase; letter-spacing: .08em; }
-  .pbtns { justify-content: center; }
-  .pslot { width: 150px; height: 104px; border-radius: 12px; border: 1px dashed var(--line-2); background: var(--surface); color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: inherit; }
-  .pslot.on { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 25%, var(--surface)); }
+  .ghost { opacity: .45; pointer-events: none; }
+  .slot.target { cursor: pointer; }
+  .place-help { align-items: center; }
+  .place-help p { color: var(--muted); font-size: 13px; text-align: center; max-width: 520px; }
 
   /* ───── mesa ───── */
   .table { --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 22vh, 300px);
