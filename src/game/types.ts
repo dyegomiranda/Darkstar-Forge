@@ -36,7 +36,7 @@ export type Target =
 
 export type Effect =
   | { k: 'dmg'; n: number; tgt: Target; via: Via }
-  /** Golpe do herói com a arma (+bônus). `then` aplica algo no alvo atingido. */
+  /** Golpe com a arma do herói (usa o alcance e o tipo dela): causa `bonus` de dano; não gasta o golpe básico do turno. `then` aplica algo no alvo. */
   | { k: 'strike'; bonus: number; times?: number; then?: 'afflict' | 'mark' | 'push' }
   | { k: 'heal'; n: number; tgt: Target }
   | { k: 'afflict'; tgt: Target }

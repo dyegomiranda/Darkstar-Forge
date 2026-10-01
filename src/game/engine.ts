@@ -165,7 +165,6 @@ export function cannotPlay(s: GameState, p: 0 | 1, uid: string): string | null {
   if (pl.level < g.level) return `Precisa do nível ${g.level}.`;
   if (g.attr && pl.hero.attrs[g.attr[0]] < g.attr[1]) return `Precisa de ${g.attr[0].toUpperCase()} ${g.attr[1]}.`;
   // o herói golpeia uma vez por turno: as cartas de Ataque melhoram esse golpe
-  if (g.effects.some((e) => e.k === 'strike') && pl.struck) return 'O herói já golpeou neste turno.';
   if ((g.vigor ?? 0) > pl.vigor) return 'Vigor insuficiente.';
   if ((g.mana ?? 0) > pl.mana) return 'Mana insuficiente.';
   const ch = choiceOf(g.effects);
@@ -327,14 +326,18 @@ function resolveTargets(s: GameState, p: 0 | 1, tgt: Target, chosen?: Pos): Pos[
   }
 }
 
-/** Golpe do herói (com a arma) num alvo. Devolve a posição atingida (ou null). */
-function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: 'afflict' | 'mark' | 'push'): void {
+/**
+ * Golpe do herói num alvo. O golpe básico (1 por turno, de graça) usa o dano da arma; as cartas de
+ * golpe têm dano próprio e NÃO gastam o golpe do turno. Posturas e bônus valem para os dois.
+ */
+function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: 'afflict' | 'mark' | 'push', basic = false): void {
   const pl = s.players[p];
   const hero = unitAt(s, heroPos(s, p))!;
   const t = unitAt(s, target);
   if (!t) return;
   const m = pl.stance?.mods ?? {};
-  const n = pl.hero.weapon.dmg + bonus + (m.strike ?? 0) + hero.buff;
+  // golpe básico: o dano da arma. Carta de golpe: o dano dela (não soma a arma nem gasta o golpe do turno).
+  const n = (basic ? pl.hero.weapon.dmg : 0) + bonus + (m.strike ?? 0) + hero.buff;
   log(s, `${pl.hero.name} golpeia ${nm(t)} (${n}).`);
   fx(s, { k: 'attack', from: hero.id, to: t.id, via: strikeVia(s, p) });
   damage(s, target, n, p, strikeVia(s, p));
@@ -523,7 +526,6 @@ export function apply(s: GameState, a: Action): string | null {
       pl.vigor -= d.game.vigor ?? 0;
       pl.mana -= d.game.mana ?? 0;
       pl.plays++;
-      if (d.game.effects.some((e) => e.k === 'strike')) pl.struck = true;
       log(s, `${pl.hero.name} usa ${d.name[0]}.`);
       fx(s, { k: 'play', p, cardId: d.id });
       // o oponente pode responder com uma Reação (se tiver uma que sirva e recursos sobrando)
@@ -535,7 +537,7 @@ export function apply(s: GameState, a: Action): string | null {
       if (pl.struck) return 'O herói já golpeou neste turno.';
       if (!reachable(s, p, strikeVia(s, p), heroPos(s, p)).some((t) => t.p === a.target.p && t.row === a.target.row && t.col === a.target.col)) return 'Fora de alcance.';
       pl.struck = true;
-      heroStrike(s, p, a.target, 0);
+      heroStrike(s, p, a.target, 0, undefined, true);
       return null;
     }
     case 'attack': {

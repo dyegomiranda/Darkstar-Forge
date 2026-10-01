@@ -194,7 +194,7 @@
   function strikeInfo(): { can: boolean; why: string } {
     if (!g) return { can: false, why: '' };
     const pl = g.players[me];
-    if (pl.struck) return { can: false, why: L('Golpe já usado: o herói golpeia 1 vez por turno, sem custo. As cartas de Ataque usam esse mesmo golpe.', 'Strike already used: the hero strikes once per turn, at no cost. Attack cards use that same strike.') };
+    if (pl.struck) return { can: false, why: L('Golpe já usado: o herói golpeia 1 vez por turno, sem custo. As cartas não gastam esse golpe.', 'Strike already used: the hero strikes once per turn, at no cost. Cards do not use it up.') };
     const hp = heroPos(g, me), via = strikeVia(g, me);
     if (!reachable(g, me, via, hp).length) {
       return { can: false, why: via === 'melee' && hp.row === 1
@@ -684,10 +684,11 @@
   const rowsFor = (p: 0 | 1) => (p === me ? [0, 1] : [1, 0]);
   /** Dano do golpe do herói agora (arma + postura + bônus do turno). */
   const strikeDmg = (p: 0 | 1) => { const pl = g!.players[p]; return pl.hero.weapon.dmg + (pl.stance?.mods.strike ?? 0) + (heroOf(p)?.buff ?? 0); };
+  const P0 = () => g!.players[me];
   /** Número de dano mostrado na carta da mão (já com a arma e a postura). */
   function dmgBadge(r: CardRef): string | null {
     for (const e of g?.defs[r.cardId]?.game.effects ?? []) {
-      if (e.k === 'strike') { const n = strikeDmg(me) + e.bonus; return e.times && e.times > 1 ? `${n}×${e.times}` : `${n}`; }
+      if (e.k === 'strike') { const n = strikeDmg(me) - P0().hero.weapon.dmg + e.bonus; return e.times && e.times > 1 ? `${n}×${e.times}` : `${n}`; }
       if (e.k === 'dmg') return `${e.n}`;
     }
     return null;
@@ -860,7 +861,7 @@
             <span class="cap">{L('Nível', 'Level')} {pl.level}</span>
             <span class="val xpv" id="xp-{p}">{#each Array(XP_PER_LEVEL) as _, i}<i class="pip" class:on={i < pl.xp}></i>{/each}<small>{pl.xp}/{XP_PER_LEVEL} XP</small></span>
           </div>
-          <div class="stat" use:tip={L('Golpe: o ataque do herói com a arma. É de graça, 1 vez por turno, a qualquer momento do turno (clique no herói). As cartas de Ataque usam esse mesmo golpe, com bônus.', 'Strike: the hero attacks with the weapon. Free, once per turn, any time during the turn (click the hero). Attack cards use that same strike, with a bonus.')}>
+          <div class="stat" use:tip={L('Golpe: o ataque do herói com a arma. É de graça, 1 vez por turno, a qualquer momento do turno (clique no herói ou em “Golpear”). As cartas não gastam esse golpe.', 'Strike: the hero attacks with the weapon. Free, once per turn, any time during the turn (click the hero or “Strike”). Cards do not use it up.')}>
             <span class="cap">{L('Golpe', 'Strike')}</span>
             <span class="val stk" class:used={pl.struck && g!.active === p}><Swords size={14} /> <b>{strikeDmg(p)}</b><small>{pl.struck && g!.active === p ? L('usado', 'used') : L(VIA[strikeVia(g!, p)][0], VIA[strikeVia(g!, p)][1])}</small></span>
           </div>
@@ -1401,7 +1402,7 @@
   .mini :global(.hp) { width: 100% !important; height: 100% !important; border-radius: 0; }
   .mini::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgb(8 6 5 / .88) 82%); }
   .slot.hero .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000; }
-  .strike-tag { position: absolute; top: 4px; left: 5px; z-index: 2; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: rgb(10 8 7 / .8); color: var(--muted); }
+  .strike-tag { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; border: 1px solid rgb(255 255 255 / .14); z-index: 4; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: rgb(10 8 7 / .8); color: var(--muted); }
   .strike-tag.on { background: #f0c45a; color: #1a120b; }
   .empty { font-size: 11px; color: rgb(255 255 255 / .25); text-transform: uppercase; letter-spacing: .08em; }
   .u-nm { font-size: 12.5px; font-weight: 600; text-align: center; line-height: 1.1; }
