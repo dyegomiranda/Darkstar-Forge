@@ -106,8 +106,8 @@ describe('reações, herói fora do campo e empurrão', () => {
     expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(true);
   });
 
-  it('herói fora do campo: não ocupa lugar e o corpo a corpo só o alcança com a frente vazia', () => {
-    const s = newGame(side(0), side(1), { seed: 7, heroOff: true });
+  it('herói fora do campo: não ocupa lugar; com a regra opcional, o corpo a corpo só passa com a frente vazia', () => {
+    const s = newGame(side(0), side(1), { seed: 7, heroOff: true, heroOffFront: true });
     expect(emptySlots(s, 1).length).toBe(6);
     expect(heroPos(s, 1).row).toBe(-1);
     expect(reachable(s, 0, 'melee', heroPos(s, 0)).some((p) => p.row === -1)).toBe(true);
@@ -124,5 +124,20 @@ describe('reações, herói fora do campo e empurrão', () => {
     expect(before.row).toBe(0);
     expect(apply(s, { t: 'play', uid: ray, target: before })).toBeNull();
     expect(heroPos(s, 1).row).toBe(1);
+  });
+});
+
+describe('herói fora do campo: golpe livre', () => {
+  it('golpeia qualquer fileira e o herói inimigo; com a regra opcional, só com a frente vazia', () => {
+    const wall = { id: 'w', name: ['Muralha', 'Wall'] as [string, string], atk: 0, def: 4, dmg: 0, keys: [], isHero: false, exhausted: true, afflicted: false, marked: false, warded: false, buff: 0 };
+    const free = newGame(side(0), side(1), { seed: 9, heroOff: true });
+    free.players[1].board[0][0] = { ...wall };
+    free.players[1].board[1][2] = { ...wall, id: 'b' };
+    const r = reachable(free, 0, 'melee', heroPos(free, 0));
+    expect(r.some((p) => p.row === -1)).toBe(true);
+    expect(r.some((p) => p.row === 1)).toBe(true);
+    const strict = newGame(side(0), side(1), { seed: 9, heroOff: true, heroOffFront: true });
+    strict.players[1].board[0][0] = { ...wall };
+    expect(reachable(strict, 0, 'melee', heroPos(strict, 0))).toEqual([{ p: 1, row: 0, col: 0 }]);
   });
 });

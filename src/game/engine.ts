@@ -48,7 +48,7 @@ function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1, off: boolean): Play
 export interface Side { hero: HeroDef; cards: CardDef[] }
 
 /** Nova partida. O jogador 0 começa; o 1 recebe uma carta a mais. */
-export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean; heroOff?: boolean } = {}): GameState {
+export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean; heroOff?: boolean; heroOffFront?: boolean } = {}): GameState {
   const defs: Record<string, CardDef> = {};
   let n = 0;
   const build = (side: Side): CardRef[] => side.cards.flatMap((c) => {
@@ -57,7 +57,7 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
   });
   const s: GameState = {
     players: [newPlayer(a.hero, build(a), 0, !!opts.heroOff), newPlayer(b.hero, build(b), 1, !!opts.heroOff)],
-    defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, heroOff: !!opts.heroOff, seq: 0, fx: [],
+    defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, heroOff: !!opts.heroOff, heroOffFront: !!opts.heroOffFront, seq: 0, fx: [],
   };
   for (const p of s.players) shuffle(s, p.deck);
   draw(s, 0, START_HAND);
@@ -104,6 +104,7 @@ const hasGuard = (s: GameState, p: 0 | 1, u: Unit) => u.keys.includes('guarda') 
  * Alvos inimigos que um ataque alcança. Corpo a corpo: quem ataca precisa estar
  * na frente; atinge a frente inimiga (só quem tem Guarda, se houver alguém com
  * Guarda); com a frente vazia, atinge a retaguarda. À distância e magia: qualquer um.
+ * No modo "herói fora do campo", o golpe do herói alcança qualquer fileira (regra opcional: só com a frente vazia).
  */
 export function reachable(s: GameState, attacker: 0 | 1, via: Via, from?: Pos, unitsOnly = false): Pos[] {
   const foe = other(attacker);
@@ -111,8 +112,10 @@ export function reachable(s: GameState, attacker: 0 | 1, via: Via, from?: Pos, u
   if (unitsOnly) list = list.filter((f) => !f.u.isHero);
   if (via !== 'melee') return list.map((f) => f.pos);
   if (from && from.row === 1) return [];
+  // herói fora do campo: golpeia qualquer fileira (a menos que a regra da frente vazia esteja ligada); Guarda continua valendo
+  const free = from?.row === -1 && !s.heroOffFront;
   const front = figures(s, foe).filter((f) => f.pos.row === 0);
-  let pool = front.length ? list.filter((f) => f.pos.row === 0) : list;
+  let pool = front.length && !free ? list.filter((f) => f.pos.row === 0) : list;
   const guards = pool.filter((f) => hasGuard(s, foe, f.u));
   if (guards.length) pool = guards;
   return pool.map((f) => f.pos);

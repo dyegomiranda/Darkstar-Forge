@@ -42,9 +42,10 @@
   let myPos = $state<{ row: 0 | 1; col: 0 | 1 | 2 }>({ row: 0, col: 1 });
   let limit = $state(saved.limit === true);
   let heroOff = $state(saved.heroOff === true);
+  let heroOffFront = $state(saved.heroOffFront === true);
   let showLog = $state(saved.showLog !== false);
   let starter = $state<'eu' | 'bot' | 'sorteio'>('sorteio');
-  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, showLog })); } catch { /* sem armazenamento local */ } });
+  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
   const ready = $derived(!!myChar && !!botChar && deckCount(myChar) > 0 && deckCount(botChar) > 0);
@@ -77,7 +78,7 @@
     const bot = sideFromApp(botHero, deckCards(botChar));
     const iStart = starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5);
     me = iStart ? 0 : 1;
-    g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff });
+    g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront });
     sel = null;
     say('');
     step = 'play';
@@ -194,6 +195,15 @@
       sel = { kind: 'unit', pos };
       say(L('Escolha o alvo do ataque (os lugares em dourado).', 'Pick the attack target (golden slots).'));
     } else if (sel) { sel = null; say(L('Alvo fora de alcance.', 'Target out of reach.'), true); }
+  }
+
+  /** Botão "Golpear": o mesmo que clicar no herói. */
+  function startStrike() {
+    if (!g || !myTurn) return;
+    const info = strikeInfo();
+    if (!info.can) { say(info.why, true); return; }
+    sel = sel?.kind === 'strike' ? null : { kind: 'strike' };
+    say(sel ? L('Golpe do herói: escolha o alvo (os lugares em dourado).', 'Hero strike: pick the target (golden slots).') : '');
   }
 
   function startMove() {
@@ -527,7 +537,10 @@
         <label class="field"><span>{L('Quem começa', 'Who starts')}</span>
           <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
         <div class="vs-opts">
-          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('como o jogador no Magic: não ocupa lugar; golpes corpo a corpo só o alcançam com a sua frente vazia', 'like the player in Magic: takes no slot; melee only reaches it when your front is empty')}</small></span></label>
+          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('como o jogador no Magic: não ocupa lugar e golpeia qualquer fileira ou o herói inimigo', 'like the player in Magic: takes no slot and strikes any row or the enemy hero')}</small></span></label>
+          {#if heroOff}
+            <label class="toggle sub"><input type="checkbox" bind:checked={heroOffFront} /> <span><b>{L('Exigir a frente vazia', 'Require an empty front')}</b><small>{L('o golpe corpo a corpo do herói só passa da fileira da frente inimiga se ela estiver vazia', 'the hero’s melee strike only goes past the enemy front row when it is empty')}</small></span></label>
+          {/if}
           <label class="toggle"><input type="checkbox" bind:checked={limit} /> <span><b>{L('Modo B', 'Mode B')}</b><small>{L('no máximo 3 habilidades por turno', 'at most 3 abilities per turn')}</small></span></label>
           <label class="toggle"><input type="checkbox" bind:checked={showLog} /> <span><b>{L('Registro da batalha', 'Battle log')}</b><small>{L('botão flutuante com tudo o que aconteceu', 'floating button with everything that happened')}</small></span></label>
         </div>
@@ -625,6 +638,7 @@
           {#if mine}
             <div class="grow"></div>
             <button class="btn sm ghost icon" use:tip={L('Trocar heróis: sai desta partida.', 'Change heroes: leaves this match.')} onclick={leave}><RotateCcw size={15} /></button>
+            <button class="btn sm" class:lit={canStrike} disabled={!myTurn} onclick={startStrike} use:tip={myTurn ? strikeInfo().why : ''}><Swords size={15} /> {L('Golpear', 'Strike')}</button>
             {#if !g!.heroOff}<button class="btn sm" disabled={!myTurn || pl.moved} onclick={startMove}><Move size={15} /> {L('Mover', 'Move')}</button>{/if}
             <button class="btn sm primary" disabled={!myTurn} onclick={() => act({ t: 'end' })}><Flag size={15} /> {L('Encerrar turno', 'End turn')}</button>
           {:else if g!.active === p && g!.winner === undefined}
@@ -1008,6 +1022,8 @@
   .pip { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .35; }
   .pip.on { background: currentColor; opacity: 1; }
   .pip.extra { background: #fff; border-color: #fff; opacity: 1; box-shadow: 0 0 6px currentColor; }
+  .btn.lit { border-color: #f0c45a; color: #f0c45a; box-shadow: 0 0 12px rgb(240 196 90 / .3); }
+  .vs-opts .toggle.sub { padding-left: 14px; border-left: 2px solid var(--line-2); }
   .thinking { color: var(--accent-2); font-size: 13px; animation: pulse 1.2s ease-in-out infinite; margin-left: auto; }
   @keyframes pulse { 50% { opacity: .45; } }
 

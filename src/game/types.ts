@@ -218,6 +218,8 @@ export interface GameState {
   seq: number;
   /** Modo em que os heróis ficam fora do campo (como o jogador no Magic). */
   heroOff: boolean;
+  /** No modo fora do campo: o golpe corpo a corpo do herói só passa da frente inimiga se ela estiver vazia (regra opcional). */
+  heroOffFront: boolean;
   /** Carta jogada esperando a resposta do oponente (Reação ou aceitar). */
   pending?: { p: 0 | 1; ref: CardRef; target?: Pos; slot?: Pos };
   /** Acontecimentos recentes para a mesa animar (números de dano, ataques, começo de turno…). */
