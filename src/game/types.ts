@@ -131,6 +131,23 @@ export interface GearItem {
   strike?: number;
 }
 
+/** Herói antes de somar o equipamento (é o que a ficha guarda e o jogador edita). */
+export interface HeroBase {
+  id: string;
+  name: string;
+  className: [string, string];
+  deckId: string;
+  attrs: Record<Attr, number>;
+  baseHp: number;
+  weapon: { name: [string, string]; dmg: number; via: Via };
+  gear: GearItem[];
+  vigor: number;
+  mana: number;
+  row: 0 | 1;
+  col: 0 | 1 | 2;
+  icon: string;
+}
+
 // ───────────── estado da partida ─────────────
 
 export interface Unit {

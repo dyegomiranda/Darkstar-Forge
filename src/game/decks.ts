@@ -3,7 +3,7 @@
  * Cada carta é uma habilidade do herói. Custos em Vigor (físico) e Mana
  * (mágico); requisitos de nível e de atributo; efeitos que o motor entende.
  */
-import type { Attr, CardGame, CardKind, Effect, GearItem, HeroDef, UnitDef, Via } from './types';
+import type { CardGame, CardKind, Effect, GearItem, HeroBase, HeroDef, UnitDef, Via } from './types';
 
 export interface ProtoCard {
   name: [string, string];
@@ -28,29 +28,33 @@ const r = (name: [string, string], cls: [string, string], icon: string, cost: { 
 };
 
 const VIA_TXT: Record<Via, [string, string]> = { melee: ['corpo a corpo', 'melee'], ranged: ['à distância', 'ranged'], magic: ['mágico', 'magic'] };
-const g = (slot: GearItem['slot'], pt: string, en: string, mods: Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike'> = {}): GearItem => {
+const g = (slot: GearItem['slot'], pt: string, en: string, mods: Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike'> = {}): GearItem => ({ slot, name: [pt, en], info: gearInfo(mods), ...mods });
+
+/** Texto do que uma peça dá (para mostrar na mesa e na ficha). */
+export function gearInfo(mods: Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike'>): [string, string] {
   const parts: [string, string][] = [];
   if (mods.armor) parts.push([`+${mods.armor} Armadura`, `+${mods.armor} Armor`]);
   if (mods.resist) parts.push([`+${mods.resist} Resistência mágica`, `+${mods.resist} Magic resistance`]);
   if (mods.hp) parts.push([`+${mods.hp} Vida`, `+${mods.hp} Life`]);
   if (mods.strike) parts.push([`+${mods.strike} no golpe`, `+${mods.strike} strike`]);
-  return { slot, name: [pt, en], info: [parts.map((x) => x[0]).join(', '), parts.map((x) => x[1]).join(', ')], ...mods };
-};
+  return [parts.map((x) => x[0]).join(', ') || '—', parts.map((x) => x[1]).join(', ') || '—'];
+}
 
 /** Soma o equipamento ao herói: vida, armadura, resistência e dano do golpe saem das peças vestidas. */
-export function buildHero(base: {
-  id: string; name: string; className: [string, string]; deckId: string; attrs: Record<Attr, number>; baseHp: number;
-  weapon: { name: [string, string]; dmg: number; via: Via }; gear: GearItem[]; vigor: number; mana: number; row: 0 | 1; col: 0 | 1 | 2; icon: string;
-}): HeroDef {
+export function buildHero(base: HeroBase): HeroDef {
   const sum = (k: 'armor' | 'resist' | 'hp' | 'strike') => base.gear.reduce((n, it) => n + (it[k] ?? 0), 0);
   const dmg = base.weapon.dmg + sum('strike');
   const weaponItem: GearItem = { slot: 'weapon', name: base.weapon.name, info: [`Golpe ${base.weapon.dmg}, ${VIA_TXT[base.weapon.via][0]}`, `Strike ${base.weapon.dmg}, ${VIA_TXT[base.weapon.via][1]}`] };
   return {
     id: base.id, name: base.name, className: base.className, deckId: base.deckId, attrs: base.attrs,
     maxHp: base.baseHp + sum('hp'), weapon: { ...base.weapon, dmg }, armor: sum('armor'), resist: sum('resist'),
-    gear: [weaponItem, ...base.gear], vigor: base.vigor, mana: base.mana, row: base.row, col: base.col, icon: base.icon,
+    gear: [weaponItem, ...base.gear.map((it) => ({ ...it, info: gearInfo(it) }))], vigor: base.vigor, mana: base.mana, row: base.row, col: base.col, icon: base.icon,
   };
 }
+
+/** Os 4 heróis prontos, antes de somar o equipamento (viram fichas editáveis no app). */
+export const HERO_BASES: HeroBase[] = [];
+const preset = (base: HeroBase): HeroDef => { HERO_BASES.push(base); return buildHero(base); };
 
 const POTION: ProtoCard = c(['Poção de Cura', 'Healing Potion'], ['Consumível', 'Consumable'], 'health-potion', 'item', {}, 1, [{ k: 'heal', n: 4, tgt: 'ally' }], 2);
 
@@ -61,7 +65,7 @@ const BAR: [string, string] = ['Bárbaro', 'Barbarian'];
 const GUE: [string, string] = ['Guerreiro', 'Fighter'];
 const red: ProtoDeck = {
   color: 'red',
-  hero: buildHero({
+  hero: preset({
     id: 'brunhild', name: 'Brunhild', className: ['Bárbara', 'Barbarian'], deckId: 'proto-red',
     attrs: { for: 4, des: 1, con: 3, int: 0, sab: 1, car: 0 }, baseHp: 28,
     weapon: { name: ['Machado grande', 'Greataxe'], dmg: 4, via: 'melee' },
@@ -100,7 +104,7 @@ const red: ProtoDeck = {
 const MAG: [string, string] = ['Mago', 'Wizard'];
 const blue: ProtoDeck = {
   color: 'blue',
-  hero: buildHero({
+  hero: preset({
     id: 'kael', name: 'Kael', className: ['Mago de batalha', 'Battle mage'], deckId: 'proto-blue',
     attrs: { for: 2, des: 2, con: 1, int: 4, sab: 0, car: 0 }, baseHp: 32,
     weapon: { name: ['Cajado de carvalho', 'Oak staff'], dmg: 4, via: 'magic' },
@@ -140,7 +144,7 @@ const PAT: [string, string] = ['Patrulheiro', 'Ranger'];
 const DRU: [string, string] = ['Druida', 'Druid'];
 const green: ProtoDeck = {
   color: 'green',
-  hero: buildHero({
+  hero: preset({
     id: 'lyra', name: 'Lyra', className: ['Patrulheira', 'Ranger'], deckId: 'proto-green',
     attrs: { for: 0, des: 4, con: 2, int: 0, sab: 3, car: 0 }, baseHp: 33,
     weapon: { name: ['Arco longo', 'Longbow'], dmg: 4, via: 'ranged' },
@@ -179,7 +183,7 @@ const BRU: [string, string] = ['Bruxo', 'Warlock'];
 const NEC: [string, string] = ['Necromante', 'Necromancer'];
 const black: ProtoDeck = {
   color: 'black',
-  hero: buildHero({
+  hero: preset({
     id: 'morgana', name: 'Morgana', className: ['Bruxa da lâmina', 'Hexblade'], deckId: 'proto-black',
     attrs: { for: 0, des: 3, con: 2, int: 0, sab: 0, car: 4 }, baseHp: 26,
     weapon: { name: ['Katana sombria', 'Shadow katana'], dmg: 4, via: 'melee' },

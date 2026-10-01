@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { LibraryBig, ScrollText, Settings2, PenTool, Check, CloudAlert, LoaderCircle, SquareStack, Swords } from '@lucide/svelte';
+  import { LibraryBig, UserRound, Settings2, PenTool, Check, CloudAlert, LoaderCircle, SquareStack, Swords } from '@lucide/svelte';
   import Game from '../ui/game/Game.svelte';
   import Back from '../ui/back/Back.svelte';
   import PdfDialog from '../ui/common/PdfDialog.svelte';
@@ -33,7 +33,7 @@
     { id: 'library', icon: LibraryBig, label: L('Biblioteca', 'Library'), go: () => router.library() },
     ...(lastCard && app.cards[lastCard] ? [{ id: 'editor', icon: PenTool, label: L('Editor', 'Editor'), go: () => router.editor(lastCard!) }] : []),
     { id: 'back', icon: SquareStack, label: L('Verso', 'Back'), go: () => router.go('/verso') },
-    { id: 'sheet', icon: ScrollText, label: L('Ficha', 'Sheet'), go: () => router.go('/ficha') },
+    { id: 'sheet', icon: UserRound, label: L('Herói', 'Hero'), go: () => router.go('/heroi') },
     { id: 'game', icon: Swords, label: L('Mesa', 'Table'), go: () => router.go('/mesa') },
     { id: 'settings', icon: Settings2, label: L('Ajustes', 'Settings'), go: () => router.go('/ajustes') },
   ]);
@@ -85,7 +85,7 @@
     {:else if router.route.name === 'game'}
       <Game />
     {:else if router.route.name === 'sheet'}
-      <Sheet />
+      <Sheet id={router.route.id} />
     {:else}
       <Settings />
     {/if}

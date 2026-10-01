@@ -6,7 +6,7 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { PF_ID, pfCollection, PROTO_ID, protoCollection, seedProject } from '../model/seed';
+import { PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
@@ -128,6 +128,13 @@ class ProjectState {
         this.cards[old.id] = next;
         this.#dirtyCards.add(old.id);
       }
+    }
+    // heróis prontos viram fichas (uma vez; se o usuário apagar, não voltam)
+    const HEROES_MARK = 'proto-heroes-1';
+    if (!p.seeded?.includes(HEROES_MARK)) {
+      p.seeded = [...(p.seeded ?? []), HEROES_MARK];
+      changed = true;
+      for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id)) p.characters.push(h);
     }
     if (!changed) return;
     this.#projectDirty = true;

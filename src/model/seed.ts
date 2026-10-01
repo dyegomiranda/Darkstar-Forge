@@ -5,14 +5,14 @@
  */
 import seedCards from '../data/seed-cards.json';
 import pfCards from '../data/pf-cards.json';
-import { PROTO_DECKS } from '../game/decks';
+import { HERO_BASES, PROTO_DECKS } from '../game/decks';
 import { effectsText } from '../game/text';
 import { ATTR_NAMES, KIND_NAMES } from '../game/types';
 import type { Look } from '../render/compose';
 import { CLASS_COLORS, COLORS } from './catalog';
 import { normalizeCost } from './cost';
 import { applyScoring } from './scoring';
-import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Edition, type Lang, type Project, type RarityId, type ResourceId } from './types';
+import { PROJECT_VERSION, type Card, type Character, type ColorId, type Deck, type Edition, type Lang, type Project, type RarityId, type ResourceId } from './types';
 import { newId } from './id';
 
 interface SeedCard {
@@ -81,6 +81,16 @@ export const PROTO_ID = 'proto1';
 /** Arma do herói dono de um deck do protótipo (deixa o texto dos golpes com o dano exato). */
 export const protoWeapon = (deckId: string) => PROTO_DECKS.find((d) => `proto-${d.color}` === deckId)?.hero.weapon;
 
+/** Os 4 heróis prontos como fichas editáveis (cada um já pode entrar na Mesa de teste). */
+export function presetHeroes(): Character[] {
+  const color = (deckId: string) => deckId.replace('proto-', '') as ColorId;
+  return HERO_BASES.map((b): Character => ({
+    id: `hero-${b.id}`, name: b.name, raceId: '', classColors: [color(b.deckId)], level: 1, hp: 30,
+    stats: { str: 10 + 2 * b.attrs.for, dex: 10 + 2 * b.attrs.des, con: 10 + 2 * b.attrs.con, int: 10 + 2 * b.attrs.int, wis: 10 + 2 * b.attrs.sab, cha: 10 + 2 * b.attrs.car },
+    slots: {}, notes: '', preset: b.id, play: structuredClone(b),
+  }));
+}
+
 /** Coleção "Protótipo": 4 decks de 40 cartas com efeitos que a Mesa de teste entende. */
 export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Card[] } {
   const now = Date.now();
@@ -119,9 +129,9 @@ export function seedProject(): { project: Project; cards: Card[] } {
     lang: 'pt-BR',
     editions: [{ id: EDITION_ID, name: '1ª Edição', code: '1ª Ed.' }, pf.edition, proto.edition],
     decks,
-    characters: [],
+    characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-2', 'proto-heroes-1'],
   };
   return { project, cards };
 }

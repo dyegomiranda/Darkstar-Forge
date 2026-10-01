@@ -124,6 +124,10 @@ export interface Character {
   slots: Partial<Record<Slot, string>>;
   notes: string;
   portraitMediaId?: string;
+  /** Dados do herói na Mesa de teste (deck, atributos de jogo, arma, equipamento). Com isso ele pode entrar em partida. */
+  play?: import('../game/types').HeroBase;
+  /** Herói pronto do Protótipo (usa o retrato que vem com o app enquanto não houver outro). */
+  preset?: string;
 }
 
 export interface Project {
