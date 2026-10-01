@@ -50,6 +50,8 @@ export type Effect =
   | { k: 'selfdmg'; n: number }
   /** Leva o herói para a fileira da frente (se houver lugar). */
   | { k: 'advance' }
+  /** Reação: anula a carta do oponente que está sendo respondida. */
+  | { k: 'counter' }
   | { k: 'stance'; mods: StanceMods };
 
 export interface StanceMods {
@@ -69,10 +71,10 @@ export type Keyword = 'guarda' | 'rapido' | 'distancia' | 'parede';
 
 export interface UnitDef { name: [string, string]; atk: number; def: number; keys?: Keyword[]; icon?: string }
 
-export type CardKind = 'ataque' | 'magia' | 'tecnica' | 'postura' | 'invocacao' | 'item';
+export type CardKind = 'ataque' | 'magia' | 'tecnica' | 'postura' | 'invocacao' | 'item' | 'reacao';
 export const KIND_NAMES: Record<CardKind, [string, string]> = {
   ataque: ['Ataque', 'Attack'], magia: ['Magia', 'Spell'], tecnica: ['Técnica', 'Technique'],
-  postura: ['Postura', 'Stance'], invocacao: ['Invocação', 'Summon'], item: ['Item', 'Item'],
+  postura: ['Postura', 'Stance'], invocacao: ['Invocação', 'Summon'], item: ['Item', 'Item'], reacao: ['Reação', 'Reaction'],
 };
 
 /** O que a carta faz no jogo (guardado na carta do app). */
@@ -83,6 +85,8 @@ export interface CardGame {
   level: number;
   attr?: [Attr, number];
   effects: Effect[];
+  /** Reação: a que tipo de carta do oponente ela responde (só pode ser usada nessa hora). */
+  react?: 'ataque' | 'magia' | 'any';
   /** Quantas cópias no deck. */
   copies: number;
 }
@@ -99,8 +103,10 @@ export interface HeroDef {
   weapon: { name: [string, string]; dmg: number; via: Via };
   /** Armadura: reduz o dano físico (corpo a corpo e à distância) de cada golpe, mínimo 1. Magia atravessa. */
   armor: number;
+  /** Resistência mágica: reduz o dano mágico de cada golpe, mínimo 1. */
+  resist: number;
   /** Equipamento vestido (vem da ficha): nome e o que dá. */
-  gear: { name: [string, string]; info: [string, string] }[];
+  gear: GearItem[];
   /** Recursos no nível 1 (3 pontos entre Vigor e Mana). */
   vigor: number;
   mana: number;
@@ -108,6 +114,21 @@ export interface HeroDef {
   row: 0 | 1;
   col: 0 | 1 | 2;
   icon: string;
+}
+
+export type GearSlot = 'weapon' | 'head' | 'chest' | 'hands' | 'feet' | 'trinket';
+export const GEAR_SLOTS: Record<GearSlot, [string, string]> = {
+  weapon: ['Arma', 'Weapon'], head: ['Cabeça', 'Head'], chest: ['Peito', 'Chest'], hands: ['Mãos', 'Hands'], feet: ['Pés', 'Feet'], trinket: ['Amuleto', 'Trinket'],
+};
+/** Uma peça de equipamento e o que ela soma ao herói. */
+export interface GearItem {
+  slot: GearSlot;
+  name: [string, string];
+  info: [string, string];
+  armor?: number;
+  resist?: number;
+  hp?: number;
+  strike?: number;
 }
 
 // ───────────── estado da partida ─────────────
@@ -158,6 +179,8 @@ export interface PlayerState {
   hitHero: boolean;
   /** Habilidades usadas neste turno (modo 3 ações). */
   plays: number;
+  /** Herói fora do campo (modo "herói fora do campo"): não ocupa um lugar. */
+  heroUnit?: Unit;
 }
 
 /** O que o motor precisa saber de cada carta. */
@@ -176,6 +199,10 @@ export interface GameState {
   /** Limite de 3 habilidades por turno (modo B). */
   actionLimit: boolean;
   seq: number;
+  /** Modo em que os heróis ficam fora do campo (como o jogador no Magic). */
+  heroOff: boolean;
+  /** Carta jogada esperando a resposta do oponente (Reação ou aceitar). */
+  pending?: { p: 0 | 1; ref: CardRef; target?: Pos; slot?: Pos };
   /** Acontecimentos recentes para a mesa animar (números de dano, ataques, começo de turno…). */
   fx: Fx[];
 }
@@ -192,14 +219,16 @@ export type Fx = { n: number } & (
   | { k: 'death'; id: string }
   | { k: 'attack'; from: string; to: string; via: Via }
   | { k: 'turn'; p: 0 | 1; turn: number }
-  | { k: 'xp'; p: 0 | 1; amount: number }
+  | { k: 'xp'; p: 0 | 1; amount: number; why: 'turn' | 'kill' | 'hit' }
   | { k: 'level'; p: 0 | 1 }
   | { k: 'play'; p: 0 | 1; cardId: string }
   | { k: 'summon'; id: string }
   | { k: 'gain'; p: 0 | 1; res: 'vigor' | 'mana'; amount: number }
+  | { k: 'react'; p: 0 | 1; cardId: string }
+  | { k: 'countered'; p: 0 | 1; cardId: string }
 );
 
-/** Posição de uma figura. */
+/** Posição de uma figura. Herói fora do campo: row = -1. */
 export interface Pos { p: 0 | 1; row: number; col: number }
 
 /** Uma jogada. */
@@ -209,4 +238,7 @@ export type Action =
   | { t: 'attack'; from: Pos; target: Pos }
   | { t: 'move'; to: Pos }
   | { t: 'levelup'; choice: 'vigor' | 'mana' | 'vida' }
+  /** Resposta a uma carta do oponente: usar uma Reação ou aceitar. */
+  | { t: 'react'; uid: string }
+  | { t: 'pass' }
   | { t: 'end' };

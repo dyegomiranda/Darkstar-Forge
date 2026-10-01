@@ -6,8 +6,7 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { PF_ID, pfCollection, PROTO_ID, protoCollection, protoWeapon, seedProject } from '../model/seed';
-import { effectsText } from '../game/text';
+import { PF_ID, pfCollection, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
@@ -113,15 +112,21 @@ class ProjectState {
       p.decks.push(...col.decks);
       for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
     }
-    // textos das cartas do protótipo reescritos (dano exato nos golpes, lembretes curtos)
-    const TEXT2 = 'proto-text-3';
-    if (!p.seeded?.includes(TEXT2)) {
-      p.seeded = [...(p.seeded ?? []), TEXT2];
+    // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
+    const RULES = 'proto-rules-2';
+    if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
+      p.seeded = [...(p.seeded ?? []), RULES];
       changed = true;
-      for (const c of Object.values(this.cards)) {
-        if (!c.game || !c.deckId.startsWith('proto-')) continue;
-        for (const l of ['pt-BR', 'en-US'] as const) c.text[l].rules = effectsText(c.game.effects, l, protoWeapon(c.deckId));
-        this.#dirtyCards.add(c.id);
+      const mine = Object.values(this.cards).filter((c) => c.deckId.startsWith('proto-'));
+      for (const fresh of protoCollection().cards) {
+        const old = mine.find((c) => c.deckId === fresh.deckId && c.n === fresh.n);
+        if (!old) {
+          if (p.decks.some((d) => d.id === fresh.deckId)) { this.cards[fresh.id] = fresh; this.#dirtyCards.add(fresh.id); }
+          continue;
+        }
+        const next: Card = { ...old, text: fresh.text, cost: fresh.cost, stats: fresh.stats, rarity: fresh.rarity, tags: fresh.tags, game: fresh.game, art: { ...old.art, icon: fresh.art.icon } };
+        this.cards[old.id] = next;
+        this.#dirtyCards.add(old.id);
       }
     }
     if (!changed) return;

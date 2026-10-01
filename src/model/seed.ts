@@ -96,8 +96,8 @@ export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Car
     return {
       id: newId('card'), deckId: `proto-${d.color}`, n: i + 1,
       text: {
-        'pt-BR': { name: pc.name[0], type: KIND_NAMES[g.kind][0], subtype: `${pc.cls[0]} · ${req(0)}`, rules: effectsText(g.effects, 'pt-BR', d.hero.weapon), flavor: '' },
-        'en-US': { name: pc.name[1], type: KIND_NAMES[g.kind][1], subtype: `${pc.cls[1]} · ${req(1).replace('Nv', 'Lv')}`, rules: effectsText(g.effects, 'en-US', d.hero.weapon), flavor: '' },
+        'pt-BR': { name: pc.name[0], type: KIND_NAMES[g.kind][0], subtype: `${pc.cls[0]} · ${req(0)}`, rules: effectsText(g.effects, 'pt-BR', d.hero.weapon, g.react), flavor: '' },
+        'en-US': { name: pc.name[1], type: KIND_NAMES[g.kind][1], subtype: `${pc.cls[1]} · ${req(1).replace('Nv', 'Lv')}`, rules: effectsText(g.effects, 'en-US', d.hero.weapon, g.react), flavor: '' },
       },
       colors: [d.color], cost,
       stats: summon && summon.k === 'summon' ? { atk: summon.unit.atk, def: summon.unit.def } : null,

@@ -35,10 +35,11 @@ function heroUnit(h: HeroDef, p: 0 | 1): Unit {
   return { id: `hero${p}-${h.id}`, name: [h.name, h.name], atk: h.weapon.dmg, def: h.maxHp, dmg: 0, keys: [], icon: h.icon, isHero: true, exhausted: false, afflicted: false, marked: false, warded: false, buff: 0 };
 }
 
-function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1): PlayerState {
+function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1, off: boolean): PlayerState {
   const board: (Unit | null)[][] = Array.from({ length: ROWS }, () => Array<Unit | null>(COLS).fill(null));
-  board[hero.row][hero.col] = heroUnit(hero, p);
+  if (!off) board[hero.row][hero.col] = heroUnit(hero, p);
   return {
+    ...(off ? { heroUnit: heroUnit(hero, p) } : {}),
     hero, vigor: hero.vigor, maxVigor: hero.vigor, mana: hero.mana, maxMana: hero.mana, level: 1, xp: 0, pendingLevels: 0,
     deck, hand: [], discard: [], recent: [], board, struck: false, moved: false, hitHero: false, plays: 0,
   };
@@ -47,7 +48,7 @@ function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1): PlayerState {
 export interface Side { hero: HeroDef; cards: CardDef[] }
 
 /** Nova partida. O jogador 0 começa; o 1 recebe uma carta a mais. */
-export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean } = {}): GameState {
+export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean; heroOff?: boolean } = {}): GameState {
   const defs: Record<string, CardDef> = {};
   let n = 0;
   const build = (side: Side): CardRef[] => side.cards.flatMap((c) => {
@@ -55,8 +56,8 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
     return Array.from({ length: c.game.copies }, () => ({ uid: `c${++n}`, cardId: c.id }));
   });
   const s: GameState = {
-    players: [newPlayer(a.hero, build(a), 0), newPlayer(b.hero, build(b), 1)],
-    defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, seq: 0, fx: [],
+    players: [newPlayer(a.hero, build(a), 0, !!opts.heroOff), newPlayer(b.hero, build(b), 1, !!opts.heroOff)],
+    defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, heroOff: !!opts.heroOff, seq: 0, fx: [],
   };
   for (const p of s.players) shuffle(s, p.deck);
   draw(s, 0, START_HAND);
@@ -69,7 +70,9 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
 // ───────────── consultas ─────────────
 
 export const other = (p: 0 | 1): 0 | 1 => (p === 0 ? 1 : 0);
-export const unitAt = (s: GameState, pos: Pos): Unit | null => s.players[pos.p].board[pos.row]?.[pos.col] ?? null;
+export const unitAt = (s: GameState, pos: Pos): Unit | null => (pos.row === -1 ? s.players[pos.p].heroUnit ?? null : s.players[pos.p].board[pos.row]?.[pos.col] ?? null);
+/** Quem decide agora: o jogador da vez, ou quem responde a uma carta pendente. */
+export const actor = (s: GameState): 0 | 1 => (s.pending ? other(s.pending.p) : s.active);
 export const def = (s: GameState, uid: string): CardDef | undefined => {
   for (const p of s.players) { const r = p.hand.find((c) => c.uid === uid); if (r) return s.defs[r.cardId]; }
   return undefined;
@@ -77,6 +80,8 @@ export const def = (s: GameState, uid: string): CardDef | undefined => {
 
 export function figures(s: GameState, p: 0 | 1): { pos: Pos; u: Unit }[] {
   const out: { pos: Pos; u: Unit }[] = [];
+  const off = s.players[p].heroUnit;
+  if (off) out.push({ pos: { p, row: -1, col: 0 }, u: off });
   s.players[p].board.forEach((row, r) => row.forEach((u, c) => { if (u) out.push({ pos: { p, row: r, col: c }, u }); }));
   return out;
 }
@@ -105,7 +110,7 @@ export function reachable(s: GameState, attacker: 0 | 1, via: Via, from?: Pos, u
   let list = figures(s, foe);
   if (unitsOnly) list = list.filter((f) => !f.u.isHero);
   if (via !== 'melee') return list.map((f) => f.pos);
-  if (from && from.row !== 0) return [];
+  if (from && from.row === 1) return [];
   const front = figures(s, foe).filter((f) => f.pos.row === 0);
   let pool = front.length ? list.filter((f) => f.pos.row === 0) : list;
   const guards = pool.filter((f) => hasGuard(s, foe, f.u));
@@ -149,6 +154,7 @@ export function cannotPlay(s: GameState, p: 0 | 1, uid: string): string | null {
   const ref = pl.hand.find((c) => c.uid === uid);
   if (!ref) return 'A carta não está na mão.';
   const g = s.defs[ref.cardId].game;
+  if (g.kind === 'reacao') return 'Reação: só pode ser usada em resposta a uma carta do oponente.';
   if (pl.pendingLevels) return 'Escolha o bônus do nível primeiro.';
   if (s.actionLimit && pl.plays >= 3) return 'Já usou 3 habilidades neste turno.';
   if (pl.level < g.level) return `Precisa do nível ${g.level}.`;
@@ -160,13 +166,29 @@ export function cannotPlay(s: GameState, p: 0 | 1, uid: string): string | null {
   const ch = choiceOf(g.effects);
   if (ch?.kind === 'slot' && !emptySlots(s, p).length) return 'Não há lugar livre no campo.';
   if (ch?.kind === 'target' && !cardTargets(s, p, g.effects).length) return 'Nenhum alvo válido.';
-  if (g.effects.some((e) => e.k === 'dmg' && e.tgt === 'enemyFront' && e.via === 'melee') && heroPos(s, p).row !== 0) return 'O herói precisa estar na frente.';
+  if (g.effects.some((e) => e.k === 'dmg' && e.tgt === 'enemyFront' && e.via === 'melee') && heroPos(s, p).row === 1) return 'O herói precisa estar na frente.';
   return null;
+}
+
+/** Reações que quem responde pode usar agora contra a carta pendente. */
+export function reactions(s: GameState): CardRef[] {
+  if (!s.pending) return [];
+  const r = other(s.pending.p), pl = s.players[r];
+  const kind = s.defs[s.pending.ref.cardId].game.kind;
+  return pl.hand.filter((c) => {
+    const g = s.defs[c.cardId].game;
+    if (g.kind !== 'reacao') return false;
+    if (g.react && g.react !== 'any' && g.react !== kind) return false;
+    if (pl.level < g.level) return false;
+    if (g.attr && pl.hero.attrs[g.attr[0]] < g.attr[1]) return false;
+    return (g.vigor ?? 0) <= pl.vigor && (g.mana ?? 0) <= pl.mana;
+  });
 }
 
 /** Todas as jogadas permitidas agora (para o bot e para testes). */
 export function legalActions(s: GameState): Action[] {
   if (s.winner !== undefined) return [];
+  if (s.pending) return [{ t: 'pass' }, ...reactions(s).map((c): Action => ({ t: 'react', uid: c.uid }))];
   const p = s.active, pl = s.players[p];
   if (pl.pendingLevels) return (['vigor', 'mana', 'vida'] as const).map((choice) => ({ t: 'levelup', choice }));
   const out: Action[] = [];
@@ -184,7 +206,7 @@ export function legalActions(s: GameState): Action[] {
     if (f.u.isHero || f.u.exhausted || f.u.keys.includes('parede') || f.u.atk + f.u.buff <= 0) continue;
     for (const target of reachable(s, p, f.u.keys.includes('distancia') ? 'ranged' : 'melee', f.pos)) out.push({ t: 'attack', from: f.pos, target });
   }
-  if (!pl.moved) for (const to of emptySlots(s, p)) out.push({ t: 'move', to });
+  if (!pl.moved && !s.heroOff) for (const to of emptySlots(s, p)) out.push({ t: 'move', to });
   out.push({ t: 'end' });
   return out;
 }
@@ -216,11 +238,14 @@ function draw(s: GameState, p: 0 | 1, n: number) {
   }
 }
 
-function addXp(s: GameState, p: 0 | 1, n: number) {
+const XP_WHY = { turn: 'começo do turno', kill: 'figura derrotada', hit: 'feriu o herói inimigo' } as const;
+
+function addXp(s: GameState, p: 0 | 1, n: number, why: keyof typeof XP_WHY) {
   const pl = s.players[p];
   if (pl.level + pl.pendingLevels >= MAX_LEVEL) return;
   pl.xp += n;
-  fx(s, { k: 'xp', p, amount: n });
+  log(s, `${pl.hero.name} ganha ${n} XP (${XP_WHY[why]}).`);
+  fx(s, { k: 'xp', p, amount: n, why });
   while (pl.xp >= XP_PER_LEVEL && pl.level + pl.pendingLevels < MAX_LEVEL) {
     pl.xp -= XP_PER_LEVEL;
     pl.pendingLevels++;
@@ -235,19 +260,20 @@ function damage(s: GameState, pos: Pos, n: number, by: 0 | 1, via: Via | 'none' 
   if (!u || n <= 0) return;
   if (u.warded) { u.warded = false; log(s, `A Proteção de ${nm(u)} anulou o dano.`); fx(s, { k: 'blocked', id: u.id }); return; }
   // armadura do herói: reduz golpes físicos (mínimo 1); magia e aflição atravessam
-  const armor = u.isHero && (via === 'melee' || via === 'ranged') ? s.players[pos.p].hero.armor : 0;
+  const hd = s.players[pos.p].hero;
+  const armor = !u.isHero ? 0 : via === 'melee' || via === 'ranged' ? hd.armor : via === 'magic' ? hd.resist ?? 0 : 0;
   const total = Math.max(armor ? 1 : 0, n - armor) + (u.marked ? 1 : 0);
   u.dmg += total;
   const absorbed = armor ? n - Math.max(1, n - armor) : 0;
-  log(s, `${nm(u)} sofre ${total} de dano${absorbed ? ` (a armadura absorveu ${absorbed})` : ''}.`);
+  log(s, `${nm(u)} sofre ${total} de dano${absorbed ? ` (${via === 'magic' ? 'a resistência' : 'a armadura'} absorveu ${absorbed})` : ''}.`);
   fx(s, { k: 'dmg', id: u.id, amount: total, armor: absorbed, marked: u.marked, via });
-  if (u.isHero && pos.p !== by && by === s.active && !s.players[by].hitHero) { s.players[by].hitHero = true; addXp(s, by, 1); }
+  if (u.isHero && pos.p !== by && by === s.active && !s.players[by].hitHero) { s.players[by].hitHero = true; addXp(s, by, 1, 'hit'); }
   if (u.dmg >= u.def) {
     fx(s, { k: 'death', id: u.id });
     if (u.isHero) { s.winner = other(pos.p); log(s, `${nm(u)} caiu. ${s.players[other(pos.p)].hero.name} venceu!`); return; }
     s.players[pos.p].board[pos.row][pos.col] = null;
     log(s, `${nm(u)} foi derrotado.`);
-    if (by !== pos.p) addXp(s, by, 1);
+    if (by !== pos.p) addXp(s, by, 1, 'kill');
   }
 }
 
@@ -257,14 +283,14 @@ function heal(s: GameState, pos: Pos, n: number) {
   const got = Math.min(n, u.dmg);
   u.dmg -= got;
   fx(s, { k: 'heal', id: u.id, amount: got });
-  if (u.afflicted) { u.afflicted = false; log(s, `${nm(u)} não está mais Afligido.`); fx(s, { k: 'status', id: u.id, s: 'cleanse' }); }
+  if (u.afflicted || u.marked) { u.afflicted = u.marked = false; log(s, `${nm(u)} não está mais Afligido nem Marcado.`); fx(s, { k: 'status', id: u.id, s: 'cleanse' }); }
   log(s, `${nm(u)} recupera ${got}.`);
 }
 
 /** Troca a figura de fileira (mesma coluna se der; senão, o primeiro lugar livre). */
 function shift(s: GameState, pos: Pos, toRow?: number): Pos | null {
   const u = unitAt(s, pos);
-  if (!u) return null;
+  if (!u || pos.row === -1) return null;
   const row = toRow ?? (pos.row === 0 ? 1 : 0);
   if (row === pos.row) return pos;
   const b = s.players[pos.p].board;
@@ -313,7 +339,7 @@ function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: '
   if (!still) return;
   if (m.strikeAfflicts || then === 'afflict') { t.afflicted = true; fx(s, { k: 'status', id: t.id, s: 'afflict' }); }
   if (then === 'mark') { t.marked = true; fx(s, { k: 'status', id: t.id, s: 'mark' }); }
-  if (then === 'push' && !t.isHero && shift(s, target)) fx(s, { k: 'status', id: t.id, s: 'push' });
+  if (then === 'push' && shift(s, target)) fx(s, { k: 'status', id: t.id, s: 'push' });
 }
 
 function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: string) {
@@ -338,7 +364,7 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: stri
     case 'afflict': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.afflicted = true; log(s, `${nm(u)} fica Afligido.`); fx(s, { k: 'status', id: u.id, s: 'afflict' }); } } break;
     case 'mark': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.marked = true; log(s, `${nm(u)} fica Marcado.`); fx(s, { k: 'status', id: u.id, s: 'mark' }); } } break;
     case 'ward': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.warded = true; log(s, `${nm(u)} está Protegido.`); fx(s, { k: 'status', id: u.id, s: 'ward' }); } } break;
-    case 'push': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u && !u.isHero && shift(s, pos)) { log(s, `${nm(u)} é empurrado.`); fx(s, { k: 'status', id: u.id, s: 'push' }); } } break;
+    case 'push': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u && shift(s, pos)) { log(s, `${nm(u)} é empurrado para a ${pos.row === 0 ? 'retaguarda' : 'frente'}.`); fx(s, { k: 'status', id: u.id, s: 'push' }); } } break;
     case 'summon': {
       const n = e.n ?? 1;
       const slots = [chosen, ...emptySlots(s, p)].filter((x): x is Pos => !!x && !unitAt(s, x));
@@ -349,7 +375,8 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: stri
     case 'gain': if (e.res === 'vigor') pl.vigor += e.n; else pl.mana += e.n; fx(s, { k: 'gain', p, res: e.res, amount: e.n }); break;
     case 'buff': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) u.buff += e.atk; } break;
     case 'selfdmg': { const h = unitAt(s, heroPos(s, p))!; h.dmg += e.n; log(s, `${pl.hero.name} perde ${e.n} PV.`); fx(s, { k: 'dmg', id: h.id, amount: e.n, armor: 0, marked: false, via: 'none' }); if (h.dmg >= h.def) s.winner = other(p); break; }
-    case 'advance': { const hp = heroPos(s, p); if (hp.row !== 0 && shift(s, hp, 0)) log(s, `${pl.hero.name} avança.`); break; }
+    case 'counter': break; // tratado na resposta (ver apply)
+    case 'advance': { const hp = heroPos(s, p); if (hp.row === 1 && shift(s, hp, 0)) log(s, `${pl.hero.name} avança.`); break; }
     case 'stance': {
       if (pl.stance?.cardId) pl.discard.push({ uid: pl.stance.uid ?? `st${++s.seq}`, cardId: pl.stance.cardId });
       pl.stance = { cardId: '', mods: e.mods };
@@ -367,20 +394,61 @@ function startTurn(s: GameState, first = false) {
   for (const f of figures(s, p)) f.u.exhausted = false;
   log(s, `— Turno ${s.turn}: ${pl.hero.name} —`);
   fx(s, { k: 'turn', p, turn: s.turn });
-  // as habilidades usadas no turno anterior vão para o cemitério
-  pl.discard.push(...pl.recent);
-  pl.recent = [];
   // aflição: 1 de dano em cada figura afligida do jogador da vez (o XP vai para o outro lado)
   for (const f of figures(s, p)) {
     if (f.u.afflicted) { log(s, `${nm(f.u)} sofre a Aflição.`); damage(s, f.pos, 1, other(p)); if (s.winner !== undefined) return; }
   }
   if (!first) draw(s, p, 1);
-  addXp(s, p, 1);
+  addXp(s, p, 1, 'turn');
+}
+
+/** Resolve a carta pendente (o oponente aceitou ou a Reação não a anulou). */
+function resolvePending(s: GameState, countered = false): void {
+  const pd = s.pending!;
+  s.pending = undefined;
+  const pl = s.players[pd.p], d = s.defs[pd.ref.cardId];
+  if (countered) {
+    log(s, `${d.name[0]} foi anulada.`);
+    fx(s, { k: 'countered', p: pd.p, cardId: d.id });
+    pl.recent.push(pd.ref);
+    return;
+  }
+  const ch = choiceOf(d.game.effects);
+  for (const e of d.game.effects) {
+    applyEffect(s, pd.p, e, ch?.kind === 'slot' ? pd.slot : pd.target, d.id);
+    if (s.winner !== undefined) break;
+  }
+  if (d.game.kind === 'postura' && pl.stance && !pl.stance.cardId) pl.stance = { ...pl.stance, cardId: d.id, uid: pd.ref.uid };
+  else pl.recent.push(pd.ref);
+}
+
+/** Resposta de quem não está na vez a uma carta pendente: usar uma Reação ou aceitar. */
+function respond(s: GameState, a: Action): string | null {
+  if (a.t === 'pass') { resolvePending(s); return null; }
+  if (a.t !== 'react') return 'Responda à carta do oponente primeiro (reagir ou aceitar).';
+  const r = other(s.pending!.p), pl = s.players[r];
+  const ref = reactions(s).find((c) => c.uid === a.uid);
+  if (!ref) return 'Esta carta não pode responder agora.';
+  const d = s.defs[ref.cardId];
+  pl.hand.splice(pl.hand.indexOf(ref), 1);
+  pl.vigor -= d.game.vigor ?? 0;
+  pl.mana -= d.game.mana ?? 0;
+  pl.recent.push(ref);
+  log(s, `${pl.hero.name} reage com ${d.name[0]}.`);
+  fx(s, { k: 'react', p: r, cardId: d.id });
+  for (const e of d.game.effects) {
+    applyEffect(s, r, e, heroPos(s, s.pending!.p), d.id);
+    if (s.winner !== undefined) { s.pending = undefined; return null; }
+  }
+  resolvePending(s, d.game.effects.some((e) => e.k === 'counter'));
+  return null;
 }
 
 /** Aplica uma jogada. Devolve um erro (texto) se não for permitida. */
 export function apply(s: GameState, a: Action): string | null {
   if (s.winner !== undefined) return 'A partida acabou.';
+  if (s.pending) return respond(s, a);
+  if (a.t === 'react' || a.t === 'pass') return 'Não há carta para responder.';
   const p = s.active, pl = s.players[p];
   if (pl.pendingLevels && a.t !== 'levelup') return 'Escolha o bônus do nível primeiro.';
   switch (a.t) {
@@ -413,12 +481,9 @@ export function apply(s: GameState, a: Action): string | null {
       if (d.game.effects.some((e) => e.k === 'strike')) pl.struck = true;
       log(s, `${pl.hero.name} usa ${d.name[0]}.`);
       fx(s, { k: 'play', p, cardId: d.id });
-      for (const e of d.game.effects) {
-        applyEffect(s, p, e, ch?.kind === 'slot' ? a.slot : a.target, d.id);
-        if (s.winner !== undefined) return null;
-      }
-      if (d.game.kind === 'postura') pl.stance = { ...pl.stance!, cardId: d.id, uid: ref.uid };
-      else pl.recent.push(ref);
+      // o oponente pode responder com uma Reação (se tiver uma que sirva e recursos sobrando)
+      s.pending = { p, ref, target: a.target, slot: a.slot };
+      if (!reactions(s).length) resolvePending(s);
       return null;
     }
     case 'strike': {
@@ -443,6 +508,7 @@ export function apply(s: GameState, a: Action): string | null {
       return null;
     }
     case 'move': {
+      if (s.heroOff) return 'Neste modo o herói fica fora do campo.';
       if (pl.moved) return 'O herói já se moveu neste turno.';
       if (a.to.p !== p || unitAt(s, a.to)) return 'Escolha um lugar livre seu.';
       const from = heroPos(s, p);
@@ -455,6 +521,8 @@ export function apply(s: GameState, a: Action): string | null {
     }
     case 'end': {
       for (const f of figures(s, p)) f.u.buff = 0;
+      // as cartas usadas neste turno saem da mesa e vão para o cemitério
+      for (const q of s.players) { q.discard.push(...q.recent); q.recent = []; }
       s.active = other(p);
       if (s.active === 0) s.turn++;
       startTurn(s);

@@ -3,7 +3,7 @@
  * deixa a posição melhor (vida, figuras em campo, cartas, nível). Encerra o
  * turno quando nenhuma jogada melhora a posição.
  */
-import { apply, figures, heroHp, legalActions, other } from './engine';
+import { apply, figures, heroHp, legalActions, other, reactions } from './engine';
 import type { Action, GameState } from './types';
 
 /** Quão boa é a posição para o jogador `p` (maior = melhor). */
@@ -38,8 +38,24 @@ function levelChoice(s: GameState, p: 0 | 1): Action {
   return { t: 'levelup', choice: needM > needV ? 'mana' : 'vigor' };
 }
 
-/** Próxima jogada do bot. */
+/** Resposta do bot a uma carta do oponente: reage se a posição ficar melhor do que aceitando. */
+function response(s: GameState): Action {
+  const me = other(s.pending!.p);
+  const pass = clone(s);
+  apply(pass, { t: 'pass' });
+  let best: Action = { t: 'pass' }, bestScore = evaluate(pass, me) + 0.6; // guardar a Reação vale um pouco
+  for (const c of reactions(s)) {
+    const sim = clone(s);
+    if (apply(sim, { t: 'react', uid: c.uid })) continue;
+    const score = evaluate(sim, me);
+    if (score > bestScore) { bestScore = score; best = { t: 'react', uid: c.uid }; }
+  }
+  return best;
+}
+
+/** Próxima jogada do bot (de quem decide agora: o jogador da vez ou quem responde a uma carta). */
 export function botAction(s: GameState): Action {
+  if (s.pending) return response(s);
   const p = s.active;
   if (s.players[p].pendingLevels) return levelChoice(s, p);
   const base = evaluate(s, p);
@@ -49,6 +65,7 @@ export function botAction(s: GameState): Action {
     if (a.t === 'end' || a.t === 'levelup') continue;
     const sim = clone(s);
     if (apply(sim, a)) continue;
+    if (sim.pending) apply(sim, { t: 'pass' }); // conta que o oponente aceita
     // olha também a melhor jogada seguinte: ganhar Mana, comprar ou se mover só valem pelo que abrem
     const cost = a.t === 'move' ? 0.4 : 0;
     let score = evaluate(sim, p) - cost;
@@ -56,7 +73,7 @@ export function botAction(s: GameState): Action {
       for (const b of legalActions(sim)) {
         if (b.t === 'end' || b.t === 'move') continue;
         const sim2 = clone(sim);
-        if (!apply(sim2, b)) score = Math.max(score, evaluate(sim2, p) - cost - 0.1);
+        if (!apply(sim2, b)) { if (sim2.pending) apply(sim2, { t: 'pass' }); score = Math.max(score, evaluate(sim2, p) - cost - 0.1); }
       }
     }
     if (score > bestScore) { bestScore = score; best = a; }
@@ -71,9 +88,11 @@ export function botTurn(s: GameState, maxSteps = 40): Action[] {
   for (let i = 0; i < maxSteps && s.active === p && s.winner === undefined; i++) {
     const a = botAction(s);
     done.push(a);
-    if (apply(s, a)) { apply(s, { t: 'end' }); break; }
+    if (apply(s, a)) { if (s.pending) apply(s, { t: 'pass' }); apply(s, { t: 'end' }); break; }
+    if (s.pending) apply(s, botAction(s)); // o outro lado (também bot, no simulador) responde
     if (a.t === 'end') break;
   }
+  if (s.pending) apply(s, { t: 'pass' });
   if (s.active === p && s.winner === undefined) apply(s, { t: 'end' });
   return done;
 }
