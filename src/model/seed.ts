@@ -34,8 +34,8 @@ const deckName = (id: ColorId): Record<Lang, string> => ({
 function editionDecks(editionId: string, prefix = ''): Deck[] {
   return [
     ...CLASS_COLORS.map((c, i): Deck => ({ id: prefix + c, editionId, name: deckName(c), kind: 'class', colors: [c], look: defaultLook(), order: i })),
-    { id: prefix + 'resources', editionId, name: { 'pt-BR': 'Recursos', 'en-US': 'Resources' }, kind: 'resources', colors: ['orange'], look: defaultLook(), order: 7 },
-    { id: prefix + 'equipment', editionId, name: { 'pt-BR': 'Equipamentos', 'en-US': 'Equipment' }, kind: 'equipment', colors: ['gear'], look: defaultLook(), order: 8 },
+    { id: prefix + 'resources', editionId, name: { 'pt-BR': 'Recursos', 'en-US': 'Resources' }, kind: 'resources', colors: ['orange'], look: { style: 'neutro' }, order: 7 },
+    { id: prefix + 'equipment', editionId, name: { 'pt-BR': 'Equipamentos', 'en-US': 'Equipment' }, kind: 'equipment', colors: ['gear'], look: { style: 'neutro' }, order: 8 },
   ];
 }
 

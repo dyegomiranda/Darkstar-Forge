@@ -93,6 +93,8 @@ export interface Look {
     classMode?: 'todas' | 'primeira';
     /** 'placa' = símbolo + número numa caixinha; 'emblema' = número dentro do símbolo, sem caixa. */
     statMode?: 'placa' | 'emblema';
+    /** Não mostrar o selo de custo quando o custo for 0 (recursos, equipamentos). */
+    hideZeroCost?: boolean;
   };
   /** Pixelar a arte (tamanho do bloco, em px da carta). Combina com o estilo Pixel. */
   pixelateArt?: number;
@@ -179,7 +181,10 @@ function renderPiece(kind: PieceKind, ps: PieceStyle, ch: PieceChoice, args: Par
 }
 
 function choose(look: Look, kind: PieceKind): { ps: PieceStyle; ch: PieceChoice } {
-  const ch = look.pieces?.[kind] ?? { style: look.style };
+  const own = look.pieces?.[kind];
+  // peça que o estilo esconde por padrão, se o usuário não disse nada sobre ela
+  const hiddenByStyle = own?.hidden === undefined && !!styleInfo(look.style).hidden?.includes(kind);
+  const ch = own ? (hiddenByStyle ? { ...own, hidden: true } : own) : { style: look.style, ...(hiddenByStyle ? { hidden: true } : {}) };
   return { ps: piece(ch.style ?? look.style, kind), ch };
 }
 
@@ -323,7 +328,8 @@ export function compose(inp: ComposeInput): string {
   // Selo de custo: arranja os símbolos e alarga o selo (e encurta o cabeçalho) se precisar
   let costPlan: CostPlan | undefined;
   const costPick = choose(look, 'cost');
-  if (inp.cost?.length && !costPick.ch.hidden) {
+  const zero = (look.icons?.hideZeroCost ?? info.hideZeroCost ?? false) && (inp.cost ?? []).every((p) => !p.amount);
+  if (inp.cost?.length && !costPick.ch.hidden && !zero) {
     const probeOut = renderPiece('cost', costPick.ps, costPick.ch, { box: S.cost, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 });
     const c0 = probeOut.content;
     const tl = textOf(probeOut, costPick.ch);
@@ -348,6 +354,17 @@ export function compose(inp: ComposeInput): string {
       const over = S.header.x + S.header.w - (S.class.x + 34);
       if (over > 0) S.header = { ...S.header, w: S.header.w - over };
     }
+  }
+  // sem selo de custo ou de classe: a barra do nome ocupa o lugar dele (se estiver na mesma linha)
+  const sameRow = (a: Box, b: Box) => a.y < b.y + b.h && b.y < a.y + a.h;
+  const H0 = S.header;
+  if (!costPlan && sameRow(S.cost, H0) && S.cost.x < H0.x) {
+    const x = Math.max(S.cost.x, 24);
+    S.header = { ...S.header, x, w: S.header.w + (H0.x - x) };
+  }
+  if ((classPick.ch.hidden || choose(look, 'class').ch.hidden) && sameRow(S.class, H0) && S.class.x > H0.x) {
+    const right = Math.min(S.class.x + S.class.w, CARD_W - 24);
+    S.header = { ...S.header, w: right - S.header.x };
   }
   add('rules', S.rules);
   add('typeBar', S.typeBar);

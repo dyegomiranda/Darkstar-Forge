@@ -217,7 +217,10 @@ export class EditorState {
   }
 
   piece(kind: PieceKind): PieceChoice {
-    return this.look.pieces?.[kind] ?? { style: this.look.style };
+    const own = this.look.pieces?.[kind];
+    // o estilo pode esconder a peça por padrão (ex.: Neutro sem selo de classe)
+    const byStyle = own?.hidden === undefined && !!styleInfo(this.look.style).hidden?.includes(kind);
+    return { ...(own ?? { style: this.look.style }), ...(byStyle ? { hidden: true } : {}) };
   }
 
   setPiece(kind: PieceKind, patch: Partial<PieceChoice>, remove: (keyof PieceChoice)[] = []): void {
@@ -241,7 +244,7 @@ export class EditorState {
   }
 
   /** Opções gerais dos símbolos (um por classe, ATK/DEF em placa ou medalhão). */
-  setIconOption<K extends 'classMode' | 'statMode'>(key: K, value: NonNullable<Look['icons']>[K]): void {
+  setIconOption<K extends 'classMode' | 'statMode' | 'hideZeroCost'>(key: K, value: NonNullable<Look['icons']>[K]): void {
     this.#write([`icons.${key}`], (l) => { l.icons = { ...l.icons, [key]: value }; });
   }
 

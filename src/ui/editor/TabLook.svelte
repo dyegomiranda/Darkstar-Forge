@@ -354,6 +354,9 @@
     {/snippet}
 
     <input type="file" accept="image/png,image/webp,image/svg+xml" hidden bind:this={symInput} onchange={(e) => uploadSymbol((e.currentTarget as HTMLInputElement).files)} />
+    <label class="toggle"><input type="checkbox" checked={look.icons?.hideZeroCost ?? STYLES.find((x) => x.id === look.style)?.hideZeroCost ?? false}
+      onchange={(e) => ed.setIconOption('hideZeroCost', (e.currentTarget as HTMLInputElement).checked)} />
+      {L('Esconder o selo de custo quando o custo for 0 (a barra do nome ocupa o espaço)', 'Hide the cost seal when the cost is 0 (the title bar takes the space)')}</label>
     {#if ed.draft.cost.length}
       {@render picker('cost', L('Custo', 'Cost') + (ed.draft.cost.length > 1 ? L(' (1º recurso)', ' (1st resource)') : ''), resourceChoices(ed.draft.cost[0].resource), RESOURCE_COLORS[ed.draft.cost[0].resource])}
     {/if}

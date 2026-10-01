@@ -10,7 +10,7 @@ export type PieceKind = 'frame' | 'header' | 'cost' | 'class' | 'typeBar' | 'rul
 
 export const PIECE_KINDS: PieceKind[] = ['frame', 'header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set'];
 
-export type StyleId = 'ornado' | 'ornadoRegio' | 'ornadoMarfim' | 'ornadoPontas' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
+export type StyleId = 'neutro' | 'ornado' | 'ornadoRegio' | 'ornadoMarfim' | 'ornadoPontas' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
 
 export interface PieceArgs {
   /** Área que o esqueleto reservou para a peça. */
@@ -86,4 +86,8 @@ export interface StyleInfo {
   rulesMax?: number;
   /** A moldura faz parte do estilo: aparece por padrão (dá para desligar). */
   frame?: boolean;
+  /** Peças que o estilo esconde por padrão (o usuário pode mostrar de novo). */
+  hidden?: PieceKind[];
+  /** Esconder o selo de custo quando o custo for 0 (padrão do estilo). */
+  hideZeroCost?: boolean;
 }

@@ -10,11 +10,13 @@ import { vazio, vazioLayout } from './vazio';
 import { espectral, espectralLayout } from './espectral';
 import { energia, energiaLayout } from './energia';
 import { aco, acoLayout } from './aco';
+import { neutro } from './neutro';
 import type { PieceKind, PieceStyle, StyleId, StyleInfo } from './types';
 
 export * from './types';
 
 export const STYLES: StyleInfo[] = [
+  { id: 'neutro', name: 'Neutro', icons: 'chapado', hidden: ['class'], hideZeroCost: true, description: 'Limpo, para recursos e equipamentos: painéis grafite, linhas finas e um filete na cor da carta. Sem selo de classe e sem custo quando ele é 0 — a barra do nome ocupa o espaço.' },
   { id: 'ornado', name: 'Ornado', icons: 'emblema', description: 'Ourivesaria na cor da classe: medalhões com fio de pérolas, cartelas com volutas, filigrana nos cantos e pergaminho.' },
   { id: 'ornadoRegio', name: 'Ornado Régio', icons: 'emblema', description: 'A mesma ourivesaria em ouro, com painéis de laca escura e letra clara.' },
   { id: 'ornadoMarfim', name: 'Ornado Marfim', icons: 'emblema', description: 'A mesma ourivesaria em prata, com painéis de marfim.' },
@@ -31,7 +33,7 @@ export const STYLES: StyleInfo[] = [
   { id: 'aco', name: 'Pixel Aço', icons: 'pixel', pixelArt: true, frame: true, rulesMax: 300, layout: acoLayout, description: 'Pixel art de metal (referência: TCG Creator vol. 18): borda grossa de pedra e aço com cantoneiras douradas, arte em janela, placa do nome, fileira de placas (custo, ATK, DEF) e caixa de pedra.' },
 ];
 
-const ALL: PieceStyle[] = [...ornado, ...ornadoRegio, ...ornadoMarfim, ...ornadoPontas, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
+const ALL: PieceStyle[] = [...neutro, ...ornado, ...ornadoRegio, ...ornadoMarfim, ...ornadoPontas, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
 
 const index = new Map<string, PieceStyle>(ALL.map((p) => [`${p.style}:${p.kind}`, p]));
 
