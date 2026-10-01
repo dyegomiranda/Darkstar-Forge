@@ -17,6 +17,8 @@
     import Glyph from '../common/Glyph.svelte';
   import { pieceThumb } from './thumbs';
   import PieceImagePanel from './PieceImagePanel.svelte';
+  import LookPreview from './LookPreview.svelte';
+  import type { DeckKind } from '../../model/types';
   import type { EditorState } from './editor.svelte';
 
   let { ed }: { ed: EditorState } = $props();
@@ -27,7 +29,13 @@
   const colors = $derived(cardColors(ed.draft.colors.map(colorHex), look));
   const deckCount = $derived(app.cardsOf(ed.draft.deckId).length);
   const edition = $derived(app.edition(ed.deck.editionId));
-  const collectionCount = $derived(app.decksOf(ed.deck.editionId).reduce((n, d) => n + app.cardsOf(d.id).length, 0));
+  const collectionCount = $derived(ed.targets.reduce((n, d) => n + app.cardsOf(d.id).length, 0));
+  const KINDS: { id: DeckKind; pt: string; en: string }[] = [
+    { id: 'class', pt: 'Decks de classe', en: 'Class decks' }, { id: 'resources', pt: 'Recursos', en: 'Resources' }, { id: 'equipment', pt: 'Equipamentos', en: 'Equipment' },
+  ];
+  const kindCount = (k: DeckKind) => app.decksOf(ed.deck.editionId).filter((d) => d.kind === k).length;
+  /** Uma carta de exemplo de cada deck que recebe a mudança (para ver como fica antes de aplicar). */
+  const samples = $derived(ed.scope === 'collection' ? ed.targets.map((d) => ({ deck: d, card: app.cardsOf(d.id)[0] })).filter((x) => !!x.card).slice(0, 10) : []);
   const SIZE_SLOTS: { slot: 'cost' | 'class' | 'atk' | 'def' | 'set'; pt: string; en: string }[] = [
     { slot: 'cost', pt: 'Custo', en: 'Cost' }, { slot: 'class', pt: 'Classe', en: 'Class' },
     { slot: 'atk', pt: 'Ataque', en: 'Attack' }, { slot: 'def', pt: 'Defesa', en: 'Defense' }, { slot: 'set', pt: 'Selo da edição', en: 'Set symbol' },
@@ -112,7 +120,7 @@
     const theme = ed.themeDirty;
     const wide = ed.touched.some((t) => t.wide);
     const where = !theme ? L('só nesta carta', 'on this card only')
-      : wide ? L(`em todos os decks da coleção “${edition?.name ?? ''}” (${collectionCount} cartas)`, `on every deck of “${edition?.name ?? ''}” (${collectionCount} cards)`)
+      : wide ? L(`em ${ed.targets.length} decks da coleção “${edition?.name ?? ''}” (${collectionCount} cartas)`, `on ${ed.targets.length} decks of “${edition?.name ?? ''}” (${collectionCount} cards)`)
       : L(`nas ${deckCount} cartas deste deck`, `on all ${deckCount} cards of this deck`);
     const r = await ui.confirm({
       title: L('Aplicar mudanças?', 'Apply changes?'),
@@ -134,7 +142,7 @@
     <div class="seg full three">
       <button class:on={ed.scope === 'card'} onclick={() => (ed.scope = 'card')}><b>{L('Esta carta', 'This card')}</b><small>1</small></button>
       <button class:on={ed.scope === 'deck'} onclick={() => (ed.scope = 'deck')}><b>{L('Deck inteiro', 'Whole deck')}</b><small>{deckCount}</small></button>
-      <button class:on={ed.scope === 'collection'} onclick={() => (ed.scope = 'collection')}><b>{L('Coleção inteira', 'Whole collection')}</b><small>{collectionCount}</small></button>
+      <button class:on={ed.scope === 'collection'} onclick={() => (ed.scope = 'collection')}><b>{L('Modelo da coleção', 'Collection template')}</b><small>{collectionCount}</small></button>
     </div>
     <p class="note"><Info size={14} />
       <span>
@@ -144,12 +152,29 @@
           {L(`Muda o tema das ${deckCount} cartas deste deck. As cartas que tinham ajuste próprio na mesma peça passam a seguir o tema.`,
             `Changes the theme of all ${deckCount} cards in this deck. Cards with their own tweak on the same piece will follow the theme.`)}
         {:else}
-          {L(`Muda o tema de todos os decks de “${edition?.name ?? ''}” (${collectionCount} cartas). Cada deck mantém as suas cores e os seus símbolos de classe e de custo.`,
-            `Changes the theme of every deck in “${edition?.name ?? ''}” (${collectionCount} cards). Each deck keeps its own colors and class/cost symbols.`)}
+          {L(`Você está editando o modelo padrão da coleção “${edition?.name ?? ''}”. Só o que você mexer aqui vai para os outros decks; cada deck mantém as suas cores e os seus símbolos de classe e de custo.`,
+            `You are editing the default template of “${edition?.name ?? ''}”. Only what you change here goes to the other decks; each deck keeps its own colors and class/cost symbols.`)}
         {/if}
         {L(' Nada é gravado até você clicar em Salvar.', ' Nothing is written until you click Save.')}
       </span>
     </p>
+    {#if ed.scope === 'collection'}
+      <div class="kinds">
+        <span class="label">{L('Quais decks recebem a mudança', 'Which decks get the change')}</span>
+        <div class="kchecks">
+          {#each KINDS.filter((k) => kindCount(k.id) > 0) as k}
+            <label class="toggle"><input type="checkbox" checked={ed.kinds.includes(k.id)} onchange={() => ed.toggleKind(k.id)} /> {L(k.pt, k.en)} <small>({kindCount(k.id)})</small></label>
+          {/each}
+        </div>
+        <span class="muted small">{L('Recursos e Equipamentos podem ter um modelo diferente: deixe-os desmarcados e edite-os a partir de uma carta deles.', 'Resources and Equipment can have a different template: leave them unchecked and edit them from one of their cards.')}</span>
+        {#if samples.length}
+          <span class="label">{L('Como fica em cada deck (antes de aplicar)', 'How each deck will look (before applying)')}</span>
+          <div class="samples">
+            {#each samples as x (x.deck.id)}<LookPreview card={x.card} look={ed.previewLook(x.deck)} label={x.deck.name[app.lang]} />{/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
     {#if ed.scope !== 'card' && ed.hasCardLook}
       <div class="warn">
         <p>{ed.scope === 'deck'
@@ -165,7 +190,7 @@
     <button class="btn primary apply" disabled={!ed.dirty} onclick={apply}><Check size={15} />
       {ed.scope === 'card' ? L('Aplicar a esta carta', 'Apply to this card')
         : ed.scope === 'deck' ? L(`Aplicar ao deck inteiro (${deckCount} cartas)`, `Apply to whole deck (${deckCount} cards)`)
-        : L(`Aplicar à coleção inteira (${collectionCount} cartas)`, `Apply to whole collection (${collectionCount} cards)`)}</button>
+        : L(`Aplicar a ${ed.targets.length} decks da coleção (${collectionCount} cartas)`, `Apply to ${ed.targets.length} decks of the collection (${collectionCount} cards)`)}</button>
   </section>
 
   <section class="stack s">
@@ -433,4 +458,8 @@
   .gl { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--bg-2); display: grid; place-items: center; cursor: pointer; }
   .gl:hover { border-color: #4a413c; background: var(--surface-2); }
   .gl.on { border-color: var(--accent); background: var(--accent-soft); }
+  .kinds { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); }
+  .kchecks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .kchecks small { color: var(--muted); }
+  .samples { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
 </style>

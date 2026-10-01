@@ -14,7 +14,7 @@
 import { app } from '../../store/project.svelte';
 import { applyScoring } from '../../model/scoring';
 import { clearPath, copyPath, isDeckSpecific } from '../../model/lookPaths';
-import type { Card, Deck, Lang } from '../../model/types';
+import type { Card, Deck, DeckKind, Lang } from '../../model/types';
 import type { IconChoice, Look, PieceChoice } from '../../render/compose';
 import { mergeLook, type CardContext } from '../../render/card';
 import { styleInfo, type PieceKind, type StyleId } from '../../render/elements';
@@ -36,6 +36,8 @@ export class EditorState {
   /** Idioma do texto sendo editado (independe do idioma da interface). */
   lang = $state<Lang>('pt-BR');
   scope = $state<LookScope>('card');
+  /** No escopo "coleção": que tipos de deck recebem a mudança (começa só com o tipo do deck aberto). */
+  kinds = $state<DeckKind[]>([]);
   #saved = $state('');
   #past: string[] = [];
   #future: string[] = [];
@@ -53,6 +55,7 @@ export class EditorState {
     this.draft = clone(card);
     this.#deckId = card.deckId;
     this.deckLook = clone(app.deck(card.deckId)!.look);
+    this.kinds = [app.deck(card.deckId)!.kind];
     this.lang = app.lang;
     this.#saved = this.#last = this.#serialize();
     this.#openCard = this.draft.look ? clone(this.draft.look) : undefined;
@@ -79,8 +82,23 @@ export class EditorState {
   /** Quantas cartas o escopo atual afeta. */
   get scopeCount(): number {
     if (this.scope === 'card') return 1;
-    const decks = this.scope === 'deck' ? [this.deck] : app.decksOf(this.deck.editionId);
+    const decks = this.scope === 'deck' ? [this.deck] : this.targets;
     return decks.reduce((n, d) => n + app.cardsOf(d.id).length, 0);
+  }
+
+  /** Decks que recebem uma mudança de coleção: o aberto e os outros dos tipos marcados. */
+  get targets(): Deck[] {
+    return app.decksOf(this.deck.editionId).filter((d) => d.id === this.#deckId || this.kinds.includes(d.kind));
+  }
+  toggleKind(k: DeckKind): void {
+    this.kinds = this.kinds.includes(k) ? this.kinds.filter((x) => x !== k) : [...this.kinds, k];
+  }
+  /** Como o tema de um deck fica depois de aplicar (cada deck mantém cores e símbolos próprios). */
+  previewLook(d: Deck): Look {
+    if (d.id === this.#deckId) return this.deckLook;
+    const l = clone($state.snapshot(d.look) as Look);
+    for (const t of this.touched) if (t.wide && !isDeckSpecific(t.path)) copyPath(l as never, this.deckLook as never, t.path, isDeckSpecific);
+    return l;
   }
 
   /** Chame após cada alteração: agrupa digitação em passos de desfazer. */
@@ -144,7 +162,7 @@ export class EditorState {
     const deck = app.deck(this.#deckId)!;
     const paths = [...new Set(this.touched.map((t) => t.path))];
     const wide = [...new Set(this.touched.filter((t) => t.wide).map((t) => t.path))].filter((p) => !isDeckSpecific(p));
-    const others = wide.length ? app.decksOf(deck.editionId).filter((d) => d.id !== deck.id) : [];
+    const others = wide.length ? this.targets.filter((d) => d.id !== deck.id) : [];
     const look = clone(this.deckLook);
     app.updateProject((p) => {
       for (const d of p.decks) {
