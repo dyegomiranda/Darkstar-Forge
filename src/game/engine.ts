@@ -8,7 +8,7 @@
  * campo de 2 fileiras × 3; a frente protege a retaguarda dos golpes corpo a
  * corpo; o dano fica até ser curado.
  */
-import type { Action, CardDef, CardRef, Effect, GameState, HeroDef, PlayerState, Pos, Target, Unit, UnitDef, Via } from './types';
+import type { Action, CardDef, CardRef, Effect, Fx, GameState, HeroDef, PlayerState, Pos, Target, Unit, UnitDef, Via } from './types';
 
 export const ROWS = 2, COLS = 3, MAX_LEVEL = 8, XP_PER_LEVEL = 3, START_HAND = 5;
 
@@ -31,13 +31,13 @@ function shuffle<T>(s: GameState, a: T[]): T[] {
 
 // ───────────── criação ─────────────
 
-function heroUnit(h: HeroDef): Unit {
-  return { id: `hero-${h.id}`, name: [h.name, h.name], atk: h.weapon.dmg, def: h.maxHp, dmg: 0, keys: [], icon: h.icon, isHero: true, exhausted: false, afflicted: false, marked: false, warded: false, buff: 0 };
+function heroUnit(h: HeroDef, p: 0 | 1): Unit {
+  return { id: `hero${p}-${h.id}`, name: [h.name, h.name], atk: h.weapon.dmg, def: h.maxHp, dmg: 0, keys: [], icon: h.icon, isHero: true, exhausted: false, afflicted: false, marked: false, warded: false, buff: 0 };
 }
 
-function newPlayer(hero: HeroDef, deck: CardRef[]): PlayerState {
+function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1): PlayerState {
   const board: (Unit | null)[][] = Array.from({ length: ROWS }, () => Array<Unit | null>(COLS).fill(null));
-  board[hero.row][hero.col] = heroUnit(hero);
+  board[hero.row][hero.col] = heroUnit(hero, p);
   return {
     hero, vigor: hero.vigor, maxVigor: hero.vigor, mana: hero.mana, maxMana: hero.mana, level: 1, xp: 0, pendingLevels: 0,
     deck, hand: [], discard: [], recent: [], board, struck: false, moved: false, hitHero: false, plays: 0,
@@ -55,8 +55,8 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
     return Array.from({ length: c.game.copies }, () => ({ uid: `c${++n}`, cardId: c.id }));
   });
   const s: GameState = {
-    players: [newPlayer(a.hero, build(a)), newPlayer(b.hero, build(b))],
-    defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, seq: 0,
+    players: [newPlayer(a.hero, build(a), 0), newPlayer(b.hero, build(b), 1)],
+    defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, seq: 0, fx: [],
   };
   for (const p of s.players) shuffle(s, p.deck);
   draw(s, 0, START_HAND);
@@ -198,6 +198,15 @@ function log(s: GameState, msg: string) {
 
 const nm = (u: Unit) => u.name[0];
 
+type FxIn = Fx extends infer T ? (T extends { n: number } ? Omit<T, 'n'> : never) : never;
+let fxN = 0;
+/** Registra um acontecimento para a mesa animar. */
+function fx(s: GameState, e: FxIn) {
+  if (!s.fx) s.fx = [];
+  s.fx.push({ ...e, n: ++fxN } as Fx);
+  if (s.fx.length > 120) s.fx.splice(0, s.fx.length - 120);
+}
+
 function draw(s: GameState, p: 0 | 1, n: number) {
   const pl = s.players[p];
   for (let i = 0; i < n; i++) {
@@ -211,10 +220,12 @@ function addXp(s: GameState, p: 0 | 1, n: number) {
   const pl = s.players[p];
   if (pl.level + pl.pendingLevels >= MAX_LEVEL) return;
   pl.xp += n;
+  fx(s, { k: 'xp', p, amount: n });
   while (pl.xp >= XP_PER_LEVEL && pl.level + pl.pendingLevels < MAX_LEVEL) {
     pl.xp -= XP_PER_LEVEL;
     pl.pendingLevels++;
     log(s, `${pl.hero.name} subiu de nível!`);
+    fx(s, { k: 'level', p });
   }
 }
 
@@ -222,14 +233,17 @@ function addXp(s: GameState, p: 0 | 1, n: number) {
 function damage(s: GameState, pos: Pos, n: number, by: 0 | 1, via: Via | 'none' = 'none') {
   const u = unitAt(s, pos);
   if (!u || n <= 0) return;
-  if (u.warded) { u.warded = false; log(s, `A Proteção de ${nm(u)} anulou o dano.`); return; }
+  if (u.warded) { u.warded = false; log(s, `A Proteção de ${nm(u)} anulou o dano.`); fx(s, { k: 'blocked', id: u.id }); return; }
   // armadura do herói: reduz golpes físicos (mínimo 1); magia e aflição atravessam
   const armor = u.isHero && (via === 'melee' || via === 'ranged') ? s.players[pos.p].hero.armor : 0;
   const total = Math.max(armor ? 1 : 0, n - armor) + (u.marked ? 1 : 0);
   u.dmg += total;
-  log(s, `${nm(u)} sofre ${total} de dano.`);
+  const absorbed = armor ? n - Math.max(1, n - armor) : 0;
+  log(s, `${nm(u)} sofre ${total} de dano${absorbed ? ` (a armadura absorveu ${absorbed})` : ''}.`);
+  fx(s, { k: 'dmg', id: u.id, amount: total, armor: absorbed, marked: u.marked, via });
   if (u.isHero && pos.p !== by && by === s.active && !s.players[by].hitHero) { s.players[by].hitHero = true; addXp(s, by, 1); }
   if (u.dmg >= u.def) {
+    fx(s, { k: 'death', id: u.id });
     if (u.isHero) { s.winner = other(pos.p); log(s, `${nm(u)} caiu. ${s.players[other(pos.p)].hero.name} venceu!`); return; }
     s.players[pos.p].board[pos.row][pos.col] = null;
     log(s, `${nm(u)} foi derrotado.`);
@@ -240,9 +254,11 @@ function damage(s: GameState, pos: Pos, n: number, by: 0 | 1, via: Via | 'none' 
 function heal(s: GameState, pos: Pos, n: number) {
   const u = unitAt(s, pos);
   if (!u) return;
-  u.dmg = Math.max(0, u.dmg - n);
-  if (u.afflicted) { u.afflicted = false; log(s, `${nm(u)} não está mais Afligido.`); }
-  log(s, `${nm(u)} recupera ${n}.`);
+  const got = Math.min(n, u.dmg);
+  u.dmg -= got;
+  fx(s, { k: 'heal', id: u.id, amount: got });
+  if (u.afflicted) { u.afflicted = false; log(s, `${nm(u)} não está mais Afligido.`); fx(s, { k: 'status', id: u.id, s: 'cleanse' }); }
+  log(s, `${nm(u)} recupera ${got}.`);
 }
 
 /** Troca a figura de fileira (mesma coluna se der; senão, o primeiro lugar livre). */
@@ -262,6 +278,7 @@ function shift(s: GameState, pos: Pos, toRow?: number): Pos | null {
 function summon(s: GameState, p: 0 | 1, d: UnitDef, at: Pos, src?: string) {
   const u: Unit = { src, id: `u${++s.seq}`, name: d.name, atk: d.atk, def: d.def, dmg: 0, keys: d.keys ?? [], icon: d.icon, isHero: false, exhausted: !(d.keys ?? []).includes('rapido'), afflicted: false, marked: false, warded: false, buff: 0 };
   s.players[p].board[at.row][at.col] = u;
+  fx(s, { k: 'summon', id: u.id });
   log(s, `${s.players[p].hero.name} invoca ${d.name[0]} (${d.atk}/${d.def}).`);
 }
 
@@ -288,14 +305,15 @@ function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: '
   const m = pl.stance?.mods ?? {};
   const n = pl.hero.weapon.dmg + bonus + (m.strike ?? 0) + hero.buff;
   log(s, `${pl.hero.name} golpeia ${nm(t)} (${n}).`);
+  fx(s, { k: 'attack', from: hero.id, to: t.id, via: strikeVia(s, p) });
   damage(s, target, n, p, strikeVia(s, p));
   if (s.winner !== undefined) return;
   if (m.strikeHeals) heal(s, heroPos(s, p), m.strikeHeals);
   const still = unitAt(s, target) === t;
   if (!still) return;
-  if (m.strikeAfflicts || then === 'afflict') t.afflicted = true;
-  if (then === 'mark') t.marked = true;
-  if (then === 'push' && !t.isHero) shift(s, target);
+  if (m.strikeAfflicts || then === 'afflict') { t.afflicted = true; fx(s, { k: 'status', id: t.id, s: 'afflict' }); }
+  if (then === 'mark') { t.marked = true; fx(s, { k: 'status', id: t.id, s: 'mark' }); }
+  if (then === 'push' && !t.isHero && shift(s, target)) fx(s, { k: 'status', id: t.id, s: 'push' });
 }
 
 function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: string) {
@@ -317,10 +335,10 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: stri
       break;
     }
     case 'heal': for (const pos of resolveTargets(s, p, e.tgt, chosen)) heal(s, pos, e.n); break;
-    case 'afflict': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.afflicted = true; log(s, `${nm(u)} fica Afligido.`); } } break;
-    case 'mark': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.marked = true; log(s, `${nm(u)} fica Marcado.`); } } break;
-    case 'ward': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.warded = true; log(s, `${nm(u)} está Protegido.`); } } break;
-    case 'push': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u && !u.isHero && shift(s, pos)) log(s, `${nm(u)} é empurrado.`); } break;
+    case 'afflict': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.afflicted = true; log(s, `${nm(u)} fica Afligido.`); fx(s, { k: 'status', id: u.id, s: 'afflict' }); } } break;
+    case 'mark': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.marked = true; log(s, `${nm(u)} fica Marcado.`); fx(s, { k: 'status', id: u.id, s: 'mark' }); } } break;
+    case 'ward': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.warded = true; log(s, `${nm(u)} está Protegido.`); fx(s, { k: 'status', id: u.id, s: 'ward' }); } } break;
+    case 'push': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u && !u.isHero && shift(s, pos)) { log(s, `${nm(u)} é empurrado.`); fx(s, { k: 'status', id: u.id, s: 'push' }); } } break;
     case 'summon': {
       const n = e.n ?? 1;
       const slots = [chosen, ...emptySlots(s, p)].filter((x): x is Pos => !!x && !unitAt(s, x));
@@ -328,9 +346,9 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: stri
       break;
     }
     case 'draw': draw(s, p, e.n); break;
-    case 'gain': if (e.res === 'vigor') pl.vigor += e.n; else pl.mana += e.n; break;
+    case 'gain': if (e.res === 'vigor') pl.vigor += e.n; else pl.mana += e.n; fx(s, { k: 'gain', p, res: e.res, amount: e.n }); break;
     case 'buff': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) u.buff += e.atk; } break;
-    case 'selfdmg': { const h = unitAt(s, heroPos(s, p))!; h.dmg += e.n; log(s, `${pl.hero.name} perde ${e.n} PV.`); if (h.dmg >= h.def) s.winner = other(p); break; }
+    case 'selfdmg': { const h = unitAt(s, heroPos(s, p))!; h.dmg += e.n; log(s, `${pl.hero.name} perde ${e.n} PV.`); fx(s, { k: 'dmg', id: h.id, amount: e.n, armor: 0, marked: false, via: 'none' }); if (h.dmg >= h.def) s.winner = other(p); break; }
     case 'advance': { const hp = heroPos(s, p); if (hp.row !== 0 && shift(s, hp, 0)) log(s, `${pl.hero.name} avança.`); break; }
     case 'stance': {
       if (pl.stance?.cardId) pl.discard.push({ uid: pl.stance.uid ?? `st${++s.seq}`, cardId: pl.stance.cardId });
@@ -348,6 +366,7 @@ function startTurn(s: GameState, first = false) {
   pl.plays = 0;
   for (const f of figures(s, p)) f.u.exhausted = false;
   log(s, `— Turno ${s.turn}: ${pl.hero.name} —`);
+  fx(s, { k: 'turn', p, turn: s.turn });
   // as habilidades usadas no turno anterior vão para o cemitério
   pl.discard.push(...pl.recent);
   pl.recent = [];
@@ -393,6 +412,7 @@ export function apply(s: GameState, a: Action): string | null {
       pl.plays++;
       if (d.game.effects.some((e) => e.k === 'strike')) pl.struck = true;
       log(s, `${pl.hero.name} usa ${d.name[0]}.`);
+      fx(s, { k: 'play', p, cardId: d.id });
       for (const e of d.game.effects) {
         applyEffect(s, p, e, ch?.kind === 'slot' ? a.slot : a.target, d.id);
         if (s.winner !== undefined) return null;
@@ -418,6 +438,7 @@ export function apply(s: GameState, a: Action): string | null {
       u.exhausted = true;
       const t = unitAt(s, a.target)!;
       log(s, `${nm(u)} ataca ${nm(t)}.`);
+      fx(s, { k: 'attack', from: u.id, to: t.id, via });
       damage(s, a.target, u.atk + u.buff, p, via);
       return null;
     }

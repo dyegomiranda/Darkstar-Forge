@@ -6,7 +6,8 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { PF_ID, pfCollection, PROTO_ID, protoCollection, seedProject } from '../model/seed';
+import { PF_ID, pfCollection, PROTO_ID, protoCollection, protoWeapon, seedProject } from '../model/seed';
+import { effectsText } from '../game/text';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
@@ -82,6 +83,17 @@ class ProjectState {
       p.editions.push(col.edition);
       p.decks.push(...col.decks);
       for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+    }
+    // textos das cartas do protótipo reescritos (dano exato nos golpes, lembretes curtos)
+    const TEXT2 = 'proto-text-3';
+    if (!p.seeded?.includes(TEXT2)) {
+      p.seeded = [...(p.seeded ?? []), TEXT2];
+      changed = true;
+      for (const c of Object.values(this.cards)) {
+        if (!c.game || !c.deckId.startsWith('proto-')) continue;
+        for (const l of ['pt-BR', 'en-US'] as const) c.text[l].rules = effectsText(c.game.effects, l, protoWeapon(c.deckId));
+        this.#dirtyCards.add(c.id);
+      }
     }
     if (!changed) return;
     this.#projectDirty = true;

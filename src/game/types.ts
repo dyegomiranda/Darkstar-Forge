@@ -176,7 +176,28 @@ export interface GameState {
   /** Limite de 3 habilidades por turno (modo B). */
   actionLimit: boolean;
   seq: number;
+  /** Acontecimentos recentes para a mesa animar (números de dano, ataques, começo de turno…). */
+  fx: Fx[];
 }
+
+/**
+ * Um acontecimento visível. `id` é o id da figura (Unit.id); `n` sempre crescente
+ * para a mesa saber o que ainda não mostrou.
+ */
+export type Fx = { n: number } & (
+  | { k: 'dmg'; id: string; amount: number; armor: number; marked: boolean; via: Via | 'none' }
+  | { k: 'blocked'; id: string }
+  | { k: 'heal'; id: string; amount: number }
+  | { k: 'status'; id: string; s: 'afflict' | 'mark' | 'ward' | 'push' | 'cleanse' }
+  | { k: 'death'; id: string }
+  | { k: 'attack'; from: string; to: string; via: Via }
+  | { k: 'turn'; p: 0 | 1; turn: number }
+  | { k: 'xp'; p: 0 | 1; amount: number }
+  | { k: 'level'; p: 0 | 1 }
+  | { k: 'play'; p: 0 | 1; cardId: string }
+  | { k: 'summon'; id: string }
+  | { k: 'gain'; p: 0 | 1; res: 'vigor' | 'mana'; amount: number }
+);
 
 /** Posição de uma figura. */
 export interface Pos { p: 0 | 1; row: number; col: number }

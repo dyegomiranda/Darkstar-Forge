@@ -2,7 +2,10 @@
  * Escreve o texto de regras de uma carta a partir dos efeitos (sempre no mesmo
  * padrão, em PT e EN). Assim o texto nunca diverge do que o jogo faz.
  */
-import type { Effect, Keyword, StanceMods, Target, Via } from './types';
+import type { Effect, HeroDef, Keyword, StanceMods, Target, Via } from './types';
+
+/** Arma do herói dono do deck: deixa o texto dos golpes com o dano exato. */
+export type Weapon = HeroDef['weapon'];
 
 type Lang = 'pt-BR' | 'en-US';
 
@@ -33,23 +36,47 @@ function stance(m: StanceMods, pt: boolean): string {
   return (pt ? 'Enquanto nesta postura, ' : 'While in this stance, ') + s + '.';
 }
 
-function one(e: Effect, pt: boolean): string {
+/** Lembretes curtos dos marcadores (só na 1ª vez que aparecem na carta). */
+const REMIND = {
+  afflict: [' (perde 1 PV no começo de cada turno até ser curado)', ' (loses 1 HP at the start of each turn until healed)'],
+  mark: [' (sofre +1 de todo dano)', ' (takes +1 from all damage)'],
+  ward: [' (anula o próximo dano)', ' (prevents the next damage)'],
+} as const;
+
+function one(e: Effect, pt: boolean, w: Weapon | undefined, seen: Set<string>): string {
+  const r = (k: keyof typeof REMIND) => { if (seen.has(k)) return ''; seen.add(k); return REMIND[k][pt ? 0 : 1]; };
+  // o 2º efeito que mira o mesmo tipo de alvo escolhido fala de "o alvo"
+  const T = (t: Target) => {
+    const chosen = ['enemy', 'enemyUnit', 'ally', 'allyUnit'].includes(t);
+    if (chosen && seen.has('tgt')) return pt ? 'o alvo' : 'the target';
+    if (chosen) seen.add('tgt');
+    return tgt(t, pt);
+  };
   switch (e.k) {
-    case 'dmg': return pt ? `Cause ${e.n} de dano ${via(e.via, pt)} a ${tgt(e.tgt, pt)}.` : `Deal ${e.n} ${via(e.via, pt)} damage to ${tgt(e.tgt, pt)}.`;
+    case 'dmg': return pt ? `Cause ${e.n} de dano ${via(e.via, pt)} a ${T(e.tgt)}.` : `Deal ${e.n} ${via(e.via, pt)} damage to ${T(e.tgt)}.`;
     case 'strike': {
-      const b = e.bonus ? (pt ? ` com +${e.bonus} de dano` : ` with +${e.bonus} damage`) : '';
-      const times = e.times && e.times > 1 ? (pt ? ` ${e.times} vezes (se o alvo cair, o golpe seguinte vai para outro inimigo)` : ` ${e.times} times (if the target falls, the next strike hits another enemy)`) : '';
-      const then = e.then === 'afflict' ? (pt ? ' O alvo fica Afligido.' : ' The target becomes Afflicted.')
-        : e.then === 'mark' ? (pt ? ' O alvo fica Marcado.' : ' The target becomes Marked.')
+      const times = e.times && e.times > 1 ? e.times : 1;
+      seen.add('tgt');
+      let head: string;
+      if (w) {
+        const n = w.dmg + e.bonus;
+        const each = times > 1 ? (pt ? ` ${times} vezes: ${n} de dano ${via(w.via, pt)} cada` : ` ${times} times: ${n} ${via(w.via, pt)} damage each`)
+          : (pt ? `: ${n} de dano ${via(w.via, pt)}` : `: ${n} ${via(w.via, pt)} damage`);
+        head = pt ? `Golpe (${w.name[0]})${each}.` : `Strike (${w.name[1]})${each}.`;
+      } else {
+        const b = e.bonus ? (pt ? ` +${e.bonus} de dano` : ` +${e.bonus} damage`) : '';
+        head = pt ? `Golpe da arma${b}${times > 1 ? ` ${times} vezes` : ''}.` : `Weapon strike${b}${times > 1 ? ` ${times} times` : ''}.`;
+      }
+      const then = e.then === 'afflict' ? (pt ? ' O alvo fica Afligido' : ' The target becomes Afflicted') + r('afflict') + '.'
+        : e.then === 'mark' ? (pt ? ' O alvo fica Marcado' : ' The target becomes Marked') + r('mark') + '.'
         : e.then === 'push' ? (pt ? ' Empurre o alvo para a outra fileira.' : ' Push the target to the other row.') : '';
-      return (pt ? `Golpeie com a sua arma${b}${times}.` : `Strike with your weapon${b}${times}.`) + then +
-        (pt ? ' (Conta como o golpe do turno.)' : ' (Counts as your strike this turn.)');
+      return head + then;
     }
-    case 'heal': return pt ? `Cure ${e.n} de ${tgt(e.tgt, pt)}.` : `Heal ${e.n} on ${tgt(e.tgt, pt)}.`;
-    case 'afflict': return pt ? `Aflija ${tgt(e.tgt, pt)}.` : `Afflict ${tgt(e.tgt, pt)}.`;
-    case 'mark': return pt ? `Marque ${tgt(e.tgt, pt)}.` : `Mark ${tgt(e.tgt, pt)}.`;
-    case 'ward': return pt ? `Proteja ${tgt(e.tgt, pt)}.` : `Ward ${tgt(e.tgt, pt)}.`;
-    case 'push': return pt ? `Empurre ${tgt(e.tgt, pt)} para a outra fileira.` : `Push ${tgt(e.tgt, pt)} to the other row.`;
+    case 'heal': return pt ? `${cap(T(e.tgt))} recupera ${e.n} PV.` : `${cap(T(e.tgt))} heals ${e.n} HP.`;
+    case 'afflict': return (pt ? `Aflija ${T(e.tgt)}` : `Afflict ${T(e.tgt)}`) + r('afflict') + '.';
+    case 'mark': return (pt ? `Marque ${T(e.tgt)}` : `Mark ${T(e.tgt)}`) + r('mark') + '.';
+    case 'ward': return (pt ? `Proteja ${T(e.tgt)}` : `Ward ${T(e.tgt)}`) + r('ward') + '.';
+    case 'push': return pt ? `Empurre ${T(e.tgt)} para a outra fileira.` : `Push ${T(e.tgt)} to the other row.`;
     case 'summon': {
       const u = e.unit;
       const keys = u.keys?.length ? ` (${u.keys.map((k) => KEY[k][pt ? 0 : 1]).join(', ')})` : '';
@@ -58,7 +85,7 @@ function one(e: Effect, pt: boolean): string {
     }
     case 'draw': return pt ? `Compre ${e.n} carta${e.n > 1 ? 's' : ''}.` : `Draw ${e.n} card${e.n > 1 ? 's' : ''}.`;
     case 'gain': return pt ? `Ganhe ${e.n} {${e.res}}.` : `Gain ${e.n} {${e.res}}.`;
-    case 'buff': return pt ? `${cap(tgt(e.tgt, pt))} ganha +${e.atk} ATK até o fim do turno.` : `${cap(tgt(e.tgt, pt))} gets +${e.atk} ATK until end of turn.`;
+    case 'buff': return pt ? `${cap(T(e.tgt))} ganha +${e.atk} ATK até o fim do turno.` : `${cap(T(e.tgt))} gets +${e.atk} ATK until end of turn.`;
     case 'selfdmg': return pt ? `Perca ${e.n} PV.` : `Lose ${e.n} HP.`;
     case 'advance': return pt ? 'Leve o seu herói para a fileira da frente.' : 'Move your hero to the front row.';
     case 'stance': return stance(e.mods, pt);
@@ -67,8 +94,9 @@ function one(e: Effect, pt: boolean): string {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export function effectsText(effects: Effect[], lang: Lang): string {
-  return effects.map((e) => one(e, lang === 'pt-BR')).join(' ');
+export function effectsText(effects: Effect[], lang: Lang, weapon?: Weapon): string {
+  const seen = new Set<string>();
+  return effects.map((e) => one(e, lang === 'pt-BR', weapon, seen)).join(' ');
 }
 
 /** Texto de lembrete das palavras-chave de uma invocação. */
