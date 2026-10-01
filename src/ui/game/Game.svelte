@@ -298,6 +298,25 @@
     }
   }
 
+  // ───────────── dicas ao passar o mouse ─────────────
+  let tipBox = $state<{ head: string; text: string; x: number; y: number; up: boolean } | null>(null);
+  /** `use:tip={'Título: explicação'}` — mostra uma caixinha de explicação ao passar o mouse. */
+  function tip(node: HTMLElement, text: string) {
+    let t = text;
+    const enter = () => {
+      if (!t) return;
+      const r = node.getBoundingClientRect();
+      const up = r.top > innerHeight / 2;
+      const i = t.indexOf(':');
+      const [head, body] = i > 0 && i < 40 ? [t.slice(0, i), t.slice(i + 1).trim()] : ['', t];
+      tipBox = { head, text: body, x: Math.min(Math.max(150, r.left + r.width / 2), innerWidth - 150), y: up ? r.top - 8 : r.bottom + 8, up };
+    };
+    const leave = () => { tipBox = null; };
+    node.addEventListener('mouseenter', enter);
+    node.addEventListener('mouseleave', leave);
+    return { update(v: string) { t = v; }, destroy() { node.removeEventListener('mouseenter', enter); node.removeEventListener('mouseleave', leave); leave(); } };
+  }
+
   // ───────────── zoom (como no Arena: a carta cresce ao passar o mouse) ─────────────
   let zoom = $state<{ id: string; x: number; y: number; up: boolean } | null>(null);
   const ZW = 330;
@@ -371,18 +390,28 @@
         <button class="btn primary" disabled={!countOf(myHero) || !countOf(botHero)} onclick={toPlace}><Swords size={16} /> {L('Continuar', 'Continue')}</button>
       </div>
     {:else}
-      <div class="place" style="--c:{colorOf(myHero)}">
+      <div class="place" style="--c:{colorOf(myHero)}; --f:{colorOf(botHero)}">
+        <span class="pside foe">{L('Campo do inimigo', 'Enemy field')} · {botHero.name}</span>
+        {#each [1, 0] as row}
+          <div class="prow ghost">
+            {#each [0, 1, 2] as col}
+              <span class="pslot">{#if botHero.row === row && botHero.col === col}<Glyph id={botHero.icon} size={34} color="#f3ead6" /><b>{botHero.name}</b>{:else}<small>{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</small>{/if}</span>
+            {/each}
+          </div>
+        {/each}
+        <div class="pmid">{L('▼ Clique numa casa do SEU campo para escolher onde o seu herói começa', '▼ Click a slot on YOUR field to choose where your hero starts')}</div>
         {#each [0, 1] as row}
-          <div class="prow"><span class="plabel">{row === 0 ? L('Frente', 'Front') : L('Retaguarda', 'Back')}</span>
+          <div class="prow">
             {#each [0, 1, 2] as col}
               <button class="pslot" class:on={myPos.row === row && myPos.col === col} onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
-                {#if myPos.row === row && myPos.col === col}<Glyph id={myHero.icon} size={44} color="#f3ead6" /><b>{myHero.name}</b>{/if}
+                {#if myPos.row === row && myPos.col === col}<Glyph id={myHero.icon} size={40} color="#f3ead6" /><b>{myHero.name}</b>{:else}<small>{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</small>{/if}
               </button>
             {/each}
           </div>
         {/each}
+        <span class="pside">{L('Seu campo', 'Your field')} · {myHero.name}</span>
       </div>
-      <div class="opts">
+      <div class="opts pbtns">
         <button class="btn" onclick={() => (step = 'heroes')}>{L('Voltar', 'Back')}</button>
         <button class="btn primary" onclick={start}><Swords size={16} /> {L('Começar partida', 'Start match')}</button>
       </div>
@@ -401,28 +430,28 @@
           <span class="emb sm"><Glyph id={pl.hero.icon} size={24} color="#f3ead6" /></span>
           <div class="who"><b>{pl.hero.name}</b><small>{L(pl.hero.className[0], pl.hero.className[1])}</small></div>
           {#if h}
-            <div class="stat" title={L('Vida do herói. Se chegar a 0, a partida acaba. O dano fica até ser curado.', 'Hero life. At 0 the match is lost. Damage stays until healed.')}>
+            <div class="stat" use:tip={L('Vida: se chegar a 0, o herói cai e a partida acaba. O dano fica até ser curado.', 'Life: at 0 the hero falls and the match ends. Damage stays until healed.')}>
               <span class="cap">{L('Vida', 'Life')}</span>
               <span class="val hpv" id="hp-{p}"><Heart size={14} /> <b>{life(h)}</b><small>/{h.def}</small><span class="hpbar"><i style="width:{(life(h) / h.def) * 100}%"></i></span></span>
             </div>
           {/if}
-          <div class="stat" title={L('Vigor: paga as habilidades físicas. Enche de novo no começo de cada turno.', 'Vigor: pays physical abilities. Refills at the start of each turn.')}>
+          <div class="stat" use:tip={L('Vigor: paga as habilidades físicas. Enche de novo no começo de cada turno.', 'Vigor: pays physical abilities. Refills at the start of each turn.')}>
             <span class="cap">Vigor</span>
             <span class="val vig" id="res-{p}-vigor"><Glyph id="gauntlet" size={15} color="currentColor" />{#each pips(pl.vigor, pl.maxVigor) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxVigor && !pl.vigor}<small>—</small>{/if}</span>
           </div>
-          <div class="stat" title={L('Mana: paga as magias. Enche de novo no começo de cada turno.', 'Mana: pays spells. Refills at the start of each turn.')}>
+          <div class="stat" use:tip={L('Mana: paga as magias. Enche de novo no começo de cada turno.', 'Mana: pays spells. Refills at the start of each turn.')}>
             <span class="cap">Mana</span>
             <span class="val man" id="res-{p}-mana"><Glyph id="crystal-cluster" size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
           </div>
-          <div class="stat" title={L(`Nível ${pl.level}. XP: +1 por turno, +1 por figura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level ${pl.level}. XP: +1 per turn, +1 per defeated figure, +1 the first time you hit the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
+          <div class="stat" use:tip={L(`Nível e XP: o herói está no nível ${pl.level}. Ganha +1 XP por turno, +1 por figura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level and XP: the hero is level ${pl.level}. +1 XP per turn, +1 per defeated figure, +1 the first time you hit the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
             <span class="cap">{L('Nível', 'Level')} {pl.level}</span>
             <span class="val xpv" id="xp-{p}">{#each Array(XP_PER_LEVEL) as _, i}<i class="pip" class:on={i < pl.xp}></i>{/each}<small>{pl.xp}/{XP_PER_LEVEL} XP</small></span>
           </div>
-          <div class="stat" title={L('Golpe: o ataque do herói com a arma, uma vez por turno (clique no herói). As cartas de Ataque melhoram esse golpe.', 'Strike: the hero attacks with the weapon once per turn (click the hero). Attack cards improve it.')}>
+          <div class="stat" use:tip={L('Golpe: o ataque do herói com a arma, uma vez por turno (clique no herói). As cartas de Ataque melhoram esse golpe.', 'Strike: the hero attacks with the weapon once per turn (click the hero). Attack cards improve it.')}>
             <span class="cap">{L('Golpe', 'Strike')}</span>
             <span class="val stk" class:used={pl.struck && g!.active === p}><Swords size={14} /> <b>{strikeDmg(p)}</b><small>{L(VIA[pl.hero.weapon.via][0], VIA[pl.hero.weapon.via][1])}</small></span>
           </div>
-          <div class="stat" title={L(`Armadura: cada golpe físico (corpo a corpo ou à distância) no herói perde ${pl.hero.armor} de dano (mínimo 1). Magia atravessa.`, `Armor: each physical hit on the hero loses ${pl.hero.armor} damage (min 1). Magic ignores it.`)}>
+          <div class="stat" use:tip={L(`Armadura: cada golpe físico (corpo a corpo ou à distância) no herói perde ${pl.hero.armor} de dano (mínimo 1). Magia atravessa.`, `Armor: each physical hit on the hero loses ${pl.hero.armor} damage (min 1). Magic ignores it.`)}>
             <span class="cap">{L('Armadura', 'Armor')}</span>
             <span class="val"><Shield size={14} /> <b>{pl.hero.armor}</b></span>
           </div>
@@ -449,11 +478,11 @@
               <span class="u-nm">{L(u.name[0], u.name[1])}</span>
               <span class="u-st">{#if !u.isHero}<span class="atk"><Swords size={13} /> {u.atk + u.buff}</span>{:else}<span class="atk" class:used={g!.players[p].struck && g!.active === p}><Swords size={13} /> {strikeDmg(p)}</span>{/if}<span class="def"><Heart size={13} /> {life(u)}{#if u.isHero}/{u.def}{/if}</span></span>
               <span class="u-mk">
-                {#if u.afflicted}<i title={L('Afligido: 1 de dano no começo do turno do dono', 'Afflicted: 1 damage at its owner’s turn start')}><Droplet size={14} /></i>{/if}
-                {#if u.marked}<i title={L('Marcado: sofre +1 de todo dano', 'Marked: takes +1 from all damage')}><Crosshair size={14} /></i>{/if}
-                {#if u.warded}<i title={L('Protegido: o próximo dano é anulado', 'Warded: the next damage is prevented')}><Shield size={14} /></i>{/if}
-                {#if u.keys.includes('guarda') || (u.isHero && g!.players[p].stance?.mods.guard)}<i title={L('Guarda', 'Guard')}><Users size={14} /></i>{/if}
-                {#if u.keys.includes('rapido')}<i title={L('Rápido', 'Swift')}><Zap size={14} /></i>{/if}
+                {#if u.afflicted}<i use:tip={L('Afligido: 1 de dano no começo do turno do dono', 'Afflicted: 1 damage at its owner’s turn start')}><Droplet size={14} /></i>{/if}
+                {#if u.marked}<i use:tip={L('Marcado: sofre +1 de todo dano', 'Marked: takes +1 from all damage')}><Crosshair size={14} /></i>{/if}
+                {#if u.warded}<i use:tip={L('Protegido: o próximo dano é anulado', 'Warded: the next damage is prevented')}><Shield size={14} /></i>{/if}
+                {#if u.keys.includes('guarda') || (u.isHero && g!.players[p].stance?.mods.guard)}<i use:tip={L('Guarda: enquanto houver alguém com Guarda, os golpes corpo a corpo inimigos precisam mirar nele.', 'Guard: while it stands, enemy melee attacks must target it.')}><Users size={14} /></i>{/if}
+                {#if u.keys.includes('rapido')}<i use:tip={L('Rápido: pode atacar no turno em que entra.', 'Swift: can attack the turn it arrives.')}><Zap size={14} /></i>{/if}
               </span>
             </span>
           {:else}
@@ -484,11 +513,11 @@
       <!-- ───── grimório e cemitério ───── -->
       {#snippet piles(p: 0 | 1, top: boolean)}
         {@const pl = g!.players[p]}
-        <div class="pile deck" class:top id="deck-{p}" title={L(`Grimório: ${pl.deck.length} cartas`, `Grimoire: ${pl.deck.length} cards`)}>
+        <div class="pile deck" class:top id="deck-{p}" use:tip={L(`Grimório: ${pl.deck.length} cartas`, `Grimoire: ${pl.deck.length} cards`)}>
           {#if pl.deck.length}<span class="stack" style="--n:{Math.min(4, Math.ceil(pl.deck.length / 10))}">{#if backUrl}<img src={backUrl} alt="" />{/if}</span>{/if}
           <span class="pcount"><BookOpen size={12} /> {pl.deck.length}</span>
         </div>
-        <button class="pile grave" class:top id="grave-{p}" onclick={() => (graveOf = p)} title={L('Cemitério (clique para ver)', 'Graveyard (click to view)')}>
+        <button class="pile grave" class:top id="grave-{p}" onclick={() => (graveOf = p)} use:tip={L('Cemitério (clique para ver)', 'Graveyard (click to view)')}>
           {#each pl.discard.slice(-1) as r (r.uid)}
             <span class="gtop" in:receive={fly(r.uid, { from: `#zone-src-${p}` })}>{#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}</span>
           {/each}
@@ -502,14 +531,14 @@
         {@const h = g!.players[p].hero}
         <div class="gear-panel" class:top style="--c:{colorOf(h)}">
           <span class="gtitle">{L('Equipamento', 'Equipment')} · {h.name}</span>
-          <div class="gi" title={L('Arma: define o dano do golpe do herói.', 'Weapon: sets the hero strike damage.')}>
+          <div class="gi" use:tip={L('Arma: define o dano do golpe do herói.', 'Weapon: sets the hero strike damage.')}>
             <span class="gic"><Glyph id={weaponIcon(h)} size={20} color="#f3ead6" /></span>
             <span class="gtx"><b>{L(h.weapon.name[0], h.weapon.name[1])}</b>
               <small>{L(`Golpe ${h.weapon.dmg} · ${VIA[h.weapon.via][0]}`, `Strike ${h.weapon.dmg} · ${VIA[h.weapon.via][1]}`)}{#if strikeDmg(p) !== h.weapon.dmg}<em> → {strikeDmg(p)}</em>{/if}</small></span>
           </div>
           {#each h.gear.filter((it) => it.name[0] !== h.weapon.name[0]) as it}
             {@const armor = it.info[0].startsWith('Armadura')}
-            <div class="gi">
+            <div class="gi" use:tip={armor ? L(`Armadura: cada golpe corpo a corpo ou à distância no herói perde ${h.armor} de dano (mínimo 1). Magia atravessa.`, `Armor: each melee or ranged hit on the hero loses ${h.armor} damage (min 1). Magic ignores it.`) : L(`${it.name[0]}: ${it.info[0]}.`, `${it.name[1]}: ${it.info[1]}.`)}>
               <span class="gic"><Glyph id={armor ? 'chest-armor' : 'magic-swirl'} size={20} color="#f3ead6" /></span>
               <span class="gtx"><b>{L(it.name[0], it.name[1])}</b>
                 <small>{armor ? L(`Armadura ${h.armor}: −${h.armor} em golpes físicos`, `Armor ${h.armor}: −${h.armor} on physical hits`) : L(it.info[0], it.info[1])}</small></span>
@@ -540,7 +569,7 @@
             in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })}
             onclick={() => clickCard(r.uid)} onmouseenter={(e) => hover(r.cardId, e)} onmouseleave={() => (zoom = null)}>
             {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
-            {#if dmgBadge(r)}<span class="dmgb" title={L('Dano que esta carta causa agora', 'Damage this card deals now')}><Swords size={13} /> {dmgBadge(r)}</span>{/if}
+            {#if dmgBadge(r)}<span class="dmgb" use:tip={L('Dano que esta carta causa agora', 'Damage this card deals now')}><Swords size={13} /> {dmgBadge(r)}</span>{/if}
           </button>
         {/each}
       </div>
@@ -574,6 +603,11 @@
       <button class="btn sm ghost" onclick={() => { g = null; step = 'heroes'; }}><RotateCcw size={14} /> {L('Trocar heróis', 'Change heroes')}</button>
     </aside>
 
+    {#if tipBox}
+      <div class="tipbox" class:up={tipBox.up} style="left:{tipBox.x}px;top:{tipBox.y}px" transition:fade={{ duration: 100 }}>
+        {#if tipBox.head}<b>{tipBox.head}</b>{/if}<span>{tipBox.text}</span>
+      </div>
+    {/if}
     <div class="fxlayer" bind:this={fxEl}>
       {#each floats as f (f.key)}
         <div class="float {f.cls}" class:big={f.big} style="left:{f.x}px;top:{f.y}px"><b>{f.text}</b>{#if f.sub}<small>{f.sub}</small>{/if}</div>
@@ -640,14 +674,20 @@
   .emb { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 60%, #000), color-mix(in srgb, var(--c) 22%, #000)); flex: none; }
   .emb.sm { width: 36px; height: 36px; border-radius: 9px; }
   .opts { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
-  .place { display: flex; flex-direction: column; gap: 12px; align-self: center; }
-  .prow { display: flex; gap: 12px; align-items: center; }
-  .plabel { width: 90px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-  .pslot { width: 150px; height: 120px; border-radius: 12px; border: 1px dashed var(--line-2); background: var(--surface); color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: inherit; }
+  .place { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: auto; }
+  .prow { display: flex; gap: 10px; align-items: center; }
+  .prow.ghost { opacity: .4; pointer-events: none; }
+  .prow.ghost .pslot { border-style: dashed; cursor: default; }
+  .pside { font: 600 11px var(--ui); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+  .pside.foe { color: var(--f); }
+  .pmid { margin: 10px 0; padding: 6px 18px; border-block: 1px solid rgb(255 255 255 / .08); color: var(--accent-2); font-size: 13px; }
+  .pslot small { font-size: 11px; color: rgb(255 255 255 / .3); text-transform: uppercase; letter-spacing: .08em; }
+  .pbtns { justify-content: center; }
+  .pslot { width: 150px; height: 104px; border-radius: 12px; border: 1px dashed var(--line-2); background: var(--surface); color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: inherit; }
   .pslot.on { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 25%, var(--surface)); }
 
   /* ───── mesa ───── */
-  .table { --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 20vh, 280px);
+  .table { --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 22vh, 300px);
     height: 100%; display: grid; grid-template-columns: 1fr 290px; min-height: 0; position: relative; }
   .main { position: relative; display: flex; flex-direction: column; gap: 5px; padding: 6px 14px; min-height: 0; overflow: hidden;
     background: radial-gradient(ellipse at 50% 50%, #241e1a 0%, #100e0c 70%); }
@@ -701,8 +741,8 @@
   .zhint { font-size: 11px; color: rgb(255 255 255 / .22); text-transform: uppercase; letter-spacing: .08em; }
   .mid { text-align: center; color: var(--accent-2); font-size: 13px; min-height: 22px; flex: none; border-top: 1px solid rgb(255 255 255 / .06); border-bottom: 1px solid rgb(255 255 255 / .06); padding: 2px 0; }
 
-  .hand { display: flex; justify-content: center; align-items: flex-end; flex: 1 1 0; min-height: 90px; max-height: var(--hand); padding-bottom: 2px; }
-  .hc { height: 100%; max-height: var(--hand); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; margin: 0 -6px; transition: transform .15s, margin .15s; position: relative; }
+  .hand { display: flex; justify-content: center; align-items: flex-end; flex: 1 1 0; min-height: 90px; padding-bottom: 2px; }
+  .hc { height: 100%; max-height: calc(var(--hand) * 1.15); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; margin: 0 -6px; transition: transform .15s, margin .15s; position: relative; }
   .hc:hover { transform: translateY(-14px); z-index: 2; }
   .hc.no { filter: brightness(.55) saturate(.6); }
   .dmgb { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1; display: inline-flex; gap: 3px; align-items: center; font: 800 14px var(--ui); padding: 2px 9px; border-radius: 9px; background: #2a0f0b; color: #ffcf7a; border: 1.5px solid #c4473a; box-shadow: 0 3px 8px rgb(0 0 0 / .6); white-space: nowrap; }
@@ -737,6 +777,9 @@
   .shown { position: absolute; left: 250px; top: 50%; transform: translateY(-58%); width: 230px; z-index: 39; pointer-events: none; display: flex; flex-direction: column; gap: 6px; align-items: center; filter: drop-shadow(0 20px 40px rgb(0 0 0 / .9)); }
   .shown span { font: 600 12px var(--ui); text-transform: uppercase; letter-spacing: .1em; color: #f0d8c8; background: rgb(10 8 7 / .85); padding: 3px 10px; border-radius: 8px; }
 
+  .tipbox { position: fixed; z-index: 70; transform: translateX(-50%); width: max-content; max-width: 280px; pointer-events: none; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; border-radius: 9px; background: #1d1916; border: 1px solid var(--line-2); box-shadow: 0 10px 28px rgb(0 0 0 / .7); font-size: 12.5px; line-height: 1.4; color: var(--text-2); }
+  .tipbox.up { transform: translate(-50%, -100%); }
+  .tipbox b { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
   .fxlayer { position: fixed; inset: 0; pointer-events: none; z-index: 45; }
   .float { position: fixed; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; animation: floatUp 1.6s cubic-bezier(.2, .7, .3, 1) forwards; white-space: nowrap; }
   .float b { font: 800 16px var(--ui); text-shadow: 0 2px 6px #000, 0 0 2px #000; }

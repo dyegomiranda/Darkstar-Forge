@@ -12,6 +12,7 @@ import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
+import { importImage } from './media';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -55,6 +56,34 @@ class ProjectState {
     const eds = this.project!.editions;
     this.editionId = eds.some((e) => e.id === last) ? last : eds[0]?.id ?? '';
     this.ready = true;
+    void this.#addProtoArt();
+  }
+
+  /**
+   * Artes em pixel art das cartas do Protótipo (vêm junto com o app, em art/proto/).
+   * Só entram em cartas que ainda não têm imagem; roda uma vez.
+   */
+  async #addProtoArt(): Promise<void> {
+    const MARK = 'proto-art-1';
+    const p = this.project!;
+    if (p.seeded?.includes(MARK)) return;
+    const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const cache = new Map<string, string | null>();
+    for (const c of Object.values(this.cards)) {
+      if (!c.game || !c.deckId.startsWith('proto-') || c.art.mediaId) continue;
+      const key = slug(c.text['en-US'].name);
+      if (!cache.has(key)) {
+        try {
+          const r = await fetch(new URL(`art/proto/${key}.webp`, document.baseURI));
+          cache.set(key, r.ok ? await importImage(await r.blob(), `${key}.webp`) : null);
+        } catch { cache.set(key, null); }
+      }
+      const id = cache.get(key);
+      if (!id) continue;
+      this.putCard({ ...this.cards[c.id], art: { ...c.art, mediaId: id, zoom: 1, x: 0, y: 0 } });
+    }
+    // só marca como feito quando todas as artes existem (enquanto o conjunto estiver incompleto, tenta de novo ao abrir)
+    if (cache.size && ![...cache.values()].some((v) => v === null)) this.updateProject((pr) => { pr.seeded = [...(pr.seeded ?? []), MARK]; });
   }
 
   /** Projeto de versão antiga: regrava as cartas já convertidas (custo em lista). */
