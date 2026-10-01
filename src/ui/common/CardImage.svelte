@@ -50,7 +50,7 @@
 </div>
 
 <style>
-  .ci { position: relative; width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.5% / 3.2%; overflow: hidden; background: var(--surface); }
+  .ci { position: relative; width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; background: var(--surface); }
   img { display: block; width: 100%; height: 100%; object-fit: cover; animation: fade .25s ease-out; }
   .sk { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding: 12%; }
   .sk span { font-size: 12px; color: var(--muted); text-align: center; }

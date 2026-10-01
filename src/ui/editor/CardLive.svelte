@@ -68,7 +68,7 @@
 </div>
 
 <style>
-  .live { width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.5% / 3.2%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .04); touch-action: none; user-select: none; }
+  .live { width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .04); touch-action: none; user-select: none; }
   .live.grab { cursor: grab; }
   .live.grab:active { cursor: grabbing; }
   .live :global(svg) { width: 100%; height: 100%; display: block; }

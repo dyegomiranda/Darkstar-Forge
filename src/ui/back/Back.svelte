@@ -174,7 +174,7 @@
   .gl:hover { background: var(--surface-2); }
   .gl.on { border-color: var(--accent); background: var(--accent-soft); }
   .stage { display: grid; place-items: center; padding: 28px; background: radial-gradient(ellipse at 50% 40%, #1d1917 0%, #0c0b0a 70%); min-height: 0; overflow: auto; }
-  .card { width: min(440px, 100%, calc((100vh - 80px) / 1.4)); aspect-ratio: 750 / 1050; border-radius: 4.5% / 3.2%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7); }
+  .card { width: min(440px, 100%, calc((100vh - 80px) / 1.4)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7); }
   .card :global(svg) { width: 100%; height: 100%; display: block; }
   @media (max-width: 900px) { .page { grid-template-columns: 1fr; overflow-y: auto; } .stage { order: -1; } .side { overflow: visible; border-right: 0; } }
 </style>

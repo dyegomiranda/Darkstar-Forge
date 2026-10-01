@@ -4,7 +4,7 @@
  * backup completo (ZIP com projeto + cartas + imagens) e planilha CSV.
  */
 import { strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
-import { degrees, PDFDocument, rgb, type PDFImage, type PDFPage } from 'pdf-lib';
+import { appendBezierCurve, clip, closePath, degrees, endPath, lineTo, moveTo, PDFDocument, popGraphicsState, pushGraphicsState, rgb, type PDFImage, type PDFPage } from 'pdf-lib';
 import { composeBack } from '../render/back';
 import { backInput, ensureBackMedia } from '../ui/back/backCtx';
 import { L } from '../app/i18n.svelte';
@@ -20,7 +20,34 @@ import { app } from '../store/project.svelte';
 import { ctxFor, ensureCardMedia } from '../ui/common/cardCtx';
 
 const MM = 72 / 25.4;
+/** Medida padrão das cartas do Magic (cabe nos sleeves, deck boxes e cortadores de canto comuns). */
 const CARD_MM = { w: 63, h: 88 };
+/** Raio dos cantos (padrão do Magic: ~3 mm). */
+const RADIUS_MM = 3;
+
+/**
+ * Desenha a imagem da carta recortada no formato da carta (cantos arredondados):
+ * fora dos cantos fica o branco do papel. `turn` = girar 180° (verso virado pela borda curta).
+ */
+function drawCard(page: PDFPage, img: PDFImage, x: number, y: number, w: number, h: number, turn = false, guide = false): void {
+  const r = RADIUS_MM * MM, k = r * 0.5523;
+  page.pushOperators(
+    pushGraphicsState(),
+    moveTo(x + r, y), lineTo(x + w - r, y), appendBezierCurve(x + w - r + k, y, x + w, y + r - k, x + w, y + r),
+    lineTo(x + w, y + h - r), appendBezierCurve(x + w, y + h - r + k, x + w - r + k, y + h, x + w - r, y + h),
+    lineTo(x + r, y + h), appendBezierCurve(x + r - k, y + h, x, y + h - r + k, x, y + h - r),
+    lineTo(x, y + r), appendBezierCurve(x, y + r - k, x + r - k, y, x + r, y),
+    closePath(), clip(), endPath(),
+  );
+  if (turn) page.drawImage(img, { x: x + w, y: y + h, width: w, height: h, rotate: degrees(180) });
+  else page.drawImage(img, { x, y, width: w, height: h });
+  page.pushOperators(popGraphicsState());
+  // guia de corte: contorno arredondado bem fino em volta da carta
+  if (guide) {
+    const d = `M${r} 0H${w - r}A${r} ${r} 0 0 1 ${w} ${r}V${h - r}A${r} ${r} 0 0 1 ${w - r} ${h}H${r}A${r} ${r} 0 0 1 0 ${h - r}V${r}A${r} ${r} 0 0 1 ${r} 0Z`;
+    page.drawSvgPath(d, { x, y: y + h, borderColor: rgb(0.62, 0.62, 0.62), borderWidth: 0.25 });
+  }
+}
 
 export function download(blob: Blob, name: string): void {
   const a = document.createElement('a');
@@ -128,9 +155,9 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
 
   if (o.layout === 'single') {
     for (let i = 0; i < n; i++) {
-      if (o.backs !== 'only') pdf.addPage([cw, ch]).drawImage(await pdf.embedJpg(fronts[i]), { x: 0, y: 0, width: cw, height: ch });
+      if (o.backs !== 'only') drawCard(pdf.addPage([cw, ch]), await pdf.embedJpg(fronts[i]), 0, 0, cw, ch);
       const bk = backImg(i);
-      if (bk) pdf.addPage([cw, ch]).drawImage(bk, { x: 0, y: 0, width: cw, height: ch });
+      if (bk) drawCard(pdf.addPage([cw, ch]), bk, 0, 0, cw, ch);
     }
   } else {
     const ox = (A4.w - (3 * cw + 2 * GAP)) / 2, oy = (A4.h - (3 * ch + 2 * GAP)) / 2;
@@ -139,7 +166,10 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
       const count = Math.min(9, n - i);
       if (o.backs !== 'only') {
         const page = pdf.addPage([A4.w, A4.h]);
-        for (let k = 0; k < count; k++) page.drawImage(await pdf.embedJpg(fronts[i + k]), { ...at(k % 3, Math.floor(k / 3)), width: cw, height: ch });
+        for (let k = 0; k < count; k++) {
+          const p = at(k % 3, Math.floor(k / 3));
+          drawCard(page, await pdf.embedJpg(fronts[i + k]), p.x, p.y, cw, ch, false, true);
+        }
         cropMarks(page, ox, oy, cw, ch);
       }
       if (backs.size) {
@@ -152,8 +182,7 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
           else row = 2 - row;
           const p = at(col, row);
           const bk = backImg(i + k)!;
-          if (o.flip === 'short') page.drawImage(bk, { x: p.x + cw, y: p.y + ch, width: cw, height: ch, rotate: degrees(180) });
-          else page.drawImage(bk, { ...p, width: cw, height: ch });
+          drawCard(page, bk, p.x, p.y, cw, ch, o.flip === 'short', true);
         }
         cropMarks(page, ox, oy, cw, ch);
       }

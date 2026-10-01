@@ -26,6 +26,8 @@ export async function rasterize(svg: string, width = CARD_W * 2, type = 'image/p
     const height = Math.round((width * CARD_H) / CARD_W);
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d')!;
+    // JPEG não tem transparência: os cantos arredondados viram branco (cor do papel), não preto
+    if (type === 'image/jpeg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); }
     ctx.drawImage(img, 0, 0, width, height);
     return await canvas.convertToBlob({ type, quality });
   } finally {
