@@ -17,3 +17,11 @@ describe('decks de teste', () => {
     for (const d of PROTO_DECKS) for (const c of d.cards) if (c.game.attr) expect(d.hero.attrs[c.game.attr[0]], `${d.hero.name}: ${c.name[0]}`).toBeGreaterThanOrEqual(c.game.attr[1]);
   });
 });
+
+import { ruleCost } from '../src/game/value';
+describe('regra de custo', () => {
+  it('toda carta do Protótipo custa exatamente o que a regra dá (Vigor + Mana)', () => {
+    const off = PROTO_DECKS.flatMap((d) => d.cards.filter((c) => (c.game.vigor ?? 0) + (c.game.mana ?? 0) !== ruleCost(c.game)).map((c) => `${c.name[0]}: custa ${(c.game.vigor ?? 0) + (c.game.mana ?? 0)}, a regra dá ${ruleCost(c.game)}`));
+    expect(off).toEqual([]);
+  });
+});

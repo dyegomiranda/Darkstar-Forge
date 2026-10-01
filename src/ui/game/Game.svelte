@@ -1,5 +1,5 @@
 <!--
-  Mesa de teste, no espírito do MTG Arena. De baixo para cima: a barra do seu
+  Mesa de teste. De baixo para cima: a barra do seu
   herói, a sua mão, as suas duas fileiras e a faixa das cartas usadas no turno;
   o lado do oponente é o mesmo, espelhado. Grimório e cemitério ficam nos cantos
   (as cartas voam de um lugar para outro). Passe o mouse numa carta para
@@ -655,7 +655,7 @@
     return { update(v: string) { t = v; }, destroy() { node.removeEventListener('mouseenter', enter); node.removeEventListener('mouseleave', leave); leave(); } };
   }
 
-  // ───────────── zoom (como no Arena: a carta cresce ao passar o mouse) ─────────────
+  // ───────────── zoom (a carta cresce ao passar o mouse) ─────────────
   let zoom = $state<{ id: string; x: number; y: number; up: boolean } | null>(null);
   const ZW = 340;
   function hover(id: string | undefined, e: MouseEvent) {
@@ -772,7 +772,7 @@
         <label class="field"><span>{L('Quem começa', 'Who starts')}</span>
           <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
         <div class="vs-opts">
-          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('como o jogador no Magic: não ocupa lugar e golpeia qualquer fileira ou o herói inimigo', 'like the player in Magic: takes no slot and strikes any row or the enemy hero')}</small></span></label>
+          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('o herói não ocupa um lugar no campo e pode golpear qualquer fileira ou o herói inimigo', 'the hero takes no slot on the field and can strike any row or the enemy hero')}</small></span></label>
           {#if heroOff}
             <label class="toggle sub"><input type="checkbox" bind:checked={heroOffFront} /> <span><b>{L('Exigir a frente vazia', 'Require an empty front')}</b><small>{L('o golpe corpo a corpo do herói só passa da fileira da frente inimiga se ela estiver vazia', 'the hero’s melee strike only goes past the enemy front row when it is empty')}</small></span></label>
           {/if}

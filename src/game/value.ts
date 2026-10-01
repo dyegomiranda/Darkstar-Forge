@@ -1,10 +1,29 @@
 /**
- * Quanto vale o que uma carta faz no jogo, em pontos (a mesma escala da pontuação
- * do editor: 1 ponto é grátis; cada 2 pontos a mais custam +1 de Vigor/Mana).
- * Referência: dano em 1 alvo vale 1 ponto por ponto de dano (3 de dano = custo 1; 5 = 2; 7 = 3).
+ * A REGRA DE CUSTO do jogo (determinística): o custo de uma carta sai só do que ela faz.
  *
- * O nível exigido entra como desconto: carta que só pode ser usada mais tarde pode ser mais forte
- * pelo mesmo custo. O atributo exigido alto dá um desconto pequeno.
+ *   pontos  = soma do valor de cada efeito − descontos (nível, atributo, reação, item)
+ *   custo   = 0 se pontos ≤ 1,5; senão, ⌈(pontos − 1,5) / 2⌉      (Vigor + Mana somados)
+ *
+ * Ou seja: 1,5 ponto é grátis e cada 2 pontos a mais custam +1. No custo 0 cabem até 1,5 ponto;
+ * no 1, até 3,5; no 2, até 5,5; no 3, até 7,5; e assim por diante.
+ *
+ * Valor dos efeitos (1 ponto = 1 de dano num alvo, à distância):
+ *   dano N            N × alcance (1 alvo 1 · 1 criatura 0,85 · fileira 2,2 · frente 2 · todos 3,5)
+ *                     × tipo (corpo a corpo 0,9 · à distância 1 · mágico 1,1)
+ *   golpe N           N por golpe (+1,5 se aflige ou marca; +1 se empurra)
+ *   cura N            0,75 × N × alcance            aflição   2 × alcance
+ *   marca             1,5 × alcance                 proteção  2 × alcance
+ *   empurrão          1,5 × alcance                 comprar N 2 × N
+ *   ganhar N recurso  2 × N − 1                     +N ATK    N × alcance
+ *   invocar           0,85 × (ATK + DEF + palavras-chave: Guarda +1,5 · Rápido +1,5 · À distância +1 · Não ataca −1)
+ *   perder N PV       −0,75 × N                     avançar   0,5        anular 6
+ *   postura           +N no golpe 3 × N · golpe mágico 2 · golpe aflige 3 · golpe cura N 1,5 × N · Guarda 2
+ *
+ * Descontos: nível exigido L: −0,5 × (L − 1) · atributo exigido ≥ 3: −0,5 · Reação: −1 · Item: −2.
+ *
+ * Toda carta com efeitos de jogo deve obedecer a esta regra (há um teste que confere a coleção
+ * Protótipo). Mexer num peso aqui muda o custo de todas as cartas de uma vez: é assim que se
+ * rebalanceia sem criar cartas "fora da curva".
  */
 import type { CardGame, Effect, StanceMods, Target, UnitDef } from './types';
 
@@ -51,7 +70,7 @@ function one(e: Effect): ValueLine {
     case 'buff': return { label: `+${e.atk} ATK (${TGT_PT[e.tgt]})`, points: round(e.atk * SCOPE[e.tgt]) };
     case 'selfdmg': return { label: `Perder ${e.n} PV`, points: -round(e.n * 0.75) };
     case 'advance': return { label: 'Avançar', points: 0.5 };
-    case 'counter': return { label: 'Anular', points: 4 };
+    case 'counter': return { label: 'Anular', points: 6 };
     case 'stance': return { label: 'Postura', points: round(stanceValue(e.mods)) };
   }
 }
@@ -61,7 +80,16 @@ export function gameValue(g: CardGame): ValueLine[] {
   const lines = g.effects.map(one);
   // Reação: só serve na hora certa e exige guardar recurso
   if (g.kind === 'reacao') lines.push({ label: 'Reação (situacional)', points: -1 });
+  // Item: uso único e poucas cópias por deck
+  if (g.kind === 'item') lines.push({ label: 'Item (consumível)', points: -2 });
   if (g.level > 1) lines.push({ label: `Exige nível ${g.level}`, points: -round((g.level - 1) * 0.5) });
   if (g.attr && g.attr[1] >= 3) lines.push({ label: `Exige ${g.attr[0].toUpperCase()} ${g.attr[1]}`, points: -0.5 });
   return lines;
 }
+
+/** Pontos da carta (nunca negativo). */
+export const gamePoints = (g: CardGame): number => Math.max(0, gameValue(g).reduce((n, l) => n + l.points, 0));
+/** O custo que a regra dá (Vigor + Mana somados). */
+/** Pontos que cabem no custo 0, e quantos pontos vale cada ponto de custo. */
+export const FREE = 1.5, PER_COST = 2;
+export const ruleCost = (g: CardGame): number => { const p = gamePoints(g); return p <= FREE ? 0 : Math.ceil((p - FREE) / PER_COST); };

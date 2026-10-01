@@ -11,7 +11,7 @@
 import mechanicsData from '../data/mechanics.json';
 import type { Card, RarityId } from './types';
 import { costTotal, hasCost, setTotal } from './cost';
-import { gameValue } from '../game/value';
+import { gameValue, ruleCost } from '../game/value';
 
 export interface Mechanic { id: string; name: string; en: string; points: number; tags: string[]; desc: string }
 
@@ -41,7 +41,7 @@ export function evaluate(card: Scorable, labels = { atk: 'Ataque', def: 'Defesa'
   if (card.game) {
     for (const l of gameValue(card.game)) { score += l.points; breakdown.push(l); }
     score = Math.max(0, score);
-    const suggestedCost = costForScore(score);
+    const suggestedCost = ruleCost(card.game); // a regra de custo do jogo (game/value.ts)
     const actual = hasCost(card) ? costTotal(card) : suggestedCost;
     return { score, breakdown, suggestedCost, suggestedRarity: rarityFor(suggestedCost, actual) };
   }
