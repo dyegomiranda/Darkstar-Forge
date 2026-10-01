@@ -1,6 +1,6 @@
 /**
  * Bot simples: olha cada jogada permitida, simula o resultado e fica com a que
- * deixa a posição melhor (vida, figuras em campo, cartas, nível). Encerra o
+ * deixa a posição melhor (vida, criaturas em campo, cartas, nível). Encerra o
  * turno quando nenhuma jogada melhora a posição.
  */
 import { apply, figures, heroHp, legalActions, other, reactions } from './engine';

@@ -16,7 +16,7 @@
   import { actor, apply, cannotPlay, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS } from '../../game/engine';
   import { botAction } from '../../game/bot';
   import { sideFromApp } from '../../game/fromApp';
-  import { ATTRS, ATTR_NAMES, type Action, type CardRef, type Fx, type GameState, type GearItem, type HeroDef, type Pos, type Unit, type Via } from '../../game/types';
+  import { ATTRS, ATTR_NAMES, type Action, type CardRef, type Fx, type Effect, type GameState, type GearItem, type HeroDef, type Pos, type Unit, type Via } from '../../game/types';
   import type { Character } from '../../model/types';
   import Glyph from '../common/Glyph.svelte';
   import CardImage from '../common/CardImage.svelte';
@@ -113,6 +113,32 @@
   });
   const isTarget = (pos: Pos) => targets.some((t) => same(t, pos));
 
+  /**
+   * O que pedir ao jogador, conforme o tipo de alvo. Os tipos que o jogo ainda não usa
+   * (encantamento, grimório, cemitério…) já ficam aqui para as próximas cartas.
+   */
+  const TARGET_PROMPT = {
+    any: ['Selecione o alvo: uma criatura ou o herói inimigo', 'Select the target: a creature or the enemy hero'],
+    creature: ['Selecione uma criatura-alvo', 'Select a target creature'],
+    enemyCreature: ['Selecione uma criatura-alvo inimiga', 'Select a target enemy creature'],
+    allyCreature: ['Selecione uma criatura-alvo sua', 'Select a target creature of yours'],
+    ally: ['Selecione um aliado-alvo: uma criatura sua ou o seu herói', 'Select a target ally: a creature of yours or your hero'],
+    player: ['Selecione o jogador-alvo', 'Select the target player'],
+    row: ['Selecione a fileira-alvo', 'Select the target row'],
+    slot: ['Selecione um lugar livre no seu campo', 'Select a free slot on your field'],
+    enchantment: ['Selecione um encantamento-alvo', 'Select a target enchantment'],
+    grimoire: ['Selecione o grimório-alvo', 'Select the target grimoire'],
+    graveyard: ['Selecione o cemitério-alvo', 'Select the target graveyard'],
+    graveCreature: ['Selecione uma criatura-alvo no cemitério', 'Select a target creature in the graveyard'],
+  } as const;
+  const ask = (k: keyof typeof TARGET_PROMPT) => say(L(TARGET_PROMPT[k][0], TARGET_PROMPT[k][1]));
+  /** Tipo de alvo de uma carta (pelo primeiro efeito que pede escolha). */
+  function promptOf(effects: Effect[]): keyof typeof TARGET_PROMPT {
+    const ch = choiceOf(effects);
+    if (!ch || ch.kind === 'slot') return 'slot';
+    return ({ enemy: 'any', enemyUnit: 'enemyCreature', enemyRow: 'row', ally: 'ally', allyUnit: 'allyCreature', enemyHero: 'player' } as Record<string, keyof typeof TARGET_PROMPT>)[ch.tgt] ?? 'any';
+  }
+
   /** O golpe do herói: pode agora? Se não, por quê (em palavras). */
   function strikeInfo(): { can: boolean; why: string } {
     if (!g) return { can: false, why: '' };
@@ -167,7 +193,8 @@
     const ref = g.players[me].hand.find((c) => c.uid === uid)!;
     const ch = choiceOf(g.defs[ref.cardId].game.effects);
     if (!ch) void act({ t: 'play', uid });
-    else { sel = sel?.kind === 'card' && sel.uid === uid ? null : { kind: 'card', uid }; say(ch.kind === 'slot' ? L('Escolha um lugar livre seu.', 'Pick a free slot of yours.') : L('Escolha o alvo (os lugares em dourado).', 'Pick the target (golden slots).')); }
+    else if (sel?.kind === 'card' && sel.uid === uid) { sel = null; say(''); }
+    else { sel = { kind: 'card', uid }; ask(promptOf(g.defs[ref.cardId].game.effects)); }
   }
 
   function clickSlot(pos: Pos) {
@@ -188,12 +215,12 @@
       const info = strikeInfo();
       if (!info.can) { say(info.why, true); return; }
       sel = sel?.kind === 'strike' ? null : { kind: 'strike' };
-      say(L('Golpe do herói: escolha o alvo (os lugares em dourado).', 'Hero strike: pick the target (golden slots).'));
+      if (sel) ask('any'); else say('');
     } else if (pos.p === me && u) {
-      if (u.exhausted) { say(L('Esta figura já atacou ou acabou de entrar (ataca a partir do próximo turno).', 'This figure already attacked or just arrived (it attacks from next turn).'), true); return; }
-      if (u.keys.includes('parede')) { say(L('Esta figura não ataca.', "This figure can't attack."), true); return; }
+      if (u.exhausted) { say(L('Esta criatura já atacou ou acabou de entrar (ataca a partir do próximo turno).', 'This creature already attacked or just arrived (it attacks from next turn).'), true); return; }
+      if (u.keys.includes('parede')) { say(L('Esta criatura não ataca.', "This creature can't attack."), true); return; }
       sel = { kind: 'unit', pos };
-      say(L('Escolha o alvo do ataque (os lugares em dourado).', 'Pick the attack target (golden slots).'));
+      ask('any');
     } else if (sel) { sel = null; say(L('Alvo fora de alcance.', 'Target out of reach.'), true); }
   }
 
@@ -203,13 +230,13 @@
     const info = strikeInfo();
     if (!info.can) { say(info.why, true); return; }
     sel = sel?.kind === 'strike' ? null : { kind: 'strike' };
-    say(sel ? L('Golpe do herói: escolha o alvo (os lugares em dourado).', 'Hero strike: pick the target (golden slots).') : '');
+    if (sel) ask('any'); else say('');
   }
 
   function startMove() {
     if (!g || !myTurn || g.players[me].moved) return;
     sel = sel?.kind === 'move' ? null : { kind: 'move' };
-    say(L('Escolha um lugar livre para o herói.', 'Pick a free slot for your hero.'));
+    if (sel) ask('slot'); else say('');
   }
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -238,6 +265,82 @@
 
   function key(e: KeyboardEvent) { if (e.key === 'Escape') { sel = null; say(''); graveOf = null; } }
 
+  // ───────────── mira: seta da origem até o alvo e destaque da área atingida ─────────────
+  let hoverPos = $state<Pos | null>(null);
+  let hoverCard = $state<string | null>(null);
+  let mouse = $state({ x: 0, y: 0 });
+  type Arrow = { body: string; head: string; line: string; shadow: string; tone: 'free' | 'foe' | 'ally' | 'slot' };
+  let arrows = $state<Arrow[]>([]);
+  const slotEl = (pos: Pos) => document.querySelector<HTMLElement>(`[data-pos="${pos.p}-${pos.row}-${pos.col}"]`);
+
+  /** Efeitos da carta escolhida (ou da carta sob o mouse, quando nada está escolhido). */
+  const aimEffects = $derived.by((): Effect[] => {
+    if (!g || !myTurn) return [];
+    const uid = sel?.kind === 'card' ? sel.uid : !sel ? hoverCard : null;
+    const ref = uid ? g.players[me].hand.find((c) => c.uid === uid) : undefined;
+    return ref ? g.defs[ref.cardId].game.effects : [];
+  });
+  /** Fileira que o alvo sob o mouse representa (cartas que atingem uma fileira inteira). */
+  const aimRow = $derived(sel?.kind === 'card' && hoverPos && isTarget(hoverPos) && choiceOf(aimEffects)?.kind === 'target' && (choiceOf(aimEffects) as { tgt: string }).tgt === 'enemyRow' ? hoverPos : null);
+  /** Áreas que a carta atinge sem escolher alvo: "p-fileira" (fileira) ou "p" (campo inteiro). */
+  const aoe = $derived.by(() => {
+    const rows = new Set<string>(), fields = new Set<number>();
+    for (const e of aimEffects) {
+      if (!('tgt' in e)) continue;
+      if (e.tgt === 'enemyFront') rows.add(`${foe}-0`);
+      else if (e.tgt === 'allEnemies') fields.add(foe);
+      else if (e.tgt === 'allAllies') fields.add(me);
+    }
+    if (aimRow) rows.add(`${aimRow.p}-${aimRow.row}`);
+    return { rows, fields };
+  });
+
+  /** Curva elevada da origem ao alvo: corpo que engrossa, ponta e sombra no "chão". */
+  function arrowGeom(x1: number, y1: number, x2: number, y2: number, tone: Arrow['tone']): Arrow | null {
+    const dist = Math.hypot(x2 - x1, y2 - y1);
+    if (dist < 40) return null;
+    // a curva abre para o lado perpendicular ao caminho: para cima quando o caminho é deitado, para fora quando é em pé
+    const lift = Math.min(160, dist * 0.3);
+    let nx = -(y2 - y1) / dist, ny = (x2 - x1) / dist;
+    if (Math.abs(ny) > 0.35 ? ny > 0 : (nx > 0) === ((x1 + x2) / 2 < innerWidth * 0.42)) { nx = -nx; ny = -ny; }
+    const cx = (x1 + x2) / 2 + nx * lift, cy = (y1 + y2) / 2 + ny * lift;
+    const pt = (t: number) => ({ x: (1 - t) ** 2 * x1 + 2 * (1 - t) * t * cx + t * t * x2, y: (1 - t) ** 2 * y1 + 2 * (1 - t) * t * cy + t * t * y2 });
+    const tan = (t: number) => { const dx = 2 * (1 - t) * (cx - x1) + 2 * t * (x2 - cx), dy = 2 * (1 - t) * (cy - y1) + 2 * t * (y2 - cy), n = Math.hypot(dx, dy) || 1; return { x: dx / n, y: dy / n }; };
+    const tb = Math.max(0.5, 1 - 30 / dist), N = 26;
+    const L1: string[] = [], R1: string[] = [];
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * tb, p = pt(t), d = tan(t), w = 2.5 + 8.5 * (i / N);
+      L1.push(`${(p.x - d.y * w).toFixed(1)},${(p.y + d.x * w).toFixed(1)}`);
+      R1.unshift(`${(p.x + d.y * w).toFixed(1)},${(p.y - d.x * w).toFixed(1)}`);
+    }
+    const b = pt(tb), d = tan(tb), hw = 19;
+    return {
+      tone,
+      body: `M${L1.join(' L')} L${R1.join(' L')} Z`,
+      head: `M${x2.toFixed(1)},${y2.toFixed(1)} L${(b.x - d.y * hw).toFixed(1)},${(b.y + d.x * hw).toFixed(1)} L${(b.x + d.x * 7).toFixed(1)},${(b.y + d.y * 7).toFixed(1)} L${(b.x + d.y * hw).toFixed(1)},${(b.y - d.x * hw).toFixed(1)} Z`,
+      line: `M${x1.toFixed(1)},${y1.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`,
+      shadow: `M${x1.toFixed(1)},${(y1 + 8).toFixed(1)} Q${((x1 + x2) / 2 + nx * lift * 0.25).toFixed(1)},${((y1 + y2) / 2 + ny * lift * 0.25 + 14).toFixed(1)} ${x2.toFixed(1)},${(y2 + 10).toFixed(1)}`,
+    };
+  }
+
+  function updateArrows() {
+    if (!g || !sel || !myTurn) { if (arrows.length) arrows = []; return; }
+    const src = sel.kind === 'card' ? document.querySelector<HTMLElement>('.hc.sel') : slotEl(sel.kind === 'unit' ? sel.pos : heroPos(g, me));
+    if (!src) { arrows = []; return; }
+    const sr = src.getBoundingClientRect();
+    const x1 = sr.left + sr.width / 2, y1 = sel.kind === 'card' ? sr.top + sr.height * 0.18 : sr.top + sr.height / 2;
+    const locked = hoverPos && isTarget(hoverPos) ? hoverPos : null;
+    if (!locked) { const a = arrowGeom(x1, y1, mouse.x, mouse.y, 'free'); arrows = a ? [a] : []; return; }
+    const tone: Arrow['tone'] = !unitAt(g, locked) && !aimRow ? 'slot' : locked.p === me ? 'ally' : 'foe';
+    // uma fileira inteira: uma seta para cada criatura atingida
+    const ends = aimRow ? Array.from({ length: COLS }, (_, col) => ({ ...locked, col })).filter((q) => unitAt(g!, q)) : [locked];
+    arrows = ends.map((q) => {
+      const r = slotEl(q)?.getBoundingClientRect();
+      return r ? arrowGeom(x1, y1, r.left + r.width / 2, r.top + r.height / 2, tone) : null;
+    }).filter((a): a is Arrow => !!a);
+  }
+  $effect(() => { void sel; void hoverPos; void mouse.x; void mouse.y; void myTurn; void tick().then(updateArrows); });
+
   // ───────────── animações: cartas voando entre grimório, mão, faixa e cemitério ─────────────
   type Fly = { key: string; from?: string; to?: string; delay?: number };
   const [send, receive] = crossfade({
@@ -258,7 +361,7 @@
     },
   });
   const fly = (key: string, extra: Omit<Fly, 'key'> = {}) => ({ key, ...extra }) as unknown as { key: string };
-  /** Figuras: quando mudam de lugar (empurrão, mover), deslizam até o lugar novo. */
+  /** Criaturas: quando mudam de lugar (empurrão, mover), deslizam até o lugar novo. */
   const [sendU, recvU] = crossfade({ duration: 450, easing: cubicOut, fallback: (node, _p, intro) => (intro ? scale(node, { duration: 300, start: 0.6 }) : fade(node, { duration: 300 })) });
 
   // ───────────── efeitos visuais (dano subindo, ataques, começo de turno…) ─────────────
@@ -293,7 +396,7 @@
     ], { duration: 520, easing: 'ease-out' });
   }
 
-  /** Golpe corpo a corpo: a figura avança até o alvo e volta. À distância/magia: um projétil voa. */
+  /** Golpe corpo a corpo: a criatura avança até o alvo e volta. À distância/magia: um projétil voa. */
   function attackAnim(from: DOMRect, to: DOMRect, fromEl: HTMLElement | null, via: Via) {
     const dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height / 2);
     if (via === 'melee') {
@@ -323,7 +426,7 @@
     const lines = g.log.slice(from).filter((l) => !l.startsWith('—') && !l.includes('XP ('));
     lastLine = g.log[g.log.length - 1] ?? '';
     if (lines.length) { caption = lines.slice(-3).join('  ·  '); const c = caption; setTimeout(() => { if (caption === c) caption = ''; }, 4200); }
-    // onde cada figura estava antes da tela mudar (as derrotadas somem)
+    // onde cada criatura estava antes da tela mudar (as derrotadas somem)
     const before = new Map<string, DOMRect>();
     for (const e of list) for (const id of idsOf(e)) { const el = elOf(id); if (el) before.set(id, el.getBoundingClientRect()); }
     await tick();
@@ -385,7 +488,7 @@
       case 'death': float(before.get(e.id) ?? rectOf(e.id), L('Derrotado', 'Defeated'), 'death', undefined, true); break;
       case 'summon': { const el = elOf(e.id); el?.animate([{ boxShadow: '0 0 0 3px #f0c45a, 0 0 30px #f0c45a' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 800 }); break; }
       case 'xp': {
-        const why = { turn: L('novo turno', 'new turn'), kill: L('figura derrotada', 'figure defeated'), hit: L('feriu o herói', 'hit the hero') }[e.why];
+        const why = { turn: L('novo turno', 'new turn'), kill: L('criatura derrotada', 'creature defeated'), hit: L('feriu o herói', 'hit the hero') }[e.why];
         float(document.getElementById(`xp-${e.p}`)?.getBoundingClientRect(), `+${e.amount} XP`, 'xp', why);
         break;
       }
@@ -601,7 +704,7 @@
   {@const P = g.players[me]}
   {@const F = g.players[foe]}
   <div class="table">
-    <div class="main">
+    <div class="main" onmousemove={(e) => { if (sel) mouse = { x: e.clientX, y: e.clientY }; }} role="presentation">
       <!-- ───── barra de herói ───── -->
       {#snippet bar(p: 0 | 1, mine: boolean)}
         {@const pl = g!.players[p]}
@@ -623,7 +726,7 @@
             <span class="cap">Mana</span>
             <span class="val man" id="res-{p}-mana"><Glyph id="crystal-cluster" size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
           </div>
-          <div class="stat" use:tip={L(`Nível e XP: o herói está no nível ${pl.level}. Todo herói ganha +1 XP no começo do próprio turno (por isso sobe de nível mesmo sem fazer nada), +1 por figura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level and XP: the hero is level ${pl.level}. Every hero gets +1 XP at the start of its own turn (so it levels up even doing nothing), +1 per defeated figure, +1 the first time it hits the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
+          <div class="stat" use:tip={L(`Nível e XP: o herói está no nível ${pl.level}. Todo herói ganha +1 XP no começo do próprio turno (por isso sobe de nível mesmo sem fazer nada), +1 por criatura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level and XP: the hero is level ${pl.level}. Every hero gets +1 XP at the start of its own turn (so it levels up even doing nothing), +1 per defeated creature, +1 the first time it hits the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
             <span class="cap">{L('Nível', 'Level')} {pl.level}</span>
             <span class="val xpv" id="xp-{p}">{#each Array(XP_PER_LEVEL) as _, i}<i class="pip" class:on={i < pl.xp}></i>{/each}<small>{pl.xp}/{XP_PER_LEVEL} XP</small></span>
           </div>
@@ -674,9 +777,9 @@
       {#snippet slot(p: 0 | 1, row: number, col: number)}
         {@const pos = { p, row, col }}
         {@const u = unitAt(g!, pos)}
-        <button class="slot" class:off={row === -1} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
+        <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
           class:hero={!!u?.isHero} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
-          onmouseenter={(e) => hover(u?.src, e)} onmouseleave={() => (zoom = null)} style="--c:{colorOf(g!.players[p].hero)}"
+          data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
           {#if u?.isHero}
             {@render heroBody(u, p)}
@@ -697,7 +800,7 @@
       {#snippet field(p: 0 | 1)}
         <div class="bfield">
           {#if g!.heroOff}{@render slot(p, -1, 0)}{/if}
-          <div class="rows">{#each rowsFor(p) as row}<div class="row">{#each Array(COLS) as _, col}{@render slot(p, row, col)}{/each}</div>{/each}</div>
+          <div class="rows" class:aoe={aoe.fields.has(p)} class:ally={p === me}>{#each rowsFor(p) as row}<div class="row" class:aoe={aoe.rows.has(`${p}-${row}`)}>{#each Array(COLS) as _, col}{@render slot(p, row, col)}{/each}</div>{/each}</div>
           {#if g!.heroOff}<span class="off-spacer"></span>{/if}
         </div>
       {/snippet}
@@ -783,7 +886,7 @@
           {@const isReact = g.defs[r.cardId]?.game.kind === 'reacao'}
           <button class="hc" class:no={!!why && !isReact} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid}
             in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })}
-            onclick={() => clickCard(r.uid)} onmouseenter={(e) => hover(r.cardId, e)} onmouseleave={() => (zoom = null)}>
+            onclick={() => clickCard(r.uid)} onmouseenter={(e) => { hoverCard = r.uid; hover(r.cardId, e); }} onmouseleave={() => { hoverCard = null; zoom = null; }}>
             {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
             {#if isReact}<span class="rtag">{L('Reação', 'Reaction')}</span>
             {:else if dmgBadge(r)}<span class="dmgb"><Swords size={13} /> {dmgBadge(r)}</span>{/if}
@@ -865,6 +968,24 @@
       </div>
     {/if}
     <div class="fxlayer" bind:this={fxEl}>
+      {#if arrows.length}
+        <svg class="aim" width="100%" height="100%">
+          <defs>
+            <filter id="aim-shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7" /></filter>
+            <filter id="aim-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          </defs>
+          {#each arrows as a}
+            <g class="arrow {a.tone}">
+              <path class="a-shadow" d={a.shadow} filter="url(#aim-shadow)" />
+              <g filter="url(#aim-glow)">
+                <path class="a-body" d={a.body} />
+                <path class="a-head" d={a.head} />
+              </g>
+              <path class="a-flow" d={a.line} />
+            </g>
+          {/each}
+        </svg>
+      {/if}
       {#each floats as f (f.key)}
         <div class="float {f.cls}" class:big={f.big} style="left:{f.x}px;top:{f.y}px"><b>{f.text}</b>{#if f.sub}<small>{f.sub}</small>{/if}</div>
       {/each}
@@ -1060,6 +1181,25 @@
   .def { color: #e8a59a; display: inline-flex; gap: 3px; align-items: center; }
   .u-mk { position: absolute; top: 6px; right: 7px; display: flex; gap: 4px; color: #cdb8ff; z-index: 2; filter: drop-shadow(0 1px 2px #000); }
   .u-mk i { font-style: normal; }
+
+  /* área atingida (fileira ou campo inteiro) */
+  .row.aoe, .rows.aoe { border-radius: 14px; outline: 2px solid #ff6a4a; outline-offset: 4px; background: rgb(255 90 60 / .1); box-shadow: 0 0 26px rgb(255 90 60 / .35); animation: aoePulse 1.1s ease-in-out infinite; }
+  .rows.aoe.ally, .slot.aoe.ally { outline-color: #6fe39b; background: rgb(90 220 140 / .1); box-shadow: 0 0 26px rgb(90 220 140 / .35); }
+  .slot.aoe { outline: 2px solid #ff6a4a; outline-offset: 3px; animation: aoePulse 1.1s ease-in-out infinite; }
+  @keyframes aoePulse { 50% { outline-color: #ffd0a0; } }
+  /* seta de mira */
+  .aim { position: absolute; inset: 0; overflow: visible; }
+  .arrow { --a1: #cfe0ff; --a2: #6f9be8; }
+  .arrow.foe { --a1: #ffd9a0; --a2: #ff4d2e; }
+  .arrow.ally { --a1: #d6ffe4; --a2: #3fc97a; }
+  .arrow.slot { --a1: #fff0c4; --a2: #f0b84a; }
+  .a-shadow { fill: none; stroke: #000; stroke-width: 12; stroke-linecap: round; opacity: .38; }
+  .a-body { fill: var(--a2); stroke: var(--a1); stroke-width: 1.6; stroke-linejoin: round; opacity: .93; }
+  .a-head { fill: var(--a1); stroke: #fff; stroke-width: 1.4; stroke-linejoin: round; }
+  .a-flow { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 3 15; opacity: .85; animation: aimFlow .55s linear infinite; }
+  .arrow.free .a-body { opacity: .6; }
+  .arrow.free .a-head { opacity: .8; }
+  @keyframes aimFlow { to { stroke-dashoffset: -18; } }
 
   .zone { height: var(--zone); width: calc(var(--row) * 4.2 + 20px); display: flex; gap: 8px; justify-content: center; align-items: center; border-radius: 10px; background: rgb(0 0 0 / .18); border: 1px solid rgb(255 255 255 / .05); padding: 4px; }
   .zc { height: 100%; aspect-ratio: 750 / 1050; position: relative; border-radius: 5px; box-shadow: 0 4px 12px rgb(0 0 0 / .6); cursor: zoom-in; }

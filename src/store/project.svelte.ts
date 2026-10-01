@@ -113,7 +113,7 @@ class ProjectState {
       for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
     }
     // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
-    const RULES = 'proto-rules-2';
+    const RULES = 'proto-rules-3';
     if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
       p.seeded = [...(p.seeded ?? []), RULES];
       changed = true;

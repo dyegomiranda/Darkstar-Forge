@@ -3,7 +3,7 @@
  * cria a partida, diz o que é permitido e aplica as jogadas.
  *
  * Resumo das regras (ver types.ts): dois recursos (Vigor e Mana) que enchem
- * todo turno; XP a cada turno, a cada figura derrotada e na 1ª vez que fere o
+ * todo turno; XP a cada turno, a cada criatura derrotada e na 1ª vez que fere o
  * herói inimigo no turno; a cada 3 XP um nível (+1 Vigor, +1 Mana ou +3 Vida);
  * campo de 2 fileiras × 3; a frente protege a retaguarda dos golpes corpo a
  * corpo; o dano fica até ser curado.
@@ -241,7 +241,7 @@ function draw(s: GameState, p: 0 | 1, n: number) {
   }
 }
 
-const XP_WHY = { turn: 'começo do turno', kill: 'figura derrotada', hit: 'feriu o herói inimigo' } as const;
+const XP_WHY = { turn: 'começo do turno', kill: 'criatura derrotada', hit: 'feriu o herói inimigo' } as const;
 
 function addXp(s: GameState, p: 0 | 1, n: number, why: keyof typeof XP_WHY) {
   const pl = s.players[p];
@@ -257,7 +257,7 @@ function addXp(s: GameState, p: 0 | 1, n: number, why: keyof typeof XP_WHY) {
   }
 }
 
-/** Causa dano numa figura. `by` = de que lado veio (para o XP). */
+/** Causa dano numa criatura. `by` = de que lado veio (para o XP). */
 function damage(s: GameState, pos: Pos, n: number, by: 0 | 1, via: Via | 'none' = 'none') {
   const u = unitAt(s, pos);
   if (!u || n <= 0) return;
@@ -290,7 +290,7 @@ function heal(s: GameState, pos: Pos, n: number) {
   log(s, `${nm(u)} recupera ${got}.`);
 }
 
-/** Troca a figura de fileira (mesma coluna se der; senão, o primeiro lugar livre). */
+/** Troca a criatura de fileira (mesma coluna se der; senão, o primeiro lugar livre). */
 function shift(s: GameState, pos: Pos, toRow?: number): Pos | null {
   const u = unitAt(s, pos);
   if (!u || pos.row === -1) return null;
@@ -397,7 +397,7 @@ function startTurn(s: GameState, first = false) {
   for (const f of figures(s, p)) f.u.exhausted = false;
   log(s, `— Turno ${s.turn}: ${pl.hero.name} —`);
   fx(s, { k: 'turn', p, turn: s.turn });
-  // aflição: 1 de dano em cada figura afligida do jogador da vez (o XP vai para o outro lado)
+  // aflição: 1 de dano em cada criatura afligida do jogador da vez (o XP vai para o outro lado)
   for (const f of figures(s, p)) {
     if (f.u.afflicted) { log(s, `${nm(f.u)} sofre a Aflição.`); damage(s, f.pos, 1, other(p)); if (s.winner !== undefined) return; }
   }
@@ -498,9 +498,9 @@ export function apply(s: GameState, a: Action): string | null {
     }
     case 'attack': {
       const u = unitAt(s, a.from);
-      if (!u || a.from.p !== p || u.isHero) return 'Escolha uma figura sua.';
-      if (u.exhausted) return 'Esta figura já atacou (ou acabou de entrar).';
-      if (u.keys.includes('parede')) return 'Esta figura não ataca.';
+      if (!u || a.from.p !== p || u.isHero) return 'Escolha uma criatura sua.';
+      if (u.exhausted) return 'Esta criatura já atacou (ou acabou de entrar).';
+      if (u.keys.includes('parede')) return 'Esta criatura não ataca.';
       const via: Via = u.keys.includes('distancia') ? 'ranged' : 'melee';
       if (!reachable(s, p, via, a.from).some((t) => t.p === a.target.p && t.row === a.target.row && t.col === a.target.col)) return 'Fora de alcance.';
       u.exhausted = true;

@@ -15,10 +15,10 @@ const KEY: Record<Keyword, [string, string]> = {
 
 function tgt(t: Target, pt: boolean): string {
   const m: Record<Target, [string, string]> = {
-    enemy: ['um inimigo', 'an enemy'], enemyUnit: ['uma figura inimiga', 'an enemy figure'], enemyHero: ['o herói inimigo', 'the enemy hero'],
+    enemy: ['um inimigo', 'an enemy'], enemyUnit: ['uma criatura inimiga', 'an enemy creature'], enemyHero: ['o herói inimigo', 'the enemy hero'],
     enemyRow: ['cada inimigo de uma fileira', 'each enemy in a row'], enemyFront: ['cada inimigo da fileira da frente', 'each enemy in the front row'],
-    allEnemies: ['cada inimigo', 'each enemy'], ally: ['uma figura aliada ou o seu herói', 'an ally figure or your hero'],
-    allyUnit: ['uma figura aliada', 'an ally figure'], hero: ['o seu herói', 'your hero'], allAllies: ['cada aliado', 'each ally'],
+    allEnemies: ['cada inimigo', 'each enemy'], ally: ['uma criatura aliada ou o seu herói', 'an ally creature or your hero'],
+    allyUnit: ['uma criatura aliada', 'an ally creature'], hero: ['o seu herói', 'your hero'], allAllies: ['cada aliado', 'each ally'],
   };
   return m[t][pt ? 0 : 1];
 }

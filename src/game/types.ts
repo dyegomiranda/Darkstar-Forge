@@ -23,13 +23,13 @@ export type Via = 'melee' | 'ranged' | 'magic';
 
 /** Alvos. */
 export type Target =
-  | 'enemy'       // uma figura inimiga ou o herói inimigo (respeitando o alcance)
-  | 'enemyUnit'   // uma figura inimiga (não o herói)
+  | 'enemy'       // uma criatura inimiga ou o herói inimigo (respeitando o alcance)
+  | 'enemyUnit'   // uma criatura inimiga (não o herói)
   | 'enemyHero'
-  | 'enemyRow'    // todas as figuras de uma fileira inimiga (inclui o herói, se estiver nela)
+  | 'enemyRow'    // todas as criaturas de uma fileira inimiga (inclui o herói, se estiver nela)
   | 'enemyFront'  // a fileira da frente inimiga
-  | 'allEnemies'  // todas as figuras inimigas e o herói inimigo
-  | 'ally'        // uma figura aliada ou o próprio herói
+  | 'allEnemies'  // todas as criaturas inimigas e o herói inimigo
+  | 'ally'        // uma criatura aliada ou o próprio herói
   | 'allyUnit'
   | 'hero'        // o próprio herói
   | 'allAllies';
@@ -227,7 +227,7 @@ export interface GameState {
 }
 
 /**
- * Um acontecimento visível. `id` é o id da figura (Unit.id); `n` sempre crescente
+ * Um acontecimento visível. `id` é o id da criatura (Unit.id); `n` sempre crescente
  * para a mesa saber o que ainda não mostrou.
  */
 export type Fx = { n: number } & (
@@ -247,7 +247,7 @@ export type Fx = { n: number } & (
   | { k: 'countered'; p: 0 | 1; cardId: string }
 );
 
-/** Posição de uma figura. Herói fora do campo: row = -1. */
+/** Posição de uma criatura. Herói fora do campo: row = -1. */
 export interface Pos { p: 0 | 1; row: number; col: number }
 
 /** Uma jogada. */
