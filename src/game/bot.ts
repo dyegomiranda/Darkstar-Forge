@@ -96,3 +96,13 @@ export function botTurn(s: GameState, maxSteps = 40): Action[] {
   if (s.active === p && s.winner === undefined) apply(s, { t: 'end' });
   return done;
 }
+
+/** Mão inicial do bot: troca (uma ou duas vezes) se quase nada dá para usar no nível 1; ao ficar, descarta as cartas mais caras. */
+export function botMulligan(s: GameState, p: 0 | 1): Action {
+  const pl = s.players[p], n = s.setup?.mull[p] ?? 0;
+  const g = (uid: string) => s.defs[pl.hand.find((c) => c.uid === uid)!.cardId].game;
+  const usable = pl.hand.filter((c) => { const x = s.defs[c.cardId].game; return x.level <= 1 && (x.vigor ?? 0) <= pl.maxVigor && (x.mana ?? 0) <= pl.maxMana && x.kind !== 'reacao'; }).length;
+  if (usable < 2 && n < 2) return { t: 'mulligan', p };
+  const worst = [...pl.hand].sort((a, b) => (g(b.uid).level * 3 + (g(b.uid).vigor ?? 0) + (g(b.uid).mana ?? 0)) - (g(a.uid).level * 3 + (g(a.uid).vigor ?? 0) + (g(a.uid).mana ?? 0)));
+  return { t: 'keep', p, discard: worst.slice(0, n).map((c) => c.uid) };
+}

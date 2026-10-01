@@ -11,10 +11,10 @@ const side = (i: number): Side => {
 };
 
 describe('motor', () => {
-  it('começa com 5 e 6 cartas, recursos cheios e XP do 1º turno', () => {
+  it('começa com 7 cartas cada, recursos cheios e XP do 1º turno', () => {
     const s = newGame(side(0), side(1), { seed: 1 });
-    expect(s.players[0].hand.length).toBe(5);
-    expect(s.players[1].hand.length).toBe(6);
+    expect(s.players[0].hand.length).toBe(7);
+    expect(s.players[1].hand.length).toBe(7);
     expect(s.players[0].vigor).toBe(3);
     expect(s.players[0].xp).toBe(1);
   });
@@ -139,5 +139,31 @@ describe('herói fora do campo: golpe livre', () => {
     const strict = newGame(side(0), side(1), { seed: 9, heroOff: true, heroOffFront: true });
     strict.players[1].board[0][0] = { ...wall };
     expect(reachable(strict, 0, 'melee', heroPos(strict, 0))).toEqual([{ p: 1, row: 0, col: 0 }]);
+  });
+});
+
+describe('mão inicial (mulligan)', () => {
+  it('troca recebe 7 de novo; ao ficar, descarta 1 por troca; o turno só começa quando os dois ficam', () => {
+    const s = newGame(side(0), side(1), { seed: 11, mulligan: true });
+    expect(s.setup).toBeTruthy();
+    expect(s.players[0].xp).toBe(0); // o 1º turno ainda não começou
+    expect(apply(s, { t: 'mulligan', p: 0 })).toBeNull();
+    expect(apply(s, { t: 'mulligan', p: 0 })).toBeNull();
+    expect(s.players[0].hand.length).toBe(7);
+    expect(apply(s, { t: 'keep', p: 0, discard: [] })).toMatch(/2 cartas/);
+    const two = s.players[0].hand.slice(0, 2).map((c) => c.uid);
+    expect(apply(s, { t: 'keep', p: 0, discard: two })).toBeNull();
+    expect(s.players[0].hand.length).toBe(5);
+    expect(s.players[0].deck.length).toBe(35);
+    expect(s.setup).toBeTruthy();
+    expect(apply(s, { t: 'keep', p: 1, discard: [] })).toBeNull();
+    expect(s.setup).toBeUndefined();
+    expect(s.players[0].xp).toBe(1);
+  });
+
+  it('no máximo 3 trocas', () => {
+    const s = newGame(side(0), side(1), { seed: 12, mulligan: true });
+    for (let i = 0; i < 3; i++) expect(apply(s, { t: 'mulligan', p: 1 })).toBeNull();
+    expect(apply(s, { t: 'mulligan', p: 1 })).toMatch(/3 vezes/);
   });
 });

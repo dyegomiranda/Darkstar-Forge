@@ -10,7 +10,7 @@
  */
 import type { Action, CardDef, CardRef, Effect, Fx, GameState, HeroDef, PlayerState, Pos, Target, Unit, UnitDef, Via } from './types';
 
-export const ROWS = 2, COLS = 3, MAX_LEVEL = 8, XP_PER_LEVEL = 3, START_HAND = 5;
+export const ROWS = 2, COLS = 3, MAX_LEVEL = 8, XP_PER_LEVEL = 3, START_HAND = 7, MAX_MULLIGANS = 3;
 
 // ───────────── sorteio (com semente, para repetir partidas) ─────────────
 
@@ -47,8 +47,8 @@ function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1, off: boolean): Play
 
 export interface Side { hero: HeroDef; cards: CardDef[] }
 
-/** Nova partida. O jogador 0 começa; o 1 recebe uma carta a mais. */
-export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean; heroOff?: boolean; heroOffFront?: boolean } = {}): GameState {
+/** Nova partida. O jogador 0 começa (e não compra no 1º turno); os dois recebem 7 cartas. */
+export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean; heroOff?: boolean; heroOffFront?: boolean; mulligan?: boolean } = {}): GameState {
   const defs: Record<string, CardDef> = {};
   let n = 0;
   const build = (side: Side): CardRef[] => side.cards.flatMap((c) => {
@@ -61,9 +61,11 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
   };
   for (const p of s.players) shuffle(s, p.deck);
   draw(s, 0, START_HAND);
-  draw(s, 1, START_HAND + 1);
+  draw(s, 1, START_HAND);
   log(s, `Partida: ${a.hero.name} × ${b.hero.name}. ${a.hero.name} começa.`);
-  startTurn(s, true);
+  // com mulligan, o 1º turno só começa depois que os dois ficarem com a mão
+  if (opts.mulligan) s.setup = { mull: [0, 0], kept: [false, false] };
+  else startTurn(s, true);
   return s;
 }
 
@@ -190,7 +192,7 @@ export function reactions(s: GameState): CardRef[] {
 
 /** Todas as jogadas permitidas agora (para o bot e para testes). */
 export function legalActions(s: GameState): Action[] {
-  if (s.winner !== undefined) return [];
+  if (s.winner !== undefined || s.setup) return [];
   if (s.pending) return [{ t: 'pass' }, ...reactions(s).map((c): Action => ({ t: 'react', uid: c.uid }))];
   const p = s.active, pl = s.players[p];
   if (pl.pendingLevels) return (['vigor', 'mana', 'vida'] as const).map((choice) => ({ t: 'levelup', choice }));
@@ -447,9 +449,41 @@ function respond(s: GameState, a: Action): string | null {
   return null;
 }
 
+/**
+ * Mão inicial. "mulligan": devolve a mão ao grimório, embaralha e compra 7 de novo (até 3 vezes).
+ * "keep": fica com a mão, mandando para o fundo do grimório 1 carta por troca feita.
+ * Quando os dois ficam com a mão, o 1º turno começa.
+ */
+function setupAction(s: GameState, a: Action): string | null {
+  const st = s.setup!;
+  if (a.t !== 'mulligan' && a.t !== 'keep') return 'Escolha primeiro a mão inicial.';
+  const pl = s.players[a.p];
+  if (st.kept[a.p]) return 'Você já ficou com a mão.';
+  if (a.t === 'mulligan') {
+    if (st.mull[a.p] >= MAX_MULLIGANS) return `Já trocou a mão ${MAX_MULLIGANS} vezes.`;
+    pl.deck.push(...pl.hand);
+    pl.hand = [];
+    shuffle(s, pl.deck);
+    draw(s, a.p, START_HAND);
+    st.mull[a.p]++;
+    log(s, `${pl.hero.name} trocou a mão inicial (${st.mull[a.p]}ª vez).`);
+    return null;
+  }
+  const need = st.mull[a.p];
+  const ids = [...new Set(a.discard)];
+  if (ids.length !== need || ids.some((uid) => !pl.hand.some((c) => c.uid === uid))) return need ? `Escolha ${need} carta${need > 1 ? 's' : ''} da mão para descartar.` : 'Nada a descartar.';
+  for (const uid of ids) { const i = pl.hand.findIndex((c) => c.uid === uid); pl.deck.push(...pl.hand.splice(i, 1)); }
+  st.kept[a.p] = true;
+  if (need) log(s, `${pl.hero.name} fica com ${pl.hand.length} cartas.`);
+  if (st.kept[0] && st.kept[1]) { s.setup = undefined; startTurn(s, true); }
+  return null;
+}
+
 /** Aplica uma jogada. Devolve um erro (texto) se não for permitida. */
 export function apply(s: GameState, a: Action): string | null {
   if (s.winner !== undefined) return 'A partida acabou.';
+  if (s.setup) return setupAction(s, a);
+  if (a.t === 'mulligan' || a.t === 'keep') return 'A partida já começou.';
   if (s.pending) return respond(s, a);
   if (a.t === 'react' || a.t === 'pass') return 'Não há carta para responder.';
   const p = s.active, pl = s.players[p];

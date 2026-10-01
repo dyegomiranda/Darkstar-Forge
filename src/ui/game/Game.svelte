@@ -13,8 +13,8 @@
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
-  import { actor, apply, cannotPlay, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS } from '../../game/engine';
-  import { botAction } from '../../game/bot';
+  import { actor, apply, cannotPlay, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS, MAX_MULLIGANS } from '../../game/engine';
+  import { botAction, botMulligan } from '../../game/bot';
   import { sideFromApp } from '../../game/fromApp';
   import { ATTRS, ATTR_NAMES, type Action, type CardRef, type Fx, type Effect, type GameState, type GearItem, type HeroDef, type Pos, type Unit, type Via } from '../../game/types';
   import type { Character } from '../../model/types';
@@ -78,13 +78,40 @@
     const bot = sideFromApp(botHero, deckCards(botChar));
     const iStart = starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5);
     me = iStart ? 0 : 1;
-    g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront });
+    g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront, mulligan: true });
     sel = null;
     say('');
     step = 'play';
     lastFx = 0;
     lastLine = '';
     floats = [];
+    // o bot decide a mão dele já; a minha aparece em destaque depois do anúncio de quem começa
+    const b = other(me);
+    for (let i = 0; i < 5 && g.setup && !g.setup.kept[b]; i++) apply(g, botMulligan($state.snapshot(g) as GameState, b));
+    discardSel = [];
+    intro = 'who';
+  }
+
+  // ───────────── antes do 1º turno: quem começa e a mão inicial (mulligan) ─────────────
+  let intro = $state<'who' | 'hand' | null>(null);
+  let discardSel = $state<string[]>([]);
+  const myMulls = $derived(g?.setup?.mull[me] ?? 0);
+  function toggleDiscard(uid: string) {
+    if (!myMulls) return;
+    discardSel = discardSel.includes(uid) ? discardSel.filter((x) => x !== uid) : discardSel.length < myMulls ? [...discardSel, uid] : [...discardSel.slice(1), uid];
+  }
+  function mulligan() {
+    if (!g) return;
+    const err = apply(g, { t: 'mulligan', p: me });
+    if (err) { say(err, true); return; }
+    discardSel = [];
+  }
+  function keepHand() {
+    if (!g) return;
+    const err = apply(g, { t: 'keep', p: me, discard: discardSel });
+    if (err) { say(err, true); return; }
+    intro = null;
+    zoom = null;
     void tick().then(() => playFx()).then(() => runBot());
   }
 
@@ -96,7 +123,7 @@
   const foe = $derived(other(me));
   /** Uma carta do oponente espera a minha resposta (Reação ou aceitar). */
   const awaiting = $derived(!!g && !!g.pending && actor(g) === me && g.winner === undefined);
-  const myTurn = $derived(!!g && g.active === me && g.winner === undefined && !botBusy && !g.pending);
+  const myTurn = $derived(!!g && g.active === me && g.winner === undefined && !botBusy && !g.pending && !g.setup);
   const same = (a: Pos, b: Pos) => a.p === b.p && a.row === b.row && (a.col === b.col || a.col === -1 || b.col === -1);
 
   const targets = $derived.by((): Pos[] => {
@@ -1057,6 +1084,55 @@
         </div>
       </div>
     {/if}
+    {#if intro === 'who'}
+      {@const first = g.players[0]}
+      <div class="intro" in:fade={{ duration: 200 }}>
+        <div class="who-row">
+          <div class="who-side" class:first={me === 0} style="--c:{colorOf(P.hero)}">
+            <HeroPortrait hero={characterOf(P.hero.id)} size={170} />
+            <b class="display">{P.hero.name}</b><small>{L('Você', 'You')}</small>
+          </div>
+          <span class="vs">VS</span>
+          <div class="who-side" class:first={me !== 0} style="--c:{colorOf(F.hero)}">
+            <HeroPortrait hero={characterOf(F.hero.id)} size={170} />
+            <b class="display">{F.hero.name}</b><small>{L('Oponente', 'Opponent')}</small>
+          </div>
+        </div>
+        <div class="who-msg">
+          <small>{starter === 'sorteio' ? L('O sorteio decidiu', 'The draw decided') : L('Como você escolheu', 'As you chose')}</small>
+          <h2 class="display">{me === 0 ? L('Você começa!', 'You go first!') : L(`${first.hero.name} começa!`, `${first.hero.name} goes first!`)}</h2>
+          <p>{me === 0 ? L('Você joga o primeiro turno (e não compra carta nele).', 'You play the first turn (and draw no card on it).') : L('O oponente joga o primeiro turno. Você compra uma carta no começo do seu.', 'The opponent plays the first turn. You draw a card at the start of yours.')}</p>
+        </div>
+        <button class="btn primary big" onclick={() => (intro = 'hand')}>{L('Ver a minha mão inicial', 'See my opening hand')}</button>
+      </div>
+    {:else if intro === 'hand' && g.setup}
+      <div class="intro hand-intro" in:fade={{ duration: 200 }}>
+        <div class="hi-head">
+          <small>{myMulls ? L(`Troca ${myMulls} de ${MAX_MULLIGANS}`, `Mulligan ${myMulls} of ${MAX_MULLIGANS}`) : L('Antes de começar', 'Before you start')}</small>
+          <h2 class="display">{L('Sua mão inicial', 'Your opening hand')}</h2>
+          <p>{#if myMulls}
+            {L(`Escolha ${myMulls} carta${myMulls > 1 ? 's' : ''} para descartar (clique nela${myMulls > 1 ? 's' : ''}) e fique com as outras, ou troque de novo.`, `Pick ${myMulls} card${myMulls > 1 ? 's' : ''} to discard (click) and keep the rest, or mulligan again.`)}
+          {:else}
+            {L('A mão foi boa? Fique com ela. Se não, troque: você recebe 7 cartas novas, mas descarta 1 (na 2ª troca, 2; na 3ª, 3).', 'Good hand? Keep it. If not, mulligan: you get 7 new cards but discard 1 (2 on the 2nd, 3 on the 3rd).')}
+          {/if}</p>
+          {#if g.setup.mull[foe]}<span class="hi-foe">{L(`${F.hero.name} trocou a mão ${g.setup.mull[foe]} vez${g.setup.mull[foe] > 1 ? 'es' : ''}.`, `${F.hero.name} took ${g.setup.mull[foe]} mulligan${g.setup.mull[foe] > 1 ? 's' : ''}.`)}</span>{/if}
+        </div>
+        <div class="hi-cards">
+          {#each P.hand as r (r.uid)}
+            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} in:flyIn={{ y: 30, duration: 300 }}>
+              {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
+              {#if discardSel.includes(r.uid)}<span class="drop-tag"><X size={14} /> {L('descartar', 'discard')}</span>{/if}
+            </button>
+          {/each}
+        </div>
+        <div class="hi-actions">
+          <button class="btn big" disabled={myMulls >= MAX_MULLIGANS} onclick={mulligan}><RotateCcw size={16} />
+            {myMulls >= MAX_MULLIGANS ? L('Sem mais trocas', 'No more mulligans') : L(`Trocar a mão (recebe 7, descarta ${myMulls + 1})`, `Mulligan (get 7, discard ${myMulls + 1})`)}</button>
+          <button class="btn primary big" disabled={discardSel.length !== myMulls} onclick={keepHand}><Check size={16} />
+            {myMulls ? L(`Ficar com ${7 - myMulls} cartas`, `Keep ${7 - myMulls} cards`) : L('Ficar com esta mão', 'Keep this hand')}</button>
+        </div>
+      </div>
+    {/if}
     {#if g.winner !== undefined && !fxPlaying}
       <div class="modal"><div class="box">
         <h2>{g.winner === me ? L('Vitória!', 'Victory!') : L('Derrota', 'Defeat')}</h2>
@@ -1343,6 +1419,32 @@
   .fxlayer :global(.bolt) { position: fixed; width: 16px; height: 16px; border-radius: 50%; }
   .fxlayer :global(.bolt.ranged) { width: 26px; height: 6px; border-radius: 3px; background: #f0c45a; box-shadow: 0 0 12px #f0c45a; }
   .fxlayer :global(.bolt.magic) { background: radial-gradient(circle, #fff, #9a7bff 45%, transparent 70%); box-shadow: 0 0 22px 6px rgb(140 110 255 / .7); width: 22px; height: 22px; }
+
+  /* antes do 1º turno: quem começa e a mão inicial */
+  .intro { position: absolute; inset: 0; z-index: 55; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 24px;
+    background: radial-gradient(ellipse at 50% 40%, rgb(30 24 20 / .78), rgb(6 5 4 / .93)); backdrop-filter: blur(7px); }
+  .who-row { display: flex; align-items: center; gap: 34px; }
+  .who-side { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: .55; transform: scale(.9); transition: all .3s; }
+  .who-side :global(.hp) { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 70%, #000), 0 0 0 6px #14110f, 0 20px 50px rgb(0 0 0 / .7); }
+  .who-side.first { opacity: 1; transform: scale(1.08); }
+  .who-side.first :global(.hp) { box-shadow: 0 0 0 2px #f0c45a, 0 0 0 7px #14110f, 0 0 60px rgb(240 196 90 / .5); }
+  .who-side b { font-size: 24px; color: #f6ead8; margin-top: 8px; }
+  .who-side small { font: 600 11px var(--ui); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .who-msg { text-align: center; display: grid; gap: 4px; }
+  .who-msg small, .hi-head small { font: 700 11px var(--ui); letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
+  .who-msg h2 { font-size: clamp(36px, 4.4vw, 60px); line-height: 1; color: #ffd98a; text-shadow: 0 0 34px rgb(240 196 90 / .45), 0 4px 0 #5a3d10; }
+  .who-msg p, .hi-head p { color: var(--text-2); font-size: 14px; max-width: 640px; margin: 4px auto 0; }
+  .hi-head { text-align: center; display: grid; gap: 4px; justify-items: center; }
+  .hi-head h2 { font-size: clamp(28px, 3vw, 42px); color: #f6ead8; line-height: 1.05; }
+  .hi-foe { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .hi-cards { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: nowrap; max-width: 100%; }
+  .hi-card { position: relative; width: clamp(120px, 12.2vw, 236px); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; border-radius: 9px; cursor: default; transition: transform .15s, filter .15s; filter: drop-shadow(0 16px 26px rgb(0 0 0 / .75)); }
+  .hi-card:hover { transform: translateY(-10px) scale(1.04); z-index: 2; }
+  .hi-card.pick { cursor: pointer; }
+  .hi-card.drop { transform: translateY(14px); }
+  .hi-card.drop :global(img) { filter: grayscale(.85) brightness(.45); }
+  .drop-tag { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: inline-flex; gap: 4px; align-items: center; padding: 5px 12px; border-radius: 99px; background: #7a1d16; color: #ffe0da; font: 700 12px var(--ui); text-transform: uppercase; letter-spacing: .1em; filter: none; white-space: nowrap; }
+  .hi-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 
   .zoom { position: fixed; z-index: 60; pointer-events: none; filter: drop-shadow(0 22px 40px rgb(0 0 0 / .85)); }
   .modal { position: absolute; inset: 0; background: rgb(0 0 0 / .6); display: grid; place-items: center; z-index: 50; }

@@ -220,6 +220,8 @@ export interface GameState {
   heroOff: boolean;
   /** No modo fora do campo: o golpe corpo a corpo do herói só passa da frente inimiga se ela estiver vazia (regra opcional). */
   heroOffFront: boolean;
+  /** Antes do 1º turno: troca da mão inicial (mulligan). `mull` = trocas já feitas; `kept` = quem já ficou com a mão. */
+  setup?: { mull: [number, number]; kept: [boolean, boolean] };
   /** Carta jogada esperando a resposta do oponente (Reação ou aceitar). */
   pending?: { p: 0 | 1; ref: CardRef; target?: Pos; slot?: Pos };
   /** Acontecimentos recentes para a mesa animar (números de dano, ataques, começo de turno…). */
@@ -260,4 +262,7 @@ export type Action =
   /** Resposta a uma carta do oponente: usar uma Reação ou aceitar. */
   | { t: 'react'; uid: string }
   | { t: 'pass' }
+  /** Mão inicial: trocar tudo (recebe 7 de novo) ou ficar com ela, descartando 1 carta por troca feita. */
+  | { t: 'mulligan'; p: 0 | 1 }
+  | { t: 'keep'; p: 0 | 1; discard: string[] }
   | { t: 'end' };
