@@ -31,6 +31,7 @@
   import { chip } from '../../audio/chip';
   import MusicPlayer from '../../audio/MusicPlayer.svelte';
   import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
+  import { creatureOf } from '../../avatar/creatures';
 
   // ───────────── preparação ─────────────
   const OPTS_KEY = 'darkstar.mesa';
@@ -522,6 +523,8 @@
   /** Toca uma animação do boneco (ele volta a ficar parado quando ela termina). */
   function animate(p: 0 | 1, a: Anim) { if (avatarOf(p)) heroAnim[p] = a; }
   function animEnd(p: 0 | 1) { if (heroAnim[p] !== 'hurt') heroAnim[p] = 'idle'; }
+  /** Bonecos das criaturas: a animação em curso de cada uma (sem entrada = parada). */
+  let unitAnim = $state<Record<string, Anim>>({});
 
   const FX_MS: Partial<Record<Fx['k'], number>> = { attack: 420, turn: 1000, xp: 120, gain: 200, level: 1300, react: 1200, countered: 900 };
 
@@ -589,6 +592,7 @@
         const hp = sideOfHero(e.from), av = hp !== null ? avatarOf(hp) : undefined;
         // o boneco usa o ataque da arma que segura; sem arma, o tipo do golpe decide
         if (hp !== null && av) animate(hp, weaponAnim(av, e.via === 'melee' ? 'slash' : e.via === 'ranged' ? 'shoot' : 'spellcast'));
+        if (hp === null) { const cr = creatureOf(g.players.flatMap((pl) => pl.board.flat()).find((x) => x?.id === e.from)?.icon); if (cr) unitAnim[e.from] = cr.attack; }
         break;
       }
       case 'dmg': {
@@ -919,7 +923,7 @@
         {@const pos = { p, row, col }}
         {@const u = unitAt(g!, pos)}
         <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
-          class:hero={!!u?.isHero} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
+          class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && !!creatureOf(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
           data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
           <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
@@ -927,8 +931,10 @@
             {#if x.isHero}
               {@render heroBody(x, p)}
             {:else}
+              {@const cr = creatureOf(x.icon)}
+              {#if cr}<span class="doll"><AvatarSprite avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={p === me ? 'n' : 's'} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
               <span class="unit" in:recvU={{ key: x.id }} out:sendU={{ key: x.id }}>
-                <span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>
+                {#if !cr}<span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>{/if}
                 <span class="u-nm">{L(x.name[0], x.name[1])}</span>
                 <span class="u-st"><span class="atk"><Swords size={13} /> {x.atk + x.buff}</span><span class="def"><Heart size={13} /> {life(x)}</span></span>
               </span>
@@ -1415,7 +1421,8 @@
   .mini { position: absolute; inset: 0; line-height: 0; }
   .mini :global(.hp) { width: 100% !important; height: 100% !important; border-radius: 0; }
   .mini::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgb(8 6 5 / .88) 82%); }
-  .slot.hero .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000; }
+  .slot.fig { overflow: visible; z-index: 2; }
+  .slot.hero .unit, .slot.fig .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000; }
   .strike-tag { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; border: 1px solid rgb(255 255 255 / .14); z-index: 4; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: rgb(10 8 7 / .8); color: var(--muted); }
   .strike-tag.on { background: #f0c45a; color: #1a120b; }
   .empty { font-size: 11px; color: rgb(255 255 255 / .25); text-transform: uppercase; letter-spacing: .08em; }

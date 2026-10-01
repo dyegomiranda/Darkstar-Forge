@@ -8,10 +8,10 @@
  */
 import raw from '../data/lpc.json';
 
-export type Body = 'male' | 'female';
+export type Body = 'male' | 'female' | 'muscular';
 export type Anim = 'idle' | 'walk' | 'slash' | 'thrust' | 'shoot' | 'spellcast' | 'hurt';
 export type Dir = 'n' | 'w' | 's' | 'e';
-export type SlotId = 'hair' | 'beard' | 'torso' | 'legs' | 'feet' | 'arms' | 'shoulders' | 'head' | 'cape' | 'weapon';
+export type SlotId = 'hair' | 'beard' | 'torso' | 'legs' | 'feet' | 'arms' | 'shoulders' | 'head' | 'cape' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon';
 export type Material = 'body' | 'hair' | 'cloth' | 'metal' | 'eye';
 
 /** A aparência escolhida pelo jogador (é o que a ficha guarda). */
@@ -20,6 +20,10 @@ export interface Avatar {
   skin: string;
   eyes: string;
   parts: Partial<Record<SlotId, { id: string; color?: string }>>;
+  /** Criaturas: cabeça de outra raça (orc, lobo, esqueleto…) no lugar da humana. */
+  head?: string;
+  /** Criaturas: corpo especial (esqueleto, zumbi) no lugar do corpo comum. */
+  frame?: string;
 }
 
 interface Layer { z: number; paths: Partial<Record<Body, string>>; anims: Anim[]; fmt: 'recolor' | 'variant' | 'file'; custom?: Anim; size?: number }
@@ -32,7 +36,7 @@ interface Catalog {
   frame: number;
   anims: Record<Anim, { frames: number; rows: number }>;
   palettes: Record<Material, { base: string; colors: Record<string, string[]> }>;
-  fixed: { body: Item; head: Record<Body, Item>; face: Item; ammo: Item };
+  fixed: { body: Item; head: Record<Body, Item>; face: Item; ammo: Item; heads: Record<string, Item>; frames: Record<string, Item> };
   slots: { id: SlotId; pt: string; en: string; optional: boolean; items: Item[] }[];
 }
 export const LPC = raw as unknown as Catalog;
@@ -143,10 +147,12 @@ export function compose(av: Avatar, anim: Anim): Promise<Sheet> {
 
 async function build(av: Avatar, anim: Anim): Promise<Sheet> {
   const { frames, rows } = LPC.anims[anim];
+  const frame = av.frame ? LPC.fixed.frames[av.frame] : undefined, head = av.head ? LPC.fixed.heads[av.head] : undefined;
   const draws: Draw[] = [
-    ...drawsOf(LPC.fixed.body, av, anim, undefined),
-    ...drawsOf(LPC.fixed.head[av.body], av, anim, undefined),
-    ...drawsOf(LPC.fixed.face, av, anim, undefined),
+    ...drawsOf(frame ?? LPC.fixed.body, av, anim, undefined),
+    ...drawsOf(head ?? LPC.fixed.head[av.body], av, anim, undefined),
+    // o rosto humano só vai em cabeça humana
+    ...(head ? [] : drawsOf(LPC.fixed.face, av, anim, undefined)),
   ];
   for (const s of LPC.slots) {
     const part = av.parts[s.id];
