@@ -167,3 +167,16 @@ describe('mão inicial (mulligan)', () => {
     expect(apply(s, { t: 'mulligan', p: 1 })).toMatch(/3 vezes/);
   });
 });
+
+describe('desistir', () => {
+  it('quem desiste (ou estoura o tempo) perde, em qualquer momento', () => {
+    const s = newGame(side(0), side(1), { seed: 13, mulligan: true });
+    expect(apply(s, { t: 'concede', p: 1 })).toBeNull();
+    expect(s.winner).toBe(0);
+    expect(s.ended).toBe('concede');
+    const t = newGame(side(0), side(1), { seed: 14 });
+    apply(t, { t: 'concede', p: 0, timeout: true });
+    expect(t.winner).toBe(1);
+    expect(t.ended).toBe('timeout');
+  });
+});

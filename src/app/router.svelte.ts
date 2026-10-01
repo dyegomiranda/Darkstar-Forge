@@ -21,6 +21,8 @@ class Router {
   route = $state<Route>(parse(location.hash));
   /** Pergunta antes de sair (ex.: editor com alterações). Devolve false para cancelar. */
   guard: (() => Promise<boolean>) | null = null;
+  /** Para onde o botão "voltar" de uma tela deve ir (ex.: ficha aberta a partir da seleção da Mesa). */
+  returnTo: string | null = null;
   #last = location.hash;
 
   constructor() {

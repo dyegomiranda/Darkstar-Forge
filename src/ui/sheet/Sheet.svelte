@@ -64,6 +64,8 @@
   /** Herói aberto (pela rota #/heroi/<id>); sem id, mostra a galeria de heróis. */
   const current = $derived(id ? chars.findIndex((c) => c.id === id) : -1);
   const ch = $derived(current >= 0 ? chars[current] : undefined);
+  /** A ficha foi aberta pelo "Editar" da seleção da Mesa: o voltar leva de volta para lá. */
+  const backToTable = router.returnTo === '/mesa';
   const open = (cid?: string) => router.go(cid ? `/heroi/${encodeURIComponent(cid)}` : '/heroi');
 
   function edit(fn: (c: Character) => void) {
@@ -201,7 +203,10 @@
     {@const race = raceOf(ch.raceId)}
     {@const mhp = maxHp(ch)}
     <header class="head no-print">
-      <button class="btn sm" onclick={() => open()}><ArrowLeft size={15} /> {L('Heróis', 'Heroes')}</button>
+      {#if backToTable}
+        <button class="btn sm primary" onclick={() => { router.returnTo = null; router.go('/mesa'); }}><ArrowLeft size={15} /> {L('Voltar à seleção da batalha', 'Back to battle selection')}</button>
+      {/if}
+      <button class="btn sm" onclick={() => { router.returnTo = null; open(); }}><ArrowLeft size={15} /> {L('Heróis', 'Heroes')}</button>
       <b class="display hd">{ch.name}</b>
       <div class="grow"></div>
       <button class="btn sm" onclick={() => print()}><Printer size={15} /> {L('Imprimir ficha', 'Print sheet')}</button>

@@ -482,6 +482,14 @@ function setupAction(s: GameState, a: Action): string | null {
 /** Aplica uma jogada. Devolve um erro (texto) se não for permitida. */
 export function apply(s: GameState, a: Action): string | null {
   if (s.winner !== undefined) return 'A partida acabou.';
+  if (a.t === 'concede') {
+    s.winner = other(a.p);
+    s.ended = a.timeout ? 'timeout' : 'concede';
+    s.pending = undefined;
+    s.setup = undefined;
+    log(s, a.timeout ? `${s.players[a.p].hero.name} perdeu por tempo. ${s.players[s.winner].hero.name} venceu!` : `${s.players[a.p].hero.name} desistiu. ${s.players[s.winner].hero.name} venceu!`);
+    return null;
+  }
   if (s.setup) return setupAction(s, a);
   if (a.t === 'mulligan' || a.t === 'keep') return 'A partida já começou.';
   if (s.pending) return respond(s, a);

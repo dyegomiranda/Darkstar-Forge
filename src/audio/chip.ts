@@ -1,89 +1,61 @@
 /**
  * Música e sons em estilo 8-bit, sintetizados na hora (Web Audio): ondas quadradas
- * e triangulares e ruído, como nos consoles antigos. Nada de arquivos de áudio.
+ * e triangulares, uma "guitarra" distorcida e ruído para a bateria. Nada de arquivos de áudio.
  *
- *  - music('menu' | 'battle' | null): troca de música com transição suave;
+ *  - music('menu' | 'battle' | null): o clima pedido pela tela (troca com transição suave);
+ *  - next() / pause() / resume() / stop(): o tocador (o que o jogador escolhe vale mais que a tela);
  *  - sfx('hit' | 'card' | …): pistas sonoras curtas.
  */
+import { build, noteHz, TRACKS, type Mood, type Track } from './tracks';
 
 type Wave = 'square' | 'triangle' | 'sawtooth';
-interface Note { step: number; len: number; freq: number }
-interface Song { bpm: number; bars: number; lead: Note[]; arp: Note[]; bass: Note[]; kick: number[]; snare: number[]; hat: number[]; leadVol: number; arpVol: number }
-
-const SEMI: Record<string, number> = { C: 0, 'C#': 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
-const hz = (n: string) => { const m = n.match(/^([A-G][#b]?)(\d)$/)!; return 440 * 2 ** ((SEMI[m[1]] + (+m[2] - 4) * 12 - 9) / 12); };
-
-/** "A4:2 C5:2 -:4" → notas (o passo é uma semicolcheia; "-" é pausa). */
-function line(src: string): Note[] {
-  const out: Note[] = [];
-  let step = 0;
-  for (const tok of src.trim().split(/\s+/)) {
-    const [n, l] = tok.split(':');
-    const len = +l;
-    if (n !== '-') out.push({ step, len, freq: hz(n) });
-    step += len;
-  }
-  return out;
-}
-/** Um compasso de arpejo em colcheias por acorde. */
-const arps = (chords: string[][], per = 2) => line(chords.map((c) => c.map((n) => `${n}:${per}`).join(' ')).join(' '));
-
-// ── tema da seleção de heróis: aventura calma, em ré menor ──
-const MENU: Song = {
-  bpm: 96, bars: 8, leadVol: 0.16, arpVol: 0.07,
-  lead: line(`A4:4 D5:4 F5:6 E5:2  D5:8 -:4 A4:2 C5:2  D5:4 F5:4 Bb5:6 A5:2  F5:8 -:8
-              A5:4 G5:4 F5:4 C5:4  F5:6 E5:2 C5:8  E5:4 G5:4 C6:4 G5:4  A5:6 G5:2 E5:4 C#5:4`),
-  arp: arps([
-    ['D3', 'A3', 'D4', 'F4', 'A4', 'F4', 'D4', 'A3'], ['D3', 'A3', 'D4', 'F4', 'A4', 'F4', 'D4', 'A3'],
-    ['Bb2', 'F3', 'Bb3', 'D4', 'F4', 'D4', 'Bb3', 'F3'], ['Bb2', 'F3', 'Bb3', 'D4', 'F4', 'D4', 'Bb3', 'F3'],
-    ['F3', 'C4', 'F4', 'A4', 'C5', 'A4', 'F4', 'C4'], ['F3', 'C4', 'F4', 'A4', 'C5', 'A4', 'F4', 'C4'],
-    ['C3', 'G3', 'C4', 'E4', 'G4', 'E4', 'C4', 'G3'], ['A2', 'E3', 'A3', 'C#4', 'E4', 'C#4', 'A3', 'E3'],
-  ]),
-  bass: line('D2:16 D2:16 Bb1:16 Bb1:16 F2:16 F2:16 C2:16 A1:16'),
-  kick: [], snare: [], hat: [],
-};
-
-// ── tema de batalha: rápido, em lá menor ──
-const BATTLE: Song = {
-  bpm: 150, bars: 8, leadVol: 0.15, arpVol: 0.055,
-  lead: line(`A4:2 C5:2 E5:2 A5:2 G5:2 E5:2 C5:2 E5:2  A5:4 G5:2 E5:2 D5:4 E5:4  F5:2 A5:2 C6:2 A5:2 F5:2 A5:2 C6:4  B5:4 G5:4 D5:4 B4:4
-              A4:2 C5:2 E5:2 A5:2 B5:2 C6:2 B5:2 A5:2  E6:6 D6:2 C6:4 A5:4  F5:2 G5:2 A5:2 C6:2 A5:2 G5:2 F5:2 A5:2  G#5:4 B5:4 E6:4 E5:4`),
-  arp: arps([
-    ['A3', 'C4', 'E4', 'C4'], ['A3', 'C4', 'E4', 'C4'], ['A3', 'C4', 'E4', 'C4'], ['A3', 'C4', 'E4', 'C4'],
-    ['F3', 'A3', 'C4', 'A3'], ['F3', 'A3', 'C4', 'A3'], ['G3', 'B3', 'D4', 'B3'], ['G3', 'B3', 'D4', 'B3'],
-    ['A3', 'C4', 'E4', 'C4'], ['A3', 'C4', 'E4', 'C4'], ['A3', 'C4', 'E4', 'C4'], ['A3', 'C4', 'E4', 'C4'],
-    ['F3', 'A3', 'C4', 'A3'], ['F3', 'A3', 'C4', 'A3'], ['E3', 'G#3', 'B3', 'G#3'], ['E3', 'G#3', 'B3', 'G#3'],
-  ], 2),
-  bass: line(`A1:2 A1:2 A2:2 A1:2 A1:2 A2:2 A1:2 G1:2  A1:2 A1:2 A2:2 A1:2 A1:2 A2:2 A1:2 E2:2
-              F1:2 F1:2 F2:2 F1:2 F1:2 F2:2 F1:2 F2:2  G1:2 G1:2 G2:2 G1:2 G1:2 G2:2 G1:2 B1:2
-              A1:2 A1:2 A2:2 A1:2 A1:2 A2:2 A1:2 G1:2  A1:2 A1:2 A2:2 A1:2 A1:2 A2:2 A1:2 E2:2
-              F1:2 F1:2 F2:2 F1:2 F1:2 F2:2 F1:2 F2:2  E1:2 E1:2 E2:2 E1:2 E2:2 E2:2 G#1:2 B1:2`),
-  kick: [0, 8, 10], snare: [4, 12], hat: [2, 6, 14],
-};
-const SONGS = { menu: MENU, battle: BATTLE };
-export type SongId = keyof typeof SONGS;
 export type Sfx = 'draw' | 'card' | 'select' | 'slash' | 'arrow' | 'magic' | 'hit' | 'block' | 'heal' | 'curse' | 'ward' | 'death' | 'summon' | 'levelup' | 'turn' | 'counter' | 'error' | 'victory' | 'defeat' | 'push';
+export type { Mood };
 
 const KEY = 'darkstar.som';
 const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY) ?? '{}') as { music?: number; sfx?: number; mute?: boolean }; } catch { return {}; } })();
+
+interface Player { track: Track; gain: GainNode; gtr: GainNode; next: number; step: number; timer: ReturnType<typeof setInterval> }
 
 class Chip {
   ctx: AudioContext | null = null;
   #master!: GainNode;
   #sfxBus!: GainNode;
   #noise!: AudioBuffer;
-  #players = new Map<SongId, { gain: GainNode; next: number; step: number; timer: ReturnType<typeof setInterval> }>();
-  #want: SongId | null = null;
+  #curve!: Float32Array<ArrayBuffer>;
+  #tracks = new Map<string, Track>();
+  #players = new Map<string, Player>();
+  #index: Record<Mood, number> = { menu: 0, battle: 0 };
+  #listeners = new Set<() => void>();
+  /** Clima que a tela pede agora. */
+  mood: Mood | null = null;
+  /** O jogador pausou ou parou a música (vale até ele mandar tocar de novo). */
+  paused = false;
   musicVol = saved.music ?? 0.6;
   sfxVol = saved.sfx ?? 0.8;
   muted = saved.mute ?? false;
 
-  /** O navegador só deixa tocar depois de um gesto do usuário: liga no 1º clique/tecla. */
   constructor() {
     if (typeof window === 'undefined') return;
-    const wake = () => { const c = this.#ensure(); if (!c) return; void c.resume().then(() => { if (this.#want && !this.#players.has(this.#want)) this.music(this.#want); }); };
-    addEventListener('pointerdown', wake, { once: false });
-    addEventListener('keydown', wake, { once: false });
+    // o navegador só deixa tocar depois de um gesto do usuário
+    const wake = () => { const c = this.#ensure(); if (!c) return; void c.resume().then(() => { if (this.mood && !this.paused && !this.#players.size) this.#play(); }); };
+    addEventListener('pointerdown', wake);
+    addEventListener('keydown', wake);
+  }
+
+  /** Faixa do clima atual (ou a última tocada). */
+  get current(): Track | null {
+    if (!this.mood) return null;
+    const list = TRACKS.filter((t) => t.mood === this.mood);
+    return this.#track(list[this.#index[this.mood] % list.length].id);
+  }
+  onchange(fn: () => void): () => void { this.#listeners.add(fn); return () => this.#listeners.delete(fn); }
+  #emit() { for (const fn of this.#listeners) fn(); }
+
+  #track(id: string): Track {
+    let t = this.#tracks.get(id);
+    if (!t) { t = build(TRACKS.find((x) => x.id === id)!); this.#tracks.set(id, t); }
+    return t;
   }
 
   #ensure(): AudioContext | null {
@@ -102,14 +74,17 @@ class Chip {
       this.#noise = this.ctx.createBuffer(1, n, n);
       const d = this.#noise.getChannelData(0);
       for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      // curva de distorção da "guitarra"
+      this.#curve = new Float32Array(1024);
+      for (let i = 0; i < 1024; i++) { const x = (i / 511.5) - 1; this.#curve[i] = Math.tanh(x * 7); }
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
     return this.ctx;
   }
 
   #save() { try { localStorage.setItem(KEY, JSON.stringify({ music: this.musicVol, sfx: this.sfxVol, mute: this.muted })); } catch { /* sem armazenamento local */ } }
-  setMute(m: boolean) { this.muted = m; if (this.ctx) this.#master.gain.setTargetAtTime(m ? 0 : 1, this.ctx.currentTime, 0.05); this.#save(); }
-  setMusicVol(v: number) { this.musicVol = v; const p = this.#want && this.#players.get(this.#want); if (p && this.ctx) p.gain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); this.#save(); }
+  setMute(m: boolean) { this.muted = m; if (this.ctx) this.#master.gain.setTargetAtTime(m ? 0 : 1, this.ctx.currentTime, 0.05); this.#save(); this.#emit(); }
+  setMusicVol(v: number) { this.musicVol = v; if (this.ctx) for (const p of this.#players.values()) if (p.track === this.current && !this.paused) p.gain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); this.#save(); }
   setSfxVol(v: number) { this.sfxVol = v; if (this.ctx) this.#sfxBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); this.#save(); }
 
   // ───────────── vozes ─────────────
@@ -120,7 +95,7 @@ class Chip {
     o.type = wave;
     o.frequency.setValueAtTime(freq, t);
     if (opt.to) o.frequency.exponentialRampToValueAtTime(Math.max(20, opt.to), t + dur);
-    if (opt.vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 7; lg.gain.value = opt.vib; l.connect(lg).connect(o.frequency); l.start(t); l.stop(t + dur + 0.05); }
+    if (opt.vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 6.5; lg.gain.value = opt.vib; l.connect(lg).connect(o.frequency); l.start(t); l.stop(t + dur + 0.05); }
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(vol, t + 0.006);
     g.gain.setValueAtTime(vol * 0.75, t + Math.max(0.01, dur * 0.55));
@@ -143,46 +118,102 @@ class Chip {
 
   // ───────────── música ─────────────
 
-  /** Troca a música (null = silêncio), com transição suave. */
-  music(id: SongId | null, fade = 2.4): void {
-    this.#want = id;
+  /** A tela pede um clima (null = silêncio). Se o jogador pausou, só guarda o pedido. */
+  music(mood: Mood | null, fade = 2.4): void {
+    if (this.mood === mood) { if (mood && !this.paused && !this.#players.size) this.#play(fade); return; }
+    this.mood = mood;
+    this.#emit();
+    if (!this.paused) this.#play(fade);
+  }
+
+  /** Toca a faixa atual do clima pedido (as outras somem aos poucos). */
+  #play(fade = 2.4): void {
     const ctx = this.#ensure();
     if (!ctx || ctx.state !== 'running') return; // no navegador, começa no 1º gesto do usuário
-    for (const [sid, p] of this.#players) {
-      if (sid === id) continue;
+    const track = this.mood && !this.paused ? this.current : null;
+    for (const [id, p] of this.#players) {
+      if (track && id === track.def.id) continue;
       p.gain.gain.cancelScheduledValues(ctx.currentTime);
       p.gain.gain.setTargetAtTime(0, ctx.currentTime, fade / 4);
-      const timer = p.timer;
-      setTimeout(() => { if (this.#want !== sid) { clearInterval(timer); if (this.#players.get(sid)?.timer === timer) this.#players.delete(sid); } }, fade * 1000 + 300);
+      this.#players.delete(id);
+      setTimeout(() => { clearInterval(p.timer); p.gain.disconnect(); }, fade * 1000 + 300);
     }
-    if (!id) return;
-    const cur = this.#players.get(id);
-    if (cur) { cur.gain.gain.cancelScheduledValues(ctx.currentTime); cur.gain.gain.setTargetAtTime(this.musicVol, ctx.currentTime, fade / 4); return; }
+    if (!track || this.#players.has(track.def.id)) return;
     const gain = ctx.createGain();
     gain.gain.value = 0;
     gain.gain.setTargetAtTime(this.musicVol, ctx.currentTime, fade / 4);
     gain.connect(this.#master);
-    const p = { gain, next: ctx.currentTime + 0.08, step: 0, timer: setInterval(() => this.#schedule(id), 60) };
+    // canal da guitarra: distorção + filtro para tirar o chiado
+    const gtr = ctx.createGain(), shaper = ctx.createWaveShaper(), lp = ctx.createBiquadFilter(), post = ctx.createGain();
+    shaper.curve = this.#curve; shaper.oversample = '2x';
+    lp.type = 'lowpass'; lp.frequency.value = 2600;
+    post.gain.value = 0.085;
+    gtr.connect(shaper).connect(lp).connect(post).connect(gain);
+    const id = track.def.id;
+    const p: Player = { track, gain, gtr, next: ctx.currentTime + 0.08, step: 0, timer: setInterval(() => this.#schedule(id), 60) };
     this.#players.set(id, p);
   }
 
-  #schedule(id: SongId) {
+  #schedule(id: string) {
     const ctx = this.ctx, p = this.#players.get(id);
     if (!ctx || !p) return;
-    const song = SONGS[id], sec = 60 / song.bpm / 4, total = song.bars * 16;
-    // a aba ficou em segundo plano: retoma do tempo atual, sem despejar notas atrasadas
+    const { track } = p, sec = 60 / track.def.bpm / 4;
+    // a janela ficou em segundo plano: retoma do tempo atual, sem despejar notas atrasadas
     if (p.next < ctx.currentTime - 0.3) p.next = ctx.currentTime + 0.05;
     while (p.next < ctx.currentTime + 0.25) {
-      const s = p.step, t = p.next, bar = s % 16;
-      for (const n of song.lead) if (n.step === s) this.#tone(p.gain, 'square', n.freq, t, n.len * sec * 0.92, song.leadVol, { vib: n.len >= 6 ? 4 : 0 });
-      for (const n of song.arp) if (n.step === s) this.#tone(p.gain, 'square', n.freq, t, n.len * sec * 0.7, song.arpVol);
-      for (const n of song.bass) if (n.step === s) this.#tone(p.gain, 'triangle', n.freq, t, n.len * sec * 0.9, 0.3);
-      if (song.kick.includes(bar)) this.#tone(p.gain, 'triangle', 150, t, 0.12, 0.5, { to: 45 });
-      if (song.snare.includes(bar)) this.#burst(p.gain, t, 0.11, 0.2, 1400, 'bandpass');
-      if (song.hat.includes(bar)) this.#burst(p.gain, t, 0.035, 0.07, 7000);
-      p.step = (s + 1) % total;
+      const t = p.next, out = p.gain;
+      for (const e of track.ev[p.step] ?? []) {
+        const d = e.len * sec;
+        switch (e.v) {
+          case 'lead': this.#tone(out, 'square', e.f, t, d * 0.92, 0.15, { vib: e.len >= 6 ? 4 : 0 }); break;
+          case 'harm': this.#tone(out, 'square', e.f, t, d * 0.9, 0.055); break;
+          case 'arp': this.#tone(out, 'square', e.f, t, d * 0.7, 0.065); break;
+          case 'bass': this.#tone(out, 'triangle', e.f, t, d * 0.9, 0.3); break;
+          // acorde de força: tônica e quinta em dente de serra, pela distorção
+          case 'gtr': this.#tone(p.gtr, 'sawtooth', e.f, t, d * 0.95, 0.5); this.#tone(p.gtr, 'sawtooth', e.f * 1.4983, t, d * 0.95, 0.4); break;
+          case 'kick': this.#tone(out, 'triangle', 150, t, 0.12, 0.55, { to: 45 }); break;
+          case 'snare': this.#burst(out, t, 0.12, 0.22, 1500, 'bandpass'); this.#tone(out, 'triangle', 190, t, 0.07, 0.16, { to: 120 }); break;
+          case 'hat': this.#burst(out, t, 0.03, 0.055, 7500); break;
+          case 'tom': this.#tone(out, 'triangle', e.f, t, 0.13, 0.4, { to: e.f * 0.6 }); break;
+          case 'crash': this.#burst(out, t, 0.7, 0.13, 5200); break;
+        }
+      }
       p.next += sec;
+      if (++p.step >= track.steps) {
+        // terminou a faixa: passa para a próxima do mesmo clima (menos repetição)
+        p.step = 0;
+        if (this.mood === track.def.mood && TRACKS.filter((x) => x.mood === this.mood).length > 1) { setTimeout(() => this.next(1.2), 0); return; }
+      }
     }
+  }
+
+  /** Próxima faixa do clima atual. */
+  next(fade = 0.7): void {
+    if (!this.mood) return;
+    this.#index[this.mood]++;
+    this.paused = false;
+    this.#emit();
+    this.#play(fade);
+  }
+  pause(): void { this.paused = true; this.#emit(); const ctx = this.ctx; if (!ctx) return; for (const p of this.#players.values()) { clearInterval(p.timer); p.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.08); } }
+  /** Volta a tocar: de onde parou (pausa) ou do começo (depois de parar). */
+  resume(): void {
+    this.paused = false;
+    this.#emit();
+    const ctx = this.#ensure();
+    if (!ctx) return;
+    const cur = this.current;
+    for (const [id, p] of this.#players) {
+      if (cur && id === cur.def.id) { p.next = ctx.currentTime + 0.06; p.gain.gain.setTargetAtTime(this.musicVol, ctx.currentTime, 0.1); clearInterval(p.timer); p.timer = setInterval(() => this.#schedule(id), 60); }
+    }
+    this.#play(0.6);
+  }
+  /** Para e volta a faixa ao começo. */
+  stop(): void {
+    this.pause();
+    const ctx = this.ctx;
+    for (const p of this.#players.values()) { p.gain.gain.cancelScheduledValues(ctx?.currentTime ?? 0); setTimeout(() => p.gain.disconnect(), 400); }
+    this.#players.clear();
   }
 
   // ───────────── pistas sonoras ─────────────
@@ -191,7 +222,7 @@ class Chip {
     const ctx = this.#ensure();
     if (!ctx || ctx.state !== 'running') return;
     const o = this.#sfxBus, t = ctx.currentTime + 0.005;
-    const seq = (notes: string[], step: number, vol = 0.2, wave: Wave = 'square', len = step * 1.6) => notes.forEach((n, i) => this.#tone(o, wave, hz(n), t + i * step, len, vol));
+    const seq = (notes: string[], step: number, vol = 0.2, wave: Wave = 'square', len = step * 1.6) => notes.forEach((n, i) => this.#tone(o, wave, noteHz(n), t + i * step, len, vol));
     switch (name) {
       case 'draw': this.#burst(o, t, 0.07, 0.12, 2500, 'bandpass', 5000); this.#tone(o, 'square', 700, t, 0.05, 0.06, { to: 1100 }); break;
       case 'select': this.#tone(o, 'square', 660, t, 0.05, 0.1); break;
@@ -210,8 +241,8 @@ class Chip {
       case 'turn': seq(['A4', 'E5'], 0.1, 0.12, 'triangle', 0.3); break;
       case 'counter': seq(['B5', 'F5', 'B4'], 0.06, 0.16, 'square', 0.1); this.#burst(o, t, 0.2, 0.2, 3000, 'bandpass', 400); break;
       case 'error': this.#tone(o, 'square', 140, t, 0.09, 0.14); this.#tone(o, 'square', 110, t + 0.1, 0.13, 0.14); break;
-      case 'levelup': seq(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], 0.075, 0.17, 'square', 0.16); this.#tone(o, 'triangle', hz('C4'), t, 0.6, 0.2); break;
-      case 'victory': seq(['C5', 'C5', 'C5', 'E5', 'G5', 'E5', 'G5', 'C6'], 0.13, 0.2, 'square', 0.2); seq(['C3', 'G3', 'C4', 'G3', 'C3', 'G3', 'C4', 'C4'], 0.13, 0.22, 'triangle', 0.2); this.#tone(o, 'square', hz('C6'), t + 8 * 0.13, 0.9, 0.2, { vib: 6 }); break;
+      case 'levelup': seq(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], 0.075, 0.17, 'square', 0.16); this.#tone(o, 'triangle', noteHz('C4'), t, 0.6, 0.2); break;
+      case 'victory': seq(['C5', 'C5', 'C5', 'E5', 'G5', 'E5', 'G5', 'C6'], 0.13, 0.2, 'square', 0.2); seq(['C3', 'G3', 'C4', 'G3', 'C3', 'G3', 'C4', 'C4'], 0.13, 0.22, 'triangle', 0.2); this.#tone(o, 'square', noteHz('C6'), t + 8 * 0.13, 0.9, 0.2, { vib: 6 }); break;
       case 'defeat': seq(['A4', 'G4', 'F4', 'E4', 'D4', 'C4', 'B3', 'A3'], 0.16, 0.18, 'square', 0.24); seq(['A2', 'A2', 'F2', 'F2', 'D2', 'D2', 'E2', 'A1'], 0.16, 0.22, 'triangle', 0.3); break;
     }
   }

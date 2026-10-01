@@ -212,6 +212,8 @@ export interface GameState {
   active: 0 | 1;
   turn: number;
   winner?: 0 | 1;
+  /** Como a partida acabou, quando não foi por vida: desistência ou tempo esgotado. */
+  ended?: 'concede' | 'timeout';
   log: string[];
   /** Limite de 3 habilidades por turno (modo B). */
   actionLimit: boolean;
@@ -265,4 +267,6 @@ export type Action =
   /** Mão inicial: trocar tudo (recebe 7 de novo) ou ficar com ela, descartando 1 carta por troca feita. */
   | { t: 'mulligan'; p: 0 | 1 }
   | { t: 'keep'; p: 0 | 1; discard: string[] }
+  /** Desistir (ou perder por tempo): o outro jogador vence. */
+  | { t: 'concede'; p: 0 | 1; timeout?: boolean }
   | { t: 'end' };

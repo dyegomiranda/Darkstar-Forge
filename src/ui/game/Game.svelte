@@ -9,10 +9,11 @@
   import { onDestroy, tick } from 'svelte';
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { Swords, Move, Flag, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Volume2, VolumeX } from '@lucide/svelte';
+  import { Swords, Move, Flag, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Menu, Flag as FlagIcon, CircleHelp, LogOut, Hourglass } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
+  import { ui } from '../../app/ui.svelte';
   import { actor, apply, cannotPlay, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS, MAX_MULLIGANS } from '../../game/engine';
   import { botAction, botMulligan } from '../../game/bot';
   import { sideFromApp } from '../../game/fromApp';
@@ -28,6 +29,7 @@
   import { characterOf, deckCards, deckCount, heroDef, playable } from './heroes';
   import AvatarSprite from '../../avatar/AvatarSprite.svelte';
   import { chip } from '../../audio/chip';
+  import MusicPlayer from '../../audio/MusicPlayer.svelte';
   import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
 
   // ───────────── preparação ─────────────
@@ -47,8 +49,9 @@
   let heroOff = $state(saved.heroOff === true);
   let heroOffFront = $state(saved.heroOffFront === true);
   let showLog = $state(saved.showLog !== false);
+  let timeLimit = $state(saved.timeLimit !== false);
   let starter = $state<'eu' | 'bot' | 'sorteio'>('sorteio');
-  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog })); } catch { /* sem armazenamento local */ } });
+  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog, timeLimit })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
   const ready = $derived(!!myChar && !!botChar && deckCount(myChar) > 0 && deckCount(botChar) > 0);
@@ -69,12 +72,6 @@
   function say(text: string, isWarn = false) { msg = text; warn = isWarn; if (text && isWarn) chip.sfx('error'); }
 
   // ───────────── som: música da seleção → música de batalha; pistas sonoras nos acontecimentos ─────────────
-  let muted = $state(chip.muted);
-  let musicVol = $state(chip.musicVol);
-  let sfxVol = $state(chip.sfxVol);
-  function toggleMute() { muted = !muted; chip.setMute(muted); }
-  $effect(() => { chip.setMusicVol(musicVol); });
-  $effect(() => { chip.setSfxVol(sfxVol); });
   // seleção, posicionamento e mão inicial: tema calmo; começou o 1º turno: tema de batalha; fim de partida: silêncio
   $effect(() => {
     const inMatch = step === 'play' && !!g;
@@ -85,6 +82,9 @@
   // carta entrando na mão
   let handCount = 0;
   $effect(() => { const n = g?.players[me].hand.length ?? 0; if (n > handCount && step === 'play') chip.sfx('draw'); handCount = n; });
+
+  /** Abre a ficha do herói; o "voltar" de lá traz de volta para esta seleção. */
+  function editHero(id: string) { router.returnTo = '/mesa'; router.go(`/heroi/${encodeURIComponent(id)}`); }
 
   function toPlace() {
     if (!myHero) return;
@@ -119,6 +119,7 @@
   let discardSel = $state<string[]>([]);
   const myMulls = $derived(g?.setup?.mull[me] ?? 0);
   function toggleDiscard(uid: string) {
+    touch();
     if (!myMulls) return;
     discardSel = discardSel.includes(uid) ? discardSel.filter((x) => x !== uid) : discardSel.length < myMulls ? [...discardSel, uid] : [...discardSel.slice(1), uid];
   }
@@ -126,6 +127,7 @@
     if (!g) return;
     const err = apply(g, { t: 'mulligan', p: me });
     if (err) { say(err, true); return; }
+    touch();
     discardSel = [];
   }
   function keepHand() {
@@ -205,6 +207,7 @@
 
   async function act(a: Action) {
     if (!g) return;
+    touch();
     const err = apply(g, a);
     if (err) { say(err, true); return; }
     say('');
@@ -223,10 +226,48 @@
     if (g && g.active !== me) void runBot();
   }
 
+  // ───────────── limite de tempo: 30 s parado mostra o contador; mais 30 s e perde ─────────────
+  const IDLE_MS = 30_000, ROPE_MS = 30_000;
+  let idleStart = $state(Date.now());
+  let now = $state(Date.now());
+  let menuOpen = $state(false);
+  let helpOpen = $state(false);
+  /** É a minha vez de decidir algo (jogar, responder, escolher o nível ou a mão inicial). */
+  const waitingMe = $derived(!!g && g.winner === undefined && !fxPlaying && (myTurn || awaiting || intro === 'hand'));
+  const touch = () => { idleStart = Date.now(); };
+  $effect(() => { if (waitingMe) touch(); });
+  const clock = setInterval(() => {
+    const t = Date.now();
+    // com o menu, a ajuda ou o cemitério abertos, o tempo não corre
+    if (menuOpen || helpOpen || graveOf !== null || !waitingMe) idleStart += t - now;
+    now = t;
+    if (timeLimit && waitingMe && g && t - idleStart > IDLE_MS + ROPE_MS) concede(true);
+  }, 250);
+  onDestroy(() => clearInterval(clock));
+  /** Fração (1 → 0) do contador; null enquanto ele não aparece. */
+  const rope = $derived(timeLimit && waitingMe && now - idleStart > IDLE_MS ? Math.max(0, 1 - (now - idleStart - IDLE_MS) / ROPE_MS) : null);
+  let lastTick = 0;
+  $effect(() => { if (rope === null) return; const sec = Math.ceil(rope * ROPE_MS / 1000); if (sec !== lastTick && sec <= 10) chip.sfx('select'); lastTick = sec; });
+
+  /** Desistir (ou perder por tempo): o oponente vence. */
+  function concede(timeout = false) {
+    if (!g || g.winner !== undefined) return;
+    menuOpen = false;
+    apply(g, { t: 'concede', p: me, timeout });
+    sel = null; intro = null; zoom = null;
+    resumeBot?.(); resumeBot = null;
+  }
+  async function askConcede() {
+    menuOpen = false;
+    const r = await ui.confirm({ title: L('Desistir da batalha?', 'Concede the battle?'), text: L('Quem desiste perde a partida.', 'Whoever concedes loses the match.'), ok: L('Desistir', 'Concede'), danger: true });
+    if (r === 'ok') concede();
+  }
+
   /** Minha resposta a uma carta do oponente. */
   let resumeBot: (() => void) | null = null;
   async function respond(a: Action) {
     if (!g || !awaiting) return;
+    touch();
     const err = apply(g, a);
     if (err) { say(err, true); return; }
     zoom = null;
@@ -237,6 +278,7 @@
 
   function clickCard(uid: string) {
     if (!g || !myTurn) return;
+    touch();
     const why = cannotPlay(g, me, uid);
     if (why) { say(why, true); return; }
     const ref = g.players[me].hand.find((c) => c.uid === uid)!;
@@ -248,6 +290,7 @@
 
   function clickSlot(pos: Pos) {
     if (!g || !myTurn) return;
+    touch();
     if (sel && isTarget(pos)) {
       const t = targets.find((x) => same(x, pos))!;
       if (sel.kind === 'card') {
@@ -676,7 +719,7 @@
           <div class="showcase">
             <div class="sc-pic">
               {#key c.id}<span in:fade={{ duration: 220 }}><HeroPortrait hero={c} size={300} /></span>{/key}
-              <button class="sc-edit" onclick={() => router.go(`/heroi/${encodeURIComponent(c.id)}`)} title={L('Editar este herói', 'Edit this hero')}><Pencil size={14} /> {L('Editar', 'Edit')}</button>
+              <button class="sc-edit" onclick={() => editHero(c.id)} title={L('Editar este herói', 'Edit this hero')}><Pencil size={14} /> {L('Editar', 'Edit')}</button>
             </div>
             <div class="sc-info">
               <h2 class="display">{h.name}</h2>
@@ -708,7 +751,7 @@
                   <HeroPortrait hero={o} size={64} />
                   <span>{o.name}</span>
                 </button>
-                <button class="redit" onclick={() => router.go(`/heroi/${encodeURIComponent(o.id)}`)} title={L('Editar herói', 'Edit hero')}><Pencil size={11} /></button>
+                <button class="redit" onclick={() => editHero(o.id)} title={L('Editar herói', 'Edit hero')}><Pencil size={11} /></button>
               </div>
             {/each}
           </div>
@@ -729,13 +772,10 @@
             <label class="toggle sub"><input type="checkbox" bind:checked={heroOffFront} /> <span><b>{L('Exigir a frente vazia', 'Require an empty front')}</b><small>{L('o golpe corpo a corpo do herói só passa da fileira da frente inimiga se ela estiver vazia', 'the hero’s melee strike only goes past the enemy front row when it is empty')}</small></span></label>
           {/if}
           <label class="toggle"><input type="checkbox" bind:checked={limit} /> <span><b>{L('Modo B', 'Mode B')}</b><small>{L('no máximo 3 habilidades por turno', 'at most 3 abilities per turn')}</small></span></label>
+          <label class="toggle"><input type="checkbox" bind:checked={timeLimit} /> <span><b>{L('Limite de tempo', 'Time limit')}</b><small>{L('30 s parado aparece o contador; mais 30 s e você perde', '30 s idle shows the countdown; 30 s more and you lose')}</small></span></label>
           <label class="toggle"><input type="checkbox" bind:checked={showLog} /> <span><b>{L('Registro da batalha', 'Battle log')}</b><small>{L('botão flutuante com tudo o que aconteceu', 'floating button with everything that happened')}</small></span></label>
         </div>
-        <div class="snd">
-          <button class="btn sm ghost icon" onclick={toggleMute} title={muted ? L('Ligar o som', 'Unmute') : L('Silenciar', 'Mute')}>{#if muted}<VolumeX size={16} />{:else}<Volume2 size={16} />{/if}</button>
-          <label><small>{L('Música', 'Music')}</small><input type="range" min="0" max="1" step="0.05" bind:value={musicVol} disabled={muted} /></label>
-          <label><small>{L('Sons', 'Sounds')}</small><input type="range" min="0" max="1" step="0.05" bind:value={sfxVol} disabled={muted} /></label>
-        </div>
+        <MusicPlayer />
         <button class="btn primary big" disabled={!ready} onclick={toPlace}><Swords size={18} /> {heroOff ? L('Começar partida', 'Start match') : L('Continuar', 'Continue')}</button>
       </footer>
     {/if}
@@ -830,13 +870,13 @@
           </div>
           {#if mine}
             <div class="grow"></div>
-            <button class="btn sm ghost icon" use:tip={muted ? L('Som desligado: clique para ligar.', 'Sound off: click to turn on.') : L('Som ligado: clique para silenciar (o volume fica na tela de seleção).', 'Sound on: click to mute (volume is on the selection screen).')} onclick={toggleMute}>{#if muted}<VolumeX size={15} />{:else}<Volume2 size={15} />{/if}</button>
-            <button class="btn sm ghost icon" use:tip={L('Trocar heróis: sai desta partida.', 'Change heroes: leaves this match.')} onclick={leave}><RotateCcw size={15} /></button>
             <button class="btn sm" class:lit={canStrike} disabled={!myTurn} onclick={startStrike} use:tip={myTurn ? strikeInfo().why : ''}><Swords size={15} /> {L('Golpear', 'Strike')}</button>
             {#if !g!.heroOff}<button class="btn sm" disabled={!myTurn || pl.moved} onclick={startMove}><Move size={15} /> {L('Mover', 'Move')}</button>{/if}
             <button class="btn sm primary" disabled={!myTurn} onclick={() => act({ t: 'end' })}><Flag size={15} /> {L('Encerrar turno', 'End turn')}</button>
-          {:else if g!.active === p && g!.winner === undefined}
-            <span class="thinking">{awaiting ? L('Esperando a sua resposta…', 'Waiting for your response…') : L('Bot jogando…', 'Bot playing…')}</span>
+          {:else}
+            <div class="grow"></div>
+            {#if g!.active === p && g!.winner === undefined}<span class="thinking">{awaiting ? L('Esperando a sua resposta…', 'Waiting for your response…') : L('Bot jogando…', 'Bot playing…')}</span>{/if}
+            <button class="btn sm" onclick={() => (menuOpen = !menuOpen)}><Menu size={15} /> {L('Menu', 'Menu')}</button>
           {/if}
         </div>
       {/snippet}
@@ -1048,6 +1088,44 @@
         </div>
       {/if}
 
+      {#if menuOpen}
+        <div class="gmenu-back" onclick={() => (menuOpen = false)} role="presentation"></div>
+        <div class="gmenu" in:scale={{ duration: 140, start: 0.92 }}>
+          <span class="section-title">{L('Menu da partida', 'Match menu')}</span>
+          <button onclick={() => (menuOpen = false)}><Check size={15} /> {L('Continuar jogando', 'Keep playing')}</button>
+          <button onclick={() => { menuOpen = false; helpOpen = true; }}><CircleHelp size={15} /> {L('Como jogar', 'How to play')}</button>
+          <label><input type="checkbox" bind:checked={showLog} /> {L('Mostrar o registro da batalha', 'Show the battle log')}</label>
+          <label><input type="checkbox" bind:checked={timeLimit} /> {L('Limite de tempo por jogada', 'Time limit per play')}</label>
+          <hr />
+          <button onclick={() => { menuOpen = false; leave(); }}><LogOut size={15} /> {L('Sair para a seleção (sem resultado)', 'Leave to selection (no result)')}</button>
+          <button class="danger" disabled={g.winner !== undefined} onclick={askConcede}><FlagIcon size={15} /> {L('Desistir (você perde)', 'Concede (you lose)')}</button>
+        </div>
+      {/if}
+      {#if helpOpen}
+        <div class="modal" onclick={() => (helpOpen = false)} role="presentation">
+          <div class="box help" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+            <h2>{L('Como jogar', 'How to play')}</h2>
+            <ul>
+              <li>{L('Vence quem levar a Vida do herói inimigo a 0.', 'Reduce the enemy hero’s Life to 0 to win.')}</li>
+              <li>{L('No seu turno: use cartas (pagando Vigor ou Mana), golpeie com o herói (de graça, 1 vez por turno), ataque com as suas criaturas e, se quiser, mova o herói. Depois, “Encerrar turno”.', 'On your turn: play cards (paying Vigor or Mana), strike with the hero (free, once per turn), attack with your creatures and optionally move the hero. Then “End turn”.')}</li>
+              <li>{L('Clicou numa carta ou no herói? Escolha o alvo dourado. Para desistir da escolha: Esc, botão direito ou clique fora.', 'Clicked a card or the hero? Pick a golden target. To cancel: Esc, right-click or click outside.')}</li>
+              <li>{L('Vigor e Mana enchem no começo do seu turno. O que sobrar paga Reações no turno do oponente.', 'Vigor and Mana refill at the start of your turn. What is left pays Reactions on the opponent’s turn.')}</li>
+              <li>{L('Corpo a corpo só alcança a fileira da frente inimiga (ou a retaguarda, se a frente estiver vazia). À distância e magia alcançam qualquer um.', 'Melee only reaches the enemy front row (or the back, if the front is empty). Ranged and magic reach anyone.')}</li>
+              <li>{L('A cada 3 XP o herói sobe de nível: +1 Vigor, +1 Mana ou +3 Vida. Cartas pedem nível e atributos.', 'Every 3 XP the hero levels up: +1 Vigor, +1 Mana or +3 Life. Cards require level and attributes.')}</li>
+            </ul>
+            <button class="btn primary" onclick={() => (helpOpen = false)}>{L('Entendi', 'Got it')}</button>
+          </div>
+        </div>
+      {/if}
+      {#if rope !== null}
+        <div class="rope" class:hot={rope < 0.34} style="--t:{rope}" in:scale={{ duration: 260, start: 0.9 }} out:fade={{ duration: 200 }}>
+          <span class="rope-label"><Hourglass size={14} /> {L('Sua vez: jogue ou encerre o turno', 'Your move: play or end the turn')} · <b>{Math.ceil(rope * ROPE_MS / 1000)}s</b></span>
+          <div class="rope-track"><div class="rope-fill"></div><span class="rope-spark"></span></div>
+        </div>
+      {/if}
+
+      <MusicPlayer float />
+
       <!-- ───── registro da batalha (flutuante) ───── -->
       {#if showLog}
         <div class="flog" class:open={logOpen}>
@@ -1193,7 +1271,7 @@
     {#if g.winner !== undefined && !fxPlaying}
       <div class="modal"><div class="box">
         <h2>{g.winner === me ? L('Vitória!', 'Victory!') : L('Derrota', 'Defeat')}</h2>
-        <p class="muted">{L(`Turno ${g.turn}.`, `Turn ${g.turn}.`)}</p>
+        <p class="muted">{g.ended === 'timeout' ? L('Tempo esgotado.', 'Time ran out.') : g.ended === 'concede' ? L('Você desistiu da batalha.', 'You conceded the battle.') : ''} {L(`Turno ${g.turn}.`, `Turn ${g.turn}.`)}</p>
         <div class="lv">
           <button class="btn primary" onclick={start}><RotateCcw size={15} /> {L('Jogar de novo', 'Play again')}</button>
           <button class="btn" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>
@@ -1265,10 +1343,6 @@
   .vs-opts .toggle span { display: flex; flex-direction: column; }
   .vs-opts .toggle b { font-size: 13px; }
   .vs-opts .toggle small { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
-  .snd { display: flex; align-items: center; gap: 10px; }
-  .snd label { display: flex; flex-direction: column; gap: 2px; }
-  .snd small { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-  .snd input { width: 84px; accent-color: var(--accent); }
   .btn.big { height: 46px; padding: 0 26px; font-size: 15px; }
   .dim { opacity: .45; pointer-events: none; }
   .place-help { align-items: center; }
@@ -1509,6 +1583,31 @@
   .hi-card.drop :global(img) { filter: grayscale(.85) brightness(.45); }
   .drop-tag { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: inline-flex; gap: 4px; align-items: center; padding: 5px 12px; border-radius: 99px; background: #7a1d16; color: #ffe0da; font: 700 12px var(--ui); text-transform: uppercase; letter-spacing: .1em; filter: none; white-space: nowrap; }
   .hi-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+  /* menu da partida */
+  .gmenu-back { position: absolute; inset: 0; z-index: 46; }
+  .gmenu { position: absolute; right: 16px; top: 58px; z-index: 47; width: 290px; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 14px; background: rgb(18 15 14 / .98); border: 1px solid var(--line-2); box-shadow: 0 22px 60px rgb(0 0 0 / .75); }
+  .gmenu button, .gmenu label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; border: 0; background: none; color: var(--text); font: 500 13.5px var(--ui); cursor: pointer; text-align: left; }
+  .gmenu button:hover:not(:disabled), .gmenu label:hover { background: var(--surface-2); }
+  .gmenu button.danger { color: #ff9c8c; }
+  .gmenu button:disabled { opacity: .4; cursor: default; }
+  .gmenu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+  .help { max-width: 560px; }
+  .help ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; color: var(--text-2); font-size: 13.5px; line-height: 1.45; }
+  /* contador de tempo: um pavio que vai queimando */
+  .rope { position: absolute; left: 50%; top: calc(50% + 22px); transform: translateX(-50%); z-index: 42; width: min(560px, 46%); display: grid; gap: 6px; justify-items: center; pointer-events: none; }
+  .rope-label { display: inline-flex; gap: 6px; align-items: center; font: 600 12.5px var(--ui); letter-spacing: .04em; padding: 4px 14px; border-radius: 99px; background: rgb(12 10 9 / .9); border: 1px solid color-mix(in srgb, #ff4d2e calc((1 - var(--t)) * 100%), #f0c45a); color: color-mix(in srgb, #ffb4a6 calc((1 - var(--t)) * 100%), #ffe6ad); box-shadow: 0 6px 18px rgb(0 0 0 / .6); }
+  .rope-label b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .rope-track { position: relative; width: 100%; height: 10px; border-radius: 6px; background: rgb(0 0 0 / .65); border: 1px solid rgb(255 255 255 / .12); box-shadow: inset 0 2px 4px rgb(0 0 0 / .8), 0 4px 14px rgb(0 0 0 / .5); }
+  .rope-fill { position: absolute; inset: 1px auto 1px 1px; width: calc(var(--t) * (100% - 2px)); border-radius: 5px; transition: width .25s linear;
+    background: linear-gradient(90deg, color-mix(in srgb, #8a1d12 calc((1 - var(--t)) * 100%), #9a6a1c), color-mix(in srgb, #ff5a36 calc((1 - var(--t)) * 100%), #ffd98a));
+    box-shadow: 0 0 12px color-mix(in srgb, #ff4d2e calc((1 - var(--t)) * 100%), #f0c45a); }
+  .rope-spark { position: absolute; top: 50%; left: calc(1px + var(--t) * (100% - 2px)); width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; transition: left .25s linear;
+    background: radial-gradient(circle, #fff 0 18%, #ffe08a 30%, #ff7a2e 55%, transparent 72%); filter: drop-shadow(0 0 8px #ff9a3c); animation: spark .28s steps(2) infinite; }
+  @keyframes spark { 50% { transform: scale(1.35) rotate(40deg); opacity: .8; } }
+  .rope.hot { animation: ropeShake .5s ease-in-out infinite; }
+  .rope.hot .rope-label { animation: pulse .5s ease-in-out infinite; }
+  @keyframes ropeShake { 25% { transform: translateX(calc(-50% - 2px)); } 75% { transform: translateX(calc(-50% + 2px)); } }
 
   .zoom { position: fixed; z-index: 60; pointer-events: none; filter: drop-shadow(0 22px 40px rgb(0 0 0 / .85)); }
   .modal { position: absolute; inset: 0; background: rgb(0 0 0 / .6); display: grid; place-items: center; z-index: 50; }
