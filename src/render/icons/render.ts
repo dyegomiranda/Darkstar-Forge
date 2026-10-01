@@ -4,15 +4,21 @@
  *  - medalhao: o símbolo em metal sobre um medalhão (aro de metal + esmalte)
  *  - chapado:  silhueta limpa numa cor só
  *  - pixel:    silhueta com contorno, pixelada (~16 px)
+ *  - orbe:     esfera de vidro na cor do símbolo, com brilho e o símbolo em relevo (3D)
+ *
+ * Os símbolos da coleção 3D (icons3d.ts) são imagens prontas: entram como estão,
+ * com sombra; o acabamento só muda no modo pixel.
  */
-import { darken, lighten, mix } from '../color';
+import { darken, lighten, luminance, mix } from '../color';
 import type { Defs } from '../defs';
 import { ICONS } from './game-icons';
+import { ICONS3D } from './icons3d';
 
-export type IconStyle = 'emblema' | 'medalhao' | 'chapado' | 'pixel';
+export type IconStyle = 'emblema' | 'medalhao' | 'chapado' | 'pixel' | 'orbe';
 export const ICON_STYLES: { id: IconStyle; name: string; en: string }[] = [
   { id: 'emblema', name: 'Metal gravado', en: 'Engraved metal' },
   { id: 'medalhao', name: 'Medalhão', en: 'Medallion' },
+  { id: 'orbe', name: 'Orbe 3D', en: '3D orb' },
   { id: 'chapado', name: 'Silhueta', en: 'Silhouette' },
   { id: 'pixel', name: 'Pixel', en: 'Pixel' },
 ];
@@ -88,7 +94,19 @@ export interface GlyphOpts {
 }
 
 /** Símbolo `id` com canto superior esquerdo em (x,y) e lado `size`. */
+/** Símbolo da coleção 3D: a imagem entra uma vez nos <defs> e é reaproveitada. */
+function image3d(defs: Defs, id: string): string {
+  const ref = defs.add(`i3d:${id}`, (did) => `<image id="${did}" href="${ICONS3D[id].src}" width="${U}" height="${U}"/>`);
+  return `<use href="#${ref}"/>`;
+}
+
 export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y: number, size: number, o: GlyphOpts = {}): string {
+  if (ICONS3D[id]) {
+    const im = image3d(defs, id);
+    const body = style === 'pixel' ? `<g filter="${pixelate(defs, pixBlock(size))}">${im}</g>` : `<g filter="${dropShadow(defs)}">${im}</g>`;
+    const op3 = o.opacity != null && o.opacity < 1 ? ` opacity="${o.opacity}"` : '';
+    return `<g transform="translate(${f(x)} ${f(y)}) scale(${+(size / U).toFixed(5)})"${op3}>${body}</g>`;
+  }
   const ic = ICONS[id];
   if (!ic) return '';
   const color = o.color ?? '#d3dae3';
@@ -109,6 +127,22 @@ export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y
       `<path d="${disc}" fill="${defs.radial([[0, lighten(enamel, 0.25)], [0.75, enamel], [1, darken(enamel, 0.5)]], 0.5, 0.4, 0.65)}"/>` +
       `<path d="M${c - 196} ${c}a196 196 0 1 0 392 0a196 196 0 1 0-392 0Z" fill="none" stroke="${lighten(ring, 0.3)}" stroke-width="5" opacity=".55"/>` +
       `<g transform="translate(${U * 0.19} ${U * 0.19}) scale(.62)"><g filter="${outline(defs, dark, 5)}"><g filter="${bevel(defs)}">${path(metal(defs, color))}</g></g></g>`;
+  } else if (style === 'orbe') {
+    // esfera de vidro: luz de cima à esquerda, borda escura, reflexo no alto e luz rebatida embaixo
+    const c = U / 2, R = 244;
+    const ball = `M${c - R} ${c}a${R} ${R} 0 1 0 ${2 * R} 0a${R} ${R} 0 1 0-${2 * R} 0Z`;
+    const deep = mix(darken(color, 0.72), '#07060a', 0.35);
+    // cor clara (aço, branco): o símbolo vai escuro; senão, claro
+    const pale = luminance(color) > 0.55;
+    const sym = pale ? defs.linear([[0, darken(color, 0.55)], [1, darken(color, 0.82)]]) : defs.linear([[0, '#ffffff'], [0.6, lighten(color, 0.8)], [1, lighten(color, 0.5)]]);
+    inner =
+      `<g filter="${dropShadow(defs)}"><path d="${ball}" fill="${deep}"/></g>` +
+      `<path d="${ball}" fill="${defs.radial([[0, lighten(color, 0.5)], [0.42, color], [0.8, darken(color, 0.45)], [1, deep]], 0.36, 0.3, 0.78)}"/>` +
+      `<path d="${ball}" fill="${defs.radial([[0.72, '#000000', 0], [1, '#000000', 0.55]], 0.5, 0.5, 0.5)}"/>` +
+      `<ellipse cx="${c - 46}" cy="${c - 150}" rx="128" ry="62" transform="rotate(-18 ${c - 46} ${c - 150})" fill="${defs.linear([[0, '#ffffff', 0.6], [1, '#ffffff', 0]])}"/>` +
+      `<path d="M${c - 170} ${c + 128}a214 214 0 0 0 340 0a236 236 0 0 1-340 0Z" fill="${lighten(color, 0.6)}" opacity=".4"/>` +
+      `<g transform="translate(${U * 0.16} ${U * 0.17}) scale(.68)"><g filter="${outline(defs, pale ? lighten(color, 0.6) : deep, 9)}">${path(sym)}</g></g>` +
+      `<path d="${ball}" fill="none" stroke="${deep}" stroke-width="10"/>`;
   } else if (style === 'chapado') {
     inner = path(color);
   } else {
@@ -125,13 +159,19 @@ export function drawGlyph(defs: Defs, id: string, style: IconStyle, x: number, y
  */
 export function drawStatBadge(defs: Defs, id: string, style: IconStyle, cx: number, cy: number, size: number, color: string, ring: string): string {
   const x = cx - size / 2, y = cy - size / 2;
+  const k = size / U;
+  // símbolo 3D: a própria imagem, um pouco escurecida para o número aparecer
+  if (ICONS3D[id]) return `<g transform="translate(${f(x)} ${f(y)}) scale(${+k.toFixed(5)})"><g filter="${dropShadow(defs)}">${image3d(defs, id)}</g><circle cx="${U / 2}" cy="${U / 2}" r="150" fill="#000" opacity=".28"/></g>`;
   const ic = ICONS[id];
   if (!ic) return '';
-  const k = size / U;
   const c = U / 2;
   const enamel = mix(darken(color, 0.78), '#0c0a0d', 0.4);
   let base: string;
-  if (style === 'chapado') {
+  if (style === 'orbe') {
+    const R = 250, disc = `M${c - R} ${c}a${R} ${R} 0 1 0 ${2 * R} 0a${R} ${R} 0 1 0-${2 * R} 0Z`;
+    base = `<g filter="${dropShadow(defs)}"><path d="${disc}" fill="${defs.radial([[0, lighten(color, 0.35)], [0.45, darken(color, 0.25)], [1, darken(color, 0.8)]], 0.36, 0.3, 0.8)}"/></g>` +
+      `<ellipse cx="${c - 46}" cy="${c - 150}" rx="128" ry="62" transform="rotate(-18 ${c - 46} ${c - 150})" fill="${defs.linear([[0, '#ffffff', 0.6], [1, '#ffffff', 0]])}"/>`;
+  } else if (style === 'chapado') {
     base = `<path d="M${c - 250} ${c}a250 250 0 1 0 500 0a250 250 0 1 0-500 0Z" fill="${enamel}"/>` +
       `<path d="M${c - 238} ${c}a238 238 0 1 0 476 0a238 238 0 1 0-476 0Z" fill="none" stroke="${color}" stroke-width="22"/>`;
   } else if (style === 'pixel') {

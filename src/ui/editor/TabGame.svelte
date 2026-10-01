@@ -13,6 +13,7 @@
   import Glyph from '../common/Glyph.svelte';
   import type { EditorState } from './editor.svelte';
   import { ATTRS, ATTR_NAMES, KIND_NAMES, type Attr } from '../../game/types';
+  import { FREE, PER_COST } from '../../game/value';
   import { effectsText } from '../../game/text';
   import { protoWeapon } from '../../model/seed';
 
@@ -194,6 +195,17 @@
           <button class:on={d.costMode === 'manual'} onclick={() => { d.costMode = 'manual'; sync(); }}>{L('Manual', 'Manual')}</button>
         </div>
       </div>
+      {@const diff = costTotal(d) - ev.suggestedCost}
+      <div class="verdict" class:ok={diff === 0} class:cheap={diff < 0} class:dear={diff > 0}>
+        {#if diff === 0}
+          <b>{L('No custo certo', 'Right on cost')}</b> <span>{L(`a regra dá ${ev.suggestedCost} e a carta custa ${costTotal(d)}.`, `the rule gives ${ev.suggestedCost} and the card costs ${costTotal(d)}.`)}</span>
+        {:else if diff < 0}
+          <b>{L(`Barata demais (${-diff} a menos)`, `Too cheap (${-diff} less)`)}</b> <span>{L(`a regra dá ${ev.suggestedCost}; custando ${costTotal(d)} ela fica forte demais.`, `the rule gives ${ev.suggestedCost}; at ${costTotal(d)} it is too strong.`)}</span>
+        {:else}
+          <b>{L(`Cara demais (${diff} a mais)`, `Too expensive (${diff} more)`)}</b> <span>{L(`a regra dá ${ev.suggestedCost}; custando ${costTotal(d)} ela fica fraca.`, `the rule gives ${ev.suggestedCost}; at ${costTotal(d)} it is weak.`)}</span>
+        {/if}
+        {#if diff !== 0}<button class="btn sm" onclick={() => { d.cost = setTotal(d.cost, ev.suggestedCost); ed.touch(); }}>{L('Usar o custo da regra', 'Use the rule cost')}</button>{/if}
+      </div>
       <p class="muted small">{L('Sugerido pela pontuação', 'Suggested by score')}: <b>{ev.suggestedCost}</b> {L('no total', 'in total')}{#if d.cost.length > 1 && d.costMode === 'auto'} · {L('no automático, o primeiro recurso completa a diferença', 'in automatic, the first resource makes up the difference')}{/if}</p>
     {/if}
   </section>
@@ -235,7 +247,7 @@
     <div class="score">
       <div class="big"><b>{ev.score}</b><span>{L('pontos', 'points')}</span></div>
       <div class="grow">
-        <p class="small muted">{L(`${FREE_POINTS} ponto é grátis; depois, a cada ${POINTS_PER_COST} pontos, +1 de custo.`, `${FREE_POINTS} point is free; then every ${POINTS_PER_COST} points = +1 cost.`)} {L('Sugestão', 'Suggestion')}: <b>{ev.suggestedCost}</b>
+        <p class="small muted">{d.game ? L(`Até ${FREE} ponto é grátis; depois, a cada ${PER_COST} pontos, +1 de custo. Os pontos saem do que a carta faz (efeitos), com desconto pelo nível e pelo atributo exigidos.`, `Up to ${FREE} points are free; then every ${PER_COST} points = +1 cost. Points come from what the card does (effects), with a discount for required level and attribute.`) : L(`${FREE_POINTS} ponto é grátis; depois, a cada ${POINTS_PER_COST} pontos, +1 de custo.`, `${FREE_POINTS} point is free; then every ${POINTS_PER_COST} points = +1 cost.`)} {L('Sugestão', 'Suggestion')}: <b>{ev.suggestedCost}</b>
           · {L('raridade pelo custo atual', 'rarity for current cost')}: <b style="color:{RARITIES[ev.suggestedRarity].color}">{RARITIES[ev.suggestedRarity].name[app.lang]}</b></p>
         <div class="bd">{#each ev.breakdown as b}<span class="chip">{b.label} <b>{b.points > 0 ? '+' : ''}{b.points}</b></span>{/each}</div>
       </div>
@@ -312,4 +324,9 @@
   .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .num { width: 64px; }
   .effects { margin: 0; padding: 9px 11px; border-radius: 9px; background: var(--bg-2); border: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
+  .verdict { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 12px; border-radius: 10px; font-size: 13px; border: 1px solid var(--line-2); }
+  .verdict span { color: var(--text-2); }
+  .verdict.ok { border-color: rgb(90 190 120 / .5); background: rgb(90 190 120 / .1); } .verdict.ok b { color: #7fd69a; }
+  .verdict.cheap { border-color: rgb(226 87 76 / .55); background: rgb(226 87 76 / .12); } .verdict.cheap b { color: #ff9c8c; }
+  .verdict.dear { border-color: rgb(226 87 76 / .55); background: rgb(226 87 76 / .12); } .verdict.dear b { color: #ff9c8c; }
 </style>

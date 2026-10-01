@@ -221,6 +221,7 @@ function styled(defs: Defs, look: TextLook, size: number): { st: TextStyle; filt
   if (look.hard) filter = defs.url('hardshadow', (id) =>
     `<filter id="${id}" x="-10%" y="-20%" width="130%" height="160%"><feDropShadow dx="3" dy="3" stdDeviation="0" flood-color="#000" flood-opacity="1"/></filter>`);
   else if (look.glow) filter = defs.glow(look.glow, 3, 0.85);
+  else if (look.shadow) filter = textShadow(defs, look.shadow, 1, 3.2, 1.6);
   else if (luminance(look.color) > 0.45) filter = textShadow(defs, '#000', 0.9, 1.8, 1.6);
   return { st, filter };
 }
@@ -415,7 +416,7 @@ export function compose(inp: ComposeInput): string {
     const box = R.out.content;
     // centraliza verticalmente o bloco quando sobra espaço (caixa no tamanho mínimo)
     let y = box.y + Math.max(0, box.h - T.need) / 2;
-    text += drawLines(T.rl, T.rs, { ...box, y, h: blockHeight(T.rl, T.rs) }, { icon: iconFn, filter: rf });
+    text += drawLines(T.rl, T.rs, { ...box, y, h: blockHeight(T.rl, T.rs) }, { icon: iconFn, filter: rf, align: R.out.align });
     y += blockHeight(T.rl, T.rs);
     if (T.fl.length) {
       if (T.rl.length) {
@@ -423,7 +424,7 @@ export function compose(inp: ComposeInput): string {
         y += T.gap;
       }
       const { filter: ff } = styled(defs, T.fs, T.fs.size);
-      text += drawLines(T.fl, T.fs, { ...box, y, h: blockHeight(T.fl, T.fs) }, { icon: iconFn, filter: ff });
+      text += drawLines(T.fl, T.fs, { ...box, y, h: blockHeight(T.fl, T.fs) }, { icon: iconFn, filter: ff, align: R.out.align });
     }
   }
 
@@ -494,7 +495,7 @@ export function compose(inp: ComposeInput): string {
     const tl = textOf(P.out, P.ch);
     const style = iconStyleFor('stat', pick);
     const glyph = pick?.glyph ?? (k === 'atk' ? ATK_ICON : DEF_ICON);
-    const color = pick?.color ?? STEEL;
+    const color = pick?.color ?? P.out.iconColor ?? STEEL;
     if (emblemStats) {
       // número dentro de um medalhão com o símbolo apagado ao fundo, sem caixa
       const b = P.args.box;

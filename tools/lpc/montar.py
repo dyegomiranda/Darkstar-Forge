@@ -15,7 +15,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 OUT = os.path.join(ROOT, 'public', 'lpc')
 ANIMS = ['idle', 'walk', 'slash', 'thrust', 'shoot', 'spellcast', 'hurt']
 CUSTOM = {'slash_128': ('slash', 128), 'slash_oversize': ('slash', 192), 'thrust_oversize': ('thrust', 192), 'thrust_128': ('thrust', 128), 'walk_128': ('walk', 128)}
-BODIES = ['male', 'female']
+BODIES = ['male', 'female', 'muscular']
 D = 'sheet_definitions/'
 
 # (grupo, [(arquivo de definição, nome PT, nome EN, extras)])
@@ -65,6 +65,18 @@ SLOTS = [
   ('cape', 'Capa', 'Cape', True, [
     ('torso/cape/cape_solid', 'Capa', 'Cape'), ('torso/cape/cape_tattered', 'Capa rasgada', 'Tattered cape'), ('torso/cape/cape_trim', 'Capa com barra', 'Trimmed cape'),
   ]),
+  ('horns', 'Chifres', 'Horns', True, [
+    ('head/appendages/head_horns_curled', 'Chifres curvos', 'Curled horns'), ('head/appendages/head_horns_backwards', 'Chifres para trás', 'Backward horns'),
+  ]),
+  ('wings', 'Asas', 'Wings', True, [
+    ('body/wings/wings_bat', 'Asas de morcego', 'Bat wings'), ('body/lizard/wings_lizard_bat', 'Asas de dragão', 'Dragon wings'), ('body/wings/wings_feathered', 'Asas de penas', 'Feathered wings'),
+  ]),
+  ('tail', 'Cauda', 'Tail', True, [
+    ('body/tails/tail_wolf', 'Cauda de lobo', 'Wolf tail'), ('body/lizard/tail_lizard', 'Cauda de lagarto', 'Lizard tail'),
+  ]),
+  ('shield', 'Escudo', 'Shield', True, [
+    ('weapons/shields/shield_round', 'Escudo redondo', 'Round shield'), ('weapons/shields/shield_kite', 'Escudo de cavaleiro', 'Kite shield'),
+  ]),
   ('weapon', 'Arma', 'Weapon', True, [
     ('weapons/sword/weapon_sword_arming', 'Espada', 'Arming sword', {'attack': 'slash'}), ('weapons/sword/weapon_sword_longsword', 'Espada longa', 'Longsword', {'attack': 'slash'}),
     ('weapons/sword/weapon_sword_katana', 'Katana', 'Katana', {'attack': 'slash'}), ('weapons/sword/weapon_sword_dagger', 'Adaga', 'Dagger', {'attack': 'slash'}),
@@ -77,7 +89,25 @@ SLOTS = [
 ]
 # partes fixas (sempre presentes; o jogador só escolhe as cores)
 FIXED = [('body', 'body/body'), ('headbase', None), ('face', 'head/faces/face_neutral'), ('ammo', 'weapons/ranged/bow/weapon_ranged_bow_arrow')]
-HEADS = {'male': 'head/heads/human/heads_human_male', 'female': 'head/heads/human/heads_human_female'}
+HEADS = {'male': 'head/heads/human/heads_human_male', 'female': 'head/heads/human/heads_human_female', 'muscular': 'head/heads/human/heads_human_male'}
+# cabeças e corpos de criaturas (para os bonecos de invocações e monstros)
+CREATURE_HEADS = {
+  'skeleton': 'head/heads/undead/heads_skeleton', 'zombie': 'head/heads/undead/heads_zombie', 'vampire': 'head/heads/undead/heads_vampire',
+  'orc': 'head/heads/fantasy/heads_orc_male', 'goblin': 'head/heads/fantasy/heads_goblin', 'troll': 'head/heads/fantasy/heads_troll',
+  'minotaur': 'head/heads/beast/heads_minotaur', 'wolf': 'head/heads/beast/heads_wolf_male', 'boarman': 'head/heads/beast/heads_boarman', 'lizard': 'head/heads/reptile/heads_lizard_male',
+}
+FRAMES = {'skeleton': 'body/special/body_skeleton', 'zombie': 'body/special/body_zombie'}
+# paletas próprias (rampas de 6 tons, do mais escuro ao mais claro) para peles de criaturas
+EXTRA = {
+  'body': {
+    'demon': ['#2a0a10', '#5e1118', '#93202a', '#c2363a', '#e2605a', '#f59a8c'],
+    'stone': ['#1c1d22', '#3a3d47', '#565a68', '#747988', '#989dab', '#c3c7d1'],
+    'ember': ['#3a0d05', '#8a2408', '#d24a0c', '#f5821f', '#ffb648', '#ffe9a0'],
+    'shadow': ['#0b0812', '#1d1630', '#33274f', '#4d3c74', '#6f5aa0', '#9b86cf'],
+    'frost': ['#10283a', '#1f4d6e', '#3a7fa8', '#6ab3d6', '#a5daf0', '#e2f6ff'],
+  },
+  'hair': {'flame': ['#5a1204', '#a82a06', '#e2560c', '#ff8a1c', '#ffbe45', '#fff0a8']},
+}
 
 copied = set()
 credits = {}
@@ -106,7 +136,8 @@ def recolors(d):
     r = d.get('recolors')
     if not r: return []
     if 'material' in r: r = {'color_1': r}
-    return [(v['material'], v.get('base')) for k, v in sorted(r.items()) if isinstance(v, dict) and 'material' in v]
+    # a base pode vir como "ulpc.green": fica só o nome da cor
+    return [(v['material'], (v.get('base') or '').split('.')[-1] or None) for k, v in sorted(r.items()) if isinstance(v, dict) and 'material' in v]
 
 def item(defpath, pt, en, extra=None, head=None):
     d = json.load(open(os.path.join(SRC, D + defpath + '.json')))
@@ -121,7 +152,7 @@ def item(defpath, pt, en, extra=None, head=None):
         for b in BODIES:
             p = L.get(b)
             if not p: continue
-            if head: p = p.replace('${head}', b)
+            if head: p = p.replace('${head}', 'male' if b == 'muscular' else b)
             paths[b] = p
         if not paths: continue
         layer = {'z': L['zPos'], 'paths': {}, 'anims': []}
@@ -177,10 +208,12 @@ for a in ANIMS:
     catalog['anims'][a] = {'frames': w // 64, 'rows': h // 64}
 for mat in ('body', 'hair', 'cloth', 'metal', 'eye'):
     meta = json.load(open(os.path.join(SRC, f'palette_definitions/{mat}/meta_{mat}.json')))
-    catalog['palettes'][mat] = {'base': meta['base'], 'colors': json.load(open(os.path.join(SRC, f'palette_definitions/{mat}/{mat}_ulpc.json')))}
+    catalog['palettes'][mat] = {'base': meta['base'], 'colors': {**json.load(open(os.path.join(SRC, f'palette_definitions/{mat}/{mat}_ulpc.json'))), **EXTRA.get(mat, {})}}
 catalog['fixed']['body'] = item('body/body', 'Corpo', 'Body')
 catalog['fixed']['head'] = {b: item(HEADS[b], 'Cabeça', 'Head') for b in BODIES}
 catalog['fixed']['face'] = item('head/faces/face_neutral', 'Rosto', 'Face', head=True)
+catalog['fixed']['heads'] = {k: item(v, k, k) for k, v in CREATURE_HEADS.items() if os.path.exists(os.path.join(SRC, D + v + '.json'))}
+catalog['fixed']['frames'] = {k: item(v, k, k) for k, v in FRAMES.items()}
 catalog['fixed']['ammo'] = item('weapons/ranged/bow/weapon_ranged_bow_arrow', 'Flecha', 'Arrow')
 for sid, pt, en, optional, items in SLOTS:
     its = []

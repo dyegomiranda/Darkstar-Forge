@@ -114,7 +114,7 @@ class ProjectState {
       for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
     }
     // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
-    const RULES = 'proto-rules-3';
+    const RULES = 'proto-rules-5';
     if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
       p.seeded = [...(p.seeded ?? []), RULES];
       changed = true;
@@ -129,6 +129,26 @@ class ProjectState {
         this.cards[old.id] = next;
         this.#dirtyCards.add(old.id);
       }
+    }
+    // os estilos Ornado, Ornado Régio e Ornado Marfim saíram: o que os usava passa para o Neutro (uma vez)
+    const STYLES_MARK = 'styles-neutro-1';
+    if (!p.seeded?.includes(STYLES_MARK)) {
+      p.seeded = [...(p.seeded ?? []), STYLES_MARK];
+      changed = true;
+      const GONE = new Set(['ornado', 'ornadoRegio', 'ornadoMarfim']);
+      const fix = (o: unknown): boolean => {
+        if (!o || typeof o !== 'object') return false;
+        let hit = false;
+        for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
+          if (k === 'style' && typeof v === 'string' && GONE.has(v)) { (o as Record<string, unknown>)[k] = 'neutro'; hit = true; }
+          else if (v && typeof v === 'object' && k !== 'text' && k !== 'game') hit = fix(v) || hit;
+        }
+        return hit;
+      };
+      fix(p);
+      // recursos e equipamentos continuam sem selo de classe (o Neutro antigo escondia por padrão)
+      for (const d of p.decks) if (d.kind !== 'class' && d.look?.style === 'neutro' && !d.look.pieces?.class) d.look.pieces = { ...d.look.pieces, class: { style: 'neutro', hidden: true } };
+      for (const c of Object.values(this.cards)) if (c.look && fix(c.look)) this.#dirtyCards.add(c.id);
     }
     // heróis prontos viram fichas (uma vez; se o usuário apagar, não voltam)
     const HEROES_MARK = 'proto-heroes-1';

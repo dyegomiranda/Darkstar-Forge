@@ -133,7 +133,7 @@ interface Bench {
 }
 
 const bench: Bench = {
-  sample: 0, deck: 'red', deck2: '', style: 'ornado', pieces: {},
+  sample: 0, deck: 'red', deck2: '', style: 'neutro', pieces: {},
   icons: { cost: {}, class: {}, atk: {}, def: {}, statMode: 'placa' }, pixelArt: false, frame: false,
 };
 
@@ -292,14 +292,14 @@ function render(deck: DeckId) {
   const deckColor = (id: string) => DECK[deckIds[clsIds.indexOf(id)]]?.hex;
 
   const mixes: [string, Look][] = [
-    ['Cabeçalho Ornado + regras Gótico + resto Arcano', { style: 'arcano', pieces: { header: { style: 'ornado' }, rules: { style: 'gotico' }, typeBar: { style: 'gotico' } } }],
+    ['Cabeçalho Neutro + regras Gótico + resto Arcano', { style: 'arcano', pieces: { header: { style: 'neutro' }, rules: { style: 'gotico' }, typeBar: { style: 'gotico' } } }],
     ['Moderno com selos de astrolábio (Arcano)', { style: 'moderno', pieces: { cost: { style: 'arcano' }, class: { style: 'arcano' }, set: { style: 'arcano' } } }],
     ['Selvagem com selos e ATK/DEF Góticos', { style: 'selvagem', pieces: { cost: { style: 'gotico' }, class: { style: 'gotico' }, stat: { style: 'gotico' } } }],
     ['Gótico com metal dourado', { style: 'gotico', pieces: Object.fromEntries(PIECE_KINDS.filter((k) => k !== 'frame').map((k) => [k, { style: 'gotico', metal: 'gold' }])) }],
-    ['Ornado com regras 50% transparentes e texto claro', { style: 'ornado', pieces: { rules: { style: 'ornado', opacity: 0.5, ink: '#fff6ea' } } }],
+    ['Neutro com regras 50% transparentes e texto claro', { style: 'neutro', pieces: { rules: { style: 'neutro', opacity: 0.5, ink: '#fff6ea' } } }],
   ];
   const emblems: [string, Look][] = [
-    ['Impacto + escudo (Emblema)', { style: 'ornado', icons: { statMode: 'emblema' } }],
+    ['Impacto + escudo (Emblema)', { style: 'neutro', icons: { statMode: 'emblema' } }],
     ['Espadas + escudo redondo (Chapado)', { style: 'moderno', icons: { statMode: 'emblema', atk: { glyph: 'crossed-swords', style: 'chapado', color: '#f2f2f2' }, def: { glyph: 'viking-shield', style: 'chapado', color: '#3d8bff' } } }],
     ['Garras + vida (Metal gravado)', { style: 'arcano', icons: { statMode: 'emblema', atk: { glyph: 'triple-claws', color: '#ffb84a' }, def: { glyph: 'heart-drop', color: '#e0453a' } } }],
     ['Pixel com número dentro', { style: 'pixel', pixelateArt: 7, icons: { statMode: 'emblema', atk: { glyph: 'broadsword' }, def: { glyph: 'heart-drop', color: '#e0453a' } } }],

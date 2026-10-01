@@ -23,7 +23,7 @@
     <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && p.resolve(null)}>
       <h3>{L('PDF para imprimir', 'Print PDF')}</h3>
       <p class="muted">{p.backsOnly ? L('Versos no tamanho real (63 × 88 mm).', 'Backs at real size (63 × 88 mm).') : L(`${p.count} cartas no tamanho real (63 × 88 mm).`, `${p.count} cards at real size (63 × 88 mm).`)}</p>
-      <p class="muted">{L('Formato padrão do Magic: cantos arredondados de 3 mm, com um contorno fino para guiar o corte (serve nos sleeves e cortadores de canto comuns).', 'Standard Magic format: 3 mm rounded corners, with a thin outline to guide cutting (fits common sleeves and corner cutters).')}</p>
+      <p class="muted">{L('Tamanho padrão de carta (63 × 88 mm): cantos arredondados de 3 mm, com um contorno fino para guiar o corte (serve nos sleeves e cortadores de canto comuns).', 'Standard card size (63 × 88 mm): 3 mm rounded corners, with a thin outline to guide cutting (fits common sleeves and corner cutters).')}</p>
 
       <span class="label">{L('Folha', 'Sheet')}</span>
       <div class="opts">

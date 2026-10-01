@@ -1,7 +1,6 @@
 import { arcano } from './arcano';
 import { gotico } from './gotico';
 import { moderno } from './moderno';
-import { ornado, ornadoMarfim, ornadoRegio } from './ornado';
 import { ornadoPontas } from './ornado-pontas';
 import { pixel } from './pixel';
 import { selvagem } from './selvagem';
@@ -11,15 +10,16 @@ import { espectral, espectralLayout } from './espectral';
 import { energia, energiaLayout } from './energia';
 import { aco, acoLayout } from './aco';
 import { neutro } from './neutro';
+import { lenda, lendaLayout } from './lenda';
+import { claro } from './claro';
 import type { PieceKind, PieceStyle, StyleId, StyleInfo } from './types';
 
 export * from './types';
 
 export const STYLES: StyleInfo[] = [
-  { id: 'neutro', name: 'Neutro', icons: 'chapado', hidden: ['class'], hideZeroCost: true, description: 'Limpo, para recursos e equipamentos: painéis grafite, linhas finas e um filete na cor da carta. Sem selo de classe e sem custo quando ele é 0 — a barra do nome ocupa o espaço.' },
-  { id: 'ornado', name: 'Ornado', icons: 'emblema', description: 'Ourivesaria na cor da classe: medalhões com fio de pérolas, cartelas com volutas, filigrana nos cantos e pergaminho.' },
-  { id: 'ornadoRegio', name: 'Ornado Régio', icons: 'emblema', description: 'A mesma ourivesaria em ouro, com painéis de laca escura e letra clara.' },
-  { id: 'ornadoMarfim', name: 'Ornado Marfim', icons: 'emblema', description: 'A mesma ourivesaria em prata, com painéis de marfim.' },
+  { id: 'neutro', name: 'Neutro', icons: 'orbe', hideZeroCost: true, description: 'Vidro escuro: painéis de vidro fosco sobre a arte, contorno de luz fino, um fio luminoso na cor da carta e símbolos em orbes de vidro. Sem custo quando ele é 0 — a barra do nome ocupa o espaço.' },
+  { id: 'lenda', name: 'Lenda', icons: 'emblema', frame: true, rulesMax: 320, layout: lendaLayout, description: 'Arte na carta inteira e texto direto sobre ela, sem caixas: sombra subindo da base, nome grande centrado entre fios de ouro, custo numa gema com aro de ouro e ataque/defesa em gemas nos cantos.' },
+  { id: 'claro', name: 'Claro', icons: 'chapado', frame: true, description: 'Carta clara e limpa: fundo de papel, arte em janela arredondada, painéis brancos com sombra suave, faixa do tipo na cor da carta e letra escura sem serifa.' },
   { id: 'ornadoPontas', name: 'Ornado Pontas', icons: 'emblema', description: 'O Ornado original: metal laqueado com espinhos, chamas no nome, cravos e joias.' },
   { id: 'gotico', name: 'Gótico', icons: 'emblema', description: 'Ferro negro com rebites, arcos pontiagudos, pedra e rosáceas de vitral.' },
   { id: 'arcano', name: 'Arcano', icons: 'emblema', description: 'Astrolábio: latão gravado, esmalte azul-noite, mapas de estrelas e luas.' },
@@ -33,13 +33,13 @@ export const STYLES: StyleInfo[] = [
   { id: 'aco', name: 'Pixel Aço', icons: 'pixel', pixelArt: true, frame: true, rulesMax: 300, layout: acoLayout, description: 'Pixel art de metal (referência: TCG Creator vol. 18): borda grossa de pedra e aço com cantoneiras douradas, arte em janela, placa do nome, fileira de placas (custo, ATK, DEF) e caixa de pedra.' },
 ];
 
-const ALL: PieceStyle[] = [...neutro, ...ornado, ...ornadoRegio, ...ornadoMarfim, ...ornadoPontas, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
+const ALL: PieceStyle[] = [...neutro, ...lenda, ...claro, ...ornadoPontas, ...gotico, ...arcano, ...moderno, ...selvagem, ...pixel, ...sombrio, ...vazio, ...espectral, ...energia, ...aco];
 
 const index = new Map<string, PieceStyle>(ALL.map((p) => [`${p.style}:${p.kind}`, p]));
 
-/** Peça de um estilo; se o estilo não tiver essa peça, cai no Ornado. */
+/** Peça de um estilo; se o estilo não existir mais (ou não tiver essa peça), cai no Neutro. */
 export function piece(style: StyleId, kind: PieceKind): PieceStyle {
-  return index.get(`${style}:${kind}`) ?? index.get(`ornado:${kind}`)!;
+  return index.get(`${style}:${kind}`) ?? index.get(`neutro:${kind}`)!;
 }
 
 export function styleInfo(id: StyleId): StyleInfo {

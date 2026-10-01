@@ -1,5 +1,5 @@
 <!--
-  Mesa de teste, no espírito do MTG Arena. De baixo para cima: a barra do seu
+  Mesa de teste. De baixo para cima: a barra do seu
   herói, a sua mão, as suas duas fileiras e a faixa das cartas usadas no turno;
   o lado do oponente é o mesmo, espelhado. Grimório e cemitério ficam nos cantos
   (as cartas voam de um lugar para outro). Passe o mouse numa carta para
@@ -31,6 +31,8 @@
   import { chip } from '../../audio/chip';
   import MusicPlayer from '../../audio/MusicPlayer.svelte';
   import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
+  import { creatureOf, hasFigure, sheetOf } from '../../avatar/creatures';
+  import SheetSprite from '../../avatar/SheetSprite.svelte';
 
   // ───────────── preparação ─────────────
   const OPTS_KEY = 'darkstar.mesa';
@@ -194,7 +196,7 @@
   function strikeInfo(): { can: boolean; why: string } {
     if (!g) return { can: false, why: '' };
     const pl = g.players[me];
-    if (pl.struck) return { can: false, why: L('Golpe já usado: o herói golpeia 1 vez por turno, sem custo. As cartas de Ataque usam esse mesmo golpe.', 'Strike already used: the hero strikes once per turn, at no cost. Attack cards use that same strike.') };
+    if (pl.struck) return { can: false, why: L('Golpe já usado: o herói golpeia 1 vez por turno, sem custo. As cartas não gastam esse golpe.', 'Strike already used: the hero strikes once per turn, at no cost. Cards do not use it up.') };
     const hp = heroPos(g, me), via = strikeVia(g, me);
     if (!reachable(g, me, via, hp).length) {
       return { can: false, why: via === 'melee' && hp.row === 1
@@ -522,6 +524,8 @@
   /** Toca uma animação do boneco (ele volta a ficar parado quando ela termina). */
   function animate(p: 0 | 1, a: Anim) { if (avatarOf(p)) heroAnim[p] = a; }
   function animEnd(p: 0 | 1) { if (heroAnim[p] !== 'hurt') heroAnim[p] = 'idle'; }
+  /** Bonecos das criaturas: a animação em curso de cada uma (sem entrada = parada). */
+  let unitAnim = $state<Record<string, Anim>>({});
 
   const FX_MS: Partial<Record<Fx['k'], number>> = { attack: 420, turn: 1000, xp: 120, gain: 200, level: 1300, react: 1200, countered: 900 };
 
@@ -577,7 +581,11 @@
         if (!g.defs[e.cardId]?.game.effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
         break;
       case 'react': chip.sfx('card'); animate(e.p, 'spellcast'); showCard(e.cardId, e.p === me ? L('Você reage com', 'You react with') : `${g.players[e.p].hero.name} ${L('reage com', 'reacts with')}`, 'react', 2200); break;
-      case 'countered': chip.sfx('counter'); showCard(e.cardId, L('Anulada!', 'Countered!'), 'countered', 1800); break;
+      case 'countered':
+        chip.sfx('counter');
+        if (e.cardId) showCard(e.cardId, L('Anulada!', 'Countered!'), 'countered', 1800);
+        else { const hu = heroOf(other(e.p)); float(hu ? rectOf(hu.id) : undefined, L('Ataque anulado!', 'Attack countered!'), 'ward', undefined, true); }
+        break;
       case 'attack': {
         const a = before.get(e.from) ?? rectOf(e.from), b = rectOf(e.to);
         if (a && b) attackAnim(a, b, elOf(e.from), e.via);
@@ -585,6 +593,7 @@
         const hp = sideOfHero(e.from), av = hp !== null ? avatarOf(hp) : undefined;
         // o boneco usa o ataque da arma que segura; sem arma, o tipo do golpe decide
         if (hp !== null && av) animate(hp, weaponAnim(av, e.via === 'melee' ? 'slash' : e.via === 'ranged' ? 'shoot' : 'spellcast'));
+        if (hp === null) { const ic = g.players.flatMap((pl) => pl.board.flat()).find((x) => x?.id === e.from)?.icon; if (hasFigure(ic)) unitAnim[e.from] = creatureOf(ic)?.attack ?? 'slash'; }
         break;
       }
       case 'dmg': {
@@ -651,7 +660,7 @@
     return { update(v: string) { t = v; }, destroy() { node.removeEventListener('mouseenter', enter); node.removeEventListener('mouseleave', leave); leave(); } };
   }
 
-  // ───────────── zoom (como no Arena: a carta cresce ao passar o mouse) ─────────────
+  // ───────────── zoom (a carta cresce ao passar o mouse) ─────────────
   let zoom = $state<{ id: string; x: number; y: number; up: boolean } | null>(null);
   const ZW = 340;
   function hover(id: string | undefined, e: MouseEvent) {
@@ -684,10 +693,11 @@
   const rowsFor = (p: 0 | 1) => (p === me ? [0, 1] : [1, 0]);
   /** Dano do golpe do herói agora (arma + postura + bônus do turno). */
   const strikeDmg = (p: 0 | 1) => { const pl = g!.players[p]; return pl.hero.weapon.dmg + (pl.stance?.mods.strike ?? 0) + (heroOf(p)?.buff ?? 0); };
+  const P0 = () => g!.players[me];
   /** Número de dano mostrado na carta da mão (já com a arma e a postura). */
   function dmgBadge(r: CardRef): string | null {
     for (const e of g?.defs[r.cardId]?.game.effects ?? []) {
-      if (e.k === 'strike') { const n = strikeDmg(me) + e.bonus; return e.times && e.times > 1 ? `${n}×${e.times}` : `${n}`; }
+      if (e.k === 'strike') { const n = strikeDmg(me) - P0().hero.weapon.dmg + e.bonus; return e.times && e.times > 1 ? `${n}×${e.times}` : `${n}`; }
       if (e.k === 'dmg') return `${e.n}`;
     }
     return null;
@@ -767,7 +777,7 @@
         <label class="field"><span>{L('Quem começa', 'Who starts')}</span>
           <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
         <div class="vs-opts">
-          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('como o jogador no Magic: não ocupa lugar e golpeia qualquer fileira ou o herói inimigo', 'like the player in Magic: takes no slot and strikes any row or the enemy hero')}</small></span></label>
+          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('o herói não ocupa um lugar no campo e pode golpear qualquer fileira ou o herói inimigo', 'the hero takes no slot on the field and can strike any row or the enemy hero')}</small></span></label>
           {#if heroOff}
             <label class="toggle sub"><input type="checkbox" bind:checked={heroOffFront} /> <span><b>{L('Exigir a frente vazia', 'Require an empty front')}</b><small>{L('o golpe corpo a corpo do herói só passa da fileira da frente inimiga se ela estiver vazia', 'the hero’s melee strike only goes past the enemy front row when it is empty')}</small></span></label>
           {/if}
@@ -860,7 +870,7 @@
             <span class="cap">{L('Nível', 'Level')} {pl.level}</span>
             <span class="val xpv" id="xp-{p}">{#each Array(XP_PER_LEVEL) as _, i}<i class="pip" class:on={i < pl.xp}></i>{/each}<small>{pl.xp}/{XP_PER_LEVEL} XP</small></span>
           </div>
-          <div class="stat" use:tip={L('Golpe: o ataque do herói com a arma. É de graça, 1 vez por turno, a qualquer momento do turno (clique no herói). As cartas de Ataque usam esse mesmo golpe, com bônus.', 'Strike: the hero attacks with the weapon. Free, once per turn, any time during the turn (click the hero). Attack cards use that same strike, with a bonus.')}>
+          <div class="stat" use:tip={L('Golpe: o ataque do herói com a arma. É de graça, 1 vez por turno, a qualquer momento do turno (clique no herói ou em “Golpear”). As cartas não gastam esse golpe.', 'Strike: the hero attacks with the weapon. Free, once per turn, any time during the turn (click the hero or “Strike”). Cards do not use it up.')}>
             <span class="cap">{L('Golpe', 'Strike')}</span>
             <span class="val stk" class:used={pl.struck && g!.active === p}><Swords size={14} /> <b>{strikeDmg(p)}</b><small>{pl.struck && g!.active === p ? L('usado', 'used') : L(VIA[strikeVia(g!, p)][0], VIA[strikeVia(g!, p)][1])}</small></span>
           </div>
@@ -914,7 +924,7 @@
         {@const pos = { p, row, col }}
         {@const u = unitAt(g!, pos)}
         <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
-          class:hero={!!u?.isHero} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
+          class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && hasFigure(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
           data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
           <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
@@ -922,8 +932,12 @@
             {#if x.isHero}
               {@render heroBody(x, p)}
             {:else}
+              {@const cr = creatureOf(x.icon)}
+              {@const sh = cr ? undefined : sheetOf(x.icon)}
+              {#if sh}<span class="doll"><SheetSprite id={sh.id} def={sh.def} attacking={!!unitAnim[x.id]} back={p === me} scale={2} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
+              {#if cr}<span class="doll"><AvatarSprite avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={p === me ? 'n' : 's'} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
               <span class="unit" in:recvU={{ key: x.id }} out:sendU={{ key: x.id }}>
-                <span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>
+                {#if !cr && !sh}<span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>{/if}
                 <span class="u-nm">{L(x.name[0], x.name[1])}</span>
                 <span class="u-st"><span class="atk"><Swords size={13} /> {x.atk + x.buff}</span><span class="def"><Heart size={13} /> {life(x)}</span></span>
               </span>
@@ -1068,13 +1082,23 @@
 
       <!-- ───── janela de resposta: o oponente jogou uma carta e eu posso reagir ───── -->
       {#if awaiting && g.pending && !fxPlaying}
-        {@const pc = app.cards[g.pending?.ref.cardId ?? '']}
+        {@const pc = app.cards[g.pending?.ref?.cardId ?? '']}
+        {@const atkU = g.pending?.attack === 'unit' && g.pending.from ? unitAt(g, g.pending.from) : null}
+        {@const tgtU = g.pending?.target ? unitAt(g, g.pending.target) : null}
         <div class="respond" in:scale={{ duration: 220, start: 0.9 }}>
-          <div class="rcard">{#if pc}<CardImage card={pc} eager />{/if}</div>
+          {#if pc}
+            <div class="rcard"><CardImage card={pc} eager /></div>
+          {:else}
+            <div class="ratk" style="--c:{colorOf(F.hero)}">
+              {#if atkU}<Glyph id={atkU.icon ?? 'death-skull'} size={96} color="#f3ead6" />{:else}<HeroPortrait hero={characterOf(F.hero.id)} size={150} />{/if}
+              <Swords size={30} />
+            </div>
+          {/if}
           <div class="rside">
-            <span class="rtitle">{F.hero.name} {L('joga', 'plays')}</span>
-            <h3 class="display">{pc ? pc.text[app.lang].name : ''}</h3>
-            <p class="muted">{L('Você tem uma Reação que serve. Use-a agora ou aceite a carta.', 'You have a Reaction that fits. Use it now or accept the card.')}</p>
+            <span class="rtitle">{pc ? `${F.hero.name} ${L('joga', 'plays')}` : L('Ataque inimigo', 'Enemy attack')}</span>
+            <h3 class="display">{pc ? pc.text[app.lang].name : atkU ? L(`${atkU.name[0]} ataca`, `${atkU.name[1]} attacks`) : L(`${F.hero.name} golpeia`, `${F.hero.name} strikes`)}</h3>
+            {#if tgtU}<span class="rtarget">{L('Alvo', 'Target')}: <b>{L(tgtU.name[0], tgtU.name[1])}</b>{#if !pc} · {atkU ? atkU.atk + atkU.buff : strikeDmg(foe)} {L('de dano', 'damage')}{/if}</span>{/if}
+            <p class="muted">{pc ? L('Você tem uma Reação que serve. Use-a agora ou aceite a carta.', 'You have a Reaction that fits. Use it now or accept the card.') : L('Você tem uma Reação que serve. Use-a agora ou aceite o ataque.', 'You have a Reaction that fits. Use it now or accept the attack.')}</p>
             <div class="rreacts">
               {#each reactions(g) as r (r.uid)}
                 <button class="rr" onclick={() => respond({ t: 'react', uid: r.uid })} onmouseenter={(e) => hover(r.cardId, e)} onmouseleave={() => (zoom = null)}>
@@ -1400,8 +1424,9 @@
   .mini { position: absolute; inset: 0; line-height: 0; }
   .mini :global(.hp) { width: 100% !important; height: 100% !important; border-radius: 0; }
   .mini::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgb(8 6 5 / .88) 82%); }
-  .slot.hero .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000; }
-  .strike-tag { position: absolute; top: 4px; left: 5px; z-index: 2; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: rgb(10 8 7 / .8); color: var(--muted); }
+  .slot.fig { overflow: visible; z-index: 2; }
+  .slot.hero .unit, .slot.fig .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000; }
+  .strike-tag { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; border: 1px solid rgb(255 255 255 / .14); z-index: 4; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: rgb(10 8 7 / .8); color: var(--muted); }
   .strike-tag.on { background: #f0c45a; color: #1a120b; }
   .empty { font-size: 11px; color: rgb(255 255 255 / .25); text-transform: uppercase; letter-spacing: .08em; }
   .u-nm { font-size: 12.5px; font-weight: 600; text-align: center; line-height: 1.1; }
@@ -1518,6 +1543,10 @@
   .respond { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 44; display: flex; gap: 22px; align-items: center; padding: 20px 24px; border-radius: 18px;
     background: rgb(16 13 12 / .96); border: 1px solid #4f7fd0; box-shadow: 0 0 0 5px rgb(0 0 0 / .45), 0 30px 80px rgb(0 0 0 / .8), 0 0 60px rgb(79 127 208 / .25); }
   .rcard { width: clamp(230px, 19vw, 320px); flex: none; filter: drop-shadow(0 16px 30px rgb(0 0 0 / .8)); }
+  .ratk { width: 190px; height: 230px; flex: none; border-radius: 16px; display: grid; place-items: center; gap: 4px; align-content: center; color: #ff9c8c;
+    background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 50%, #1a1512), #0c0a09 80%); border: 1px solid color-mix(in srgb, var(--c) 55%, #000); }
+  .rtarget { font-size: 13px; color: var(--text-2); }
+  .rtarget b { color: var(--text); }
   .rside { display: flex; flex-direction: column; gap: 10px; max-width: 320px; }
   .rtitle { font: 700 11px var(--ui); letter-spacing: .18em; text-transform: uppercase; color: #a9c8ff; }
   .rside h3 { font-size: 26px; line-height: 1.05; color: #f6ead8; }

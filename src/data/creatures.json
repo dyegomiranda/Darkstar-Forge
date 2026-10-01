@@ -1,0 +1,39 @@
+{
+ "wolf": {
+  "cell": [
+   32,
+   64
+  ],
+  "idle": 1,
+  "attack": 5,
+  "fps": 10
+ },
+ "bear": {
+  "cell": [
+   64,
+   64
+  ],
+  "idle": 1,
+  "attack": 4,
+  "fps": 7
+ },
+ "ballista": {
+  "cell": [
+   128,
+   128
+  ],
+  "idle": 1,
+  "attack": 6,
+  "fps": 12,
+  "scale": 0.75
+ },
+ "tower": {
+  "cell": [
+   64,
+   80
+  ],
+  "idle": 1,
+  "attack": 1,
+  "fps": 1
+ }
+}

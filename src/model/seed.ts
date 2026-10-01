@@ -26,8 +26,8 @@ interface SeedCard {
 
 export const EDITION_ID = 'ed1';
 
-/** Tema padrão de um deck novo: Ornado (o visual do card1), sem moldura. */
-export const defaultLook = (): Look => ({ style: 'ornado' });
+/** Tema padrão de um deck novo: Neutro (vidro escuro), sem moldura. */
+export const defaultLook = (): Look => ({ style: 'neutro' });
 
 const deckName = (id: ColorId): Record<Lang, string> => ({
   'pt-BR': `${COLORS[id].name['pt-BR']} — ${COLORS[id].classes['pt-BR']}`,
@@ -38,8 +38,8 @@ const deckName = (id: ColorId): Record<Lang, string> => ({
 function editionDecks(editionId: string, prefix = ''): Deck[] {
   return [
     ...CLASS_COLORS.map((c, i): Deck => ({ id: prefix + c, editionId, name: deckName(c), kind: 'class', colors: [c], look: defaultLook(), order: i })),
-    { id: prefix + 'resources', editionId, name: { 'pt-BR': 'Recursos', 'en-US': 'Resources' }, kind: 'resources', colors: ['orange'], look: { style: 'neutro' }, order: 7 },
-    { id: prefix + 'equipment', editionId, name: { 'pt-BR': 'Equipamentos', 'en-US': 'Equipment' }, kind: 'equipment', colors: ['gear'], look: { style: 'neutro' }, order: 8 },
+    { id: prefix + 'resources', editionId, name: { 'pt-BR': 'Recursos', 'en-US': 'Resources' }, kind: 'resources', colors: ['orange'], look: { style: 'neutro', pieces: { class: { style: 'neutro', hidden: true } } }, order: 7 },
+    { id: prefix + 'equipment', editionId, name: { 'pt-BR': 'Equipamentos', 'en-US': 'Equipment' }, kind: 'equipment', colors: ['gear'], look: { style: 'neutro', pieces: { class: { style: 'neutro', hidden: true } } }, order: 8 },
   ];
 }
 
@@ -132,7 +132,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-3', 'proto-heroes-1', 'proto-avatars-1'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1'],
   };
   return { project, cards };
 }

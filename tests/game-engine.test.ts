@@ -44,6 +44,7 @@ describe('motor', () => {
     const s = newGame(side(3), side(0), { seed: 4 }); // Morgana × Brunhild
     const before = heroHp(s, 1);
     expect(apply(s, { t: 'strike', target: heroPos(s, 1) })).toBeNull();
+    if (s.pending) apply(s, { t: 'pass' }); // Brunhild tem uma Reação na mão e aceita o golpe
     expect(heroHp(s, 1)).toBe(before - 2); // katana 4 − armadura 2 de Brunhild
     const free = emptySlots(s, 0).length;
     s.players[0].hand.unshift({ uid: 'x', cardId: 'black-4' }); // Erguer Esqueleto
@@ -178,5 +179,35 @@ describe('desistir', () => {
     apply(t, { t: 'concede', p: 0, timeout: true });
     expect(t.winner).toBe(1);
     expect(t.ended).toBe('timeout');
+  });
+});
+
+describe('reagir a ataques que não são cartas', () => {
+  const give = (s: ReturnType<typeof newGame>, p: 0 | 1, name: string) => {
+    const pl = s.players[p];
+    const ref = [...pl.hand, ...pl.deck].find((c) => s.defs[c.cardId].name[0] === name)!;
+    if (!pl.hand.includes(ref)) { pl.deck.splice(pl.deck.indexOf(ref), 1); pl.hand.push(ref); }
+    return ref.uid;
+  };
+  it('o golpe básico do herói inimigo abre a resposta; Esquiva protege o herói', () => {
+    const s = newGame(side(1), side(2), { seed: 21 }); // Kael golpeia (mágico) × Lyra com Esquiva
+    give(s, 1, 'Esquiva');
+    const before = heroHp(s, 1);
+    expect(apply(s, { t: 'strike', target: heroPos(s, 1) })).toBeNull();
+    expect(s.pending?.attack).toBe('strike');
+    expect(heroHp(s, 1)).toBe(before); // ainda não acertou
+    const react = legalActions(s).find((a) => a.t === 'react')!;
+    expect(apply(s, react)).toBeNull();
+    expect(s.pending).toBeUndefined();
+    expect(heroHp(s, 1)).toBe(before); // a Proteção anulou o golpe
+    expect(s.players[0].struck).toBe(true);
+  });
+  it('sem Reação na mão, o golpe acerta na hora', () => {
+    const s = newGame(side(1), side(2), { seed: 22 });
+    s.players[1].hand = s.players[1].hand.filter((c) => s.defs[c.cardId].game.kind !== 'reacao');
+    const before = heroHp(s, 1);
+    apply(s, { t: 'strike', target: heroPos(s, 1) });
+    expect(s.pending).toBeUndefined();
+    expect(heroHp(s, 1)).toBeLessThan(before);
   });
 });

@@ -12,7 +12,7 @@
   import { Defs } from '../../render/defs';
   import { skeleton } from '../../render/layout';
   import { ICON_STYLES, type IconStyle } from '../../render/icons/render';
-  import { ATK_CHOICES, DEF_CHOICES, ICON_NAMES, RESOURCE_COLORS, classChoices, resourceChoices } from '../../render/icons/glyphs';
+  import { ATK_CHOICES, DEF_CHOICES, iconName, RESOURCE_COLORS, classChoices, resourceChoices } from '../../render/icons/glyphs';
   import { makePalette, type BlendMode, type MetalKind } from '../../render/palette';
     import Glyph from '../common/Glyph.svelte';
   import { pieceThumb } from './thumbs';
@@ -71,7 +71,7 @@
         inp.uid = `sc-${s.id}`;
         return [s.id, compose(inp)];
       }));
-    }, styleThumbs.ornado ? 300 : 0);
+    }, styleThumbs.neutro ? 300 : 0);
     return () => clearTimeout(t);
   });
 
@@ -359,7 +359,7 @@
           <button class="btn sm ghost" disabled={!ed.iconChanged(slot)} onclick={() => ed.revertIcon(slot)}><Undo2 size={13} /> {L('Voltar ao que estava', 'Back to how it was')}</button></div>
         <div class="glyphs">
           {#each ids as g}
-            <button class="gl" class:on={cur === g} title={ICON_NAMES[g] ?? g} onclick={() => ed.setIcon(slot, { glyph: g })}><Glyph id={g} size={26} color={look.icons?.[slot]?.color ?? color} /></button>
+            <button class="gl" class:on={cur === g} title={iconName(g, app.lang !== 'pt-BR')} onclick={() => ed.setIcon(slot, { glyph: g })}><Glyph id={g} size={26} color={look.icons?.[slot]?.color ?? color} /></button>
           {/each}
           <input type="color" title={L('Cor do símbolo', 'Symbol color')} value={look.icons?.[slot]?.color ?? color} oninput={(e) => ed.setIcon(slot, { color: (e.currentTarget as HTMLInputElement).value })} />
           <button class="btn sm ghost icon" title={L('Cor padrão', 'Default color')} disabled={!look.icons?.[slot]?.color} onclick={() => ed.setIcon(slot, {}, ['color'])}><RotateCcw size={14} /></button>

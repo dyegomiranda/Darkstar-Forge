@@ -59,14 +59,12 @@ function one(e: Effect, pt: boolean, w: Weapon | undefined, seen: Set<string>): 
       seen.add('tgt');
       let head: string;
       if (w) {
-        const n = w.dmg + e.bonus;
+        const n = e.bonus;
         const each = times > 1 ? (pt ? ` ${times} vezes: ${n} de dano ${via(w.via, pt)} cada` : ` ${times} times: ${n} ${via(w.via, pt)} damage each`)
           : (pt ? `: ${n} de dano ${via(w.via, pt)}` : `: ${n} ${via(w.via, pt)} damage`);
-        const how = e.bonus ? (pt ? ` (arma ${w.dmg} + ${e.bonus})` : ` (weapon ${w.dmg} + ${e.bonus})`) : '';
-        head = (pt ? `Golpe (${w.name[0]})${each}${how}.` : `Strike (${w.name[1]})${each}${how}.`) + (pt ? ' Usa o golpe do turno.' : ' Uses your strike this turn.');
+        head = pt ? `Golpe (${w.name[0]})${each}.` : `Strike (${w.name[1]})${each}.`;
       } else {
-        const b = e.bonus ? (pt ? ` +${e.bonus} de dano` : ` +${e.bonus} damage`) : '';
-        head = pt ? `Golpe da arma${b}${times > 1 ? ` ${times} vezes` : ''}.` : `Weapon strike${b}${times > 1 ? ` ${times} times` : ''}.`;
+        head = pt ? `Golpe com a arma: ${e.bonus} de dano${times > 1 ? `, ${times} vezes` : ''}.` : `Weapon strike: ${e.bonus} damage${times > 1 ? `, ${times} times` : ''}.`;
       }
       const then = e.then === 'afflict' ? (pt ? ' O alvo fica Afligido' : ' The target becomes Afflicted') + r('afflict') + '.'
         : e.then === 'mark' ? (pt ? ' O alvo fica Marcado' : ' The target becomes Marked') + r('mark') + '.'
