@@ -74,3 +74,55 @@ describe('motor', () => {
     console.log('vitórias (de 18 partidas cada):', wins, '· turnos médios:', (turns.reduce((x, y) => x + y, 0) / turns.length).toFixed(1));
   }, 120000);
 });
+
+describe('reações, herói fora do campo e empurrão', () => {
+  const findUid = (s: ReturnType<typeof newGame>, p: 0 | 1, name: string) => {
+    const pl = s.players[p];
+    const pool = [...pl.hand, ...pl.deck];
+    const ref = pool.find((c) => s.defs[c.cardId].name[0] === name)!;
+    if (!pl.hand.includes(ref)) { pl.deck.splice(pl.deck.indexOf(ref), 1); pl.hand.push(ref); }
+    return ref.uid;
+  };
+
+  it('Contramágica anula a Magia do oponente e gasta a Mana de quem reage', () => {
+    const s = newGame(side(3), side(1), { seed: 5 }); // Morgana × Kael
+    const curse = findUid(s, 0, 'Maldição da Ruína');
+    findUid(s, 1, 'Contramágica');
+    expect(apply(s, { t: 'play', uid: curse, target: heroPos(s, 1) })).toBeNull();
+    expect(s.pending).toBeTruthy(); // Kael pode responder
+    const react = legalActions(s).find((a) => a.t === 'react')!;
+    expect(apply(s, react)).toBeNull();
+    expect(s.pending).toBeUndefined();
+    expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(false); // a maldição não fez efeito
+    expect(s.players[1].mana).toBe(s.players[1].maxMana - 2);
+  });
+
+  it('sem Reação que sirva, a carta resolve na hora', () => {
+    const s = newGame(side(3), side(0), { seed: 6 }); // Morgana × Brunhild (Aparar só responde a Ataque)
+    const curse = findUid(s, 0, 'Maldição da Ruína');
+    findUid(s, 1, 'Aparar');
+    apply(s, { t: 'play', uid: curse, target: heroPos(s, 1) });
+    expect(s.pending).toBeUndefined();
+    expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(true);
+  });
+
+  it('herói fora do campo: não ocupa lugar e o corpo a corpo só o alcança com a frente vazia', () => {
+    const s = newGame(side(0), side(1), { seed: 7, heroOff: true });
+    expect(emptySlots(s, 1).length).toBe(6);
+    expect(heroPos(s, 1).row).toBe(-1);
+    expect(reachable(s, 0, 'melee', heroPos(s, 0)).some((p) => p.row === -1)).toBe(true);
+    s.players[1].board[0][0] = { id: 'w', name: ['Muralha', 'Wall'], atk: 0, def: 4, dmg: 0, keys: [], isHero: false, exhausted: true, afflicted: false, marked: false, warded: false, buff: 0 };
+    expect(reachable(s, 0, 'melee', heroPos(s, 0)).some((p) => p.row === -1)).toBe(false);
+    expect(legalActions(s).some((a) => a.t === 'move')).toBe(false);
+  });
+
+  it('empurrar muda o herói inimigo de fileira', () => {
+    const s = newGame(side(1), side(0), { seed: 8 }); // Kael × Brunhild (na frente)
+    const ray = findUid(s, 0, 'Raio de Gelo');
+    s.players[1].hand = [];
+    const before = heroPos(s, 1);
+    expect(before.row).toBe(0);
+    expect(apply(s, { t: 'play', uid: ray, target: before })).toBeNull();
+    expect(heroPos(s, 1).row).toBe(1);
+  });
+});
