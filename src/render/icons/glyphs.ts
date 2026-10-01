@@ -5,6 +5,7 @@
  */
 import type { ColorId, ResourceId } from '../../model/types';
 import { CHOICES, ICONS } from './game-icons';
+import { CHOICES3D, ICONS3D } from './icons3d';
 
 export { ICONS };
 
@@ -281,10 +282,12 @@ export const RESOURCE_COLORS: Record<ResourceId, string> = {
 
 export const STEEL = '#d3dae3';
 
-export const resourceChoices = (r: string): string[] => CHOICES[`res:${r}`] ?? [];
-export const classChoices = (c: ColorId | string): string[] => CHOICES[`cls:${c}`] ?? CHOICES['cls:gear'];
-export const ATK_CHOICES = CHOICES.atk;
-export const DEF_CHOICES = CHOICES.def;
+/** Opções de um uso: as silhuetas primeiro (a 1ª é o padrão), depois a coleção 3D. */
+const both = (k: string): string[] => [...(CHOICES[k] ?? []), ...(CHOICES3D[k] ?? [])];
+export const resourceChoices = (r: string): string[] => both(`res:${r}`);
+export const classChoices = (c: ColorId | string): string[] => (CHOICES[`cls:${c}`] ? both(`cls:${c}`) : both('cls:gear'));
+export const ATK_CHOICES = both('atk');
+export const DEF_CHOICES = both('def');
 
 /** Símbolo padrão de um recurso, de um deck, do ataque e da defesa. */
 export const resourceIcon = (r: string): string | undefined => resourceChoices(r)[0];
@@ -294,3 +297,6 @@ export const DEF_ICON = DEF_CHOICES[0];
 
 export const RESOURCE_IDS = Object.keys(RESOURCE_COLORS) as ResourceId[];
 export const isResource = (id: string): id is ResourceId => id in RESOURCE_COLORS;
+
+/** Nome de um símbolo (silhueta ou 3D) para a interface. */
+export const iconName = (id: string, en = false): string => (ICONS3D[id] ? (en ? ICONS3D[id].en : ICONS3D[id].pt) : ICON_NAMES[id] ?? id);

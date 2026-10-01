@@ -31,7 +31,8 @@
   import { chip } from '../../audio/chip';
   import MusicPlayer from '../../audio/MusicPlayer.svelte';
   import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
-  import { creatureOf } from '../../avatar/creatures';
+  import { creatureOf, hasFigure, sheetOf } from '../../avatar/creatures';
+  import SheetSprite from '../../avatar/SheetSprite.svelte';
 
   // ───────────── preparação ─────────────
   const OPTS_KEY = 'darkstar.mesa';
@@ -592,7 +593,7 @@
         const hp = sideOfHero(e.from), av = hp !== null ? avatarOf(hp) : undefined;
         // o boneco usa o ataque da arma que segura; sem arma, o tipo do golpe decide
         if (hp !== null && av) animate(hp, weaponAnim(av, e.via === 'melee' ? 'slash' : e.via === 'ranged' ? 'shoot' : 'spellcast'));
-        if (hp === null) { const cr = creatureOf(g.players.flatMap((pl) => pl.board.flat()).find((x) => x?.id === e.from)?.icon); if (cr) unitAnim[e.from] = cr.attack; }
+        if (hp === null) { const ic = g.players.flatMap((pl) => pl.board.flat()).find((x) => x?.id === e.from)?.icon; if (hasFigure(ic)) unitAnim[e.from] = creatureOf(ic)?.attack ?? 'slash'; }
         break;
       }
       case 'dmg': {
@@ -923,7 +924,7 @@
         {@const pos = { p, row, col }}
         {@const u = unitAt(g!, pos)}
         <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
-          class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && !!creatureOf(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
+          class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && hasFigure(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
           data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
           <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
@@ -932,9 +933,11 @@
               {@render heroBody(x, p)}
             {:else}
               {@const cr = creatureOf(x.icon)}
+              {@const sh = cr ? undefined : sheetOf(x.icon)}
+              {#if sh}<span class="doll"><SheetSprite id={sh.id} def={sh.def} attacking={!!unitAnim[x.id]} back={p === me} scale={2} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
               {#if cr}<span class="doll"><AvatarSprite avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={p === me ? 'n' : 's'} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
               <span class="unit" in:recvU={{ key: x.id }} out:sendU={{ key: x.id }}>
-                {#if !cr}<span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>{/if}
+                {#if !cr && !sh}<span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>{/if}
                 <span class="u-nm">{L(x.name[0], x.name[1])}</span>
                 <span class="u-st"><span class="atk"><Swords size={13} /> {x.atk + x.buff}</span><span class="def"><Heart size={13} /> {life(x)}</span></span>
               </span>

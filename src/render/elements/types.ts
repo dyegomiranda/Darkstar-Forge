@@ -10,7 +10,7 @@ export type PieceKind = 'frame' | 'header' | 'cost' | 'class' | 'typeBar' | 'rul
 
 export const PIECE_KINDS: PieceKind[] = ['frame', 'header', 'cost', 'class', 'typeBar', 'rules', 'stat', 'footer', 'set'];
 
-export type StyleId = 'neutro' | 'ornado' | 'ornadoRegio' | 'ornadoMarfim' | 'ornadoPontas' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
+export type StyleId = 'neutro' | 'lenda' | 'claro' | 'ornadoPontas' | 'gotico' | 'arcano' | 'moderno' | 'selvagem' | 'pixel' | 'sombrio' | 'vazio' | 'espectral' | 'energia' | 'aco';
 
 export interface PieceArgs {
   /** Área que o esqueleto reservou para a peça. */
@@ -44,7 +44,7 @@ export interface PieceOut {
   pixelIcons?: number;
   /** Selo de custo: cada símbolo vai escuro sobre uma esfera na cor do recurso (esferas de energia). */
   costOrbs?: boolean;
-  /** Alinhamento do texto de uma linha (nome: centro; tipo: esquerda, se não disser). */
+  /** Alinhamento do texto (nome: centro; tipo e regras: esquerda, se não disser). */
   align?: 'left' | 'center';
   /** Moldura: desenho que vai POR BAIXO da arte (fundo da carta). */
   under?: string;

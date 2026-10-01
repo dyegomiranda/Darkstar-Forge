@@ -1,11 +1,24 @@
 /**
  * Bonecos das criaturas do campo, montados com as mesmas peças dos heróis.
  * A criatura é reconhecida pelo ícone da unidade (o mesmo que a carta de invocação usa).
- * Sem boneco aqui, o campo mostra o ícone.
+ * Animais, máquinas e construções vêm de folhas prontas (tools/sprites/montar.py).
+ * Sem figura aqui, o campo mostra o ícone.
  */
+import sheets from '../data/creatures.json';
 import type { Anim, Avatar } from './lpc';
 
 export interface Creature { avatar: Avatar; attack: Anim }
+/** Criatura de folha pronta: tamanho do quadro, nº de quadros parado/atacando, velocidade. */
+export interface SheetDef { cell: number[]; idle: number; attack: number; fps: number; scale?: number }
+const SHEET = sheets as Record<string, SheetDef>;
+/** Ícone da unidade → folha de quadros (animais, máquinas e construções). */
+const SHEET_OF: Record<string, string> = { 'wolf-head': 'wolf', 'wolf-howl': 'wolf', 'bear-head': 'bear', 'magic-gate': 'tower', crossbow: 'ballista' };
+export const sheetOf = (icon: string | undefined): { id: string; def: SheetDef } | undefined => {
+  const id = icon ? SHEET_OF[icon] : undefined;
+  return id && SHEET[id] ? { id, def: SHEET[id] } : undefined;
+};
+/** A unidade tem figura no campo (boneco de peças ou folha pronta)? */
+export const hasFigure = (icon: string | undefined): boolean => !!icon && (icon in CREATURES || !!sheetOf(icon));
 
 export const CREATURES: Record<string, Creature> = {
   // Esqueleto: ossos, espada e escudo
