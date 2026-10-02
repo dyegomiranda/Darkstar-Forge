@@ -35,6 +35,10 @@ class Chip {
   musicVol = saved.music ?? 0.6;
   sfxVol = saved.sfx ?? 0.8;
   muted = saved.mute ?? false;
+  /** Volume geral (multiplica música e sons). */
+  masterVol = 1;
+  /** Silêncio temporário (janela em segundo plano). */
+  hushed = false;
 
   constructor() {
     if (typeof window === 'undefined') return;
@@ -64,7 +68,7 @@ class Chip {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.#master = this.ctx.createGain();
-      this.#master.gain.value = this.muted ? 0 : 1;
+      this.#master.gain.value = this.#level();
       // um compressor leve evita estalos quando vários sons tocam juntos
       const comp = this.ctx.createDynamicsCompressor();
       this.#master.connect(comp).connect(this.ctx.destination);
@@ -84,7 +88,12 @@ class Chip {
   }
 
   #save() { try { localStorage.setItem(KEY, JSON.stringify({ music: this.musicVol, sfx: this.sfxVol, mute: this.muted })); } catch { /* sem armazenamento local */ } }
-  setMute(m: boolean) { this.muted = m; if (this.ctx) this.#master.gain.setTargetAtTime(m ? 0 : 1, this.ctx.currentTime, 0.05); this.#save(); this.#emit(); }
+  #level(): number { return this.muted || this.hushed ? 0 : this.masterVol; }
+  #applyLevel() { if (this.ctx) this.#master.gain.setTargetAtTime(this.#level(), this.ctx.currentTime, 0.05); }
+  setMute(m: boolean) { this.muted = m; this.#applyLevel(); this.#save(); this.#emit(); }
+  setMaster(v: number) { this.masterVol = v; this.#applyLevel(); }
+  /** Cala (ou devolve) o som sem mexer na escolha do jogador: janela em segundo plano. */
+  hush(on: boolean) { this.hushed = on; this.#applyLevel(); }
   setMusicVol(v: number) { this.musicVol = v; if (this.ctx) for (const p of this.#players.values()) if (p.track === this.current && !this.paused) p.gain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); this.#save(); }
   setSfxVol(v: number) { this.sfxVol = v; if (this.ctx) this.#sfxBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); this.#save(); }
 

@@ -2,7 +2,7 @@
 
 As 81 cartas da coleção **Classes — Pathfinder** têm um prompt pronto cada, no estilo das artes de
 Magic: The Gathering (`tools/comfyui/prompts-pf.json`). O script abaixo manda todos para o seu
-ComfyUI e salva cada imagem com o nome que o Darkstar Forge entende.
+ComfyUI e salva cada imagem com o nome que o Void Sun entende.
 
 ## 1. Abra o ComfyUI
 
@@ -62,7 +62,7 @@ Dicas:
 
 ## 3. Coloque as artes nas cartas
 
-No Darkstar Forge: **Biblioteca → Coleção "Classes — Pathfinder" → Importar artes** e selecione
+No Void Sun: **Construtor de decks → Biblioteca → Coleção "Classes — Pathfinder" → Importar artes** e selecione
 todas as imagens da pasta `artes-pf` (Ctrl+A). Cada uma vai para a carta do mesmo nome
 (`pf-red_001.png` = carta nº 1 do deck vermelho da coleção). Também funciona com o nome da carta
 (`corte-duplo.png` ou `Corte Duplo.jpg`). Se alguma carta tiver mais de uma versão, abre uma janela

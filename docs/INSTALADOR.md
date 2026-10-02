@@ -1,4 +1,4 @@
-# Darkstar Forge — instaladores (Windows e Linux)
+# Void Sun — instaladores (Windows e Linux)
 
 Seu amigo **não precisa digitar nenhum comando**.  
 Ele só **baixa o instalador** e **dá dois cliques**.
@@ -15,9 +15,9 @@ Arquivos típicos:
 
 | Arquivo | Plataforma | O que fazer |
 |---------|------------|-------------|
-| `Darkstar Forge Setup 1.0.0.exe` (ou similar) | Windows | Duplo clique → instalar |
-| `Darkstar Forge-1.0.0.AppImage` | Linux | Marcar executável (se pedir) → duplo clique |
-| `darkstar-forge_1.0.0_amd64.deb` (ou similar) | Linux (Debian/Ubuntu) | Duplo clique no instalador de pacotes |
+| `Void Sun Setup 1.0.0.exe` (ou similar) | Windows | Duplo clique → instalar |
+| `Void Sun-3.0.0.AppImage` | Linux | Marcar executável (se pedir) → duplo clique |
+| `void-sun_3.0.0_amd64.deb` (ou similar) | Linux (Debian/Ubuntu) | Duplo clique no instalador de pacotes |
 
 Na primeira execução no Windows, o sistema pode instalar o **WebView2** (Microsoft) se ainda não existir (dependendo da versão do Electron / instalador).
 
@@ -82,7 +82,7 @@ npm run electron
 ### Desenvolvimento (web no browser)
 
 ```bash
-./Darkstar\ Forge
+./Void\ Sun
 # ou:
 npm run dev:web
 ```

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Abre o Void Sun (o jogo). É o que o atalho do menu de aplicativos chama.
+# Usa o AppImage mais recente de release/; se não houver, compila e abre (precisa do Node).
+set -euo pipefail
+DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+APP="$(ls -t "$DIR"/release/*.AppImage 2>/dev/null | head -n1 || true)"
+if [[ -n "$APP" ]]; then
+  exec "$APP" "$@"
+fi
+cd "$DIR"
+[[ -d node_modules ]] || npm install
+exec npm run app

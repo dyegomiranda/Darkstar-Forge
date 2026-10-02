@@ -120,7 +120,7 @@ export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Car
   }));
   // as cartas de equipamento dos heróis prontos (arma + 5 peças de cada um)
   const eq = protoEquipment(PROTO_ID);
-  return { edition: { id: PROTO_ID, name: 'Protótipo — Mesa de teste', code: 'PROTO', deckSize: 40 }, decks: [...decks, eq.deck], cards: [...cards, ...eq.cards] };
+  return { edition: { id: PROTO_ID, name: 'Protótipo', code: 'PROTO', deckSize: 40 }, decks: [...decks, eq.deck], cards: [...cards, ...eq.cards] };
 }
 
 export function seedProject(): { project: Project; cards: Card[] } {
@@ -130,7 +130,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
   const cards = [...toCards(seedCards as SeedCard[], '', 'manual'), ...pf.cards, ...proto.cards];
   const project: Project = {
     version: PROJECT_VERSION,
-    name: 'Darkstar',
+    name: 'Void Sun',
     lang: 'pt-BR',
     editions: [{ id: EDITION_ID, name: '1ª Edição', code: '1ª Ed.' }, pf.edition, proto.edition],
     decks,

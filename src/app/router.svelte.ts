@@ -1,6 +1,13 @@
-/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/tema/deck/<deck>, #/tema/colecao/<deck>, #/verso, #/ficha, #/mesa, #/ajustes. */
+/**
+ * Rotas por hash: #/ (tela inicial), #/batalha (modos), #/batalha/solo, #/heroi[/<id>|/novo],
+ * #/decks[/deck], #/carta/<id>, #/tema/deck/<deck>, #/tema/colecao/<deck>, #/verso, #/colecao, #/ajustes, #/sobre.
+ */
 export type Route =
+  | { name: 'home' }
+  | { name: 'modes' }
+  | { name: 'about' }
   | { name: 'library'; deck?: string }
+  | { name: 'collection' }
   | { name: 'editor'; id: string }
   | { name: 'theme'; scope: 'deck' | 'collection'; deck: string }
   | { name: 'back' }
@@ -13,10 +20,14 @@ function parse(hash: string): Route {
   if (a === 'carta' && b) return { name: 'editor', id: decodeURIComponent(b) };
   if (a === 'tema' && (b === 'deck' || b === 'colecao') && c) return { name: 'theme', scope: b === 'deck' ? 'deck' : 'collection', deck: decodeURIComponent(c) };
   if (a === 'verso') return { name: 'back' };
+  if (a === 'colecao') return { name: 'collection' };
   if (a === 'ficha' || a === 'heroi') return { name: 'sheet', id: b ? decodeURIComponent(b) : undefined };
-  if (a === 'mesa') return { name: 'game' };
+  if (a === 'mesa' || (a === 'batalha' && b === 'solo')) return { name: 'game' };
+  if (a === 'batalha') return { name: 'modes' };
   if (a === 'ajustes') return { name: 'settings' };
-  return { name: 'library', deck: b ? decodeURIComponent(b) : undefined };
+  if (a === 'sobre') return { name: 'about' };
+  if (a === 'decks' || a === 'biblioteca') return { name: 'library', deck: b ? decodeURIComponent(b) : undefined };
+  return { name: 'home' };
 }
 
 class Router {
@@ -40,7 +51,23 @@ class Router {
     location.hash = path;
   }
 
-  library(deck?: string) { this.go(deck ? `/biblioteca/${encodeURIComponent(deck)}` : '/biblioteca'); }
+  /** Troca o endereço sem perguntar nada nem deixar a página anterior no histórico (ex.: herói novo que acabou de ser salvo). */
+  replace(path: string): void {
+    history.replaceState(null, '', `#${path}`);
+    this.#last = location.hash;
+    this.route = parse(location.hash);
+  }
+
+  /** A tela "acima" da atual (para o botão de voltar e para o B do controle). */
+  parent(): string {
+    const r = this.route;
+    if (r.name === 'game') return '/batalha';
+    if (r.name === 'editor' || r.name === 'theme' || r.name === 'back' || r.name === 'collection') return '/decks';
+    if (r.name === 'sheet' && r.id) return '/heroi';
+    return '/';
+  }
+
+  library(deck?: string) { this.go(deck ? `/decks/${encodeURIComponent(deck)}` : '/decks'); }
   editor(id: string) { this.go(`/carta/${encodeURIComponent(id)}`); }
   /** Tela de tema: do deck, ou da coleção (tendo esse deck como amostra). */
   theme(scope: 'deck' | 'collection', deck: string) { this.go(`/tema/${scope === 'deck' ? 'deck' : 'colecao'}/${encodeURIComponent(deck)}`); }

@@ -1,8 +1,38 @@
-# Darkstar Forge — progresso
+# Void Sun — progresso
 
-**Atualizado:** 29/09/2026 (versão 2.2: peças e símbolos de imagem, vários símbolos de classe, artes pelo ComfyUI)
-**Como abrir:** atalho *Darkstar Forge* no menu de aplicativos, ou o script `Darkstar Forge` na pasta.
-**Código antigo:** preservado no git na etiqueta `legado-v1`.
+**Atualizado:** 02/10/2026 (versão 3.0: o jogo passa a se chamar Void Sun e vira jogo em primeiro lugar)
+**Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
+**Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.0 (02/10/2026)
+
+### De editor com jogo dentro para jogo com editor dentro
+- [x] Novo nome: **Void Sun** (janela, atalho, lançador, pacote, textos); os dados continuam na mesma pasta do computador
+- [x] Tela inicial em pixel art (arte do sol eclipsado, logotipo dentro do disco, coroa pulsando, estrelas e brasas) com o menu principal
+- [x] Campanha e Multijogador aparecem apagados, com o adesivo "Em construção"
+- [x] A barra lateral saiu: cada tela tem uma barra no alto (voltar, título, ações) e o Esc abre o menu de pausa
+- [x] Modo batalha → Solo / Multijogador; Sobre o jogo (com os créditos)
+
+### Criação de personagem
+- [x] Herói novo começa do zero (sem modelo); dá para duplicar um herói existente
+- [x] Rascunho: botão "Salvar personagem", "Descartar" e pergunta ao sair com alterações
+- [x] Atributos com limite: 18 pontos, máximo 18 por atributo, bônus da ancestralidade por cima; os atributos de jogo passam a ser os modificadores da ficha
+- [x] Todo herói pode batalhar (fichas antigas sem dados de jogo ganham os da classe)
+- [x] Aparência refeita: categorias à esquerda e uma miniatura por opção, já no herói
+- [x] Mais de 200 peças: camiseta, casacos, vestidos, quimonos, 33 coberturas de cabeça, 28 armas, bigodes, narizes, orelhas, cintos, colares, mochilas…
+- [x] Chifres, asas e cauda com cor própria; barba por fazer translúcida; barba e bigode nascem da cor do cabelo
+- [x] Botões de animação corrigidos ("Ataque da arma" fica marcado enquanto toca)
+- [x] Equipamento: seletor em tela cheia com cartas grandes e zoom no lugar
+
+### Batalha
+- [x] Dificuldade: Muito fácil, Fácil, Normal, Difícil (o bot de antes) e Muito difícil (planeja o turno e começa com +5 de vida e 1 carta a mais)
+- [x] Atalhos de teclado (encerrar turno, golpear, trocar posição, registro) e Esc abrindo o menu da partida
+
+### Configurações
+- [x] Vídeo: em janela (com resolução), maximizada ou tela cheia; escala da interface; qualidade gráfica; contador de quadros
+- [x] Som: volume geral, música, efeitos, silenciar, silenciar em segundo plano
+- [x] Jogo: idioma, dificuldade, velocidade, limite de tempo, registro
+- [x] Controles: teclas configuráveis e joystick (navegação por direcional em todas as telas)
 
 ## Versão 2.3 (30/09/2026)
 

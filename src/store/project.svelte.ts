@@ -10,6 +10,7 @@ import { PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProje
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROTO_GEAR_DECK, migrateGear, protoEquipment } from '../model/equipment';
+import { upgradeHero } from '../model/hero';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
 import { PRESET_AVATARS } from '../avatar/presets';
@@ -182,6 +183,25 @@ class ProjectState {
       p.seeded = [...(p.seeded ?? []), AVATARS_MARK];
       changed = true;
       for (const c of p.characters) if (c.preset && !c.avatar && PRESET_AVATARS[c.preset]) c.avatar = structuredClone(PRESET_AVATARS[c.preset]);
+    }
+    // todo herói pode batalhar: fichas sem dados de jogo ganham os da classe; os atributos de jogo passam a vir da ficha
+    const PLAY_MARK = 'heroes-play-1';
+    if (!p.seeded?.includes(PLAY_MARK)) {
+      p.seeded = [...(p.seeded ?? []), PLAY_MARK];
+      changed = true;
+      const playable = [...p.decks].sort((a, b) => a.order - b.order).filter((d) => Object.values(this.cards).some((c) => c.deckId === d.id && c.game));
+      for (const c of p.characters) upgradeHero(c, playable);
+    }
+    // o jogo passou a se chamar Void Sun: os nomes que ainda eram os de fábrica acompanham (o que o usuário renomeou fica)
+    const NAME_MARK = 'rename-voidsun-1';
+    if (!p.seeded?.includes(NAME_MARK)) {
+      p.seeded = [...(p.seeded ?? []), NAME_MARK];
+      changed = true;
+      if (p.name === 'Darkstar') p.name = 'Void Sun';
+      for (const e of p.editions) {
+        if (e.name === 'Protótipo — Mesa de teste') e.name = 'Protótipo';
+        if (e.back?.title === 'Darkstar') e.back.title = 'Void Sun';
+      }
     }
     if (!changed) return;
     this.#projectDirty = true;

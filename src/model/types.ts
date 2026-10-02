@@ -1,5 +1,5 @@
 /**
- * Modelo de dados do Darkstar Forge (uma fonte da verdade, versionada).
+ * Modelo de dados do Void Sun (uma fonte da verdade, versionada).
  *
  * Projeto → edições → decks → cartas. Cada carta pertence a UM deck (deckId).
  * Texto só em `text[idioma]`. Aparência: o deck define o tema (look) e a

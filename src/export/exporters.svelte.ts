@@ -103,7 +103,7 @@ export async function exportPngZip(cards: Card[]): Promise<void> {
     files[`${String(c.n).padStart(3, '0')}-${slug(c.text[app.lang].name)}.png`] = [new Uint8Array(await b.arrayBuffer()), { level: 0 }];
   });
   if (!done) return;
-  download(new Blob([zipSync(files)], { type: 'application/zip' }), `darkstar-cartas-${cards.length}.zip`);
+  download(new Blob([zipSync(files)], { type: 'application/zip' }), `voidsun-cartas-${cards.length}.zip`);
   ui.toast(L(`${cards.length} imagens exportadas`, `${cards.length} images exported`));
 }
 
@@ -188,7 +188,7 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
       }
     }
   }
-  const name = o.backs === 'only' ? 'darkstar-versos.pdf' : `darkstar-${n}-cartas${o.backs === 'with' ? '-frente-verso' : ''}.pdf`;
+  const name = o.backs === 'only' ? 'voidsun-versos.pdf' : `voidsun-${n}-cartas${o.backs === 'with' ? '-frente-verso' : ''}.pdf`;
   download(new Blob([(await pdf.save()) as Uint8Array<ArrayBuffer>], { type: 'application/pdf' }), name);
   ui.toast(L('PDF pronto', 'PDF ready'));
 }
@@ -227,7 +227,7 @@ export async function exportBackup(): Promise<void> {
     files[`media/${m.id}.json`] = strToU8(JSON.stringify({ name: m.name, type: m.type }));
   }
   const stamp = new Date().toISOString().slice(0, 10);
-  download(new Blob([zipSync(files)], { type: 'application/zip' }), `darkstar-backup-${stamp}.zip`);
+  download(new Blob([zipSync(files)], { type: 'application/zip' }), `voidsun-backup-${stamp}.zip`);
   ui.toast(L('Backup salvo', 'Backup saved'));
 }
 
@@ -266,7 +266,7 @@ export async function exportCsv(cards: Card[]): Promise<void> {
     const d = app.deck(c.deckId);
     return [c.n, d ? COLORS[d.colors[0]].classes[lang] : '', t.name, t.type, t.subtype, c.cost.length ? costTotal(c) : '', c.cost.map((p) => `${p.amount} ${p.resource}`).join(' + '), c.stats?.atk ?? '', c.stats?.def ?? '', RARITIES[c.rarity].name[lang], t.rules, t.flavor].map(q).join(';');
   });
-  download(new Blob(['﻿' + [head.map(q).join(';'), ...rows].join('\r\n')], { type: 'text/csv' }), 'darkstar-cartas.csv');
+  download(new Blob(['﻿' + [head.map(q).join(';'), ...rows].join('\r\n')], { type: 'text/csv' }), 'voidsun-cartas.csv');
 }
 
 export async function mediaBlob(id: string): Promise<Blob | undefined> {

@@ -1,38 +1,45 @@
-# Darkstar Forge
+# Void Sun
 
-Estúdio de criação de cartas do **Darkstar**, um TCG que funciona como um RPG de mesa em cartas. Cada cor de deck é um par de classes, com base em Pathfinder 2e e D&D 5e.
+**Void Sun** é um RPG de mesa em forma de jogo de cartas. Você é o herói: a ancestralidade, os atributos e o equipamento saem da sua ficha, e o deck são as habilidades da sua classe (cada cor de deck é um par de classes, com base em Pathfinder 2e e D&D 5e).
 
-O programa roda totalmente no seu computador, sem servidor. Com ele você:
+O jogo roda totalmente no seu computador, sem servidor. Ele traz:
 
-- cria e organiza as cartas por deck;
-- personaliza cada peça do visual;
-- monta a ficha e o boneco dos heróis;
-- testa as cartas numa mesa de jogo contra um bot;
-- exporta PNG em alta resolução e PDF para impressão (63 × 88 mm).
+- **Modo batalha** contra o jogo, em cinco níveis de dificuldade;
+- **Criação de personagem**, com boneco em pixel art;
+- **Construtor de decks**: um editor completo de cartas, decks, temas e coleções, com exportação em PNG e PDF para impressão (63 × 88 mm);
+- configurações de vídeo, som, jogo e controles (teclado e joystick).
 
-> **Licença:** software livre sob a GPL-3.0. A propriedade intelectual do Darkstar (nome, marca, artes, personagens, textos) **não** está coberta pela GPL.
+A **campanha** (mapa aberto, história, criaturas e chefes) e o **multijogador** estão em construção.
+
+> O jogo se chamava *Darkstar Forge* até a versão 2.9. A pasta do projeto e o repositório mantêm o nome antigo; os dados de quem já usava continuam no mesmo lugar.
+
+> **Licença:** software livre sob a GPL-3.0. A propriedade intelectual do jogo (nome, marca, artes, personagens, textos) **não** está coberta pela GPL.
 
 ## Como abrir
 
-- **Pelo menu de aplicativos:** o atalho *Darkstar Forge* abre o programa.
-- **Pela pasta:** dê dois cliques no script `Darkstar Forge`. Ele abre o AppImage mais recente de `release/`; se ainda não houver um, ele compila e abre.
+- **Pelo menu de aplicativos:** o atalho *Void Sun* abre o jogo.
+- **Pela pasta:** dê dois cliques no script `Void Sun`. Ele abre o AppImage mais recente de `release/`; se ainda não houver um, ele compila e abre.
 - **Instaladores:** estão em [Releases](../../releases) (Linux AppImage/deb, Windows).
 
 ## O que tem dentro
 
 | Tela | O que faz |
 |---|---|
-| **Biblioteca** | Coleções e decks com contagem de cartas, busca, filtros (tipo, custo, raridade, etiqueta), curva de custo, seleção múltipla, mover entre decks, PNG (zip) e PDF. Importa artes em lote pelo nome do arquivo, com escolha entre variações (ver grande, apagar, gerar mais pelo ComfyUI). Os botões **Editar coleção** e **Editar este deck** abrem a tela de tema. As cartas aparecem completas em alta resolução: cada uma é desenhada uma vez e guardada. |
-| **Editor** | Abas **Texto** (PT/EN, símbolos no texto), **Jogo** (classes, custos, ATK/DEF, raridade, regra de custo, efeitos da Mesa; em cartas de equipamento, o espaço e os bônus), **Arte** (enviar, enquadrar, zoom, espelhar, pixelar) e **Aparência** (ajustes só daquela carta). Tem desfazer/refazer e Ctrl+S, e só grava ao salvar. |
-| **Tema** | Aparência do deck inteiro ou da coleção, com carta de amostra: 14 estilos que se misturam peça a peça, cores de fundo/texto/destaque por peça (ataque e defesa separados), símbolos por recurso e por classe em 5 acabamentos ou com imagens suas (inclui uma coleção 3D), tamanhos e espaçamento. |
-| **Verso** | Verso de cada coleção: estilo, cores, padrão, arte de fundo, emblema e título. |
-| **Herói** | Galeria e ficha de cada herói: boneco em pixel art montado por peças (vira o retrato e a miniatura do campo), atributos, cartas de equipamento vestidas e dados de jogo. |
-| **Mesa** | Protótipo jogável contra um bot: seleção de heróis e de cenário, mão inicial com troca, campo com bonecos animados, reações, níveis, efeitos visíveis, registro da batalha, música e sons. |
-| **Ajustes** | Coleção aberta (nome, sigla e logo), decks, backup (.zip), restauração, planilha (.csv), espaço usado e créditos. |
+| **Tela inicial** | Menu principal: Campanha (em construção), Modo batalha, Criação de personagem, Construtor de decks, Configurações e Sobre o jogo. |
+| **Modo batalha** | Solo (contra o jogo) ou Multijogador (em construção). Na batalha solo: seleção de heróis, cenário, dificuldade e velocidade; mão inicial com troca; campo com bonecos animados, reações, níveis, efeitos visíveis, registro, música e sons. |
+| **Criação de personagem** | Galeria de heróis e o criador, em cinco abas: **Identidade** (nome, classe, ancestralidade, retrato, história), **Atributos** (18 pontos para distribuir, com limite), **Aparência** (boneco em pixel art, com uma miniatura por opção), **Equipamento** (cartas vestidas) e **Deck e recursos**. Trabalha num rascunho: só "Salvar personagem" grava. |
+| **Construtor de decks** | **Biblioteca** (coleções, decks, busca, filtros, curva de custo, importação de artes, PNG e PDF), **Editor** de carta (texto, jogo, arte, aparência), **Tema** do deck ou da coleção (14 estilos que se misturam peça a peça), **Coleção** (nome, sigla, selo e decks) e **Verso** das cartas. |
+| **Configurações** | **Vídeo** (em janela, maximizada ou tela cheia; resolução; escala da interface; qualidade gráfica; contador de quadros), **Som** (geral, música, efeitos), **Jogo** (idioma, dificuldade, velocidade, limite de tempo), **Controles** (teclas configuráveis e joystick) e **Dados** (backup, restauração, planilha, espaço usado). |
+| **Sobre o jogo** | O que é o Void Sun, versão e créditos. |
+
+### Controles
+
+- **Teclado:** setas navegam por qualquer tela, Enter confirma, Esc fecha o que estiver aberto ou abre o menu. Na batalha: `E` encerra o turno, `G` golpeia, `T` troca de posição, `L` abre o registro (todas configuráveis). F11 alterna a tela cheia.
+- **Joystick:** direcional ou alavanca esquerda navegam, A confirma, B volta, X golpeia, Y encerra o turno, LB/RB trocam de aba, Start abre o menu.
 
 ## Artes
 
-As artes das cartas e os cenários da Mesa são gerados no próprio computador pelo ComfyUI (Flux.1 dev + LoRA "Modern Pixel Art"). Os scripts ficam em `tools/comfyui/`; veja também [docs/artes.md](docs/artes.md).
+A arte da tela inicial e dos modos, as artes das cartas e os cenários do campo são gerados no próprio computador pelo ComfyUI (Flux.1 dev + LoRA "Modern Pixel Art"). Os scripts ficam em `tools/comfyui/` (`gerar_telas.py`, `gerar_cenarios.py`, `gerar_proto.py`); veja também [docs/artes.md](docs/artes.md). As peças dos bonecos vêm do Liberated Pixel Cup (`tools/lpc/montar.py`).
 
 ## Para desenvolver
 
@@ -49,18 +56,21 @@ npm run dist:windows # gera o instalador do Windows
 
 ```
 src/
+  app/         moldura do jogo: rotas, configurações, teclado e joystick, estilos
+  game/        regras da batalha (motor), bot com níveis de dificuldade, decks do protótipo
+  avatar/      boneco do herói em pixel art (peças do LPC) e criaturas do campo
   render/      motor de desenho da carta: SVG → imagem
-    elements/  os estilos, peça a peça (ornado.ts, gotico.ts, …)
+    elements/  os estilos, peça a peça (neutro.ts, gotico.ts, …)
     icons/     símbolos (game-icons.net) e acabamentos
     compose.ts monta a carta; layout.ts, text.ts, palette.ts, defs.ts
     queue.ts   fila de imagens em alta resolução com cache
-  model/       tipos, catálogo (classes, recursos, raridades), custos, pontuação, dados iniciais
+  model/       tipos, catálogo (classes, recursos, raridades), regras da ficha do herói, equipamento, dados iniciais
   store/       banco local (IndexedDB), salvamento carta a carta, imagens
-  ui/          telas (Svelte 5): library, editor, sheet, settings, common
+  ui/          telas (Svelte 5): home, game, hero, library, editor, settings, common
   export/      PNG, PDF, backup, CSV
-  data/        cartas de exemplo, tabela de mecânicas, raças
-electron/      janela do programa desktop (segura: sem Node na página)
-tests/         testes (Vitest)
+  data/        cartas de exemplo, tabela de mecânicas, raças, catálogo de peças do boneco
+electron/      janela do jogo (segura: sem Node na página) e a ponte para modo de tela e escala
+tests/         testes (Vitest); tools/sim/ tem os simuladores bot × bot
 ```
 
-Símbolos: [game-icons.net](https://game-icons.net), CC BY 3.0 (créditos no programa). Fontes: SIL OFL.
+Símbolos: [game-icons.net](https://game-icons.net), CC BY 3.0 (créditos no jogo). Fontes: SIL OFL.
