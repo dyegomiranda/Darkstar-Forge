@@ -297,18 +297,23 @@ export class EditorState {
   }
 
   /** Símbolo, cor ou imagem de um recurso do custo (mana, vigor…). */
-  setResIcon(res: string, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []): void {
+  setResIcon(res: string, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []): void { this.#setKeyedIcon('res', 'cost', res, patch, remove); }
+  /** Símbolo, cor ou imagem de uma classe (red, blue…). */
+  setClsIcon(cls: string, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []): void { this.#setKeyedIcon('cls', 'class', cls, patch, remove); }
+
+  #setKeyedIcon(group: 'res' | 'cls', old: 'cost' | 'class', key: string, patch: Partial<IconChoice>, remove: (keyof IconChoice)[]): void {
     const keys = [...Object.keys(patch), ...remove];
-    // o formato antigo guardava o símbolo do 1º recurso em icons.cost: sai junto, para não brigar com o novo
-    const legacy = keys.filter((k) => k === 'glyph' || k === 'color' || k === 'image').map((k) => `icons.cost.${k}`);
-    this.#write([...keys.map((k) => `icons.res.${res}.${k}`), ...legacy], (l) => {
+    // o formato antigo guardava o símbolo do 1º recurso/classe em icons.cost / icons.class: sai junto, para não brigar com o novo
+    const legacy = keys.filter((k) => k === 'glyph' || k === 'color' || k === 'image').map((k) => `icons.${old}.${k}`);
+    this.#write([...keys.map((k) => `icons.${group}.${key}.${k}`), ...legacy], (l) => {
       l.icons ??= {};
-      const all = { ...(l.icons.res ?? {}) };
-      const cur = { ...(all[res] ?? {}), ...patch } as IconChoice;
+      const all = { ...(l.icons[group] ?? {}) };
+      const cur = { ...(all[key] ?? {}), ...patch } as IconChoice;
       for (const k of remove) delete cur[k];
-      if (Object.keys(cur).length) all[res] = cur; else delete all[res];
-      if (Object.keys(all).length) l.icons.res = all; else delete l.icons.res;
-      if (l.icons.cost) for (const k of ['glyph', 'color', 'image'] as const) if (keys.includes(k)) delete l.icons.cost[k];
+      if (Object.keys(cur).length) all[key] = cur; else delete all[key];
+      if (Object.keys(all).length) l.icons[group] = all; else delete l.icons[group];
+      const o = l.icons[old];
+      if (o) for (const k of ['glyph', 'color', 'image'] as const) if (keys.includes(k)) delete o[k];
     });
   }
 

@@ -122,7 +122,7 @@
                   <label class="toggle"><input type="checkbox" checked={ed.kinds.includes(k.id)} onchange={() => ed.toggleKind(k.id)} /> {L(k.pt, k.en)} <small>({kindCount(k.id)})</small></label>
                 {/each}
               </div>
-              <p class="muted small">{L('Só o que você mexer vai para os outros decks; cada deck mantém as suas cores e o seu símbolo de classe.', 'Only what you change goes to the other decks; each deck keeps its colors and its class symbol.')}</p>
+              <p class="muted small">{L('Só o que você mexer vai para os outros decks; cada deck mantém as suas cores.', 'Only what you change goes to the other decks; each deck keeps its colors.')}</p>
               <span class="section-title">{L('Como cada deck fica', 'How each deck will look')}</span>
               <div class="samples">
                 {#each samples as x (x.deck.id)}<LookPreview card={x.card} look={ed.previewLook(x.deck)} label={x.deck.name[app.lang]} />{/each}
