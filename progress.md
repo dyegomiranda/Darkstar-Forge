@@ -4,6 +4,11 @@
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
 
+## Versão 3.4.2 (02/10/2026)
+
+- [x] Logotipo: o samurai sombrio agora é homem (cavanhaque, coque), com asas de morcego de membrana e a lâmina negra à mostra
+- [x] Peças daédricas têm os veios de brasa em qualquer cor, não só na cor do conjunto
+
 ## Versão 3.4.1 (02/10/2026)
 
 - [x] Logotipo: samurai sombrio (boca fechada, olhar cruel, asas de demônio, katana negra) no lugar do guitarrista; fumaça negra e roxa sobe da lâmina

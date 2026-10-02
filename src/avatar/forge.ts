@@ -16,17 +16,21 @@ export interface Forge {
   trim?: string | 'light';
   /** Marca no peito. */
   sigil?: 'ridges' | 'rune' | 'sun' | 'cross' | 'gem' | 'ribs';
+  /** Veios de brasa nas frestas e nos brilhos da peça, seja qual for a cor do metal. */
+  veins?: boolean;
   /** Cor da marca e das pontas (quando não é a do metal). */
   accent?: string;
 }
 
 /** A brasa das peças daédricas (o boneco animado faz esses pontos pulsarem). */
 export const EMBER = '#ff5a2a';
+/** Brasa escura: o veio nas frestas das placas. */
+export const EMBER_DARK = '#7a0c10';
 /** Brasa média: as arestas das quilhas e o corpo das pontas. */
 export const EMBER_MID = '#d2381c';
 
 export const FORGES: Record<string, Forge> = {
-  daedric: { pt: 'Daédrico', en: 'Daedric', spikes: 'horn', sigil: 'ridges', accent: EMBER },
+  daedric: { pt: 'Daédrico', en: 'Daedric', spikes: 'horn', sigil: 'ridges', veins: true, accent: EMBER },
   ebony: { pt: 'Ébano', en: 'Ebony', texture: 'bands', trim: '#a9a3c4' },
   dragon: { pt: 'Sangue de dragão', en: 'Dragonblood', texture: 'scales', spikes: 'bone', accent: '#ffd9a0' },
   frost: { pt: 'Guardião do gelo', en: 'Frost warden', texture: 'facets', spikes: 'crystal', accent: '#ffffff' },
@@ -103,6 +107,16 @@ export function forge(ctx: CanvasRenderingContext2D, slot: SlotId, style: string
     const front = rows === 1 || r === 2, back = rows > 1 && r === 0;
     // (as mudanças são decididas com a peça original e aplicadas depois, para uma não interferir na outra)
     const todo: [number, number, readonly [number, number, number]][] = [];
+
+    if (plates && f.veins) {
+      // os veios vêm dos tons da própria peça (a sombra das frestas e o brilho), então existem em qualquer cor
+      const vein = rgb(EMBER_DARK);
+      for (let y = by; y <= ey; y++) for (let x = bx; x <= ex; x++) {
+        if (!solid(x0 + x, y0 + y)) continue;
+        const t = tone(x0 + x, y0 + y);
+        if (t === 1) todo.push([x, y, vein]); else if (t === 5) todo.push([x, y, accent]);
+      }
+    }
 
     if (plates && f.texture) {
       for (let y = by; y <= ey; y++) for (let x = bx; x <= ex; x++) {

@@ -7,7 +7,7 @@
  * tools/lpc/montar.py). Créditos dos artistas: src/data/lpc-credits.json.
  */
 import raw from '../data/lpc.json';
-import { cover, EMBER, EMBER_MID, forge, FORGES } from './forge';
+import { cover, EMBER, EMBER_DARK, EMBER_MID, forge, FORGES } from './forge';
 
 export type Body = 'male' | 'female' | 'muscular';
 export type Anim = 'idle' | 'walk' | 'slash' | 'thrust' | 'shoot' | 'spellcast' | 'hurt';
@@ -358,7 +358,7 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
   let glow: HTMLCanvasElement | undefined;
   const ember = LPC.palettes.metal.colors.daedric;
   if (ember && Object.values(av.parts).some((p) => p?.color === 'daedric' || p?.style === 'daedric')) {
-    const veins = [ember[1], ember[5], EMBER, EMBER_MID].map(rgb);
+    const veins = [ember[1], ember[5], EMBER, EMBER_DARK, EMBER_MID].map(rgb);
     const src = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     const g = layer(), data = g.createImageData(canvas.width, canvas.height), d = data.data;
     let any = false;
