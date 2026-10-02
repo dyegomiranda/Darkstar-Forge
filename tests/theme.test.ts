@@ -113,3 +113,16 @@ describe('ajustes finos da aparência', () => {
     expect(app.cards.k1.text['pt-BR'].name).toBe('Golpe');
   });
 });
+
+describe('símbolo por classe', () => {
+  it('na coleção, cada classe tem o seu símbolo e ele vai para todos os decks', () => {
+    const ed = new EditorState(app.cards.x, 'collection', true);
+    ed.setClsIcon('red', { glyph: 'battle-axe' });
+    ed.setClsIcon('blue', { glyph: 'wizard-staff' });
+    ed.save();
+    expect(app.deck('a')!.look.icons?.cls).toEqual({ red: { glyph: 'battle-axe' }, blue: { glyph: 'wizard-staff' } });
+    expect(app.deck('b')!.look.icons?.cls).toEqual({ red: { glyph: 'battle-axe' }, blue: { glyph: 'wizard-staff' } });
+    // o símbolo antigo (só da 1ª classe do deck) sai ao escolher o novo
+    expect(app.deck('a')!.look.icons?.class?.glyph).toBeUndefined();
+  });
+});

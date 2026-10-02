@@ -68,7 +68,7 @@ export interface ComposeInfo {
   ink: Partial<Record<PieceSlot, string>>;
   /** Cor do fundo de cada peça (ausente = o estilo não tem fundo trocável nessa peça). */
   fill: Partial<Record<PieceSlot, string>>;
-  /** Cor de cada símbolo: classe, ataque, defesa e um por recurso do custo (`res:mana`…). */
+  /** Cor de cada símbolo: ataque, defesa, um por recurso do custo (`res:mana`…) e um por classe (`cls:red`…). */
   icon: Record<string, string>;
 }
 
@@ -105,6 +105,8 @@ export interface Look {
     cost?: IconChoice;
     /** Símbolo, cor ou imagem de cada recurso (mana, vigor…). */
     res?: Partial<Record<string, IconChoice>>;
+    /** Símbolo, cor ou imagem de cada classe (red, blue…). O de `class` vale só para a 1ª classe da carta (formato antigo). */
+    cls?: Partial<Record<string, IconChoice>>;
     class?: IconChoice;
     atk?: IconChoice;
     def?: IconChoice;
@@ -503,22 +505,31 @@ export function composeEx(inp: ComposeInput): { svg: string; info: ComposeInfo }
     const before = text;
     text = '';
     const style = iconStyleFor(pick);
+    /** Escolha de uma classe: a própria (icons.cls) por cima da antiga, que valia só para a 1ª classe da carta. */
+    const clsPick = (id: string, first: boolean): IconChoice | undefined => {
+      const own = look.icons?.cls?.[id];
+      return own || (first && pick) ? { ...(first ? pick : undefined), ...own } : undefined;
+    };
     if (classPlan) {
-      // várias classes: cada símbolo na cor da sua classe (a escolha da Aparência vale para a 1ª)
+      // várias classes: cada símbolo na cor da sua classe
       const x0 = c.x + (c.w - classPlan.width) / 2;
       for (const u of classPlan.units) {
         const id = classIds[u.part];
-        const glyph = (u.part === 0 && pick?.glyph) || classIcon(id);
-        const color = (u.part === 0 && pick?.color) || K.out.iconColor || lighten(vivid(inp.colors[u.part] ?? K.args.pal.base), 0.3);
+        const pk = clsPick(id, u.part === 0);
+        const glyph = pk?.glyph ?? classIcon(id);
+        const color = pk?.color ?? K.out.iconColor ?? lighten(vivid(inp.colors[u.part] ?? K.args.pal.base), 0.3);
+        used.icon[`cls:${id}`] = color;
         if (u.part === 0) used.icon.class = color;
-        text += pix(K.out, symbol(defs, u.part === 0 ? pick : undefined, glyph, style, x0 + u.x, c.y + u.y, u.s, color));
+        text += pix(K.out, symbol(defs, pk, glyph, style, x0 + u.x, c.y + u.y, u.s, color));
       }
     } else {
       const s = Math.min(c.w, c.h) * 0.94;
-      const glyph = pick?.glyph ?? classIcon(inp.colorId);
-      const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
+      const pk = clsPick(inp.colorId, true);
+      const glyph = pk?.glyph ?? classIcon(inp.colorId);
+      const color = pk?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
+      used.icon[`cls:${inp.colorId}`] = color;
       used.icon.class = color;
-      text += pix(K.out, symbol(defs, pick, glyph, style, c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, color));
+      text += pix(K.out, symbol(defs, pk, glyph, style, c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, color));
     }
     text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, pick?.size);
   }

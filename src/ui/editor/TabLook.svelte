@@ -15,7 +15,9 @@
   import { app } from '../../store/project.svelte';
   import { router } from '../../app/router.svelte';
   import { L } from '../../app/i18n.svelte';
-  import { colorHex, RESOURCES } from '../../model/catalog';
+  import { COLORS, colorHex, RESOURCES } from '../../model/catalog';
+  import { lighten } from '../../render/color';
+  import { vivid } from '../../render/palette';
   import { STYLES, piece, type PieceKind } from '../../render/elements';
   import { CARD_FONTS } from '../../render/fonts';
   import { cardColors, compose, composeEx, defaultFill, frameOn, type ComposeInfo, type IconChoice, type Look, type PieceSlot } from '../../render/compose';
@@ -28,7 +30,7 @@
   import Glyph from '../common/Glyph.svelte';
   import { pieceThumb } from './thumbs';
   import PieceImagePanel from './PieceImagePanel.svelte';
-  import type { ResourceId } from '../../model/types';
+  import type { ColorId, ResourceId } from '../../model/types';
   import type { EditorState } from './editor.svelte';
 
   let { ed }: { ed: EditorState } = $props();
@@ -132,18 +134,33 @@
     return { ...(first && c ? { glyph: c.glyph, color: c.color, image: c.image } : {}), ...look.icons?.res?.[r] };
   }
 
+  /** Classes cujo símbolo dá para escolher: na carta, as dela; no tema, todas as das cartas dos decks atingidos. */
+  const classes = $derived.by((): ColorId[] => {
+    const cards = theme ? (ed.scope === 'deck' ? [ed.deck] : ed.targets).flatMap((d) => app.cardsOf(d.id)) : [ed.draft];
+    const seen = new Set<ColorId>(ed.draft.colors);
+    for (const c of cards) for (const col of c.colors) seen.add(col);
+    if (!seen.size) seen.add(ed.deck.colors[0]);
+    return (Object.keys(COLORS) as ColorId[]).filter((c) => seen.has(c));
+  });
+  function clsPick(id: ColorId): IconChoice {
+    const first = (ed.draft.colors[0] ?? ed.deck.colors[0]) === id;
+    const c = look.icons?.class;
+    return { ...(first && c ? { glyph: c.glyph, color: c.color, image: c.image } : {}), ...look.icons?.cls?.[id] };
+  }
+
   // ── símbolos próprios (imagem enviada pelo usuário) ──
-  type IconKey = 'class' | 'atk' | 'def' | `res:${ResourceId}`;
+  type IconKey = 'atk' | 'def' | `res:${ResourceId}` | `cls:${ColorId}`;
   let symInput: HTMLInputElement;
-  let symKey: IconKey = 'class';
+  let symKey: IconKey = 'atk';
   let symTick = $state(0);
-  const pickOf = (k: IconKey): IconChoice => (k.startsWith('res:') ? resPick(k.slice(4) as ResourceId) : look.icons?.[k as 'class'] ?? {});
+  const pickOf = (k: IconKey): IconChoice => (k.startsWith('res:') ? resPick(k.slice(4) as ResourceId) : k.startsWith('cls:') ? clsPick(k.slice(4) as ColorId) : look.icons?.[k as 'atk'] ?? {});
   function writeIcon(k: IconKey, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []) {
     if (k.startsWith('res:')) ed.setResIcon(k.slice(4), patch, remove);
-    else ed.setIcon(k as 'class', patch, remove);
+    else if (k.startsWith('cls:')) ed.setClsIcon(k.slice(4), patch, remove);
+    else ed.setIcon(k as 'atk', patch, remove);
   }
   $effect(() => {
-    const ids = [...(['class', 'atk', 'def'] as const).map((k) => look.icons?.[k]?.image?.mediaId), look.icons?.cost?.image?.mediaId, ...Object.values(look.icons?.res ?? {}).map((i) => i?.image?.mediaId)].filter(Boolean) as string[];
+    const ids = [...(['class', 'atk', 'def'] as const).map((k) => look.icons?.[k]?.image?.mediaId), look.icons?.cost?.image?.mediaId, ...Object.values(look.icons?.res ?? {}).map((i) => i?.image?.mediaId), ...Object.values(look.icons?.cls ?? {}).map((i) => i?.image?.mediaId)].filter(Boolean) as string[];
     if (ids.some((id) => !mediaUrl(id))) void ensureAll(ids).then(() => symTick++);
   });
   const symUrl = (id: string) => { void symTick; return mediaUrl(id); };
@@ -452,24 +469,21 @@
     <input type="file" accept="image/png,image/webp,image/svg+xml" hidden bind:this={symInput} onchange={(e) => uploadSymbol((e.currentTarget as HTMLInputElement).files)} />
     <div class="field">
       <span>{L('Qual símbolo', 'Which symbol')}</span>
-      {#if theme && resources.length > 1}
-        <span class="muted small">{L('Há um símbolo para cada recurso: cada carta mostra o do recurso que ela custa.', 'There is one symbol per resource: each card shows the one for the resource it costs.')}</span>
+      {#if theme && resources.length + classes.length > 2}
+        <span class="muted small">{L('Há um símbolo para cada recurso e para cada classe: cada carta mostra os do recurso que ela custa e da classe dela.', 'There is one symbol per resource and per class: each card shows the ones for the resource it costs and for its class.')}</span>
       {/if}
       <div class="pieces">
         {#each resources as r (r)}
           {@render picker(`res:${r}`, `${L('Custo', 'Cost')} — ${RESOURCES[r].name[app.lang]}`, resourceChoices(r), used.icon[`res:${r}`] ?? resPick(r).color ?? RESOURCE_COLORS[r])}
         {/each}
-        {#if ed.scope !== 'collection'}
-          {@render picker('class', L('Classe', 'Class') + (ed.draft.colors.length > 1 && look.icons?.classMode !== 'primeira' ? L(' (1ª classe)', ' (1st class)') : ''), classChoices(ed.draft.colors[0] ?? ed.deck.colors[0]), hex(used.icon.class, '#e8dcc4'))}
-        {/if}
+        {#each classes as c (c)}
+          {@render picker(`cls:${c}`, `${L('Classe', 'Class')} — ${COLORS[c].classes[app.lang]}`, classChoices(c), hex(clsPick(c).color ?? used.icon[`cls:${c}`], lighten(vivid(colorHex(c)), 0.3)))}
+        {/each}
         {#if ed.draft.stats || theme}
           {@render picker('atk', L('Ataque', 'Attack'), ATK_CHOICES, hex(used.icon.atk, '#d3dae3'))}
           {@render picker('def', L('Defesa', 'Defense'), DEF_CHOICES, hex(used.icon.def, '#d3dae3'))}
         {/if}
       </div>
-      {#if ed.scope === 'collection'}
-        <span class="muted small">{L('O símbolo de classe é de cada deck: escolha em “Editar este deck”.', 'The class symbol belongs to each deck: choose it under “Edit this deck”.')}</span>
-      {/if}
     </div>
     {#if ed.draft.colors.length > 1}
       <label class="toggle"><input type="checkbox" checked={look.icons?.classMode !== 'primeira'} onchange={(e) => ed.setIconOption('classMode', (e.currentTarget as HTMLInputElement).checked ? 'todas' : 'primeira')} />
