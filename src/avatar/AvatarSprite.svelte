@@ -37,22 +37,32 @@
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = Math.max(0, 0.3 + 0.3 * Math.sin(t * 2.4) + 0.08 * Math.sin(t * 13));
       ctx.drawImage(s.glow, f * s.size, row * s.size, s.size, s.size, 0, 0, s.size, s.size);
-      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
+      // fagulhas: sobem dos veios e se apagam
+      const pts = pixels(s, s.glow, f, row), n = pts.length / 2;
+      for (let i = 0; n && i < 5; i++) {
+        const life = 0.9 + rnd(i, 7) * 0.8, clock = t + rnd(i, 8) * life, age = (clock % life) / life;
+        const k = Math.floor(rnd(i, Math.floor(clock / life) + 3) * n);
+        ctx.globalAlpha = 0.9 * (1 - age);
+        ctx.fillStyle = age < 0.4 ? '#ffd27a' : '#ff5a2a';
+        ctx.fillRect(Math.round(pts[k * 2] + Math.sin((t + i) * 3) * age * 2), Math.round(pts[k * 2 + 1] - age * (7 + rnd(i, 9) * 6)), 1, 1);
+      }
+      ctx.globalAlpha = 1;
     }
     if (s.fx) magic(ctx, s, f, row);
   }
 
   // ───── magia imbuída na arma: aura, chamas, fumaça ou faíscas que nascem dos pixels da arma ─────
-  const points = new WeakMap<Sheet, Map<number, Int16Array>>();
-  /** Pixels da arma no quadro (x, y, x, y…). */
-  function weaponPixels(s: Sheet, f: number, row: number): Int16Array {
-    let per = points.get(s);
-    if (!per) { per = new Map(); points.set(s, per); }
+  const points = new WeakMap<HTMLCanvasElement, Map<number, Int16Array>>();
+  const weaponPixels = (s: Sheet, f: number, row: number) => pixels(s, s.fx!.mask, f, row);
+  /** Pixels de uma camada (a arma, os veios de brasa) no quadro: x, y, x, y… */
+  function pixels(s: Sheet, mask: HTMLCanvasElement, f: number, row: number): Int16Array {
+    let per = points.get(mask);
+    if (!per) { per = new Map(); points.set(mask, per); }
     const key = row * 100 + f;
     let pts = per.get(key);
     if (!pts) {
-      const d = s.fx!.mask.getContext('2d', { willReadFrequently: true })!.getImageData(f * s.size, row * s.size, s.size, s.size).data;
+      const d = mask.getContext('2d', { willReadFrequently: true })!.getImageData(f * s.size, row * s.size, s.size, s.size).data;
       const out: number[] = [];
       for (let y = 0; y < s.size; y++) for (let x = 0; x < s.size; x++) if (d[(y * s.size + x) * 4 + 3] > 60) out.push(x, y);
       pts = Int16Array.from(out);

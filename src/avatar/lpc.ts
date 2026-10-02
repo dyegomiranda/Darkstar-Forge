@@ -7,6 +7,7 @@
  * tools/lpc/montar.py). Créditos dos artistas: src/data/lpc-credits.json.
  */
 import raw from '../data/lpc.json';
+import { cover, EMBER, forge, FORGES } from './forge';
 
 export type Body = 'male' | 'female' | 'muscular';
 export type Anim = 'idle' | 'walk' | 'slash' | 'thrust' | 'shoot' | 'spellcast' | 'hurt';
@@ -17,7 +18,7 @@ export type Material = 'body' | 'hair' | 'cloth' | 'metal' | 'eye';
 /** Efeitos de "magia imbuída" de uma arma. */
 export type FxKind = 'aura' | 'flame' | 'smoke' | 'sparks';
 /** Uma peça vestida: qual, a cor, e (armas e escudos) a tinta do metal e o efeito mágico. */
-export interface Part { id: string; color?: string; tint?: string; fx?: FxKind; fxColor?: string }
+export interface Part { id: string; color?: string; tint?: string; fx?: FxKind; fxColor?: string; /** Feitio de conjunto (daédrico, ébano…): o trabalho próprio da peça, que fica mesmo trocando a cor. */ style?: string }
 
 /** A aparência escolhida pelo jogador (é o que a ficha guarda). */
 export interface Avatar {
@@ -118,6 +119,23 @@ export function colorsOf(item: Item, slot?: SlotId): { name: string; hex: string
   if (!mat || !LPC.palettes[mat]) return [];
   return Object.entries(LPC.palettes[mat].colors).map(([name, ramp]) => ({ name, hex: ramp[Math.min(3, ramp.length - 1)] }));
 }
+/**
+ * Ordem de mostruário: primeiro os neutros (do preto ao branco), depois as cores na ordem do
+ * arco-íris (vermelho, laranja, amarelo, verde, azul, roxo, rosa) e, dentro de cada uma, do escuro ao claro.
+ */
+export function spectrum<T>(list: T[], hex: (t: T) => string): T[] {
+  const key = (h: string): [number, number] => {
+    const m = /#([0-9a-f]{6})/i.exec(h);
+    if (!m) return [99, 0];
+    const [r, g, b] = rgb('#' + m[1]).map((v) => v / 255);
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    if (s < 0.16 || l < 0.05 || l > 0.96) return [-1, l];
+    const hue = (mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60;
+    return [Math.floor(((hue + 15) % 360) / 30), l];
+  };
+  return list.map((t) => ({ t, k: key(hex(t)) })).sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1]).map((x) => x.t);
+}
 export const swatch = (mat: Material, name: string) => { const r = LPC.palettes[mat].colors[name]; return r ? r[Math.min(3, r.length - 1)] : '#888'; };
 
 export const defaultAvatar = (body: Body = 'male'): Avatar => ({
@@ -196,7 +214,7 @@ function recolor(im: HTMLImageElement, maps: { from: string[]; to: string[] }[])
 
 // ───────────── montagem ─────────────
 
-interface Draw { rel: string; z: number; size: number; hold0: boolean; maps: { from: string[]; to: string[] }[]; slot?: SlotId; alpha?: number; tint?: { ramp: string[]; paint: boolean } }
+interface Draw { rel: string; z: number; size: number; hold0: boolean; maps: { from: string[]; to: string[] }[]; slot?: SlotId; alpha?: number; tint?: { ramp: string[]; paint: boolean }; style?: { name: string; ramp: string[] } }
 
 function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined, ownSkin = false): Draw[] {
   const pick = (a: Anim) => {
@@ -255,7 +273,11 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
     // peças do rosto humano não vão em cabeça de outra raça
     if (head && HUMAN_FACE.includes(s.id)) continue;
     const tint = part?.tint && TINTS[part.tint] && TINTABLE.includes(s.id) ? { ramp: TINTS[part.tint].ramp, paint: s.id === 'shield' } : undefined;
-    draws.push(...drawsOf(item, av, anim, part?.color, OWN_SKIN.includes(s.id)).map((d) => ({ ...d, slot: s.id, tint })));
+    // feitio de conjunto: precisa dos tons do metal da peça para trabalhar em cima deles
+    const mat = item.recolors?.find((r) => r.material === 'metal' || r.material === 'cloth')?.material;
+    const tones = mat ? LPC.palettes[mat].colors[part?.color ?? ''] ?? LPC.palettes[mat].colors[LPC.palettes[mat].base] : undefined;
+    const style = part?.style && FORGES[part.style] && tones ? { name: part.style, ramp: tones } : undefined;
+    draws.push(...drawsOf(item, av, anim, part?.color, OWN_SKIN.includes(s.id)).map((d) => ({ ...d, slot: s.id, tint, style })));
     if (item.ammo && anim === 'shoot') draws.push(...drawsOf(LPC.fixed.ammo, av, anim, undefined));
   }
   draws.sort((a, b) => a.z - b.z);
@@ -309,8 +331,21 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
       for (let p = 0; p < under.length; p++) if (under[p]) data.data[p * 4 + 3] = 0;
       t.putImageData(data, 0, 0);
       ctx.drawImage(t.canvas, 0, 0);
+    } else if (d.style && d.slot) {
+      const t = layer();
+      paint(t, d, im);
+      forge(t, d.slot, d.style.name, d.style.ramp, frames, rows, size);
+      ctx.drawImage(t.canvas, 0, 0);
     } else paint(ctx, d, im);
   });
+  // luvas: cobrem a mão inteira (a peça do acervo é só um pedaço), no material e na cor da luva
+  const gl = av.parts.hands, glove = itemOf('hands', gl?.id);
+  if (glove?.id === 'arms_gloves' && draws.some((d, i) => d.slot === 'hands' && imgs[i])) {
+    const pal = LPC.palettes.metal, m = layer();
+    draws.forEach((d, i) => { if (d.slot === 'hands' && imgs[i]) paint(m, d, imgs[i]!); });
+    const skin = LPC.palettes.body.colors[av.skin] ?? LPC.palettes.body.colors[LPC.palettes.body.base];
+    cover(ctx as CanvasRenderingContext2D, m, skin, pal.colors[gl?.color ?? ''] ?? pal.colors[pal.base], size);
+  }
   // arma com magia imbuída: guarda só os pixels da arma, para o efeito nascer deles
   const wp = av.parts.weapon;
   let fx: Sheet['fx'];
@@ -322,8 +357,8 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
   // armadura daédrica: os veios de brasa (os tons 2 e 6 do metal) ficam numa camada à parte, que pulsa
   let glow: HTMLCanvasElement | undefined;
   const ember = LPC.palettes.metal.colors.daedric;
-  if (ember && Object.values(av.parts).some((p) => p?.color === 'daedric')) {
-    const veins = [ember[1], ember[5]].map(rgb);
+  if (ember && Object.values(av.parts).some((p) => p?.color === 'daedric' || p?.style === 'daedric')) {
+    const veins = [ember[1], ember[5], EMBER].map(rgb);
     const src = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     const g = layer(), data = g.createImageData(canvas.width, canvas.height), d = data.data;
     let any = false;

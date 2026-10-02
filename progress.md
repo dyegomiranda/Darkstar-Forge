@@ -1,8 +1,16 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.3: abertura com falha de tela, logotipo novo, Daédrico com veios de brasa, categoria Mãos)
+**Atualizado:** 02/10/2026 (versão 3.4: conjuntos com feitio próprio, luvas inteiras, paletas em ordem, logotipo novo)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.4 (02/10/2026)
+
+- [x] Conjuntos de placas com feitio próprio, trabalhado em cima da peça e quadro a quadro: Daédrico (espinhos, runa no peito, veios e fagulhas de brasa), Ébano (friso e faixas), Sangue de dragão (escamas), Guardião do gelo (cristais), Celestial (sol), Paladino (cruz), Senhor dos ossos (costelas), Cavaleiro do vazio (gema)
+- [x] O feitio fica na peça mesmo trocando a cor; escolher o modelo comum tira o feitio
+- [x] Luvas cobrem a mão inteira e o começo do antebraço, na cor da luva
+- [x] Paletas em ordem de mostruário (neutros, depois o arco-íris, do escuro ao claro); 5 castanhos quase pretos para o cabelo
+- [x] Abertura: logotipo novo a partir do herói Djabo (com guitarra), fantasma roxo no nome, conjunto menor; a saída não depende mais da animação
 
 ## Versão 3.3 (02/10/2026)
 

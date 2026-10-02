@@ -1,6 +1,6 @@
 <!--
   Tela de abertura: o logotipo de quem fez o jogo, numa tela velha que liga, falha e
-  desliga. Tudo é desenhado numa grade de 480 × 270 (a mesma da arte do jogo) e
+  desliga. Tudo é desenhado numa grade de 640 × 360 e
   ampliado sem suavizar. Some sozinha; qualquer clique ou tecla pula na hora.
 -->
 <script lang="ts">
@@ -10,9 +10,9 @@
   let cv = $state<HTMLCanvasElement>();
   let px = $state(4);
 
-  const W = 480, H = 270;
-  /** Vermelho sangue do nome, de cima para baixo, e o "fantasma" ciano da falha. */
-  const BLOOD = ['#a80f1a', '#8c0a14', '#8c0a14', '#6c060e'], GHOST = '#1fb9c4';
+  const W = 640, H = 360;
+  /** Vermelho sangue do nome, de cima para baixo, e o "fantasma" roxo da falha. */
+  const BLOOD = ['#a80f1a', '#8c0a14', '#8c0a14', '#6c060e'], GHOST = '#9a4dff';
   /** Tempo na tela. (Para conferir o desenho com calma: sessionStorage 'splash-hold' segura a abertura.) */
   /**
    * "Djabo" em letra de terminal antigo: cada letra tem 8 pontos de largura e 13 linhas
@@ -59,8 +59,8 @@
     }
 
     function layout(img: HTMLImageElement | null) {
-      // "Djabo": letra de terminal inclinada, ampliada 4× (pontos grandes, como numa tela antiga)
-      const K = 4, LEAN = 3, ROWS = 13, CAP = 10;
+      // "Djabo": letra de terminal inclinada, ampliada 3× (pontos grandes, como numa tela antiga)
+      const K = 3, LEAN = 3, ROWS = 13, CAP = 10;
       const m = { w: NAME.length * 8, h: ROWS, on: (x: number, y: number) => !!(NAME[x >> 3][y] & (0x80 >> (x & 7))) };
       const lean = Math.ceil(m.h / LEAN);
       const w = (m.w + lean) * K, h = m.h * K;
@@ -73,7 +73,7 @@
         ghost.fillStyle = GHOST;
         ghost.fillRect(sx, y * K, K, K);
       }
-      const iw = img?.width ?? 0, ih = img?.height ?? 0, GAP = 2;
+      const iw = img?.width ?? 0, ih = img?.height ?? 0, GAP = 6;
       const gx = Math.round((W - (iw + GAP + w)) / 2), top = Math.round((H - (ih + 26)) / 2);
       base.clearRect(0, 0, W, H);
       if (img) base.drawImage(img, gx, top + 26);
@@ -88,7 +88,7 @@
     // ───── a falha: sorteada de novo a cada ~55 ms ─────
     const rnd = (a: number, b: number) => a + Math.random() * (b - a);
     let step = -1, bands: { y: number; h: number; dx: number }[] = [], ca = 0, blank = false;
-    let ghostDx = -3, cuts: { y: number; h: number; dx: number }[] = [], swap = false;
+    let ghostDx = -2, cuts: { y: number; h: number; dx: number }[] = [], swap = false;
     let burst = { from: 0, to: 0, amp: 0 }, nextBurst = 1.9;
 
     function shuffle(g: number, t: number) {
@@ -96,12 +96,12 @@
       for (let i = 0, n = Math.round(g * 7); i < n; i++) bands.push({ y: Math.floor(rnd(0, H)), h: Math.ceil(rnd(2, 4 + 30 * g)), dx: Math.round(rnd(-1, 1) * g * 46) });
       ca = Math.round(g * rnd(1, 5));
       blank = t < 0.75 && Math.random() < 0.22;
-      // o nome falha sozinho, mesmo com a tela calma: o fantasma ciano treme e fatias das letras escorregam
+      // o nome falha sozinho, mesmo com a tela calma: o fantasma roxo treme e fatias das letras escorregam
       const r = Math.random();
-      ghostDx = r < 0.16 || g > 0.3 ? Math.round(rnd(-7, 6)) : -3;
+      ghostDx = r < 0.16 || g > 0.3 ? Math.round(rnd(-6, 5)) : -2;
       swap = g > 0.5 && Math.random() < 0.3;
       cuts = [];
-      if (name && (r > 0.86 || g > 0.25)) for (let i = 0, n = 1 + Math.floor(rnd(0, 3)); i < n; i++) cuts.push({ y: 4 * Math.floor(rnd(0, name.h / 4 - 1)), h: 4 * Math.ceil(rnd(0, 3)), dx: 4 * Math.round(rnd(-4, 4)) });
+      if (name && (r > 0.86 || g > 0.25)) for (let i = 0, n = 1 + Math.floor(rnd(0, 3)); i < n; i++) cuts.push({ y: 3 * Math.floor(rnd(0, name.h / 3 - 1)), h: 3 * Math.ceil(rnd(0, 3)), dx: 3 * Math.round(rnd(-4, 4)) });
     }
 
     function drawName() {
@@ -140,7 +140,7 @@
       const t = (now - t0) / 1000;
       if (t >= STAY && exitAt === Infinity) leave(false);
       const e = exitAt === Infinity ? -1 : Math.min(1, (now - exitAt) / exitLen);
-      if (e >= 1) { over = true; cancelAnimationFrame(raf); ondone(); return; }
+      if (e >= 1) { finish(); return; }
 
       // força da falha: forte ao ligar, some aos poucos, volta em rajadas curtas e no desligar
       let g = t < 0.4 ? 1 : t < 1.5 ? Math.pow(1 - (t - 0.4) / 1.1, 2) : 0;
@@ -193,12 +193,21 @@
       if (e > 0.4) { const p = (e - 0.4) / 0.6; if (p < 0.6) shutter(Math.pow(1 - p / 0.6, 2), 1); else shutter(0, 1 - (p - 0.6) / 0.4); }
     }
 
+    function finish() {
+      if (over) return;
+      over = true;
+      cancelAnimationFrame(raf);
+      ondone();
+    }
     function leave(fast: boolean) {
       if (exitAt !== Infinity) return;
-      if (!t0) { over = true; ondone(); return; }
+      if (!t0) { finish(); return; }
       exitAt = performance.now();
       exitLen = fast ? 300 : 620;
+      // a animação para quando a janela não está à vista: a saída não pode depender dela
+      setTimeout(finish, exitLen + 120);
     }
+    const guard = Number.isFinite(STAY) ? setTimeout(() => leave(false), STAY * 1000 + 1600) : undefined;
     const skip = (e: Event) => { e.preventDefault(); e.stopPropagation(); leave(true); };
 
     // espera a figura e as fontes (sem travar a abertura se algo faltar)
@@ -217,7 +226,7 @@
 
     addEventListener('keydown', skip, true);
     cv!.parentElement!.addEventListener('pointerdown', skip);
-    return () => { over = true; cancelAnimationFrame(raf); removeEventListener('keydown', skip, true); removeEventListener('resize', fit); };
+    return () => { over = true; clearTimeout(guard); cancelAnimationFrame(raf); removeEventListener('keydown', skip, true); removeEventListener('resize', fit); };
   });
 </script>
 
