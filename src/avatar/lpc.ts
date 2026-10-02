@@ -31,6 +31,8 @@ export interface Avatar {
   head?: string;
   /** Criaturas: corpo especial (esqueleto, zumbi) no lugar do corpo comum. */
   frame?: string;
+  /** Raça de cabeça humana com traços próprios (demônio: chifres, cauda, pele e olhos). */
+  race?: string;
 }
 
 interface Layer { z: number; paths: Partial<Record<Body, string>>; anims: Anim[]; fmt: 'recolor' | 'variant' | 'file'; custom?: Anim; size?: number }
@@ -97,10 +99,15 @@ export const RACE_HEADS: { id: string; pt: string; en: string; skin?: string; fr
   { id: 'orc', pt: 'Orc', en: 'Orc', skin: 'green' }, { id: 'goblin', pt: 'Goblin', en: 'Goblin', skin: 'bright_green' }, { id: 'troll', pt: 'Troll', en: 'Troll', skin: 'dark_green' },
   { id: 'lizard', pt: 'Draconato', en: 'Dragonborn', skin: 'green' }, { id: 'vampire', pt: 'Vampiro', en: 'Vampire', skin: 'pale_green' },
   { id: 'minotaur', pt: 'Minotauro', en: 'Minotaur', skin: 'fur_brown' }, { id: 'wolf', pt: 'Lobisomem', en: 'Werewolf', skin: 'fur_grey' }, { id: 'boarman', pt: 'Homem-javali', en: 'Boarman', skin: 'fur_brown' },
-  { id: 'wartotaur', pt: 'Javali de guerra', en: 'Wartotaur', skin: 'fur_brown' }, { id: 'skeleton', pt: 'Esqueleto', en: 'Skeleton', frame: 'skeleton' }, { id: 'zombie', pt: 'Zumbi', en: 'Zombie', skin: 'zombie', frame: 'zombie' },
+  { id: 'wartotaur', pt: 'Javali de guerra', en: 'Wartotaur', skin: 'fur_brown' }, { id: 'skeleton', pt: 'Esqueleto', en: 'Skeleton', skin: 'bone', frame: 'skeleton' }, { id: 'zombie', pt: 'Zumbi', en: 'Zombie', skin: 'zombie', frame: 'zombie' },
   { id: 'frankenstein', pt: 'Constructo', en: 'Flesh golem', skin: 'zombie_green' }, { id: 'jack', pt: 'Cabeça de abóbora', en: 'Pumpkin head' }, { id: 'alien', pt: 'Ser do vazio', en: 'Void being', skin: 'lavender' },
   { id: 'rabbit', pt: 'Coelho', en: 'Rabbitfolk', skin: 'fur_white' }, { id: 'rat', pt: 'Rato', en: 'Ratfolk', skin: 'fur_grey' }, { id: 'mouse', pt: 'Camundongo', en: 'Mousefolk', skin: 'fur_tan' },
   { id: 'pig', pt: 'Porco', en: 'Pigfolk', skin: 'light' }, { id: 'sheep', pt: 'Ovelha', en: 'Sheepfolk', skin: 'fur_white' },
+];
+
+/** Raças de cabeça humana: o que as distingue são a pele, os olhos e as partes do corpo (chifres, cauda…). */
+export const RACE_LOOKS: { id: string; pt: string; en: string; skin: string; eyes: string; parts: Partial<Record<SlotId, Part>> }[] = [
+  { id: 'demon', pt: 'Demônio', en: 'Demon', skin: 'demon', eyes: 'infernal', parts: { horns: { id: 'head_horns_curled' }, tail: { id: 'tail_lizard' } } },
 ];
 
 /** Cores que uma peça aceita: variantes prontas ou a paleta do material. `slot` diz se a peça de pele pode ter cor própria. */
@@ -204,7 +211,8 @@ function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined, 
     const pal = LPC.palettes[r.material];
     // partes do corpo (chifres, asas, cauda) usam a cor escolhida para elas; sem escolha, a da pele
     const to = r.material === 'body' ? (ownSkin && color && pal.colors[color] ? color : av.skin) : r.material === 'eye' ? av.eyes : color ?? pal.base;
-    return { from: r.source ?? pal.colors[r.base ?? pal.base] ?? [], to: pal.colors[to] ?? pal.colors[pal.base] };
+    // (algumas cabeças citam uma cor-base que a paleta não tem: foram desenhadas na cor-base comum)
+    return { from: r.source ?? pal.colors[r.base ?? pal.base] ?? pal.colors[pal.base] ?? [], to: pal.colors[to] ?? pal.colors[pal.base] };
   }).filter((m) => m.from !== m.to);
   // olhos de monstro: o 4º tom da cor pinta o branco do olho (todo negro, todo branco, fundo escuro…)
   const eye = LPC.palettes.eye.colors[av.eyes];
@@ -214,7 +222,7 @@ function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined, 
     const rel = l.custom
       ? (l.fmt === 'variant' ? `${p}${variant}.png` : `${p.replace(/\/$/, '')}.png`)
       : (l.fmt === 'variant' ? `${p}${src}/${variant}.png` : `${p}${src}.png`);
-    return { rel, z: l.z, size: l.size ?? LPC.frame, hold0, maps: l.fmt === 'recolor' ? maps : [], alpha: item.alpha };
+    return { rel, z: l.z, size: l.size ?? LPC.frame, hold0, maps: l.fmt === 'recolor' || item.skin ? maps : [], alpha: item.alpha };
   });
 }
 

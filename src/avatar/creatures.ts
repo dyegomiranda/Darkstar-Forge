@@ -24,7 +24,7 @@ export const CREATURES: Record<string, Creature> = {
   // Esqueleto: ossos, espada e escudo
   'death-skull': {
     attack: 'slash',
-    avatar: { body: 'male', skin: 'light', eyes: 'red', frame: 'skeleton', head: 'skeleton', parts: { shield: { id: 'shield_round', color: 'silver' }, weapon: { id: 'weapon_sword_arming', color: 'iron' } } },
+    avatar: { body: 'male', skin: 'bone', eyes: 'red', frame: 'skeleton', head: 'skeleton', parts: { shield: { id: 'shield_round', color: 'silver' }, weapon: { id: 'weapon_sword_arming', color: 'iron' } } },
   },
   // Demônio: pele rubra, chifres, asas e cauda
   'daemon-skull': {

@@ -1,13 +1,14 @@
 <!--
   Aparência do herói: à esquerda as categorias (corpo, rosto, roupas, armas…); no
-  meio, uma caixinha por opção, já mostrando o herói com ela; embaixo, fixas, as
-  cores e os efeitos da peça escolhida (assim as caixinhas não mudam de lugar).
+  meio, uma caixinha por opção, já mostrando o herói com ela; logo abaixo da última
+  fileira, as cores e os efeitos da peça escolhida (em listas longas ficam presas
+  ao pé da tela, e as caixinhas rolam por cima).
 -->
 <script lang="ts">
   import { Ban, User, Scissors, Smile, Ear, Shirt, Footprints, Hand, Crown, Glasses, Gem, Shield, Sword, Feather, Backpack, Check, Sparkles, Ribbon, Wind, Rabbit, Eye, Minus, Swords, Flame } from '@lucide/svelte';
   import { L } from '../app/i18n.svelte';
   import DollThumb from './DollThumb.svelte';
-  import { colorsOf, FX_COLORS, FX_KINDS, HUMAN_FACE, itemOf, LPC, OWN_SKIN, RACE_HEADS, SKINS, swatch, TINTABLE, TINTS, type Avatar, type Body, type Dir, type Part, type SlotId } from './lpc';
+  import { colorsOf, FX_COLORS, FX_KINDS, HUMAN_FACE, itemOf, LPC, OWN_SKIN, RACE_HEADS, RACE_LOOKS, SKINS, swatch, TINTABLE, TINTS, type Avatar, type Body, type Dir, type Part, type SlotId } from './lpc';
   import { SETS, wearSet, wearing } from './sets';
 
   let { avatar, onchange }: { avatar: Avatar; onchange: (a: Avatar) => void } = $props();
@@ -43,7 +44,7 @@
   /** Categorias que este boneco pode usar (barba e bigode: só no corpo masculino; rosto humano: só em cabeça humana). */
   function usable(id: Cat): boolean {
     if (id === 'body' || id === 'sets') return true;
-    if (id === 'look') return !avatar.head;
+    if (id === 'look') return true;
     if (avatar.head && HUMAN_FACE.includes(id)) return false;
     if (avatar.body === 'female' && (id === 'beard' || id === 'mustache')) return false;
     return LPC.slots.find((s) => s.id === id)!.items.some((i) => i.bodies.includes(avatar.body));
@@ -87,6 +88,21 @@
   /** Troca a raça do boneco: a cabeça (e o corpo, no esqueleto e no zumbi) e a pele que combina. */
   const withRace = (id: string | null): Avatar => {
     const a = clone();
+    // sai o que era da raça de cabeça humana anterior (chifres, cauda, olhos…)
+    const old = RACE_LOOKS.find((x) => x.id === a.race);
+    if (old) {
+      for (const k of Object.keys(old.parts) as SlotId[]) if (a.parts[k]?.id === old.parts[k]!.id) delete a.parts[k];
+      if (a.eyes === old.eyes) a.eyes = 'brown';
+      if (a.skin === old.skin) a.skin = 'light';
+      delete a.race;
+    }
+    const look = RACE_LOOKS.find((x) => x.id === id);
+    if (look) {
+      delete a.head; delete a.frame;
+      a.race = look.id; a.skin = look.skin; a.eyes = look.eyes;
+      for (const [k, v] of Object.entries(look.parts) as [SlotId, Part][]) a.parts[k] = { ...v };
+      return a;
+    }
     const r = RACE_HEADS.find((x) => x.id === id);
     if (!r) { delete a.head; delete a.frame; if (!SKINS.slice(0, 7).includes(a.skin)) a.skin = 'light'; return a; }
     a.head = r.id;
@@ -96,6 +112,21 @@
   };
   const withFace = (f: string): Avatar => { const a = clone(); if (f === 'neutral') delete a.face; else a.face = f; delete a.parts.eyes; return a; };
   const pick = (id: string | null) => onchange(withPart(id));
+
+  /** As peças dos conjuntos que cabem nesta categoria (cada uma já com o metal ou o tecido do conjunto). */
+  const setPieces = $derived.by(() => {
+    if (!slotId) return [];
+    const seen = new Set<string>();
+    return SETS.flatMap((st) => {
+      const p = st.parts[slotId], it = p ? itemOf(slotId, p.id) : undefined;
+      if (!p || !it?.bodies.includes(avatar.body) || seen.has(p.id + '/' + p.color)) return [];
+      seen.add(p.id + '/' + p.color);
+      return [{ set: st, part: p, item: it }];
+    });
+  });
+  const isPiece = (p: Part) => part?.id === p.id && part?.color === p.color;
+  const withPiece = (p: Part): Avatar => { const a = clone(); if (slotId) a.parts[slotId] = { ...a.parts[slotId], ...p }; return a; };
+  const onPiece = $derived(setPieces.some((x) => isPiece(x.part)));
 
   // cores de olhos: primeiro as de gente, depois as de monstro (têm o branco do olho pintado ou brilham)
   const EYES = Object.entries(LPC.palettes.eye.colors);
@@ -140,13 +171,21 @@
             </button>
           {/each}
         </div>
-        <span class="sub">{L('Raça do boneco', 'Doll race')}</span>
+        <span class="sub">{L('Raça', 'Race')}</span>
         <div class="tiles">
-          <button class="tile" class:on={!avatar.head} onclick={() => onchange(withRace(null))}>
+          <button class="tile" class:on={!avatar.head && !avatar.race} onclick={() => onchange(withRace(null))}>
             <span class="tpic"><DollThumb avatar={withRace(null)} crop={HEAD} px={3} /></span>
             <span class="tname">{L('Humano', 'Human')}</span>
-            {#if !avatar.head}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+            {#if !avatar.head && !avatar.race}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
           </button>
+          {#each RACE_LOOKS as r (r.id)}
+            {@const on = !avatar.head && avatar.race === r.id}
+            <button class="tile" class:on onclick={() => onchange(withRace(r.id))}>
+              <span class="tpic"><DollThumb avatar={withRace(r.id)} crop={HEAD} px={3} /></span>
+              <span class="tname">{L(r.pt, r.en)}</span>
+              {#if on}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+            </button>
+          {/each}
           {#each RACE_HEADS as r (r.id)}
             <button class="tile" class:on={avatar.head === r.id} onclick={() => onchange(withRace(r.id))}>
               <span class="tpic"><DollThumb avatar={withRace(r.id)} crop={HEAD} px={3} /></span>
@@ -156,6 +195,8 @@
           {/each}
         </div>
         <p class="note">{L('Elfos, anões e tieflings usam a cabeça humana: escolha as orelhas, a barba, os chifres e a cauda nas categorias ao lado.', 'Elves, dwarves and tieflings use the human head: pick ears, beard, horns and tail in the categories on the side.')}</p>
+      {:else if cat === 'look' && avatar.head}
+        <p class="note">{L('A cabeça desta raça já vem com os próprios olhos. O olhar e a cor dos olhos valem para as raças de cabeça humana (Humano, Demônio).', 'This race’s head comes with its own eyes. Eye shape and eye color apply to the races with a human head (Human, Demon).')}</p>
       {:else if cat === 'look'}
         <div class="tiles small">
           {#each Object.entries(LPC.fixed.faces) as [fid, f] (fid)}
@@ -191,27 +232,44 @@
         <div class="tiles" class:small={view.crop === FACE}>
           {#if slot.optional}
             <button class="tile none" class:on={!current} onclick={() => pick(null)}>
-              <span class="tpic"><DollThumb avatar={withPart(null)} crop={view.crop} px={view.px} dir={view.dir} /><span class="ban"><Ban size={15} /></span></span>
-              <span class="tname">{L('Nenhum', 'None')}</span>
+              <span class="tpic"><DollThumb avatar={withPart(null)} crop={view.crop} px={view.px} dir={view.dir} />{#if slotId !== 'ears'}<span class="ban"><Ban size={15} /></span>{/if}</span>
+              <span class="tname">{slotId === 'ears' ? L('Humano', 'Human') : L('Nenhum', 'None')}</span>
               {#if !current}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
             </button>
           {/if}
           {#each items as it (it.id)}
-            <button class="tile" class:on={current?.id === it.id} onclick={() => pick(it.id)} title={L(it.pt, it.en)}>
+            {@const on = current?.id === it.id && !onPiece}
+            <button class="tile" class:on onclick={() => pick(it.id)} title={L(it.pt, it.en)}>
               <span class="tpic"><DollThumb avatar={withPart(it.id)} crop={view.crop} px={view.px} dir={view.dir} /></span>
               <span class="tname">{L(it.pt, it.en)}</span>
-              {#if current?.id === it.id}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+              {#if on}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
             </button>
           {/each}
         </div>
+        {#if setPieces.length}
+          <span class="sub">{L('Peças dos conjuntos', 'Set pieces')}</span>
+          <div class="tiles">
+            {#each setPieces as sp (sp.part.id + sp.part.color)}
+              {@const on = isPiece(sp.part)}
+              <button class="tile set" class:on onclick={() => onchange(withPiece(sp.part))} title={L(sp.set.pt, sp.set.en)}>
+                <span class="tpic"><DollThumb avatar={withPiece(sp.part)} crop={view.crop} px={view.px} dir={view.dir} /></span>
+                <span class="tname">{L(sp.set.pt, sp.set.en)}</span>
+                <small>{L(sp.item.pt, sp.item.en)}</small>
+                {#if on}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
       {/if}
     </div>
 
-    <!-- cores e efeitos: sempre embaixo, para as caixinhas não mudarem de lugar -->
+    <!-- cores e efeitos: logo abaixo da última fileira (a lista encolhe até o conteúdo; quando é longa, rola e isto fica no pé) -->
     <footer class="foot">
       {#if cat === 'body'}
         <div class="pal"><span>{L('Pele', 'Skin')}</span>
           <div class="sw">{#each SKINS as c}<button class:on={avatar.skin === c} style="--k:{swatch('body', c)}" title={c} aria-label={c} onclick={() => set((a) => { a.skin = c; })}></button>{/each}</div></div>
+      {:else if cat === 'look' && avatar.head}
+        <p class="hint">{L('Sem cores para escolher nesta raça.', 'No colors to pick for this race.')}</p>
       {:else if cat === 'look'}
         {#each eyeSets as es}
           <div class="pal"><span>{L('Cor dos olhos', 'Eye color')} — {L(es.pt, es.en)}</span>
@@ -270,7 +328,7 @@
   .phead { display: flex; align-items: baseline; gap: 10px; flex: none; flex-wrap: wrap; }
   .phead h3 { font: 400 15px var(--pixel); letter-spacing: .06em; color: var(--text); }
   .phead small { color: var(--muted); font-size: 12px; }
-  .scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px; }
+  .scroll { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px; }
   .sub { font: 400 10px var(--pixel); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
   .note { margin: 0; font-size: 12.5px; color: var(--muted); }
   .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
@@ -287,6 +345,7 @@
   .tile.set .tname { min-height: 0; font: 400 11px var(--pixel); letter-spacing: .04em; color: var(--text); margin-top: 2px; }
   .tile.set.on .tname { color: var(--accent-2); }
   .tile.set small { font-size: 10.5px; line-height: 1.3; color: var(--muted); text-align: center; min-height: 2.6em; }
+  .sub:not(:first-child) { margin-top: 6px; }
   .tcheck { position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; display: grid; place-items: center; background: var(--accent); color: #1a1308; z-index: 1; }
   .ban { position: absolute; right: 6px; bottom: 6px; color: var(--muted); }
 

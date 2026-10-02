@@ -192,6 +192,13 @@ class ProjectState {
       const playable = [...p.decks].sort((a, b) => a.order - b.order).filter((d) => Object.values(this.cards).some((c) => c.deckId === d.id && c.game));
       for (const c of p.characters) upgradeHero(c, playable);
     }
+    // a pele agora pinta o boneco inteiro: os esqueletos que já existiam continuam cor de osso
+    const BONE_MARK = 'skeleton-skin-1';
+    if (!p.seeded?.includes(BONE_MARK)) {
+      p.seeded = [...(p.seeded ?? []), BONE_MARK];
+      changed = true;
+      for (const c of p.characters) if (c.avatar?.frame === 'skeleton') c.avatar.skin = 'bone';
+    }
     // o jogo passou a se chamar Void Sun: os nomes que ainda eram os de fábrica acompanham (o que o usuário renomeou fica)
     const NAME_MARK = 'rename-voidsun-1';
     if (!p.seeded?.includes(NAME_MARK)) {

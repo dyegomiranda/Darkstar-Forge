@@ -135,11 +135,12 @@
             {/each}
           </div>
         </div>
-        <div class="row3" class:dim={s.display !== 'windowed' || !inApp}>
-          <div class="lbl"><b>{L('Resolução', 'Resolution')}</b><small>{L('tamanho da janela no modo “em janela”', 'window size in “windowed” mode')} · {L('tela', 'screen')}: {settings.screen.width}×{settings.screen.height}</small></div>
+        <!-- em tela cheia e maximizado o jogo usa a tela inteira; escolher uma resolução passa para janela desse tamanho -->
+        <div class="row3" class:dim={!inApp}>
+          <div class="lbl"><b>{L('Resolução', 'Resolution')}</b><small>{!inApp ? L('só no programa instalado', 'only in the installed game') : s.display === 'windowed' ? L('tamanho da janela do jogo', 'size of the game window') : L(`agora o jogo usa a tela inteira (${settings.screen.width} × ${settings.screen.height}); escolher uma resolução passa o jogo para janela desse tamanho`, `the game now uses the whole screen (${settings.screen.width} × ${settings.screen.height}); picking a resolution puts the game in a window of that size`)}</small></div>
           <div class="chips">
             {#each settings.resolutions as r}
-              <button class:on={s.resolution === r} disabled={s.display !== 'windowed' || !inApp} onclick={() => (s.resolution = r)}>{r.replace('x', ' × ')}</button>
+              <button class:on={s.display === 'windowed' && s.resolution === r} disabled={!inApp} onclick={() => { s.resolution = r; s.display = 'windowed'; }}>{r.replace('x', ' × ')}</button>
             {/each}
           </div>
         </div>
