@@ -9,7 +9,7 @@
   import { onDestroy, tick } from 'svelte';
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { Swords, ArrowLeftRight, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Menu, Flag as FlagIcon, CircleHelp, LogOut, Hourglass, Dices, Map as MapIcon, Moon, TrendingUp } from '@lucide/svelte';
+  import { Swords, ArrowLeftRight, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Menu, Flag as FlagIcon, CircleHelp, LogOut, Hourglass, Dices, Map as MapIcon, Moon, TrendingUp, Gauge } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
@@ -53,6 +53,15 @@
   let heroOffFront = $state(saved.heroOffFront === true);
   let showLog = $state(saved.showLog !== false);
   let timeLimit = $state(saved.timeLimit !== false);
+  /** Velocidade das jogadas do oponente: pausas para dar tempo de ler cada carta e ver cada efeito. */
+  type Pace = 'slow' | 'normal' | 'fast';
+  let pace = $state<Pace>(saved.pace === 'slow' || saved.pace === 'fast' ? saved.pace : 'normal');
+  /** k: espaço entre os efeitos; think: pausa antes de cada jogada; card: tempo para ler a carta antes do efeito; shown: tempo da carta na tela; end: pausa antes de encerrar o turno. */
+  const PACES: Record<Pace, { k: number; think: number; card: number; shown: number; end: number }> = {
+    fast: { k: 1, think: 800, card: 1100, shown: 2600, end: 700 },
+    normal: { k: 1.5, think: 1200, card: 2000, shown: 3600, end: 1100 },
+    slow: { k: 2.2, think: 2000, card: 3200, shown: 5000, end: 1800 },
+  };
   let starter = $state<'eu' | 'bot' | 'sorteio'>('sorteio');
   /** Cenário escolhido para o campo ('random' = sorteia a cada partida). */
   let scenePick = $state(typeof saved.scene === 'string' ? saved.scene : 'random');
@@ -66,7 +75,7 @@
   const sceneStyle = $derived(scene.img ? `--scene:url("${new URL(scene.img, document.baseURI).href}")` : '');
   /** Piso de cada casa (varia de casa para casa). */
   const floorOf = (p: number, row: number, col: number) => `url(${floorTile(scene, 1 + p * 100 + (row + 1) * 10 + col)})`;
-  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog, timeLimit, scene: scenePick })); } catch { /* sem armazenamento local */ } });
+  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog, timeLimit, pace, scene: scenePick })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
   const ready = $derived(!!myChar && !!botChar && deckCount(myChar) > 0 && deckCount(botChar) > 0);
@@ -240,11 +249,12 @@
       botBusy = true;
       try {
         await fxDone;
-        await sleep(500);
-        if (g?.pending) { apply(g, botAction($state.snapshot(g) as GameState)); await playFx(); }
+        await sleep(PACES[pace].think * 0.6);
+        if (g?.pending) { apply(g, botAction($state.snapshot(g) as GameState)); await playFx(true); }
       } finally { botBusy = false; }
     }
-    if (g && g.active !== me) void runBot();
+    // o turno passou para o oponente: ele só começa depois que a faixa do turno terminar
+    if (g && g.active !== me) { if (pace !== 'fast') await fxDone; void runBot(); }
   }
 
   // ───────────── limite de tempo: 30 s parado mostra o contador; mais 30 s e perde ─────────────
@@ -292,7 +302,7 @@
     const err = apply(g, a);
     if (err) { say(err, true); return; }
     zoom = null;
-    await playFx();
+    await playFx(true); // a carta do oponente resolve no ritmo dele
     resumeBot?.();
     resumeBot = null;
   }
@@ -374,16 +384,16 @@
       let steps = 0;
       while (alive && g && g.active === foe && g.winner === undefined && steps++ < 40) {
         // espera as animações da jogada anterior terminarem, com uma pausa para dar para acompanhar
-        await sleep(Math.max(0, fxUntil - Date.now()) + 800);
+        await sleep(Math.max(0, fxUntil - Date.now()) + PACES[pace].think);
         if (!g || g.active !== foe) break;
         const a = botAction($state.snapshot(g) as GameState);
-        if (a.t === 'end') await sleep(700); // deixa ver a última carta antes de ela sair da mesa
+        if (a.t === 'end') await sleep(PACES[pace].end); // deixa ver a última carta antes de ela sair da mesa
         if (apply(g, a)) apply(g, { t: 'end' });
-        await playFx();
+        await playFx(true);
         // o bot jogou uma carta e eu posso responder: espera a minha decisão
         if (g?.pending && actor(g) === me) await new Promise<void>((r) => { resumeBot = r; });
       }
-      if (g && g.active === foe && g.winner === undefined && !g.pending) { apply(g, { t: 'end' }); await playFx(); }
+      if (g && g.active === foe && g.winner === undefined && !g.pending) { apply(g, { t: 'end' }); await playFx(true); }
     } finally { botBusy = false; }
   }
 
@@ -575,8 +585,8 @@
 
   const FX_MS: Partial<Record<Fx['k'], number>> = { attack: 420, turn: 1000, xp: 120, gain: 200, level: 1300, react: 1200, countered: 900 };
 
-  /** Mostra o que aconteceu desde a última vez, em sequência. */
-  async function playFx(): Promise<void> {
+  /** Mostra o que aconteceu desde a última vez, em sequência. `foeAct`: é uma jogada do oponente, no ritmo da velocidade escolhida. */
+  async function playFx(foeAct = false): Promise<void> {
     if (!g) return;
     const list = g.fx.filter((e) => e.n > lastFx).map((e) => ({ ...e })) as Fx[];
     if (!list.length) return;
@@ -585,17 +595,20 @@
     const from = lastLine ? g.log.lastIndexOf(lastLine) + 1 : 0;
     const lines = g.log.slice(from).filter((l) => !l.startsWith('—') && !l.includes('XP ('));
     lastLine = g.log[g.log.length - 1] ?? '';
-    if (lines.length) { caption = lines.slice(-2).join('  ·  '); const c = caption; setTimeout(() => { if (caption === c) caption = ''; }, 4200); }
+    const pc = PACES[pace];
+    if (lines.length) { caption = lines.slice(-2).join('  ·  '); const c = caption; setTimeout(() => { if (caption === c) caption = ''; }, 4200 * (foeAct ? pc.k : 1)); }
     // onde cada criatura estava antes da tela mudar (as derrotadas somem)
     const before = new Map<string, DOMRect>();
     for (const e of list) for (const id of idsOf(e)) { const el = elOf(id); if (el) before.set(id, el.getBoundingClientRect()); }
     await tick();
     const rectOf = (id: string) => elOf(id)?.getBoundingClientRect() ?? before.get(id);
-    let t = 0;
+    let t = 0, k = foeAct ? pc.k : 1;
     for (const e of list) {
+      // o meu turno começou: daqui em diante segue no ritmo normal
+      if (e.k === 'turn' && e.p === me) k = 1;
       const at = t;
       setTimeout(() => show(e, rectOf, before), at);
-      t += e.k === 'play' ? (e.p !== me ? 1100 : 150) : FX_MS[e.k] ?? 380;
+      t += e.k === 'play' ? (e.p !== me ? pc.card : 150) : (FX_MS[e.k] ?? 380) * k;
     }
     fxUntil = Date.now() + t + 400;
     fxPlaying++;
@@ -622,7 +635,7 @@
       // a carta do oponente aparece grande ao lado (se eu posso responder, ela já está na janela de resposta)
       case 'play':
         chip.sfx('card');
-        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}`);
+        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}`, '', PACES[pace].shown);
         // cartas que não são um golpe: o boneco conjura (o golpe tem a sua própria animação, logo depois)
         if (!g.defs[e.cardId]?.game.effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
         break;
@@ -839,6 +852,9 @@
         <div class="vs-mid"><span class="vs">VS</span></div>
         {@render side(false)}
       </div>
+      {#snippet paceOpts()}
+        <option value="slow">{L('Lento', 'Slow')}</option><option value="normal">{L('Normal', 'Normal')}</option><option value="fast">{L('Rápido', 'Fast')}</option>
+      {/snippet}
       {#snippet opt(on: boolean, set: (v: boolean) => void, title: string, desc: string, sub = false)}
         <label class="opt" class:on class:sub>
           <input type="checkbox" checked={on} onchange={(e) => set((e.currentTarget as HTMLInputElement).checked)} />
@@ -864,6 +880,8 @@
           </button>
           <label class="starter"><small>{L('Quem começa', 'Who starts')}</small>
             <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
+          <label class="starter" use:tip={L('Velocidade de jogo: quanto tempo o oponente dá para você ler cada carta e ver cada efeito antes da próxima jogada', 'Game speed: how long the opponent gives you to read each card and see each effect before the next play')}><small>{L('Velocidade', 'Speed')}</small>
+            <select class="select-in" bind:value={pace}>{@render paceOpts()}</select></label>
         </div>
         <div class="foot-go">
           <MusicPlayer />
@@ -1269,6 +1287,8 @@
           <button onclick={() => { menuOpen = false; helpOpen = true; }}><CircleHelp size={15} /> {L('Como jogar', 'How to play')}</button>
           <label><input type="checkbox" bind:checked={showLog} /> {L('Mostrar o registro da batalha', 'Show the battle log')}</label>
           <label><input type="checkbox" bind:checked={timeLimit} /> {L('Limite de tempo por jogada', 'Time limit per play')}</label>
+          <label class="gm-sel"><Gauge size={15} /> {L('Velocidade', 'Speed')}
+            <select class="select-in" bind:value={pace}><option value="slow">{L('Lento', 'Slow')}</option><option value="normal">{L('Normal', 'Normal')}</option><option value="fast">{L('Rápido', 'Fast')}</option></select></label>
           <hr />
           <button onclick={() => { menuOpen = false; leave(); }}><LogOut size={15} /> {L('Sair para a seleção (sem resultado)', 'Leave to selection (no result)')}</button>
           <button class="danger" disabled={g.winner !== undefined} onclick={askConcede}><FlagIcon size={15} /> {L('Desistir (você perde)', 'Concede (you lose)')}</button>
@@ -1890,6 +1910,7 @@
   .gmenu button, .gmenu label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; border: 0; background: none; color: var(--text); font: 500 13.5px var(--ui); cursor: pointer; text-align: left; }
   .gmenu button:hover:not(:disabled), .gmenu label:hover { background: var(--surface-2); }
   .gmenu button.danger { color: #ff9c8c; }
+  .gm-sel .select-in { margin-left: auto; width: auto; }
   .gmenu button:disabled { opacity: .4; cursor: default; }
   .gmenu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
   .help { max-width: 560px; }
