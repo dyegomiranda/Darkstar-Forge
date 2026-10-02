@@ -722,6 +722,19 @@
   // ───────────── zoom (a carta cresce ao passar o mouse) ─────────────
   let zoom = $state<{ id: string; x: number; y: number; up: boolean } | null>(null);
   const ZW = 340;
+  /** Mão inicial: a carta cresce no próprio lugar até dar para ler, sem sair da tela. */
+  function growInPlace(e: MouseEvent) {
+    const el = e.currentTarget as HTMLElement;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    // posição sem a transformação em curso (a carta pode estar no meio de uma animação)
+    const box = (el.offsetParent ?? el.parentElement!).getBoundingClientRect();
+    const cx = box.left + el.offsetLeft + w / 2, cy = box.top + el.offsetTop + h / 2;
+    const k = Math.max(1.04, Math.min(400 / w, (innerHeight - 24) / h));
+    const fit = (c: number, half: number, max: number) => Math.min(max - 12 - half, Math.max(12 + half, c)) - c;
+    el.style.setProperty('--k', k.toFixed(3));
+    el.style.setProperty('--tx', `${fit(cx, (w * k) / 2, innerWidth).toFixed(1)}px`);
+    el.style.setProperty('--ty', `${fit(cy, (h * k) / 2, innerHeight).toFixed(1)}px`);
+  }
   function hover(id: string | undefined, e: MouseEvent) {
     if (!id || !app.cards[id]) { zoom = null; return; }
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -1435,7 +1448,7 @@
         </div>
         <div class="hi-cards">
           {#each P.hand as r (r.uid)}
-            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} in:flyIn={{ y: 30, duration: 300 }}>
+            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} onmouseenter={growInPlace} in:flyIn={{ y: 30, duration: 300 }}>
               {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
               {#if discardSel.includes(r.uid)}<span class="drop-tag"><X size={14} /> {L('descartar', 'discard')}</span>{/if}
             </button>
@@ -1896,10 +1909,10 @@
   .hi-head h2 { font-size: clamp(28px, 3vw, 42px); color: #f6ead8; line-height: 1.05; }
   .hi-foe { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
   .hi-cards { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: nowrap; max-width: 100%; }
-  .hi-card { position: relative; width: clamp(120px, 12.2vw, 236px); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; border-radius: 9px; cursor: default; transition: transform .15s, filter .15s; filter: drop-shadow(0 16px 26px rgb(0 0 0 / .75)); }
-  .hi-card:hover { transform: translateY(-10px) scale(1.04); z-index: 2; }
+  .hi-card { position: relative; width: clamp(120px, 12.2vw, 236px); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; border-radius: 9px; cursor: default; transition: transform .18s ease-out, filter .15s; filter: drop-shadow(0 16px 26px rgb(0 0 0 / .75)); }
+  .hi-card:hover { transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--k, 1.04)); z-index: 3; transition-delay: .12s; }
   .hi-card.pick { cursor: pointer; }
-  .hi-card.drop { transform: translateY(14px); }
+  .hi-card.drop:not(:hover) { transform: translateY(14px); }
   .hi-card.drop :global(img) { filter: grayscale(.85) brightness(.45); }
   .drop-tag { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: inline-flex; gap: 4px; align-items: center; padding: 5px 12px; border-radius: 99px; background: #7a1d16; color: #ffe0da; font: 700 12px var(--ui); text-transform: uppercase; letter-spacing: .1em; filter: none; white-space: nowrap; }
   .hi-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
