@@ -759,7 +759,8 @@
     return out;
   }
   const weaponIcon = (h: HeroDef) => (h.weapon.via === 'melee' ? 'broadsword' : h.weapon.via === 'ranged' ? 'bow-arrow' : 'wizard-staff');
-  const gearIcon = (it: GearItem, h: HeroDef) => ({ weapon: weaponIcon(h), head: 'warlord-helmet', chest: 'chest-armor', hands: 'gauntlet', feet: 'boot-stomp', trinket: 'magic-swirl' }[it.slot]);
+  /** Símbolo de uma peça: o da própria carta de equipamento; sem ele, o do espaço. */
+  const gearIcon = (it: GearItem, h: HeroDef) => it.icon ?? ({ weapon: weaponIcon(h), offhand: 'round-shield', head: 'warlord-helmet', chest: 'chest-armor', hands: 'gauntlet', legs: 'leg-armor', feet: 'boot-stomp', trinket: 'magic-swirl', ring: 'skull-ring' }[it.slot]);
   const pips = (cur: number, max: number) => Array.from({ length: Math.max(cur, max) }, (_, i) => (i < cur ? (i >= max ? 'extra' : 'on') : 'off'));
   const pct = (n: number, max: number) => `${Math.min(100, Math.round((n / max) * 100))}%`;
 </script>

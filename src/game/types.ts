@@ -116,9 +116,9 @@ export interface HeroDef {
   icon: string;
 }
 
-export type GearSlot = 'weapon' | 'head' | 'chest' | 'hands' | 'feet' | 'trinket';
+export type GearSlot = 'weapon' | 'offhand' | 'head' | 'chest' | 'hands' | 'legs' | 'feet' | 'trinket' | 'ring';
 export const GEAR_SLOTS: Record<GearSlot, [string, string]> = {
-  weapon: ['Arma', 'Weapon'], head: ['Cabeça', 'Head'], chest: ['Peito', 'Chest'], hands: ['Mãos', 'Hands'], feet: ['Pés', 'Feet'], trinket: ['Amuleto', 'Trinket'],
+  weapon: ['Arma', 'Weapon'], offhand: ['Mão secundária', 'Off hand'], head: ['Cabeça', 'Head'], chest: ['Peito', 'Chest'], hands: ['Mãos', 'Hands'], legs: ['Pernas', 'Legs'], feet: ['Pés', 'Feet'], trinket: ['Amuleto', 'Amulet'], ring: ['Anel', 'Ring'],
 };
 /** Uma peça de equipamento e o que ela soma ao herói. */
 export interface GearItem {
@@ -129,6 +129,10 @@ export interface GearItem {
   resist?: number;
   hp?: number;
   strike?: number;
+  /** Símbolo da carta de equipamento (para a mesa). */
+  icon?: string;
+  /** Carta de equipamento de onde a peça veio. */
+  cardId?: string;
 }
 
 /** Herói antes de somar o equipamento (é o que a ficha guarda e o jogador edita). */
