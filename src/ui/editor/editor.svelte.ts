@@ -296,6 +296,23 @@ export class EditorState {
     });
   }
 
+  /**
+   * Tira um ajuste de um lado só (ataque ou defesa), para ele voltar ao desenho do
+   * estilo. Se o valor vinha do que vale "para os dois", o outro lado fica com ele.
+   */
+  clearSide(side: 'atk' | 'def', key: 'fill' | 'ink' | 'colors'): void {
+    const other = side === 'atk' ? 'def' : 'atk';
+    this.#write([`pieces.stat.${key}`, `pieces.atk.${key}`, `pieces.def.${key}`], (l) => {
+      const ps = (l.pieces ??= {}) as Record<string, Record<string, unknown> | undefined>;
+      const shared = ps.stat?.[key];
+      if (shared !== undefined) {
+        if (ps[other]?.[key] === undefined) ps[other] = { ...ps[other], [key]: shared };
+        delete ps.stat![key];
+      }
+      if (ps[side]) { delete ps[side]![key]; if (!Object.keys(ps[side]!).length) delete ps[side]; }
+    });
+  }
+
   /** Símbolo, cor ou imagem de um recurso do custo (mana, vigor…). */
   setResIcon(res: string, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []): void { this.#setKeyedIcon('res', 'cost', res, patch, remove); }
   /** Símbolo, cor ou imagem de uma classe (red, blue…). */
