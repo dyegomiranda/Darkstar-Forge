@@ -8,7 +8,7 @@
   import { Ban, User, Scissors, Smile, Ear, Shirt, Footprints, Hand, Crown, Glasses, Gem, Shield, Sword, Feather, Backpack, Check, Sparkles, Ribbon, Wind, Rabbit, Eye, Minus, Swords, Flame } from '@lucide/svelte';
   import { L } from '../app/i18n.svelte';
   import DollThumb from './DollThumb.svelte';
-  import { colorsOf, FX_COLORS, FX_KINDS, HUMAN_FACE, itemOf, LPC, OWN_SKIN, RACE_HEADS, RACE_LOOKS, SKINS, swatch, TINTABLE, TINTS, type Avatar, type Body, type Dir, type Part, type SlotId } from './lpc';
+  import { colorsOf, FX_COLORS, FX_KINDS, HUMAN_FACE, itemOf, LPC, OWN_SKIN, RACE_HEADS, RACE_LOOKS, SKINS, spectrum, swatch, TINTABLE, TINTS, type Avatar, type Body, type Dir, type Part, type SlotId } from './lpc';
   import { SETS, wearSet, wearing } from './sets';
 
   let { avatar, onchange }: { avatar: Avatar; onchange: (a: Avatar) => void } = $props();
@@ -59,7 +59,10 @@
   const items = $derived(slot ? slot.items.filter((i) => i.bodies.includes(avatar.body)) : []);
   const part = $derived<Part | undefined>(slotId ? avatar.parts[slotId] : undefined);
   const current = $derived(slotId ? itemOf(slotId, part?.id) : undefined);
-  const colors = $derived(current && slotId ? colorsOf(current, slotId) : []);
+  const colors = $derived(current && slotId ? spectrum(colorsOf(current, slotId), (c) => c.hex) : []);
+  const skins = spectrum(SKINS, (c) => swatch('body', c));
+  const tints = spectrum(Object.entries(TINTS), ([, t]) => t.ramp[2]);
+  const fxColors = spectrum(Object.entries(FX_COLORS), ([, f]) => f.ramp[1]);
   const ownSkin = $derived(!!slotId && OWN_SKIN.includes(slotId) && !current?.variants);
   const tintable = $derived(!!slotId && TINTABLE.includes(slotId) && !!current);
   const view = $derived(catOf(cat));
@@ -74,7 +77,8 @@
     const cs = colorsOf(it, slotId), keep = a.parts[slotId]?.color;
     // barba, bigode e sobrancelhas nascem da cor do cabelo
     const hair = (['beard', 'mustache', 'eyebrows'] as SlotId[]).includes(slotId) && cs.some((c) => c.name === a.parts.hair?.color) ? a.parts.hair?.color : undefined;
-    a.parts[slotId] = { ...a.parts[slotId], id, color: cs.some((c) => c.name === keep) ? keep : OWN_SKIN.includes(slotId) && !it.variants ? undefined : hair ?? cs[0]?.name };
+    // (escolher o modelo comum tira o feitio de conjunto que a peça tinha)
+    a.parts[slotId] = { ...a.parts[slotId], style: undefined, id, color: cs.some((c) => c.name === keep) ? keep : OWN_SKIN.includes(slotId) && !it.variants ? undefined : hair ?? cs[0]?.name };
     return a;
   }
   const withBody = (b: Body): Avatar => {
@@ -119,8 +123,8 @@
     const seen = new Set<string>();
     return SETS.flatMap((st) => {
       const p = st.parts[slotId], it = p ? itemOf(slotId, p.id) : undefined;
-      if (!p || !it?.bodies.includes(avatar.body) || seen.has(p.id + '/' + p.color)) return [];
-      seen.add(p.id + '/' + p.color);
+      if (!p || !it?.bodies.includes(avatar.body) || seen.has(`${p.id}/${p.color}/${p.style}`)) return [];
+      seen.add(`${p.id}/${p.color}/${p.style}`);
       return [{ set: st, part: p, item: it }];
     });
   });
@@ -131,18 +135,19 @@
   let chosen = $state<Partial<Record<SlotId, string>>>({});
   const pieceOn = $derived.by(() => {
     if (!slotId || !part) return undefined;
-    const kept = setPieces.find((x) => x.set.id === chosen[slotId] && x.part.id === part.id);
-    return (kept ?? setPieces.find((x) => x.part.id === part.id && x.part.color === part.color))?.set.id;
+    const same = setPieces.filter((x) => x.part.id === part.id && x.part.style === part.style);
+    // (a peça com feitio é do seu conjunto, seja qual for a cor; sem feitio, vale a escolha feita aqui ou a cor do conjunto)
+    return (same.find((x) => x.set.id === chosen[slotId]) ?? (part.style ? same[0] : same.find((x) => x.part.color === part.color)))?.set.id;
   });
-  const withPiece = (p: Part): Avatar => { const a = clone(); if (slotId) a.parts[slotId] = { ...a.parts[slotId], ...p }; return a; };
+  const withPiece = (p: Part): Avatar => { const a = clone(); if (slotId) { a.parts[slotId] = { ...a.parts[slotId], ...p }; if (!p.style) delete a.parts[slotId]!.style; } return a; };
   const pickPiece = (setId: string, p: Part) => { if (slotId) chosen[slotId] = setId; onchange(withPiece(p)); };
 
   // cores de olhos: primeiro as de gente, depois as de monstro (têm o branco do olho pintado ou brilham)
   const EYES = Object.entries(LPC.palettes.eye.colors);
   const MONSTER = ['blood', 'infernal', 'void', 'blind', 'ghost', 'venom', 'abyss', 'molten', 'undead', 'red', 'purple', 'pink', 'yellow'];
   const eyeSets = [
-    { pt: 'Naturais', en: 'Natural', list: EYES.filter(([n]) => !MONSTER.includes(n)) },
-    { pt: 'Monstros e demônios', en: 'Monsters & demons', list: EYES.filter(([n]) => MONSTER.includes(n)) },
+    { pt: 'Naturais', en: 'Natural', list: spectrum(EYES.filter(([n]) => !MONSTER.includes(n)), ([, r]) => r[1]) },
+    { pt: 'Monstros e demônios', en: 'Monsters & demons', list: spectrum(EYES.filter(([n]) => MONSTER.includes(n)), ([, r]) => r[1]) },
   ];
   /** Bolinha da cor de olho: a íris, com o fundo do olho quando ele é pintado. */
   const eyeDot = (ramp: string[]) => `radial-gradient(circle, ${ramp[2]} 0 22%, ${ramp[1]} 24% 52%, ${ramp[3] ?? '#f2f7f8'} 54%)`;
@@ -258,7 +263,7 @@
         {#if setPieces.length}
           <span class="sub">{L('Peças dos conjuntos', 'Set pieces')}</span>
           <div class="tiles">
-            {#each setPieces as sp (sp.part.id + sp.part.color)}
+            {#each setPieces as sp (sp.set.id)}
               {@const on = pieceOn === sp.set.id}
               <button class="tile set" class:on onclick={() => pickPiece(sp.set.id, sp.part)} title={L(sp.set.pt, sp.set.en)}>
                 <span class="tpic"><DollThumb avatar={on ? avatar : withPiece(sp.part)} crop={view.crop} px={view.px} dir={view.dir} /></span>
@@ -276,13 +281,13 @@
     <footer class="foot">
       {#if cat === 'body'}
         <div class="pal"><span>{L('Pele', 'Skin')}</span>
-          <div class="sw">{#each SKINS as c}<button class:on={avatar.skin === c} style="--k:{swatch('body', c)}" title={c} aria-label={c} onclick={() => set((a) => { a.skin = c; })}></button>{/each}</div></div>
+          <div class="sw">{#each skins as c}<button class:on={avatar.skin === c} style="--k:{swatch('body', c)}" aria-label={c} onclick={() => set((a) => { a.skin = c; })}></button>{/each}</div></div>
       {:else if cat === 'look' && avatar.head}
         <p class="hint">{L('Sem cores para escolher nesta raça.', 'No colors to pick for this race.')}</p>
       {:else if cat === 'look'}
         {#each eyeSets as es}
           <div class="pal"><span>{L('Cor dos olhos', 'Eye color')} — {L(es.pt, es.en)}</span>
-            <div class="sw">{#each es.list as [name, ramp]}<button class="eye" class:on={avatar.eyes === name} style="--k:{eyeDot(ramp)}" title={name} aria-label={name} onclick={() => set((a) => { a.eyes = name; })}></button>{/each}</div></div>
+            <div class="sw">{#each es.list as [name, ramp]}<button class="eye" class:on={avatar.eyes === name} style="--k:{eyeDot(ramp)}" aria-label={name} onclick={() => set((a) => { a.eyes = name; })}></button>{/each}</div></div>
         {/each}
       {:else if cat === 'sets'}
         <p class="hint">{L('Os metais dos conjuntos (ébano, daédrico, da noite, mithril, celestial…) também estão na lista de cores de qualquer peça de metal.', 'The set metals (ebony, daedric, night, mithril, celestial…) are also in the color list of any metal piece.')}</p>
@@ -291,14 +296,14 @@
           <div class="pal"><span>{L('Cor', 'Color')} — {L(current.pt, current.en)}</span>
             <div class="sw">
               {#if ownSkin}<button class="skin" class:on={!part?.color} title={L('Mesma cor da pele', 'Same as the skin')} aria-label={L('Mesma cor da pele', 'Same as the skin')} style="--k:{swatch('body', avatar.skin)}" onclick={() => edit((p) => { delete p.color; })}><User size={12} /></button>{/if}
-              {#each colors as c}<button class:on={part?.color === c.name} style="--k:{c.hex}" title={c.name} aria-label={c.name} onclick={() => edit((p) => { p.color = c.name; })}></button>{/each}
+              {#each colors as c}<button class:on={part?.color === c.name} style="--k:{c.hex}" aria-label={c.name} onclick={() => edit((p) => { p.color = c.name; })}></button>{/each}
             </div></div>
         {/if}
         {#if tintable}
           <div class="pal"><span>{slotId === 'weapon' ? L('Metal da arma (lâmina, ponta, guarda)', 'Weapon metal (blade, tip, guard)') : L('Pintura do escudo', 'Shield paint')}</span>
             <div class="sw">
               <button class="skin" class:on={!part?.tint} title={L('Original', 'Original')} aria-label={L('Original', 'Original')} style="--k:#2a2540" onclick={() => edit((p) => { delete p.tint; })}><Ban size={12} color="#bbb" /></button>
-              {#each Object.entries(TINTS) as [name, tn]}<button class:on={part?.tint === name} style="--k:linear-gradient(135deg, {tn.ramp[4]}, {tn.ramp[2]} 55%, {tn.ramp[0]})" title={L(tn.pt, tn.en)} aria-label={L(tn.pt, tn.en)} onclick={() => edit((p) => { p.tint = name; })}></button>{/each}
+              {#each tints as [name, tn]}<button class:on={part?.tint === name} style="--k:linear-gradient(135deg, {tn.ramp[4]}, {tn.ramp[2]} 55%, {tn.ramp[0]})" title={L(tn.pt, tn.en)} aria-label={L(tn.pt, tn.en)} onclick={() => edit((p) => { p.tint = name; })}></button>{/each}
             </div></div>
         {/if}
         {#if slotId === 'weapon'}
@@ -309,7 +314,7 @@
                 {#each FX_KINDS as k (k.id)}<button class:on={part?.fx === k.id} onclick={() => edit((p) => { p.fx = k.id; p.fxColor ??= 'purple'; })}>{L(k.pt, k.en)}</button>{/each}
               </div>
               {#if part?.fx}
-                <div class="sw">{#each Object.entries(FX_COLORS) as [name, fc]}<button class:on={(part.fxColor ?? 'purple') === name} style="--k:linear-gradient(135deg, {fc.ramp[2]}, {fc.ramp[1]} 50%, {fc.ramp[0]})" title={L(fc.pt, fc.en)} aria-label={L(fc.pt, fc.en)} onclick={() => edit((p) => { p.fxColor = name; })}></button>{/each}</div>
+                <div class="sw">{#each fxColors as [name, fc]}<button class:on={(part.fxColor ?? 'purple') === name} style="--k:linear-gradient(135deg, {fc.ramp[2]}, {fc.ramp[1]} 50%, {fc.ramp[0]})" title={L(fc.pt, fc.en)} aria-label={L(fc.pt, fc.en)} onclick={() => edit((p) => { p.fxColor = name; })}></button>{/each}</div>
               {/if}
             </div></div>
         {/if}

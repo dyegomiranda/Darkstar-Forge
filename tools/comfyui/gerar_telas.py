@@ -5,7 +5,7 @@ Uso: python3 tools/comfyui/gerar_telas.py [variações=1] [id…]
 Saída: public/ui/<id>.webp (pixelado). O que já existe é pulado; com variações > 1, as extras
 saem como <id>__v2.webp… para escolher (renomeie a preferida para <id>.webp).
 """
-import io, json, os, sys, time, urllib.request, urllib.parse
+import shutil, io, json, os, sys, time, urllib.request, urllib.parse
 from PIL import Image
 
 API = 'http://127.0.0.1:8188'
@@ -30,19 +30,20 @@ ARTS = [
      "vertical composition: two rival heroes facing each other in a duel on a dark stone arena, on the left an armored knight with a sword and red cape, on the right a hooded mage with a glowing blue staff, "
      "both in profile, sparks between them, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
     # logotipo do desenvolvedor (tela de abertura): fundo preto liso, para assentar sobre a tela preta
-    ('estudio', 77, 1024, 1024,
-     "one single full body chibi game character sprite on a plain pure black background: a little black-furred demon rock guitarist with a big head and a small stocky body, standing with legs apart, "
-     "playing a black electric guitar with a red trim held across his body. He has two big curved black horns, two round glowing red eyes, a wide grin with white fangs, "
-     "a wild mane of spiky shaggy black hair, shaggy black fur on the arms and legs, a short pointed tail, clawed feet. "
-     "Dark charcoal and deep purple-grey shading with a bright red rim light so the black figure reads clearly against the black background. "
-     "Simple readable shapes, front view, the whole figure from the horns to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
+    # (parte de uma foto do boneco do jogo, em tools/comfyui/ref: a figura sai parecida com ele, com mais detalhe e uma guitarra)
+    ('estudio', 93, 1024, 1024,
+     "one single full body chibi game character sprite on a plain pure black background, front view: a small demon knight rock guitarist with a big head and a small body. "
+     "Very long straight black hair in two big twin tails falling to the sides, two short curved bright red horns on top of the head, big glowing red eyes, a pale face, "
+     "two large dark bat wings spread open behind the back, black plate armor with dark grey edges, black boots. "
+     "The character is playing a black electric guitar with a dark red trim, held across the body, one hand on the neck and one on the strings. "
+     "Simple readable shapes, the whole figure from the horns to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
     ('campanha', 43, 1024, 1280,
      "vertical composition: a winding road through a dark fantasy world map landscape seen from a high cliff, distant ruined castle, dead forest, mountains and a glowing violet rift on the horizon, "
      "a small party of three travelers with a lantern walking the road, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
 ]
 
-def wf(prompt, seed, w, h, fig=False):
-    return {
+def wf(prompt, seed, w, h, fig=False, init=None, denoise=1.0):
+    g = {
       "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "flux1-dev.safetensors", "weight_dtype": "fp8_e4m3fn"}},
       "2": {"class_type": "DualCLIPLoader", "inputs": {"clip_name1": "t5xxl_fp16.safetensors", "clip_name2": "clip_l.safetensors", "type": "flux"}},
       "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
@@ -55,6 +56,13 @@ def wf(prompt, seed, w, h, fig=False):
       "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
       "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "voidsun-tela"}},
     }
+    if init:
+        # parte de uma imagem de referência: quanto menor o `denoise`, mais a figura fica igual a ela
+        g["11"] = {"class_type": "LoadImage", "inputs": {"image": init}}
+        g["12"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["11", 0], "vae": ["3", 0]}}
+        g["7"]["inputs"]["latent_image"] = ["12", 0]
+        g["7"]["inputs"]["denoise"] = denoise
+    return g
 
 def pixelar(data, grade=4, cores=96):
     im = Image.open(io.BytesIO(data)).convert('RGB')
@@ -75,7 +83,11 @@ for aid, seed, w, h, prompt in ARTS:
         dst = os.path.join(OUT, f"{aid}.webp" if v == 1 else f"{aid}__v{v}.webp")
         if os.path.exists(dst): continue
         t0 = time.time()
-        pid = post('/prompt', {"prompt": wf(prompt, seed * 100 + v, w, h, fig=aid == 'estudio')})['prompt_id']
+        if aid == 'estudio':
+            shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ref', 'estudio-ref.png'), os.path.join(os.path.expanduser('~/ComfyUI/input'), 'estudio-ref.png'))
+            g = wf(prompt, seed * 100 + v, w, h, fig=True, init='estudio-ref.png', denoise=[0.72, 0.8, 0.86, 0.92][(v - 1) % 4])
+        else: g = wf(prompt, seed * 100 + v, w, h)
+        pid = post('/prompt', {"prompt": g})['prompt_id']
         while True:
             time.sleep(2)
             hist = get('/history/' + pid)
@@ -84,6 +96,6 @@ for aid, seed, w, h, prompt in ARTS:
         if not imgs: print('ERRO', aid, v, flush=True); continue
         raw = urllib.request.urlopen(API + '/view?' + urllib.parse.urlencode(imgs[0])).read()
         # o logotipo fica na grade dos bonecos (pixels grandes, poucas cores) e sem perdas
-        if aid == 'estudio': pixelar(raw, grade=4, cores=56).save(dst, 'WEBP', lossless=True)
+        if aid == 'estudio': pixelar(raw, grade=8, cores=40).save(dst, 'WEBP', lossless=True)
         else: pixelar(raw).save(dst, 'WEBP', quality=90, method=6)
         print('ok', aid, v, int(time.time() - t0), 's', flush=True)
