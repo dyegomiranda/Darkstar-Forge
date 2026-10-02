@@ -30,8 +30,6 @@
   let tile = $state(Number(localStorage.getItem('forge.tile') ?? 230));
   let selected = $state(new Set<string>());
   let lastClicked = $state<string | null>(null);
-  let hover = $state<{ card: Card; rect: DOMRect } | null>(null);
-  let hoverTimer: ReturnType<typeof setTimeout> | undefined;
 
   $effect(() => { try { localStorage.setItem('forge.tile', String(tile)); } catch { /* sem armazenamento local */ } });
 
@@ -114,12 +112,6 @@
     else next.add(c.id);
     lastClicked = c.id;
     selected = next;
-  }
-
-  function onhover(c: Card | null, el?: HTMLElement) {
-    clearTimeout(hoverTimer);
-    if (!c || !el) { hover = null; return; }
-    hoverTimer = setTimeout(() => { hover = { card: c, rect: el.getBoundingClientRect() }; }, 380);
   }
 
   // ── artes em lote ──
@@ -213,15 +205,6 @@
   const selCards = $derived([...selected].map((id) => app.cards[id]).filter(Boolean));
   const exportSet = $derived(selCards.length ? selCards : filtered);
 
-  const zoomStyle = $derived.by(() => {
-    if (!hover) return '';
-    const W = 400, H = W * 1.4;
-    const r = hover.rect;
-    const right = r.right + 18 + W < innerWidth;
-    const x = right ? r.right + 18 : Math.max(12, r.left - 18 - W);
-    const y = Math.min(Math.max(12, r.top + r.height / 2 - H / 2), innerHeight - H - 12);
-    return `left:${x}px;top:${y}px;width:${W}px`;
-  });
 </script>
 
 <div class="lib">
@@ -313,7 +296,7 @@
     <div class="grid-wrap">
       {#if filtered.length}
         <CardGrid cards={filtered} {tile} {selected} onopen={(c) => router.editor(c.id)} ontoggle={toggle}
-          onduplicate={duplicate} ondelete={(c) => remove([c.id])} {onhover} />
+          onduplicate={duplicate} ondelete={(c) => remove([c.id])} />
       {:else}
         <div class="empty">
           <p>{filtering ? L('Nenhuma carta com esses filtros.', 'No cards match these filters.') : L('Este deck ainda não tem cartas.', 'This deck has no cards yet.')}</p>
@@ -346,9 +329,6 @@
   </section>
 </div>
 
-{#if hover}
-  <div class="zoom" style={zoomStyle}><CardImage card={hover.card} eager /></div>
-{/if}
 
 {#if picking}
   <ArtPicker groups={picking} onconfirm={finishArt} oncancel={() => (picking = null)} />
@@ -401,7 +381,6 @@
 
   .bulk { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 28px; border-top: 1px solid var(--line); background: var(--bg-2); font-size: 13px; }
 
-  .zoom { position: fixed; z-index: 40; pointer-events: none; filter: drop-shadow(0 24px 50px rgb(0 0 0 / .8)); animation: zin .16s ease-out; }
   @keyframes zin { from { opacity: 0; transform: scale(.97); } }
 
   @media (max-width: 1000px) { .curve { display: none; } }
@@ -414,6 +393,5 @@
     .deck { width: auto; flex: none; }
     .dn small, .cnt { display: none; }
     .top, .filters, .bulk { padding-left: 14px; padding-right: 14px; }
-    .zoom { display: none; }
   }
 </style>
