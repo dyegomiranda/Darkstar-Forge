@@ -140,19 +140,19 @@
   let page = $state(0);
   const zfiles = $derived(zg ? filesOf(zg) : []);
   const pages = $derived(Math.max(1, Math.ceil(zfiles.length / perPage)));
-  const shown = $derived(zfiles.slice(page * perPage, page * perPage + perPage));
+  /** Primeira imagem da página. A última página não fica com uma imagem sozinha: recua para a tela continuar cheia. */
+  const first = $derived(Math.max(0, Math.min(page * perPage, zfiles.length - perPage)));
+  const shown = $derived(zfiles.slice(first, first + perPage));
 
-  /** Abre a ampliada numa carta, já na página da imagem escolhida. */
-  function openZoom(gi: number, last = false) {
+  /** Abre a ampliada numa carta, sempre nas primeiras imagens dela (a escolhida fica marcada onde estiver). */
+  function openZoom(gi: number) {
     zoom = gi;
-    const list = filesOf(groups[gi]);
-    const i = last ? list.length - 1 : Math.max(0, list.findIndex((f) => f.name === pick[groups[gi].card.id]));
-    page = Math.floor(Math.max(0, i) / perPage);
+    page = 0;
   }
   function go(delta: number) {
     if (zoom === null) return;
     const next = Math.min(groups.length - 1, Math.max(0, zoom + delta));
-    if (next !== zoom) openZoom(next, delta < 0);
+    if (next !== zoom) openZoom(next);
   }
   /** Seta: passa as imagens; no fim (ou no começo) delas, muda de carta. */
   function turn(delta: number) {
@@ -272,8 +272,8 @@
       <button class="btn sm" class:danger={!picked(zg)} onclick={() => (pick[zg.card.id] = '')}><X size={14} /> {L('Nenhuma serve (deixar a carta como está)', 'None works (leave the card as is)')}</button>
       {#if pages > 1}
         <span class="pager">
-          {#each Array(pages) as _, p}<button class="pg" class:on={p === page} onclick={() => (page = p)} title={L(`Imagens ${p * perPage + 1} a ${Math.min(zfiles.length, (p + 1) * perPage)}`, `Images ${p * perPage + 1} to ${Math.min(zfiles.length, (p + 1) * perPage)}`)}></button>{/each}
-          <small>{L(`imagens ${page * perPage + 1}–${Math.min(zfiles.length, (page + 1) * perPage)} de ${zfiles.length}`, `images ${page * perPage + 1}–${Math.min(zfiles.length, (page + 1) * perPage)} of ${zfiles.length}`)}</small>
+          {#each Array(pages) as _, p}<button class="pg" class:on={p === page} onclick={() => (page = p)} title={L(`Página ${p + 1}`, `Page ${p + 1}`)}></button>{/each}
+          <small>{L(`imagens ${first + 1}–${Math.min(zfiles.length, first + perPage)} de ${zfiles.length}`, `images ${first + 1}–${Math.min(zfiles.length, first + perPage)} of ${zfiles.length}`)}</small>
         </span>
       {/if}
       <span class="muted small">{L('Teclado: ← → passa as imagens e as cartas · 1, 2, 3 escolhe · 0 nenhuma · Esc volta', 'Keys: ← → browse images and cards · 1, 2, 3 choose · 0 none · Esc back')}</span>
