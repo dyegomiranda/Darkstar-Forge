@@ -92,12 +92,14 @@
   try { saved = JSON.parse(localStorage.getItem(SAVED) ?? '{}') ?? {}; } catch { saved = {}; }
 
   /** Escolha por carta: o nome do arquivo ou '' (nenhuma). Começa na escolha guardada ou na 1ª imagem. */
+  // svelte-ignore state_referenced_locally (só o valor inicial interessa)
   let pick = $state<Record<string, string>>(Object.fromEntries(groups.map((g) => {
     const s = saved[g.card.id];
     const list = filesOf(g);
     if (s === '') return [g.card.id, ''];
     return [g.card.id, (list.find((f) => f.name === s) ?? list[0])?.name ?? ''];
   })));
+  // svelte-ignore state_referenced_locally (só o valor inicial interessa)
   const restored = groups.filter((g) => saved[g.card.id] !== undefined).length;
   /** A imagem escolhida de uma carta (se ainda estiver na lista). */
   const picked = (g: ArtGroup): File | undefined => filesOf(g).find((f) => f.name === pick[g.card.id]);

@@ -16,6 +16,7 @@
 
   let { id }: { id: string } = $props();
 
+  // svelte-ignore state_referenced_locally (a tela é recriada a cada rota: o valor inicial é o que vale)
   const card = app.cards[id];
   const ed = card ? new EditorState(card) : null;
   let tab = $state<'text' | 'game' | 'art' | 'look'>((sessionStorage.getItem('forge.tab') as 'text') ?? 'text');

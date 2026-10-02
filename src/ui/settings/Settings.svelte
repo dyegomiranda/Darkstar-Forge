@@ -3,14 +3,15 @@
   import creatureCredits from '../../data/creatures-credits.json';
   const lpcAuthors = [...new Set(Object.values(lpcCredits as Record<string, { authors: string[] }>).flatMap((c) => c.authors))].sort((a, b) => a.localeCompare(b));
   import { onMount } from 'svelte';
-  import { Download, Upload, FileSpreadsheet, HardDrive, RotateCcw, Award, BookOpen, Layers, Image as ImageIcon, Trash } from '@lucide/svelte';
+  import { Download, Upload, FileSpreadsheet, HardDrive, RotateCcw, Award, BookOpen, Layers, Image as ImageIcon, Trash, Paintbrush } from '@lucide/svelte';
+  import { router } from '../../app/router.svelte';
   import { app } from '../../store/project.svelte';
   import { importImage, ensureMedia, mediaUrl } from '../../store/media';
   import { pruneRenders, storageEstimate, db } from '../../store/db';
   import { L } from '../../app/i18n.svelte';
   import { ui } from '../../app/ui.svelte';
   import { COLORS, colorHex } from '../../model/catalog';
-  import { STYLES, type StyleId } from '../../render/elements';
+  import { STYLES } from '../../render/elements';
   import { classIcon } from '../../render/icons/glyphs';
   import { AUTHORS, ICONS } from '../../render/icons/game-icons';
   import { lighten } from '../../render/color';
@@ -28,6 +29,8 @@
   let logoTick = $state(0);
 
   const ed = $derived(app.edition());
+  /** Deck que serve de amostra ao editar a coleção: o primeiro deck de classe com cartas. */
+  const themeDeck = $derived([...app.decksOf().filter((d) => d.kind === 'class'), ...app.decksOf()].find((d) => app.cardsOf(d.id).length));
   const mb = (b: number) => `${(b / 1024 / 1024).toFixed(1)} MB`;
 
   async function refresh() {
@@ -58,7 +61,7 @@
   async function reset() {
     const r = await ui.confirm({
       title: L('Recomeçar do zero?', 'Start over?'),
-      text: L('Apaga TODAS as cartas, decks, personagens e artes deste projeto e recria as 450 cartas de exemplo.\nFaça um backup antes se quiser guardar algo.', 'Deletes ALL cards, decks, characters and art in this project and recreates the 450 sample cards.\nMake a backup first if you want to keep anything.'),
+      text: L('Apaga TODAS as cartas, decks, personagens e artes deste projeto e recria as coleções de exemplo.\nFaça um backup antes se quiser guardar algo.', 'Deletes ALL cards, decks, characters and art in this project and recreates the sample collections.\nMake a backup first if you want to keep anything.'),
       ok: L('Apagar e recomeçar', 'Erase and start over'), danger: true,
     });
     if (r !== 'ok') return;
@@ -98,26 +101,26 @@
 
     <section class="panel sec">
       <header><Layers size={18} /><h2>{L('Decks e temas', 'Decks & themes')}</h2></header>
-      <p class="muted">{L('O tema define o estilo padrão de todas as cartas do deck. Ajustes finos (cores, peças, símbolos) ficam no editor, aba Aparência → "Tema do deck".', 'The theme sets the default style for every card in the deck. Fine tuning (colors, pieces, symbols) is in the editor, Look tab → "Deck theme".')}</p>
+      <p class="muted">{L('Os decks da coleção aberta. O visual (estilo, cores, peças, símbolos) se edita na tela de tema: “Editar tema” abre a do deck e “Editar coleção” muda todos de uma vez.', 'The decks of the open collection. The look (style, colors, pieces, symbols) is edited on the theme screen: “Edit theme” opens the deck’s and “Edit collection” changes all at once.')}</p>
       <div class="decks">
-        {#each app.decks as d, i (d.id)}
+        {#each app.decksOf() as d, i (d.id)}
+          {@const n = app.cardsOf(d.id).length}
           <div class="deck">
             <span class="emb" style="--c:{colorHex(d.colors[0])}"><Glyph id={classIcon(d.colors[0])} size={20} color={lighten(vivid(colorHex(d.colors[0])), 0.35)} /></span>
             <div class="grow stack tight">
               <input class="input" value={d.name[app.lang]} oninput={(e) => app.updateProject((p) => { p.decks.find((x) => x.id === d.id)!.name[app.lang] = (e.currentTarget as HTMLInputElement).value; })} />
-              <span class="muted small">{COLORS[d.colors[0]].classes[app.lang]} · {app.cardsOf(d.id).length} {L('cartas', 'cards')}</span>
+              <span class="muted small">{COLORS[d.colors[0]].classes[app.lang]} · {n} {L('cartas', 'cards')} · {L('estilo', 'style')} {STYLES.find((x) => x.id === d.look.style)?.name ?? 'Neutro'}</span>
             </div>
-            <select class="select theme" value={d.look.style} onchange={(e) => app.updateProject((p) => { const dk = p.decks.find((x) => x.id === d.id)!; dk.look = { ...dk.look, style: (e.currentTarget as HTMLSelectElement).value as StyleId, pieces: {} }; })}>
-              {#each STYLES as s}<option value={s.id}>{s.name}</option>{/each}
-            </select>
+            <button class="btn sm" disabled={!n} title={n ? '' : L('O deck precisa de pelo menos uma carta para servir de amostra', 'The deck needs at least one card to serve as a sample')} onclick={() => router.theme('deck', d.id)}><Paintbrush size={14} /> {L('Editar tema', 'Edit theme')}</button>
             <span class="ord">{i + 1}</span>
           </div>
         {/each}
       </div>
-      <div class="row wrap">
-        <span class="muted small">{L('Aplicar um estilo em todos os decks:', 'Apply one style to every deck:')}</span>
-        {#each STYLES as s}<button class="btn sm" onclick={() => app.updateProject((p) => p.decks.forEach((d) => { d.look = { ...d.look, style: s.id, pieces: {} }; }))}>{s.name}</button>{/each}
-      </div>
+      {#if themeDeck}
+        <div class="row wrap">
+          <button class="btn" onclick={() => router.theme('collection', themeDeck.id)}><Paintbrush size={15} /> {L('Editar coleção (todos os decks de uma vez)', 'Edit collection (all decks at once)')}</button>
+        </div>
+      {/if}
     </section>
 
     <section class="panel sec">
@@ -179,12 +182,11 @@
   .tight { gap: 3px; }
   .emb { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex: none;
     background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #000), color-mix(in srgb, var(--c) 25%, #000)); }
-  .theme { width: 150px; }
   .ord { width: 24px; text-align: center; color: var(--muted); font-size: 12px; }
   .usage { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .bar { height: 6px; border-radius: 6px; background: var(--surface-3); margin-top: 8px; overflow: hidden; }
   .bar div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
   .danger-zone { border-color: rgb(226 87 76 / .3); }
   .danger-zone header { color: var(--danger); }
-  @media (max-width: 760px) { .inner { padding: 18px 14px 80px; } .cols { grid-template-columns: 1fr; } .theme { width: 110px; } .ord { display: none; } }
+  @media (max-width: 760px) { .inner { padding: 18px 14px 80px; } .cols { grid-template-columns: 1fr; } .ord { display: none; } }
 </style>

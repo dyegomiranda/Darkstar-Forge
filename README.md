@@ -6,7 +6,8 @@ O programa roda totalmente no seu computador, sem servidor. Com ele você:
 
 - cria e organiza as cartas por deck;
 - personaliza cada peça do visual;
-- monta a ficha dos personagens;
+- monta a ficha e o boneco dos heróis;
+- testa as cartas numa mesa de jogo contra um bot;
 - exporta PNG em alta resolução e PDF para impressão (63 × 88 mm).
 
 > **Licença:** software livre sob a GPL-3.0. A propriedade intelectual do Darkstar (nome, marca, artes, personagens, textos) **não** está coberta pela GPL.
@@ -21,16 +22,17 @@ O programa roda totalmente no seu computador, sem servidor. Com ele você:
 
 | Tela | O que faz |
 |---|---|
-| **Biblioteca** | Coleções (ex.: 1ª Edição e Classes — Pathfinder), importação de artes em lote (pelo nome do arquivo), decks com contagem 50/50, busca, filtros (tipo, custo, raridade, etiqueta), curva de custo, seleção múltipla, mover entre decks, PNG (zip) e PDF. As cartas aparecem completas em alta resolução: cada uma é desenhada uma vez e guardada, então a biblioteca abre na hora. |
-| **Editor** | Abas **Texto** (PT/EN, símbolos no texto), **Jogo** (classes, até 4 custos por carta — cada um com recurso, quantidade e número ou símbolo repetido —, custo total automático ou manual, ATK/DEF, raridade, mecânicas com pontuação), **Arte** (enviar, enquadrar arrastando, zoom, espelhar, pixelar) e **Aparência**. Tem desfazer/refazer e Ctrl+S, e só grava ao salvar. |
-| **Aparência** | 11 estilos (Ornado, Gótico, Arcano, Moderno, Selvagem, Pixel, Pixel Sombrio, Vazio, Espectral, Energia, Pixel Aço) que podem ser misturados peça a peça. Cada peça aceita cor, transparência, metal, cor do texto e fonte. Os símbolos vêm em 4 acabamentos (metal gravado, medalhão, silhueta, pixel) ou podem ser imagens suas; cartas de várias classes mostram um símbolo por classe; e ATK/DEF podem ficar em placas ou com o número no medalhão. **Imagem própria:** qualquer peça (ou a moldura inteira) pode ser um PNG de um modelo pronto, esticado, em 9 partes (cantos fixos) ou na proporção, com ajuste fino, margens do texto e tingimento pela cor da carta. Vale só para a carta ou como **tema do deck**. |
-| **Verso** | Verso de cada coleção: estilo, cores, padrão, arte de fundo, emblema e título. No PDF frente e verso, cada carta sai com o verso da sua coleção. |
-| **Ficha** | Vários personagens, com retrato, ancestralidade, classes, nível, pontos de vida, atributos com modificador e equipamento em "boneco" usando as cartas do deck de Equipamentos. Pode ser impressa. |
-| **Ajustes** | Coleção aberta (nome, sigla e logo), tema de cada deck, backup (.zip), restauração, planilha (.csv), espaço usado e créditos. |
+| **Biblioteca** | Coleções e decks com contagem de cartas, busca, filtros (tipo, custo, raridade, etiqueta), curva de custo, seleção múltipla, mover entre decks, PNG (zip) e PDF. Importa artes em lote pelo nome do arquivo, com escolha entre variações (ver grande, apagar, gerar mais pelo ComfyUI). Os botões **Editar coleção** e **Editar este deck** abrem a tela de tema. As cartas aparecem completas em alta resolução: cada uma é desenhada uma vez e guardada. |
+| **Editor** | Abas **Texto** (PT/EN, símbolos no texto), **Jogo** (classes, custos, ATK/DEF, raridade, regra de custo, efeitos da Mesa; em cartas de equipamento, o espaço e os bônus), **Arte** (enviar, enquadrar, zoom, espelhar, pixelar) e **Aparência** (ajustes só daquela carta). Tem desfazer/refazer e Ctrl+S, e só grava ao salvar. |
+| **Tema** | Aparência do deck inteiro ou da coleção, com carta de amostra: 14 estilos que se misturam peça a peça, cores de fundo/texto/destaque por peça (ataque e defesa separados), símbolos por recurso e por classe em 5 acabamentos ou com imagens suas (inclui uma coleção 3D), tamanhos e espaçamento. |
+| **Verso** | Verso de cada coleção: estilo, cores, padrão, arte de fundo, emblema e título. |
+| **Herói** | Galeria e ficha de cada herói: boneco em pixel art montado por peças (vira o retrato e a miniatura do campo), atributos, cartas de equipamento vestidas e dados de jogo. |
+| **Mesa** | Protótipo jogável contra um bot: seleção de heróis e de cenário, mão inicial com troca, campo com bonecos animados, reações, níveis, efeitos visíveis, registro da batalha, música e sons. |
+| **Ajustes** | Coleção aberta (nome, sigla e logo), decks, backup (.zip), restauração, planilha (.csv), espaço usado e créditos. |
 
-## Artes com IA
+## Artes
 
-As 81 cartas da coleção Classes têm prompts prontos no estilo MTG e um script para o ComfyUI: veja [docs/artes.md](docs/artes.md).
+As artes das cartas e os cenários da Mesa são gerados no próprio computador pelo ComfyUI (Flux.1 dev + LoRA "Modern Pixel Art"). Os scripts ficam em `tools/comfyui/`; veja também [docs/artes.md](docs/artes.md).
 
 ## Para desenvolver
 

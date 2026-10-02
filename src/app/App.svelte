@@ -6,6 +6,8 @@
   import PdfDialog from '../ui/common/PdfDialog.svelte';
   import { app, LAST_EDITION } from '../store/project.svelte';
   import { loadCardFonts } from '../render/fonts';
+  import { RENDER_VERSION } from '../render/card';
+  import { pruneOldRenders } from '../store/db';
   import { router } from './router.svelte';
   import { L } from './i18n.svelte';
   import Library from '../ui/library/Library.svelte';
@@ -22,10 +24,12 @@
 
   onMount(() => {
     Promise.all([loadCardFonts(), app.load()]).catch((e) => { error = String(e?.message ?? e); });
+    // com o app já aberto e parado: limpa do cache as imagens de versões antigas do desenho (só ocupam espaço)
+    const tidy = setTimeout(() => { void pruneOldRenders(`${RENDER_VERSION}-`).catch(() => undefined); }, 8000);
     // grava pendências ao fechar a janela/aba
     const flush = () => { void app.flush(); };
     addEventListener('pagehide', flush);
-    return () => removeEventListener('pagehide', flush);
+    return () => { clearTimeout(tidy); removeEventListener('pagehide', flush); };
   });
 
   $effect(() => { if (router.route.name === 'editor') lastCard = router.route.id; });
