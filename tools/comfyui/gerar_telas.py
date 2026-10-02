@@ -13,6 +13,8 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'publ
 os.makedirs(OUT, exist_ok=True)
 PRE = "UMEMPART, modern pixel art, highly detailed 16-bit fantasy game key art, crisp square pixels, limited color palette, dramatic lighting, "
 END = " Dark, mysterious, cosmic mood. No text, no letters, no logo, no UI, no border, no frame, no watermark."
+PRE_FIG = "UMEMPART, modern pixel art, highly detailed 16-bit game character art, crisp square pixels, limited color palette, dramatic red rim lighting, "
+END_FIG = " No text, no letters, no logo, no UI, no border, no frame, no watermark, no scenery, no ground." 
 # (id, semente, largura, altura, descrição)
 ARTS = [
     ('titulo', 31, 1920, 1088,
@@ -26,18 +28,25 @@ ARTS = [
     ('batalha-multi', 42, 1024, 1280,
      "vertical composition: two rival heroes facing each other in a duel on a dark stone arena, on the left an armored knight with a sword and red cape, on the right a hooded mage with a glowing blue staff, "
      "both in profile, sparks between them, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
+    # logotipo do desenvolvedor (tela de abertura): fundo preto liso, para assentar sobre a tela preta
+    ('estudio', 51, 1024, 1024,
+     "full body character on a plain pure black background: a fearsome black-skinned demon rock guitarist standing with legs apart, shredding a black electric guitar held across his body. "
+     "He has four big curved black horns (two rising from the forehead and two sweeping out from the sides of the head), glowing red eyes, a snarling mouth with fangs, "
+     "a huge wild mane of long shaggy black hair, long black fur hanging from the forearms and shoulders, a muscular bare chest with a leather guitar strap, clawed hands on the fretboard and strings, "
+     "ragged black fur around the waist and legs, clawed feet. Strong red rim light outlining the whole silhouette, faint red embers. "
+     "The whole figure from the horns to the feet is inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
     ('campanha', 43, 1024, 1280,
      "vertical composition: a winding road through a dark fantasy world map landscape seen from a high cliff, distant ruined castle, dead forest, mountains and a glowing violet rift on the horizon, "
      "a small party of three travelers with a lantern walking the road, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
 ]
 
-def wf(prompt, seed, w, h):
+def wf(prompt, seed, w, h, fig=False):
     return {
       "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "flux1-dev.safetensors", "weight_dtype": "fp8_e4m3fn"}},
       "2": {"class_type": "DualCLIPLoader", "inputs": {"clip_name1": "t5xxl_fp16.safetensors", "clip_name2": "clip_l.safetensors", "type": "flux"}},
       "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
       "10": {"class_type": "LoraLoader", "inputs": {"model": ["1", 0], "clip": ["2", 0], "lora_name": "ume_modern_pixelart.safetensors", "strength_model": 1.0, "strength_clip": 1.0}},
-      "4": {"class_type": "CLIPTextEncode", "inputs": {"text": PRE + prompt + END, "clip": ["10", 1]}},
+      "4": {"class_type": "CLIPTextEncode", "inputs": {"text": (PRE_FIG + prompt + END_FIG) if fig else (PRE + prompt + END), "clip": ["10", 1]}},
       "5": {"class_type": "FluxGuidance", "inputs": {"conditioning": ["4", 0], "guidance": 3.5}},
       "6": {"class_type": "EmptySD3LatentImage", "inputs": {"width": w, "height": h, "batch_size": 1}},
       "7": {"class_type": "KSampler", "inputs": {"model": ["10", 0], "positive": ["5", 0], "negative": ["5", 0], "latent_image": ["6", 0],
@@ -65,7 +74,7 @@ for aid, seed, w, h, prompt in ARTS:
         dst = os.path.join(OUT, f"{aid}.webp" if v == 1 else f"{aid}__v{v}.webp")
         if os.path.exists(dst): continue
         t0 = time.time()
-        pid = post('/prompt', {"prompt": wf(prompt, seed * 100 + v, w, h)})['prompt_id']
+        pid = post('/prompt', {"prompt": wf(prompt, seed * 100 + v, w, h, fig=aid == 'estudio')})['prompt_id']
         while True:
             time.sleep(2)
             hist = get('/history/' + pid)
