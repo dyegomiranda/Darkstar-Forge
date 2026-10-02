@@ -109,7 +109,7 @@ function recolor(im: HTMLImageElement, maps: { from: string[]; to: string[] }[])
 
 // ───────────── montagem ─────────────
 
-interface Draw { rel: string; z: number; size: number; hold0: boolean; maps: { from: string[]; to: string[] }[] }
+interface Draw { rel: string; z: number; size: number; hold0: boolean; maps: { from: string[]; to: string[] }[]; slot?: SlotId }
 
 function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined): Draw[] {
   const pick = (a: Anim) => {
@@ -158,7 +158,7 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
     const part = av.parts[s.id];
     const item = itemOf(s.id, part?.id);
     if (!item || !item.bodies.includes(av.body)) continue;
-    draws.push(...drawsOf(item, av, anim, part?.color));
+    draws.push(...drawsOf(item, av, anim, part?.color).map((d) => ({ ...d, slot: s.id })));
     if (item.ammo && anim === 'shoot') draws.push(...drawsOf(LPC.fixed.ammo, av, anim, undefined));
   }
   draws.sort((a, b) => a.z - b.z);
@@ -168,17 +168,48 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
   const ctx = canvas.getContext('2d')!;
   ctx.imageSmoothingEnabled = false;
   const imgs = await Promise.all(draws.map((d) => load(d.rel)));
-  draws.forEach((d, i) => {
-    const im = imgs[i];
-    if (!im) return;
+  /** Desenha uma camada (todos os quadros) num contexto. */
+  const paint = (to: CanvasRenderingContext2D, d: Draw, im: HTMLImageElement) => {
     const src: CanvasImageSource = d.maps.length ? recolor(im, d.maps) : im;
     const off = (size - d.size) / 2;
     const cols = Math.floor(im.width / d.size), rws = Math.max(1, Math.floor(im.height / d.size));
     for (let r = 0; r < rows; r++) for (let f = 0; f < frames; f++) {
       const sf = d.hold0 ? 0 : f;
       if (sf >= cols || r >= rws) continue;
-      ctx.drawImage(src, sf * d.size, r * d.size, d.size, d.size, f * size + off, r * size + off, d.size, d.size);
+      to.drawImage(src, sf * d.size, r * d.size, d.size, d.size, f * size + off, r * size + off, d.size, d.size);
     }
+  };
+  const layer = () => { const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; const x = c.getContext('2d', { willReadFrequently: true })!; x.imageSmoothingEnabled = false; return x; };
+
+  // Elmo de metal: o cabelo fica por baixo dele. Sem isto, a franja apareceria pelas
+  // aberturas do elmo (um "olho" na cor do cabelo). O que sai é o cabelo dentro do
+  // contorno do elmo; o que passa para fora (trança, cabelo comprido) continua.
+  const helmet = itemOf('head', av.parts.head?.id)?.id.startsWith('hat_helmet');
+  let under: Uint8ClampedArray | null = null;
+  if (helmet && draws.some((d) => d.slot === 'hair')) {
+    const h = layer();
+    draws.forEach((d, i) => { if (d.slot === 'head' && imgs[i]) paint(h, d, imgs[i]!); });
+    const a = h.getImageData(0, 0, canvas.width, canvas.height).data;
+    under = new Uint8ClampedArray(canvas.width * canvas.height);
+    // em cada linha de cada quadro: tudo entre o primeiro e o último ponto do elmo está "debaixo" dele
+    for (let y = 0; y < canvas.height; y++) for (let f = 0; f < frames; f++) {
+      let x0 = -1, x1 = -1;
+      for (let x = f * size; x < (f + 1) * size; x++) if (a[(y * canvas.width + x) * 4 + 3] > 40) { if (x0 < 0) x0 = x; x1 = x; }
+      for (let x = x0; x0 >= 0 && x <= x1; x++) under[y * canvas.width + x] = 1;
+    }
+  }
+
+  draws.forEach((d, i) => {
+    const im = imgs[i];
+    if (!im) return;
+    if (under && d.slot === 'hair') {
+      const t = layer();
+      paint(t, d, im);
+      const data = t.getImageData(0, 0, canvas.width, canvas.height);
+      for (let p = 0; p < under.length; p++) if (under[p]) data.data[p * 4 + 3] = 0;
+      t.putImageData(data, 0, 0);
+      ctx.drawImage(t.canvas, 0, 0);
+    } else paint(ctx, d, im);
   });
   return { canvas, size, frames, rows };
 }
@@ -188,13 +219,9 @@ export function attackAnim(av: Avatar, fallback: Anim = 'slash'): Anim {
   return itemOf('weapon', av.parts.weapon?.id)?.attack ?? fallback;
 }
 
-/** "Foto" do boneco para o retrato: o busto de frente (rosto à mostra), ampliado sem suavizar, sobre um fundo. */
+/** "Foto" do boneco para o retrato: o busto de frente, igual ao boneco, ampliado sem suavizar, sobre um fundo. */
 export async function portrait(av: Avatar, bg = '#2a2420', px = 8): Promise<Blob> {
-  // retrato é para ver o rosto: sem arma nem escudo na frente, e sem elmo de metal (capuz e chapéu de pano ficam)
-  const parts = { ...av.parts };
-  delete parts.weapon; delete parts.shield;
-  if (parts.head?.id.startsWith('hat_helmet')) delete parts.head;
-  const sheet = await compose({ ...av, parts }, 'idle');
+  const sheet = await compose(av, 'idle');
   const off = (sheet.size - LPC.frame) / 2;
   const sx = off + 14, sy = 2 * sheet.size + off + 8, sw = 36, sh = 45; // direção "s" (de frente), do alto da cabeça ao peito
   const c = document.createElement('canvas');
