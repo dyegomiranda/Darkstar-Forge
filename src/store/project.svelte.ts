@@ -197,8 +197,24 @@ class ProjectState {
   /** Edição pelo id; sem id, a coleção aberta. */
   edition(id?: string) { const eds = this.project?.editions; return eds?.find((e) => e.id === (id ?? this.editionId)) ?? eds?.[0]; }
 
+  /**
+   * Cartas agrupadas por deck, já em ordem. Montado uma vez e refeito só quando
+   * alguma carta entra, sai, muda de deck ou de número — as telas pedem esta lista
+   * muitas vezes por desenho (contagens, filtros, temas).
+   */
+  #byDeck = $derived.by(() => {
+    const map = new Map<string, Card[]>();
+    for (const c of Object.values(this.cards)) {
+      const list = map.get(c.deckId);
+      if (list) list.push(c); else map.set(c.deckId, [c]);
+    }
+    for (const list of map.values()) list.sort((a, b) => a.n - b.n);
+    return map;
+  });
+
+  /** Cartas de um deck, pela ordem do número. (Não altere a lista devolvida: ela é compartilhada.) */
   cardsOf(deckId: string): Card[] {
-    return Object.values(this.cards).filter((c) => c.deckId === deckId).sort((a, b) => a.n - b.n);
+    return this.#byDeck.get(deckId) ?? [];
   }
 
   // ───────────── escrita ─────────────
@@ -229,6 +245,15 @@ class ProjectState {
     const res = { red: 'vigor', blue: 'mana', green: 'nature', black: 'souls', purple: 'shadow', white: 'faith', silver: 'focus', orange: 'gold', gear: 'gold' }[colors[0]] as ResourceId;
     const now = Date.now();
     const blank = { name: '', type: '', subtype: '', rules: '', flavor: '' };
+    // deck de Equipamentos: a carta nasce como equipamento (sem custo nem ataque/defesa; o espaço e os bônus se escolhem na aba Jogo)
+    if (deck.kind === 'equipment') {
+      return {
+        id: newId('card'), deckId, n,
+        text: { 'pt-BR': { ...blank, name: 'Novo equipamento', type: 'Equipamento' }, 'en-US': { ...blank, name: 'New equipment', type: 'Equipment' } },
+        colors, cost: [], stats: null, rarity: 'common', mechanics: [], tags: [], costMode: 'manual', rarityMode: 'manual',
+        art: { zoom: 1, x: 0, y: 0, mirror: false }, gear: {}, createdAt: now, updatedAt: now,
+      };
+    }
     return {
       id: newId('card'), deckId, n,
       text: { 'pt-BR': { ...blank, name: 'Nova carta', type: 'Criatura' }, 'en-US': { ...blank, name: 'New card', type: 'Creature' } },
@@ -273,6 +298,10 @@ class ProjectState {
     this.project = project;
     this.cards = Object.fromEntries(cards.map((c) => [c.id, c]));
     if (!project.editions.some((e) => e.id === this.editionId)) this.editionId = project.editions[0]?.id ?? '';
+    // backup de uma versão anterior do programa: passa pelas mesmas atualizações de quando o app abre
+    // (estilos que saíram, equipamento em cartas, coleções novas…)
+    this.#addMissingCollections();
+    await this.flush();
   }
 
   async resetToSeed(): Promise<void> {

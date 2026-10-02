@@ -40,6 +40,11 @@
   $effect(() => { const v = query; clearTimeout(qTimer); qTimer = setTimeout(() => (q = v.trim().toLowerCase()), 160); });
 
   const lang = $derived(app.lang);
+  /** Nome do deck em duas partes: "Vermelho — Guerreiro / Bárbaro" → destaque "Guerreiro / Bárbaro", detalhe "Vermelho". */
+  function deckLabel(d: { name: Record<string, string> }): { main: string; small: string } {
+    const [a, ...rest] = (d.name[lang] ?? '').split(' — ');
+    return rest.length ? { main: rest.join(' — '), small: a } : { main: a, small: '' };
+  }
   const deck = $derived(deckId ? app.deck(deckId) : undefined);
   // abrir um deck de outra coleção troca a coleção aberta
   $effect(() => { if (deck && deck.editionId !== app.editionId) app.editionId = deck.editionId; });
@@ -240,7 +245,7 @@
       {@const n = count(d.id)}
       <button class="deck" class:on={deck?.id === d.id} onclick={() => { selected = new Set(); router.library(d.id); }}>
         <span class="emb" style="--c:{colorHex(d.colors[0])}"><Glyph id={classIcon(d.colors[0])} size={19} color={lighten(vivid(colorHex(d.colors[0])), 0.35)} /></span>
-        <span class="dn">{COLORS[d.colors[0]].classes[lang]}<small>{COLORS[d.colors[0]].name[lang]}</small></span>
+        <span class="dn">{deckLabel(d).main || COLORS[d.colors[0]].classes[lang]}<small>{deckLabel(d).small}</small></span>
         <span class="cnt" class:ok={n === sizeOf(d.id)} class:warn={n !== sizeOf(d.id) && d.kind === 'class'}>{n}{d.kind === 'class' ? `/${sizeOf(d.id)}` : ''}</span>
       </button>
     {/each}
@@ -249,7 +254,7 @@
   <section class="content">
     <header class="top">
       <div class="title">
-        <h1>{deck ? COLORS[deck.colors[0]].classes[lang] : L('Todas as cartas', 'All cards')}</h1>
+        <h1>{deck ? deckLabel(deck).main || COLORS[deck.colors[0]].classes[lang] : L('Todas as cartas', 'All cards')}</h1>
         <p class="muted">
           {filtered.length}{filtering ? ` ${L('de', 'of')} ${base.length}` : ''} {L('cartas', 'cards')}
           {#if deck && deck.kind === 'class'}

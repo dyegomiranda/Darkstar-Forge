@@ -44,7 +44,7 @@
   const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
   let picking = $state<Slot | null>(null);
-  let portraitInput: HTMLInputElement;
+  let portraitInput = $state<HTMLInputElement>();
   let creating = $state(false);
 
   const chars = $derived(app.project?.characters ?? []);
@@ -155,7 +155,7 @@
           {@const d = c.play ? heroDef(c) : null}
           <div class="hcard" style="--c:{heroColor(c)}">
             <button class="hmain" onclick={() => open(c.id)} title={L('Abrir a ficha', 'Open the sheet')}>
-              <span class="hpic"><HeroPortrait hero={c} size={220} />{#if c.avatar}<span class="hdoll"><AvatarSprite avatar={c.avatar} scale={2} /></span>{/if}</span>
+              <span class="hpic"><HeroPortrait hero={c} size={220} />{#if c.avatar && c.portraitMediaId}<span class="hdoll"><AvatarSprite avatar={c.avatar} scale={2} /></span>{/if}</span>
               <span class="hname display">{c.name || L('Sem nome', 'Unnamed')}</span>
               <span class="hclass">{d ? L(d.className[0], d.className[1]) : c.classColors.map((col) => COLORS[col].classes[app.lang]).join(' / ')}</span>
               {#if d}
@@ -192,8 +192,8 @@
     <div class="sheet">
       <!-- identidade -->
       <section class="card id">
-        <button class="portrait" onclick={() => portraitInput.click()} title={L('Trocar retrato', 'Change portrait')}>
-          {#if portrait}<img src={portrait} alt="" />{:else if ch.preset}<span class="pfill"><HeroPortrait hero={ch} size={290} /></span>{:else}<div class="ph"><Upload size={22} /><span>{L('Enviar retrato', 'Upload portrait')}</span></div>{/if}
+        <button class="portrait" onclick={() => portraitInput?.click()} title={L('Trocar retrato', 'Change portrait')}>
+          {#if portrait}<img src={portrait} alt="" />{:else if ch.preset || ch.avatar}<span class="pfill"><HeroPortrait hero={ch} size={290} /></span>{:else}<div class="ph"><Upload size={22} /><span>{L('Enviar retrato', 'Upload portrait')}</span></div>{/if}
           <span class="pchange"><Upload size={13} /> {L('Trocar imagem', 'Change image')}</span>
         </button>
         <input type="file" accept="image/*" hidden bind:this={portraitInput} onchange={(e) => setPortrait((e.currentTarget as HTMLInputElement).files)} />
@@ -405,13 +405,7 @@
 <style>
   .sheet-page { height: 100%; overflow-y: auto; background: radial-gradient(ellipse at 50% 0%, #1b1715, var(--bg) 60%); }
   .head { display: flex; align-items: center; gap: 8px; padding: 14px 28px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgb(12 11 10 / .9); backdrop-filter: blur(8px); z-index: 2; flex-wrap: wrap; }
-  .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-  .tabs button { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--surface); color: var(--text-2); font: 500 13px var(--ui); cursor: pointer; }
-  .tabs button.on { background: var(--accent-soft); border-color: rgb(216 176 106 / .5); color: var(--accent-2); }
-  .tabs .add { border-style: dashed; }
   .empty { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 12vh 20px; color: var(--muted); }
-  .empty h2 { color: var(--text); }
-  .empty p { max-width: 460px; }
 
   .gallery { padding: 28px 32px 60px; max-width: 1500px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
   .ghead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

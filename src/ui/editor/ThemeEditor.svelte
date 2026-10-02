@@ -20,10 +20,12 @@
 
   let { scope, deckId }: { scope: Exclude<LookScope, 'card'>; deckId: string } = $props();
 
+  // svelte-ignore state_referenced_locally (a tela é recriada a cada rota: o valor inicial é o que vale)
   const deck = app.deck(deckId);
   const cards = deck ? app.cardsOf(deck.id) : [];
   // amostra inicial: de preferência uma carta com custo, ataque e defesa (mostra todas as peças)
   let at = $state(Math.max(0, cards.findIndex((c) => c.stats && c.cost.length)));
+  // svelte-ignore state_referenced_locally (a tela é recriada a cada rota: o valor inicial é o que vale)
   const ed = deck && cards.length ? new EditorState(cards[at], scope, true) : null;
   const edition = deck ? app.edition(deck.editionId) : undefined;
 

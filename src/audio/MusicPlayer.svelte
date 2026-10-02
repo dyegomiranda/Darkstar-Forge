@@ -9,6 +9,7 @@
 
   let { float = false }: { float?: boolean } = $props();
 
+  // svelte-ignore state_referenced_locally (só o valor inicial interessa)
   let open = $state(!float);
   let tick = $state(0);
   $effect(() => chip.onchange(() => tick++));

@@ -14,6 +14,7 @@
   let { card, alt = '', eager = false }: { card: Card; alt?: string; eager?: boolean } = $props();
 
   let el: HTMLDivElement;
+  // svelte-ignore state_referenced_locally (só o valor inicial interessa)
   let visible = $state(eager);
   let url = $state<string | undefined>();
   let failed = $state(false);

@@ -387,7 +387,16 @@
     } finally { botBusy = false; }
   }
 
-  function key(e: KeyboardEvent) { if (e.key === 'Escape') { if (sel) cancel(); else say(''); graveOf = null; } }
+  /** Esc fecha o que estiver aberto por cima (cenários, ajuda, menu, cemitério); senão, cancela a mira. */
+  function key(e: KeyboardEvent) {
+    if (e.key !== 'Escape') return;
+    if (sceneOpen) sceneOpen = false;
+    else if (helpOpen) helpOpen = false;
+    else if (menuOpen) menuOpen = false;
+    else if (graveOf !== null) { graveOf = null; zoom = null; }
+    else if (sel) cancel();
+    else say('');
+  }
 
   // ───────────── mira: seta da origem até o alvo e destaque da área atingida ─────────────
   let hoverPos = $state<Pos | null>(null);
@@ -576,7 +585,7 @@
     const from = lastLine ? g.log.lastIndexOf(lastLine) + 1 : 0;
     const lines = g.log.slice(from).filter((l) => !l.startsWith('—') && !l.includes('XP ('));
     lastLine = g.log[g.log.length - 1] ?? '';
-    if (lines.length) { caption = lines.slice(-3).join('  ·  '); const c = caption; setTimeout(() => { if (caption === c) caption = ''; }, 4200); }
+    if (lines.length) { caption = lines.slice(-2).join('  ·  '); const c = caption; setTimeout(() => { if (caption === c) caption = ''; }, 4200); }
     // onde cada criatura estava antes da tela mudar (as derrotadas somem)
     const before = new Map<string, DOMRect>();
     for (const e of list) for (const id of idsOf(e)) { const el = elOf(id); if (el) before.set(id, el.getBoundingClientRect()); }
@@ -863,6 +872,7 @@
       </footer>
       {#if sceneOpen}
         <div class="scene-modal" onclick={() => (sceneOpen = false)} role="presentation" transition:fade={{ duration: 140 }}>
+          <!-- svelte-ignore a11y_click_events_have_key_events (o Esc fecha, pela janela) -->
           <div class="scene-box" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1" in:scale={{ duration: 200, start: 0.94 }}>
             <header><div><small>{L('Onde a batalha acontece', 'Where the battle takes place')}</small><h2 class="display">{L('Campo de batalha', 'Battlefield')}</h2></div>
               <button class="btn sm ghost icon" onclick={() => (sceneOpen = false)}><X size={16} /></button></header>
@@ -1126,7 +1136,7 @@
       </div>
       <div class="mid" class:warn={!!msg && warn} class:aiming={!!sel} class:mine={myTurn || awaiting} class:foe={!myTurn && !awaiting && g.winner === undefined}>
         <span class="mid-orn"></span>
-        <div class="mid-plate">
+        <div class="mid-plate" class:long={!!(msg || caption)}>
           {#key msg || caption}
             <span in:fade={{ duration: 160 }}>{msg || caption || (awaiting ? L('O oponente jogou uma carta: reaja ou aceite', 'The opponent played a card: react or accept') : myTurn ? L('Seu turno', 'Your turn') : g.winner === undefined ? L(`Turno de ${F.hero.name}`, `${F.hero.name}'s turn`) : '')}</span>
           {/key}
@@ -1266,6 +1276,7 @@
       {/if}
       {#if helpOpen}
         <div class="modal" onclick={() => (helpOpen = false)} role="presentation">
+          <!-- svelte-ignore a11y_click_events_have_key_events (o Esc fecha, pela janela) -->
           <div class="box help" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
             <h2>{L('Como jogar', 'How to play')}</h2>
             <ul>
@@ -1326,7 +1337,8 @@
 
     {#if graveOf !== null}
       <div class="modal" onclick={() => { graveOf = null; zoom = null; }} role="presentation">
-        <div class="gbox" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+        <!-- svelte-ignore a11y_click_events_have_key_events (o Esc fecha, pela janela) -->
+          <div class="gbox" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
           <header><h2>{L('Cemitério de', 'Graveyard of')} {g.players[graveOf].hero.name} · {g.players[graveOf].discard.length}</h2>
             <button class="btn sm ghost icon" onclick={() => { graveOf = null; zoom = null; }}><X size={16} /></button></header>
           <div class="ggrid">
@@ -1418,14 +1430,20 @@
       </div>
     {/if}
     {#if g.winner !== undefined && !fxPlaying}
-      <div class="modal"><div class="box">
-        <h2>{g.winner === me ? L('Vitória!', 'Victory!') : L('Derrota', 'Defeat')}</h2>
-        <p class="muted">{g.ended === 'timeout' ? L('Tempo esgotado.', 'Time ran out.') : g.ended === 'concede' ? L('Você desistiu da batalha.', 'You conceded the battle.') : ''} {L(`Turno ${g.turn}.`, `Turn ${g.turn}.`)}</p>
-        <div class="lv">
-          <button class="btn primary" onclick={start}><RotateCcw size={15} /> {L('Jogar de novo', 'Play again')}</button>
-          <button class="btn" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>
+      {@const won = g.winner === me}
+      <div class="modal">
+        <div class="endbox" class:won in:scale={{ duration: 320, start: 0.85 }} style="--c:{colorOf(g.players[g.winner].hero)}">
+          <span class="end-rays"></span>
+          <div class="end-pic"><HeroPortrait hero={characterOf(g.players[g.winner].hero.id)} size={120} round /></div>
+          <small>{won ? L('A batalha é sua', 'The battle is yours') : L(`${g.players[g.winner].hero.name} venceu`, `${g.players[g.winner].hero.name} won`)}</small>
+          <h2 class="display">{won ? L('Vitória!', 'Victory!') : L('Derrota', 'Defeat')}</h2>
+          <p class="muted">{g.ended === 'timeout' ? L('O tempo esgotou.', 'Time ran out.') : g.ended === 'concede' ? L('Você desistiu da batalha.', 'You conceded the battle.') : won ? L(`${F.hero.name} caiu.`, `${F.hero.name} fell.`) : L(`${P.hero.name} caiu.`, `${P.hero.name} fell.`)} {L(`Turno ${g.turn}.`, `Turn ${g.turn}.`)}</p>
+          <div class="lv">
+            <button class="btn primary big" onclick={start}><RotateCcw size={16} /> {L('Jogar de novo', 'Play again')}</button>
+            <button class="btn big" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>
+          </div>
         </div>
-      </div></div>
+      </div>
     {/if}
   </div>
 {/if}
@@ -1667,11 +1685,13 @@
   .mid-orn { position: relative; flex: 1; max-width: 300px; height: 2px; background: linear-gradient(90deg, transparent, var(--mc)); }
   .mid-orn::after { content: ''; position: absolute; right: -4px; top: 50%; width: 8px; height: 8px; margin-top: -4px; transform: rotate(45deg); background: var(--mc); box-shadow: 0 0 8px var(--mc); }
   .mid-orn.r { transform: scaleX(-1); }
-  .mid-plate { display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 250px; max-width: 70%; padding: 4px 26px; border-radius: 99px;
+  .mid-plate { display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 250px; max-width: min(860px, 58%); padding: 4px 26px; border-radius: 99px;
     background: linear-gradient(180deg, #2a221c, #14100d); border: 1px solid var(--mc); color: color-mix(in srgb, var(--mc) 70%, #fff);
     box-shadow: 0 0 0 3px rgb(0 0 0 / .4), 0 6px 18px rgb(0 0 0 / .55), 0 0 16px color-mix(in srgb, var(--mc) 25%, transparent), inset 0 1px 0 rgb(255 255 255 / .1);
     font: 600 14.5px var(--display, serif); letter-spacing: .05em; }
   .mid-plate > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  /* avisos e narração: letra comum, mais fácil de ler que a de título */
+  .mid-plate.long { font: 500 13.5px var(--ui); letter-spacing: 0; }
   .mid.warn .mid-plate { background: linear-gradient(180deg, #3a1813, #1c0c0a); color: #ffcabf; font-weight: 700; }
   .cancel-btn { flex: none; display: inline-flex; gap: 4px; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--line-2); background: rgb(22 19 17 / .9); color: var(--text-2); font: 600 12px var(--ui); letter-spacing: 0; cursor: pointer; }
   .cancel-btn:hover { border-color: var(--danger); color: #ffb4a6; }
@@ -1750,8 +1770,8 @@
   .gtx b { font-size: 12.5px; line-height: 1.15; }
   .gtx small { font-size: 11px; color: var(--muted); line-height: 1.25; }
   .gtx em { font-style: normal; color: #f0c45a; font-weight: 700; }
-  .gchips { display: flex; gap: 5px; }
-  .gchip { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: help; flex: 1; min-width: 0; }
+  .gchips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .gchip { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: help; flex: 1 0 30px; min-width: 0; }
   .gchip small { font: 600 9.5px var(--ui); color: var(--text-2); white-space: nowrap; }
 
   .banner { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 40; pointer-events: none; display: flex; flex-direction: column; align-items: center; padding: 14px 70px; background: linear-gradient(90deg, transparent, rgb(10 8 7 / .92) 18%, rgb(10 8 7 / .92) 82%, transparent); border-block: 1px solid color-mix(in srgb, #c4473a 60%, transparent); }
@@ -1889,6 +1909,19 @@
   .rope.hot .rope-label { animation: pulse .5s ease-in-out infinite; }
   @keyframes ropeShake { 25% { transform: translateX(calc(-50% - 2px)); } 75% { transform: translateX(calc(-50% + 2px)); } }
 
+  /* fim de partida */
+  .endbox { position: relative; overflow: hidden; width: min(460px, 92%); display: grid; justify-items: center; gap: 8px; padding: 28px 30px 26px; border-radius: 22px; text-align: center;
+    background: linear-gradient(170deg, color-mix(in srgb, var(--c) 20%, #1c1815), #100d0b 72%); border: 1px solid #8a6d3b;
+    box-shadow: 0 0 0 5px rgb(0 0 0 / .5), 0 30px 80px rgb(0 0 0 / .85), 0 0 80px color-mix(in srgb, var(--c) 22%, transparent); }
+  .end-rays { position: absolute; left: 50%; top: -250px; width: 640px; height: 640px; margin-left: -320px; border-radius: 50%; opacity: .12; pointer-events: none;
+    background: repeating-conic-gradient(from 0deg, #f0c45a 0deg 5deg, transparent 5deg 16deg); -webkit-mask-image: radial-gradient(circle, #000 10%, transparent 62%); mask-image: radial-gradient(circle, #000 10%, transparent 62%); animation: spin 16s linear infinite; }
+  .endbox:not(.won) .end-rays { display: none; }
+  .end-pic { position: relative; line-height: 0; border-radius: 50%; box-shadow: 0 0 0 3px #14100d, 0 0 0 5px color-mix(in srgb, var(--c) 80%, #000), 0 0 0 6px #d9b56a, 0 10px 30px rgb(0 0 0 / .7); }
+  .endbox small { position: relative; margin-top: 8px; font: 700 11px var(--ui); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .endbox h2 { position: relative; font-size: 46px; line-height: 1; color: #d8cfc4; }
+  .endbox.won h2 { color: #ffd98a; text-shadow: 0 0 30px rgb(240 196 90 / .6), 0 3px 0 #6b4a12; }
+  .endbox p { position: relative; margin: 0 0 10px; }
+  .endbox .lv { position: relative; justify-content: center; }
   .zoom { position: fixed; z-index: 60; pointer-events: none; filter: drop-shadow(0 22px 40px rgb(0 0 0 / .85)); }
   .modal { position: absolute; inset: 0; background: rgb(0 0 0 / .6); display: grid; place-items: center; z-index: 50; }
   .box { background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px; padding: 22px 26px; display: flex; flex-direction: column; gap: 10px; min-width: 320px; }

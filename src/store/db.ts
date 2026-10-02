@@ -108,6 +108,16 @@ export async function pruneRenders(keep: Set<string>): Promise<number> {
   return stale.length;
 }
 
+/** Tira do cache as imagens feitas por uma versão anterior do desenho (a chave começa pela versão). */
+export async function pruneOldRenders(prefix: string): Promise<number> {
+  const d = await db();
+  const stale = (await d.getAllKeys('renders')).filter((k) => !String(k).startsWith(prefix));
+  if (!stale.length) return 0;
+  const tx = d.transaction('renders', 'readwrite');
+  await Promise.all([...stale.map((k) => tx.store.delete(k)), tx.done]);
+  return stale.length;
+}
+
 export async function storageEstimate(): Promise<{ used: number; quota: number }> {
   const e = await navigator.storage?.estimate?.();
   return { used: e?.usage ?? 0, quota: e?.quota ?? 0 };
