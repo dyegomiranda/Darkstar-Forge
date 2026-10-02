@@ -32,11 +32,13 @@
     const rnd = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
     const a = JSON.parse(JSON.stringify(avatar)) as Avatar;
     a.skin = rnd(SKINS.slice(0, 7));
-    a.eyes = rnd(Object.keys(LPC.palettes.eye.colors));
+    a.eyes = rnd(Object.keys(LPC.palettes.eye.colors).filter((k) => !LPC.palettes.eye.colors[k][3]));
+    delete a.head; delete a.frame; delete a.face;
     const RARE = ['beard', 'mustache', 'nose', 'ears', 'arms', 'shoulders', 'head', 'cape', 'face', 'neck', 'belt', 'back', 'shield'];
+    const NEVER = ['eyes', 'crest', 'visor', 'eyebrows'];
     for (const s of LPC.slots) {
       const pool = s.items.filter((i) => i.bodies.includes(a.body));
-      const skip = OWN_SKIN.includes(s.id) || (RARE.includes(s.id) && Math.random() < 0.7) || (a.body === 'female' && (s.id === 'beard' || s.id === 'mustache'));
+      const skip = OWN_SKIN.includes(s.id) || NEVER.includes(s.id) || (RARE.includes(s.id) && Math.random() < 0.7) || (a.body === 'female' && (s.id === 'beard' || s.id === 'mustache'));
       if (skip || !pool.length) { delete a.parts[s.id]; continue; }
       const it = rnd(pool);
       a.parts[s.id] = { id: it.id, color: rnd(colorsOf(it, s.id))?.name };

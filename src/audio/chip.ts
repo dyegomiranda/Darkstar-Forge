@@ -9,7 +9,7 @@
  */
 import { build, noteHz, TRACKS, type Mood, type Track } from './tracks';
 
-type Wave = 'square' | 'triangle' | 'sawtooth';
+type Wave = 'square' | 'triangle' | 'sawtooth' | 'sine';
 export type Sfx = 'draw' | 'card' | 'select' | 'slash' | 'arrow' | 'magic' | 'hit' | 'block' | 'heal' | 'curse' | 'ward' | 'death' | 'summon' | 'levelup' | 'turn' | 'counter' | 'error' | 'victory' | 'defeat' | 'push';
 export type { Mood };
 
@@ -26,7 +26,7 @@ class Chip {
   #curve!: Float32Array<ArrayBuffer>;
   #tracks = new Map<string, Track>();
   #players = new Map<string, Player>();
-  #index: Record<Mood, number> = { menu: 0, battle: 0 };
+  #index: Record<Mood, number> = { title: 0, menu: 0, battle: 0 };
   #listeners = new Set<() => void>();
   /** Clima que a tela pede agora. */
   mood: Mood | null = null;
@@ -126,6 +126,63 @@ class Chip {
     for (const det of [-5, 5]) { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq; o.detune.value = det; o.connect(g); o.start(t); o.stop(t + dur + 0.1); }
   }
 
+  /** Coro: três dentes de serra levemente desafinados (com a oitava de cima bem baixa), abafados, entrando devagar. */
+  #choir(out: AudioNode, freq: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.Q.value = 0.6;
+    f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1150, t + dur * 0.5); f.frequency.linearRampToValueAtTime(700, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.9, dur * 0.35));
+    g.gain.setValueAtTime(vol, t + dur * 0.8);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.25);
+    f.connect(g).connect(out);
+    for (const [det, mul, lv] of [[-9, 1, 1], [8, 1, 1], [3, 2, 0.28]] as const) {
+      const o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.value = freq * mul; o.detune.value = det; og.gain.value = lv;
+      o.connect(og).connect(f); o.start(t); o.stop(t + dur + 0.3);
+    }
+  }
+
+  /** Sino: senoide com um harmônico agudo que some rápido e uma cauda longa. */
+  #bell(out: AudioNode, freq: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    for (const [mul, lv, len] of [[1, 1, dur], [2.76, 0.32, dur * 0.35], [5.4, 0.12, dur * 0.15]] as const) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = freq * mul;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol * lv, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g).connect(out); o.start(t); o.stop(t + len + 0.03);
+    }
+  }
+
+  /** Cordas curtas (ostinato e tremolo): dente de serra abafado, com ataque rápido. */
+  #strings(out: AudioNode, freq: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 1900; f.Q.value = 0.8;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    f.connect(g).connect(out);
+    for (const det of [-6, 6]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq; o.detune.value = det; o.connect(f); o.start(t); o.stop(t + dur + 0.03); }
+  }
+
+  /** Metais: dente de serra + quadrada, o filtro abre com a nota (o "inchar" do metal). */
+  #brass(out: AudioNode, freq: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!;
+    const g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.Q.value = 1.4;
+    f.frequency.setValueAtTime(300, t); f.frequency.linearRampToValueAtTime(1500, t + Math.min(0.5, dur * 0.4)); f.frequency.linearRampToValueAtTime(800, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.14, dur * 0.3));
+    g.gain.setValueAtTime(vol * 0.85, t + dur * 0.75);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.06);
+    f.connect(g).connect(out);
+    for (const [wave, det] of [['sawtooth', -4], ['square', 5]] as const) { const o = ctx.createOscillator(); o.type = wave; o.frequency.value = freq; o.detune.value = det; o.connect(f); o.start(t); o.stop(t + dur + 0.1); }
+  }
+
   #burst(out: AudioNode, t: number, dur: number, vol: number, freq: number, type: BiquadFilterType = 'highpass', to?: number) {
     const ctx = this.ctx!;
     const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
@@ -198,6 +255,13 @@ class Chip {
           case 'hat': this.#burst(out, t, 0.03, 0.055, 7500); break;
           case 'tom': this.#tone(out, 'triangle', e.f, t, 0.13, 0.4, { to: e.f * 0.6 }); break;
           case 'crash': this.#burst(out, t, 0.7, 0.13, 5200); break;
+          // ── vozes épicas (tela inicial) ──
+          case 'choir': this.#choir(out, e.f, t, d, 0.05); break;
+          case 'bell': this.#bell(out, e.f, t, Math.max(1.2, d), 0.075); break;
+          case 'str': this.#strings(out, e.f, t, Math.max(0.09, d * 0.8), 0.06); break;
+          case 'brass': this.#brass(out, e.f, t, d * 0.96, 0.085); break;
+          case 'taiko': this.#tone(out, 'sine', 96, t, 0.42, 0.75 * Math.min(1, 0.6 + e.len * 0.2), { to: 38 }); this.#burst(out, t, 0.09, 0.3, 420, 'lowpass', 90); break;
+          case 'roll': this.#burst(out, t, 0.07, 0.16 * e.len, 1300, 'bandpass'); this.#tone(out, 'triangle', 180, t, 0.05, 0.09 * e.len, { to: 130 }); break;
         }
       }
       p.next += sec;

@@ -7,13 +7,31 @@
  * espaçadas), `pluck` (arpejo agudo saltitante).
  * Levadas de rock (batalha): `chug` (guitarra abafada em colcheias), `gallop` (galope),
  * `open` (acordes soltos, bateria em meio-tempo), `break` (respiro).
+ * Levadas épicas (tela inicial): `dark` (coro grave, sinos espaçados, tambor distante),
+ * `epic` (coro, metais, cordas em ostinato e tambores de guerra) e `rise` (tremolo e rufo que crescem).
  */
-export type Mood = 'menu' | 'battle';
-export type Feel = 'arp' | 'pad' | 'pluck' | 'chug' | 'gallop' | 'open' | 'break';
+export type Mood = 'title' | 'menu' | 'battle';
+export type Feel = 'arp' | 'pad' | 'pluck' | 'chug' | 'gallop' | 'open' | 'break' | 'dark' | 'epic' | 'rise';
 export interface Part { chords: string; feel: Feel }
 export interface TrackDef { id: string; name: [string, string]; mood: Mood; bpm: number; parts: Record<string, Part>; form: string }
 
 export const TRACKS: TrackDef[] = [
+  {
+    id: 'eclipse', name: ['Sol do Vazio', 'Void Sun'], mood: 'title', bpm: 74, form: 'ABBCBB',
+    parts: {
+      A: { feel: 'dark', chords: 'Dm Dm Bb Bb Gm Gm A A' },
+      B: { feel: 'epic', chords: 'Dm C Bb A Dm C Bb A' },
+      C: { feel: 'rise', chords: 'Bb Bb C C Dm Dm A A' },
+    },
+  },
+  {
+    id: 'abismo', name: ['Coroa do Abismo', 'Crown of the Abyss'], mood: 'title', bpm: 66, form: 'AABCB',
+    parts: {
+      A: { feel: 'dark', chords: 'Em Em C C Am Am B B' },
+      B: { feel: 'epic', chords: 'Em D C B Em G D B' },
+      C: { feel: 'rise', chords: 'C C D D Em Em B B' },
+    },
+  },
   {
     id: 'estrada', name: ['Estrada do Herói', "Hero's Road"], mood: 'menu', bpm: 96, form: 'AABAB',
     parts: { A: { feel: 'arp', chords: 'Dm Dm Bb Bb F F C A' }, B: { feel: 'pad', chords: 'Gm Gm Dm Dm Bb C Dm Dm' } },
@@ -46,7 +64,7 @@ export const TRACKS: TrackDef[] = [
 
 // ───────────── montagem: dos acordes para os eventos de cada passo (1 passo = semicolcheia) ─────────────
 
-export type Voice = 'arp' | 'pad' | 'bass' | 'gtr' | 'kick' | 'snare' | 'hat' | 'crash' | 'tom';
+export type Voice = 'arp' | 'pad' | 'bass' | 'gtr' | 'kick' | 'snare' | 'hat' | 'crash' | 'tom' | 'choir' | 'bell' | 'str' | 'brass' | 'taiko' | 'roll';
 export interface Ev { v: Voice; f: number; len: number }
 export interface Track { def: TrackDef; steps: number; ev: Ev[][] }
 
@@ -131,6 +149,42 @@ export function build(def: TrackDef): Track {
           put(b0 + 8, 'snare', 0, 1);
           if (last) fill();
           if (bi % 4 === 0) put(b0, 'crash', 0, 6);
+          break;
+        }
+        case 'dark': {
+          // abertura sombria: coro grave, baixo parado, sinos espaçados e um tambor distante
+          for (const n of [mid - 12, mid, third, fifth]) put(b0, 'choir', n, 16);
+          put(b0, 'bass', low, 16);
+          (bi % 2 ? [[4, fifth + 12], [10, mid + 24]] : [[2, mid + 12], [8, fifth + 12], [13, third + 12]]).forEach(([k, n]) => put(b0 + k, 'bell', n, 8));
+          if (bi % 2 === 0) put(b0, 'taiko', 0, 2);
+          if (bi % 4 === 3) { put(b0 + 12, 'taiko', 0, 1); put(b0 + 14, 'taiko', 0, 1); }
+          break;
+        }
+        case 'epic': {
+          // o tema: coro, metais segurando a tônica, cordas em ostinato e tambores de guerra
+          for (const n of [mid, third, fifth, mid + 12]) put(b0, 'choir', n, 16);
+          put(b0, 'brass', mid - 12, 11); put(b0 + 12, 'brass', fifth - 12, 4);
+          put(b0, 'brass', fifth, 8); put(b0 + 8, 'brass', mid + 12, 8);
+          [mid, mid, fifth, mid, third, mid, fifth, mid + 12].forEach((n, k) => put(b0 + k * 2, 'str', n, 1.5));
+          put(b0, 'bass', low, 8); put(b0 + 8, 'bass', low, 4); put(b0 + 12, 'bass', low + 7, 4);
+          for (const k of [0, 6, 8, 12, 14]) put(b0 + k, 'taiko', 0, k === 0 ? 2 : 1);
+          if (bi % 2) put(b0 + 10, 'taiko', 0, 1);
+          if (bi === 0) put(b0, 'crash', 0, 8);
+          if (last) for (const k of [8, 9, 10, 11, 12, 13, 14, 15]) put(b0 + k, 'taiko', 0, 1);
+          put(b0 + 4, 'bell', mid + 24, 6);
+          break;
+        }
+        case 'rise': {
+          // a subida: tremolo de cordas, sinos subindo e um rufo que cresce até o fim
+          for (const n of [mid - 12, mid, fifth]) put(b0, 'choir', n, 16);
+          for (let k = 0; k < 16; k++) put(b0 + k, 'str', k % 2 ? fifth : mid, 0.9);
+          put(b0, 'bass', low, 16);
+          [mid + 12, third + 12, fifth + 12, mid + 24].forEach((n, k) => put(b0 + k * 4, 'bell', n, 6));
+          for (const k of [0, 4, 8, 12]) put(b0 + k, 'taiko', 0, 1);
+          // rufo: começa baixo e cresce ao longo da parte (len = força, de 0,2 a 1)
+          const grow = (bi + 1) / chords.length;
+          for (let k = 0; k < 16; k += last ? 1 : 2) put(b0 + k, 'roll', 0, 0.2 + 0.8 * grow * (last ? (k + 1) / 16 : 0.6));
+          if (last) put(b0 + 15, 'crash', 0, 8);
           break;
         }
         case 'break': {

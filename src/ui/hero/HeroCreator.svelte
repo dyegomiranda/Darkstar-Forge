@@ -10,7 +10,8 @@
 
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { Plus, Minus, X, Heart, Upload, Swords, Shield, Sparkles, Save, Undo2, Trash2, UserRound, Dna, Shirt, Backpack, Layers, Check, TriangleAlert, Pencil, RotateCcw, ScrollText } from '@lucide/svelte';
+  import { fade } from 'svelte/transition';
+  import { Plus, Minus, X, Heart, Upload, Swords, Shield, Sparkles, Save, Undo2, Trash2, UserRound, Dna, Shirt, Backpack, Layers, Check, TriangleAlert, Pencil, RotateCcw, ScrollText, Wand2, Star } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { importImage } from '../../store/media';
   import { L } from '../../app/i18n.svelte';
@@ -18,7 +19,7 @@
   import { router } from '../../app/router.svelte';
   import { CLASS_COLORS, COLORS, colorHex } from '../../model/catalog';
   import type { Card, Character, ColorId, Slot } from '../../model/types';
-  import { blankHero, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS } from '../../model/hero';
+  import { blankHero, BUILDS, buildStats, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS, type Build } from '../../model/hero';
   import { SLOTS, equippedCards, gearText, heroBaseOf } from '../../model/equipment';
   import { buildHero } from '../../game/decks';
   import { classIcon } from '../../render/icons/glyphs';
@@ -28,9 +29,9 @@
   import CardImage from '../common/CardImage.svelte';
   import HeroPortrait from '../common/HeroPortrait.svelte';
   import ScreenBar from '../common/ScreenBar.svelte';
-  import { zoomable } from '../common/zoom';
   import AppearancePicker from '../../avatar/AppearancePicker.svelte';
-  import { defaultAvatar, type Avatar } from '../../avatar/lpc';
+  import { defaultAvatar, RACE_HEADS, type Avatar } from '../../avatar/lpc';
+  import AvatarSprite from '../../avatar/AvatarSprite.svelte';
   import HeroStage from './HeroStage.svelte';
 
   let { id }: { id: string } = $props();
@@ -45,8 +46,8 @@
 
   type Step = 'who' | 'attrs' | 'look' | 'gear' | 'deck';
   const STEPS: { id: Step; icon: typeof UserRound; pt: string; en: string }[] = [
-    { id: 'who', icon: UserRound, pt: 'Identidade', en: 'Identity' }, { id: 'attrs', icon: Dna, pt: 'Atributos', en: 'Attributes' },
-    { id: 'look', icon: Shirt, pt: 'Aparência', en: 'Appearance' }, { id: 'gear', icon: Backpack, pt: 'Equipamento', en: 'Equipment' },
+    { id: 'who', icon: UserRound, pt: 'Identidade', en: 'Identity' }, { id: 'look', icon: Shirt, pt: 'Aparência', en: 'Appearance' },
+    { id: 'attrs', icon: Dna, pt: 'Atributos', en: 'Attributes' }, { id: 'gear', icon: Backpack, pt: 'Equipamento', en: 'Equipment' },
     { id: 'deck', icon: Layers, pt: 'Deck e recursos', en: 'Deck & resources' },
   ];
   let step = $state<Step>((STEPS.find((s) => s.id === keepStep)?.id) ?? 'who');
@@ -102,6 +103,25 @@
       draft.play = { ...draft.play, className: d.className, deckId: d.deckId, vigor: d.vigor, mana: d.mana, icon: d.icon };
     }
   }
+  /** Como cada ancestralidade aparece no boneco: a cabeça da raça ou, nas de cabeça humana, os traços que a marcam. */
+  const RACE_LOOK: Record<string, { head?: string; skin?: string; parts?: Avatar['parts'] }> = {
+    orc: { head: 'orc', skin: 'green' }, goblin: { head: 'goblin', skin: 'bright_green' }, dragonborn: { head: 'lizard', skin: 'green' },
+    elf: { parts: { ears: { id: 'head_ears_elven' } } }, gnome: { parts: { ears: { id: 'head_ears_medium' } } },
+    tiefling: { skin: 'demon', parts: { horns: { id: 'head_horns_curled' }, tail: { id: 'tail_lizard_alt', color: 'red' } } },
+  };
+  /** Troca a ancestralidade e ajusta o boneco: sai o que era da raça anterior, entra o da nova (o resto da aparência fica). */
+  function chooseRace(id: string) {
+    const before = RACE_LOOK[draft.raceId], after = RACE_LOOK[id];
+    setRace(draft, id);
+    const a = draft.avatar;
+    if (!a) return;
+    if (before?.head && a.head === before.head) { delete a.head; delete a.frame; }
+    for (const k of Object.keys(before?.parts ?? {}) as (keyof Avatar['parts'])[]) if (a.parts[k]?.id === before!.parts![k]!.id) delete a.parts[k];
+    if (before?.skin && a.skin === before.skin) a.skin = 'light';
+    if (after?.head && RACE_HEADS.some((r) => r.id === after.head)) a.head = after.head;
+    if (after?.skin) a.skin = after.skin;
+    for (const [k, v] of Object.entries(after?.parts ?? {})) a.parts[k as keyof Avatar['parts']] ??= { ...v! };
+  }
   let portraitInput = $state<HTMLInputElement>();
   async function setPortrait(files: FileList | null) {
     const f = files?.[0];
@@ -113,9 +133,25 @@
   const left = $derived(pointsLeft(draft));
   const attrs = $derived(gameAttrs(draft));
   function resetStats() { for (const s of STATS) draft.stats[s.id] = statBase(draft, s.id); }
+  /** Sugestões: primeiro as da classe do herói. Cada uma diz quantas cartas do deck ainda ficariam travadas. */
+  const builds = $derived(BUILDS.map((b) => {
+    const stats = buildStats(draft, b), at = gameAttrs({ stats });
+    const blocked = draft.play ? app.cardsOf(draft.play.deckId).filter((c) => c.game?.attr && at[c.game.attr[0]] < c.game.attr[1]).length : 0;
+    return { b, stats, at, blocked, mine: b.classes.includes(draft.classColors[0]), on: STATS.every((s) => draft.stats[s.id] === stats[s.id]) };
+  }).sort((x, y) => Number(y.mine) - Number(x.mine)));
+  function applyBuild(b: Build) { draft.stats = buildStats(draft, b); }
+  /** Cartas do deck que pedem cada atributo: quantas são e o maior valor pedido. */
+  const asks = $derived.by(() => {
+    const out: Record<string, { n: number; max: number }> = {};
+    for (const c of draft.play ? app.cardsOf(draft.play.deckId) : []) { const a = c.game?.attr; if (a) { const o = (out[a[0]] ??= { n: 0, max: 0 }); o.n++; o.max = Math.max(o.max, a[1]); } }
+    return out;
+  });
 
   // ───── equipamento ─────
   let picking = $state<Slot | null>(null);
+  /** Carta em destaque no seletor (a que o mouse ou o foco aponta). */
+  let peek = $state<string | null>(null);
+  $effect(() => { if (!picking) peek = null; });
   const equipment = $derived(Object.values(app.cards).filter((c) => app.deck(c.deckId)?.kind === 'equipment'));
   /** Cartas que cabem no espaço: primeiro as que dão algo no jogo, depois as demais. */
   const slotOptions = (slot: Slot) => equipment.filter((c) => c.tags.some((t) => SLOTS.find((s) => s.id === slot)!.tags.includes(t)))
@@ -249,7 +285,7 @@
               <div class="fld"><span>{L('Ancestralidade', 'Ancestry')}</span>
                 <div class="races">
                   {#each RACES as r (r.id)}
-                    <button class="race" class:on={draft.raceId === r.id} onclick={() => setRace(draft, r.id)}>
+                    <button class="race" class:on={draft.raceId === r.id} onclick={() => chooseRace(r.id)}>
                       <b>{r.name[app.lang]}</b>
                       <span class="rmods">
                         {#each STATS as s}{@const m = (r.boosts[s.id] ?? 0) + (r.flaws[s.id] ?? 0)}{#if m}<i class:neg={m < 0}>{fmt(m)} {L(s.pt, s.en)}</i>{/if}{/each}
@@ -287,10 +323,25 @@
                     <button disabled={!canRaise(draft, s.id)} onclick={() => { if (canRaise(draft, s.id)) draft.stats[s.id]++; }} aria-label={L('Aumentar', 'Raise')}><Plus size={15} /></button>
                   </div>
                   <div class="stbar">{#each Array(STAT_MAX - 8 + 1) as _, i}<i class:on={8 + i <= v} class:base={8 + i <= statBase(draft, s.id)}></i>{/each}</div>
-                  <p>{L(s.what[0], s.what[1])}</p>
+                  <p>{L(s.does[0], s.does[1])}</p>
+                  <p class="ask" class:need={asks[s.attr] && attrs[s.attr] < asks[s.attr].max} class:ok={asks[s.attr] && attrs[s.attr] >= asks[s.attr].max}>{asks[s.attr] ? L(`No seu deck: ${asks[s.attr].n} carta${asks[s.attr].n > 1 ? 's pedem' : ' pede'} ${s.pt} (até ${asks[s.attr].max}).`, `In your deck: ${asks[s.attr].n} card${asks[s.attr].n > 1 ? 's need' : ' needs'} ${s.en} (up to ${asks[s.attr].max}).`) : L(`Nenhuma carta do seu deck pede ${s.pt}.`, `No card in your deck needs ${s.en}.`)}</p>
                   {#if rm}<span class="rtag" class:neg={rm < 0}>{fmt(rm)} {L('ancestralidade', 'ancestry')}</span>{/if}
                 </div>
               {/each}
+            </div>
+            <div class="builds">
+              <header><Wand2 size={15} /><h3>{L('Sugestões prontas', 'Ready-made builds')}</h3><small>{L('Não sabe como distribuir? Escolha um estilo: os pontos são gastos para você, e dá para ajustar depois.', 'Not sure how to spend? Pick a style: the points are spent for you, and you can adjust afterwards.')}</small></header>
+              <div class="blist">
+                {#each builds as x (x.b.id)}
+                  <button class="build" class:on={x.on} class:mine={x.mine} onclick={() => applyBuild(x.b)}>
+                    <span class="bhead"><b>{L(x.b.pt, x.b.en)}</b>{#if x.mine}<em><Star size={10} /> {L('para a sua classe', 'for your class')}</em>{/if}</span>
+                    <span class="binfo">{L(x.b.info[0], x.b.info[1])}</span>
+                    <span class="bstats">{#each STATS as st}<i class:hi={x.at[st.attr] >= 3} class:zero={!x.at[st.attr]}>{L(st.pt, st.en)} {x.at[st.attr]}</i>{/each}</span>
+                    <span class="bdeck" class:bad={x.blocked > 0}>{x.blocked ? L(`${x.blocked} carta${x.blocked > 1 ? 's' : ''} do seu deck fica${x.blocked > 1 ? 'm' : ''} sem uso`, `${x.blocked} card${x.blocked > 1 ? 's' : ''} of your deck stay${x.blocked > 1 ? '' : 's'} unusable`) : L('usa todas as cartas do seu deck', 'uses every card in your deck')}</span>
+                    {#if x.on}<span class="rcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+                  </button>
+                {/each}
+              </div>
             </div>
             {#if locked.length}
               <div class="lock"><TriangleAlert size={15} />
@@ -308,16 +359,22 @@
 
           {:else if step === 'gear'}
             <div class="gearwrap">
-              <div class="doll">
-                <svg class="figure" viewBox="0 0 100 140" aria-hidden="true">
-                  <path d="M50 10c7 0 12 6 12 13s-5 13-12 13-12-6-12-13 5-13 12-13Zm-18 30h36c8 0 13 6 14 13l4 30c1 5-3 8-7 6l-5-2 1 36-10 3-5-28h-4l-5 28-10-3 1-36-5 2c-4 2-8-1-7-6l4-30c1-7 6-13 14-13Z" fill="currentColor" />
-                </svg>
-                {#each SLOTS as sl (sl.id)}
-                  {@const card = draft.slots[sl.id] ? app.cards[draft.slots[sl.id]!] : undefined}
-                  <button class="slot" class:filled={!!card} style="left:{sl.pos[0]}%;top:{sl.pos[1]}%" title={L(sl.pt, sl.en)} onclick={() => (picking = sl.id)}>
-                    {#if card}<CardImage {card} />{:else}<Plus size={16} /><span>{L(sl.pt, sl.en)}</span>{/if}
+              <div class="rig">
+                {#snippet slotBtn(sid: Slot)}
+                  {@const sl = SLOTS.find((x) => x.id === sid)!}
+                  {@const card = draft.slots[sid] ? app.cards[draft.slots[sid]!] : undefined}
+                  <button class="slot" class:filled={!!card} title={card ? `${L(sl.pt, sl.en)}: ${cardName(card)}` : L(sl.pt, sl.en)} onclick={() => (picking = sid)}>
+                    <span class="scard">{#if card}<CardImage {card} />{:else}<Plus size={18} />{/if}</span>
+                    <small>{L(sl.pt, sl.en)}</small>
                   </button>
-                {/each}
+                {/snippet}
+                <div class="scol">{#each ['head', 'chest', 'hands', 'legs', 'feet'] as const as sid}{@render slotBtn(sid)}{/each}</div>
+                <div class="altar">
+                  <span class="halo"></span>
+                  {#if draft.avatar}<span class="fig"><AvatarSprite avatar={draft.avatar} scale={5} /></span>{:else}<HeroPortrait hero={draft} size={200} />{/if}
+                  <span class="plinth"></span>
+                </div>
+                <div class="scol">{#each ['mainHand', 'offHand', 'amulet', 'ring1', 'ring2'] as const as sid}{@render slotBtn(sid)}{/each}</div>
               </div>
               <div class="gearlist">
                 <p class="hint">{L('Clique num espaço para escolher a carta de equipamento. A arma da mão principal define o golpe do herói; as outras peças somam vida, armadura e resistência.', 'Click a slot to choose the equipment card. The main-hand weapon sets the hero’s strike; the other pieces add life, armor and resistance.')}</p>
@@ -384,28 +441,44 @@
 {#if picking}
   {@const opts = slotOptions(picking)}
   {@const sl = SLOTS.find((s) => s.id === picking)!}
-  <div class="picker" role="dialog" aria-modal="true" aria-label={L('Escolher equipamento', 'Choose equipment')}>
-    <header>
-      <div><small>{L('Equipar', 'Equip')}</small><h2>{L(sl.pt, sl.en)}</h2></div>
-      <div class="rowx">
-        {#if draft.slots[picking]}<button class="px-btn" onclick={() => equip(picking!, null)}><X size={14} /> {L('Deixar vazio', 'Leave empty')}</button>{/if}
-        <button class="px-btn gold" onclick={() => (picking = null)}>{L('Fechar', 'Close')} <span class="kbd">Esc</span></button>
-      </div>
-    </header>
-    {#if opts.length}
-      <div class="opts">
-        {#each opts as c (c.id)}
-          <button class="opt" class:on={draft.slots[picking] === c.id} onclick={() => equip(picking!, c)}>
-            <span class="ocard" use:zoomable={{ width: 440 }}><CardImage card={c} eager /></span>
-            <b>{cardName(c)}</b>
-            <small>{gearText(c.gear, app.lang)}</small>
-            {#if draft.slots[picking] === c.id}<span class="worn"><Check size={12} strokeWidth={3} /> {L('equipado', 'equipped')}</span>{/if}
-          </button>
-        {/each}
-      </div>
-    {:else}
-      <div class="gone"><p>{L('Ainda não há carta de equipamento para este espaço. Crie uma no deck de Equipamentos (Construtor de Decks → Nova carta) e, na aba Jogo da carta, escolha o espaço e os bônus.', 'There is no equipment card for this slot yet. Create one in the Equipment deck (Deck Builder → New card) and, in the card’s Game tab, choose the slot and the bonuses.')}</p></div>
-    {/if}
+  {@const shown = opts.find((c) => c.id === peek) ?? opts.find((c) => c.id === draft.slots[picking!]) ?? opts[0]}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="backdrop" onclick={() => (picking = null)}>
+    <div class="picker" role="dialog" aria-modal="true" aria-label={L('Escolher equipamento', 'Choose equipment')} onclick={(e) => e.stopPropagation()}>
+      <header>
+        <div><small>{L('Equipar', 'Equip')}</small><h2>{L(sl.pt, sl.en)}</h2></div>
+        <span class="count">{opts.length} {L(opts.length === 1 ? 'carta' : 'cartas', opts.length === 1 ? 'card' : 'cards')}</span>
+        <button class="px-icon" onclick={() => (picking = null)} title={L('Fechar (Esc)', 'Close (Esc)')} aria-label={L('Fechar', 'Close')}><X size={15} /></button>
+      </header>
+      {#if opts.length}
+        <div class="pbody">
+          <div class="opts">
+            {#if draft.slots[picking]}
+              <button class="opt none" onclick={() => equip(picking!, null)} onmouseenter={() => (peek = null)}>
+                <span class="ocard empty"><X size={26} /></span><b>{L('Deixar vazio', 'Leave empty')}</b>
+              </button>
+            {/if}
+            {#each opts as c (c.id)}
+              <button class="opt" class:on={draft.slots[picking] === c.id} class:peek={shown?.id === c.id} onclick={() => equip(picking!, c)} onmouseenter={() => (peek = c.id)} onfocus={() => (peek = c.id)}>
+                <span class="ocard"><CardImage card={c} /></span>
+                <b>{cardName(c)}</b>
+                {#if draft.slots[picking] === c.id}<span class="worn"><Check size={11} strokeWidth={3} /> {L('equipado', 'equipped')}</span>{/if}
+              </button>
+            {/each}
+          </div>
+          {#if shown}
+            <aside class="view">
+              {#key shown.id}<span class="big" in:fade={{ duration: 120 }}><CardImage card={shown} eager /></span>{/key}
+              <b>{cardName(shown)}</b>
+              <p>{gearText(shown.gear, app.lang)}</p>
+              <button class="px-btn gold" onclick={() => equip(picking!, shown)}>{draft.slots[picking] === shown.id ? L('Já equipado', 'Already equipped') : L('Equipar', 'Equip')}</button>
+            </aside>
+          {/if}
+        </div>
+      {:else}
+        <div class="gone"><p>{L('Ainda não há carta de equipamento para este espaço. Crie uma no deck de Equipamentos (Construtor de decks → Nova carta) e, na aba Jogo da carta, escolha o espaço e os bônus.', 'There is no equipment card for this slot yet. Create one in the Equipment deck (Deck builder → New card) and, in the card’s Game tab, choose the slot and the bonuses.')}</p></div>
+      {/if}
+    </div>
   </div>
 {/if}
 
@@ -523,13 +596,20 @@
   .lock { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 2px solid rgb(255 184 74 / .35); background: rgb(255 184 74 / .07); color: #ffd79a; }
   .lock b { font-size: 12.5px; } .lock p { margin: 3px 0 0; font-size: 12px; color: var(--text-2); }
 
-  .gearwrap { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 26px; align-items: start; }
-  .doll { position: relative; aspect-ratio: 100 / 140; }
-  .figure { position: absolute; inset: 6% 18%; width: 64%; height: 88%; color: #1d1930; }
-  .slot { position: absolute; width: 23%; aspect-ratio: 750 / 1050; transform: translate(-50%, -50%); border: 2px dashed #4a417a; background: rgb(13 11 22 / .85); color: var(--muted); font: 500 10px var(--ui); cursor: pointer; padding: 0; overflow: hidden; display: grid; place-items: center; align-content: center; gap: 2px; transition: all var(--t); }
-  .slot:hover { border-color: var(--accent); color: var(--text); transform: translate(-50%, -50%) scale(1.06); z-index: 2; }
-  .slot.filled { border: 0; box-shadow: 0 0 0 2px #000, 0 8px 20px rgb(0 0 0 / .6); }
-  .slot span { padding: 0 3px; text-align: center; }
+  .gearwrap { display: grid; grid-template-columns: minmax(420px, 560px) minmax(0, 1fr); gap: 26px; align-items: start; }
+  .rig { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 16px 14px; border: 2px solid #2c2647; background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--c) 22%, #14111f), #0b0913 72%); }
+  .scol { display: flex; flex-direction: column; gap: 8px; }
+  .slot { display: grid; justify-items: center; gap: 3px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--muted); font: inherit; transition: transform var(--t), color var(--t); }
+  .scard { width: 62px; aspect-ratio: 750 / 1050; display: grid; place-items: center; overflow: hidden; border: 2px dashed #4a417a; background: rgb(13 11 22 / .85); transition: border-color var(--t), box-shadow var(--t); }
+  .slot.filled .scard { border: 2px solid #000; box-shadow: 0 0 0 1px #6a5fa8, 0 6px 14px rgb(0 0 0 / .6); }
+  .slot small { font: 400 8.5px var(--pixel); letter-spacing: .06em; text-transform: uppercase; }
+  .slot:hover { transform: scale(1.07); color: var(--accent-2); }
+  .slot:hover .scard { border-color: var(--accent); box-shadow: 0 0 14px rgb(227 181 102 / .35); }
+  .altar { position: relative; display: grid; place-items: center; min-height: 380px; }
+  .halo { position: absolute; width: 78%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--c) 40%, transparent), transparent 66%); animation: breath 4s ease-in-out infinite; }
+  @keyframes breath { 50% { opacity: .55; transform: scale(.94); } }
+  .fig { position: relative; margin-top: -30px; }
+  .plinth { position: absolute; bottom: 12%; width: 62%; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, rgb(0 0 0 / .7), transparent 70%); box-shadow: 0 0 0 2px rgb(255 240 200 / .12), 0 0 30px color-mix(in srgb, var(--c) 45%, transparent); }
   .gearlist { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .grow1 { display: grid; grid-template-columns: 112px minmax(110px, 1fr) minmax(130px, 1.2fr) auto auto; gap: 8px; align-items: center; padding: 7px 9px; border: 2px solid #2c2647; background: #100e1a; }
   .grow1.empty { grid-template-columns: 112px 1fr auto; border-style: dashed; background: none; }
@@ -551,18 +631,49 @@
   .split .vig i { background: #f08a6c; } .split .man i { background: #7fb0ff; }
   .split small { font-size: 11px; }
 
-  .picker { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; gap: 16px; padding: 22px 28px 28px; overflow-y: auto; background: rgb(6 5 11 / .96); backdrop-filter: blur(6px); animation: fadein .15s; }
+  .backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgb(4 3 8 / .78); backdrop-filter: blur(5px); animation: fadein .14s; }
   @keyframes fadein { from { opacity: 0; } }
-  .picker header { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 2px solid #2c2647; }
-  .picker header small { font: 400 10px var(--pixel); letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
-  .picker h2 { font: 400 24px var(--pixel); letter-spacing: .06em; text-transform: uppercase; }
-  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px 18px; }
-  .opt { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border: 2px solid transparent; background: none; cursor: pointer; color: var(--text-2); font: inherit; }
-  .opt:hover, .opt:focus-visible { z-index: 6; }
-  .opt.on { border-color: var(--accent); background: rgb(227 181 102 / .07); }
-  .ocard { display: block; width: 100%; aspect-ratio: 750 / 1050; filter: drop-shadow(0 12px 22px rgb(0 0 0 / .7)); }
-  .opt b { font-size: 14px; color: var(--text); } .opt small { font-size: 12.5px; text-align: center; }
-  .worn { position: absolute; top: 0; left: 0; display: inline-flex; gap: 4px; align-items: center; padding: 2px 8px; background: var(--accent); color: #1a1308; font: 700 11px var(--ui); z-index: 7; }
+  .picker { width: min(1180px, 100%); max-height: min(820px, calc(100vh - 48px)); display: flex; flex-direction: column; background: linear-gradient(180deg, #1a1630, #0e0c18);
+    border: 3px solid #fff0c8; box-shadow: 0 0 0 3px #05040a, 0 0 0 6px #4a417a, 0 0 60px rgb(190 120 255 / .22), 0 30px 80px rgb(0 0 0 / .8); animation: popin .18s cubic-bezier(.2, .9, .3, 1.15); }
+  @keyframes popin { from { transform: scale(.94); opacity: 0; } }
+  .picker header { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 2px solid #2c2647; flex: none; }
+  .picker header div { flex: 1; }
+  .picker header small { font: 400 9px var(--pixel); letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+  .picker h2 { font: 400 20px var(--pixel); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-2); }
+  .count { font-size: 12px; color: var(--muted); }
+  .pbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px 10px; align-content: start; padding: 16px 18px; overflow-y: auto; min-height: 0; }
+  .opt { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 6px 8px; border: 2px solid transparent; background: none; cursor: pointer; color: var(--text-2); font: inherit; transition: border-color var(--t), background var(--t), transform var(--t); }
+  .opt:hover, .opt.peek { border-color: #6a5fa8; background: rgb(255 255 255 / .03); transform: translateY(-2px); }
+  .opt.on { border-color: var(--accent); background: rgb(227 181 102 / .08); }
+  .ocard { display: block; width: 100%; aspect-ratio: 750 / 1050; filter: drop-shadow(0 8px 14px rgb(0 0 0 / .6)); }
+  .ocard.empty { display: grid; place-items: center; border: 2px dashed #4a417a; color: var(--muted); filter: none; }
+  .opt b { font-size: 12px; color: var(--text); text-align: center; line-height: 1.25; }
+  .worn { position: absolute; top: 0; left: 0; display: inline-flex; gap: 3px; align-items: center; padding: 2px 6px; background: var(--accent); color: #1a1308; font: 700 10px var(--ui); z-index: 2; }
+  .view { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px; border-left: 2px solid #2c2647; background: #0b0913; overflow-y: auto; min-height: 0; }
+  .big { display: block; width: 100%; aspect-ratio: 750 / 1050; filter: drop-shadow(0 16px 30px rgb(0 0 0 / .75)); }
+  .view b { font: 400 14px var(--pixel); letter-spacing: .04em; color: var(--accent-2); text-align: center; }
+  .view p { margin: 0; font-size: 13px; color: var(--text-2); text-align: center; }
+
+  .builds { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 2px solid #3a3260; background: #0d0b16; }
+  .builds header { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; color: var(--accent-2); }
+  .builds h3 { font: 400 13px var(--pixel); letter-spacing: .06em; }
+  .builds header small { font-size: 12.5px; color: var(--text-2); }
+  .blist { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  .build { position: relative; display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 11px 12px; cursor: pointer; color: var(--text-2); font: inherit; border: 2px solid #2c2647; background: linear-gradient(180deg, #17142a, #100e1a); transition: all var(--t); }
+  .build:hover { border-color: #6a5fa8; transform: translateY(-2px); }
+  .build.mine { border-color: rgb(227 181 102 / .45); }
+  .build.on { border-color: var(--accent); background: #1d1930; box-shadow: 0 0 18px rgb(227 181 102 / .18); }
+  .bhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .bhead b { font: 400 13px var(--pixel); letter-spacing: .04em; color: var(--text); }
+  .build.on .bhead b { color: var(--accent-2); }
+  .bhead em { font-style: normal; display: inline-flex; gap: 3px; align-items: center; font: 700 10px var(--ui); padding: 1px 6px; background: var(--accent); color: #1a1308; }
+  .binfo { font-size: 12px; line-height: 1.4; }
+  .bstats { display: flex; flex-wrap: wrap; gap: 3px; }
+  .bstats i { font-style: normal; font: 700 10.5px var(--ui); padding: 1px 6px; background: #231e38; color: var(--text-2); }
+  .bstats i.hi { background: rgb(227 181 102 / .2); color: var(--accent-2); } .bstats i.zero { opacity: .45; }
+  .bdeck { font-size: 11.5px; color: #9be0b4; } .bdeck.bad { color: #ffd79a; }
+  .stat p.ask.need { color: #ffd79a; } .stat p.ask.ok { color: #9be0b4; }
 
   @media (max-width: 1180px) {
     .body { grid-template-columns: 1fr; overflow-y: auto; }

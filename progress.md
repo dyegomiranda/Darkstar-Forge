@@ -4,6 +4,21 @@
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
 
+## Versão 3.1 (02/10/2026)
+
+- [x] Abrir Configurações não muda mais o tamanho da janela; o modo guardado pelo programa é a referência
+- [x] Resoluções até a maior tela ligada (2K, 4K) e escala da interface automática (a mesma aparência em 1080p, 2K e 4K)
+- [x] Tela inicial: sem o subtítulo, feixe roxo também à esquerda do sol (a mesma arte, espelhada no lugar) e música épica própria (coro, metais, cordas e tambores)
+- [x] Aparência é a 2ª aba; paleta e efeitos ficam embaixo das miniaturas; bonecos sempre centralizados
+- [x] Categoria Olhos (16 olhares, ciclope, 31 cores: naturais e de monstro), sobrancelhas, 7 tons de cabelo entre o castanho e o preto, pele negra
+- [x] Raça do boneco (orc, goblin, troll, draconato, vampiro, esqueleto…) e a ancestralidade escolhida já veste o boneco
+- [x] 14 conjuntos de armadura e roupa (Daédrico, Ébano, Sombra da noite, Celestial…), 12 metais e 7 tecidos novos, adornos e viseiras de elmo
+- [x] Armas e escudos: tinta do metal/pintura e magia imbuída (aura, chamas, fumaça, faíscas) com cor
+- [x] Equipamento: o boneco no centro com os espaços dos lados; a escolha abre numa janela por cima, com a carta grande ao lado
+- [x] Atributos: o que cada um faz, quantas cartas do deck pedem e sugestões prontas que distribuem os pontos
+- [x] Zoom das cartas em fileira (mão inicial, mão da batalha): cresce no lugar e as vizinhas abrem espaço, sem atraso
+- [x] Esc na batalha pausa o jogo e abre o menu no centro da tela
+
 ## Versão 3.0 (02/10/2026)
 
 ### De editor com jogo dentro para jogo com editor dentro

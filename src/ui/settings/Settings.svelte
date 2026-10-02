@@ -41,7 +41,11 @@
   const pct = (v: number) => `${Math.round(v * 100)}%`;
 
   // tudo vale na hora
-  $effect(() => { void [s.display, s.resolution, s.uiScale, s.quality]; settings.applyVideo(); });
+  // (só quando o jogador muda algo: abrir esta tela não mexe na janela)
+  let opened = false;
+  $effect(() => { void [s.display, s.resolution]; if (opened) settings.applyVideo(); });
+  $effect(() => { void [s.uiScale, s.quality]; if (opened) settings.applyVideo(false); });
+  $effect(() => { opened = true; });
   $effect(() => { void [s.master, s.music, s.sfx, s.mute]; settings.applyAudio(); });
   $effect(() => { JSON.stringify(s); settings.save(); });
 
@@ -140,9 +144,10 @@
           </div>
         </div>
         <div class="row3">
-          <div class="lbl"><b>{L('Escala da interface', 'Interface scale')}</b><small>{L('aumenta ou diminui textos e botões', 'makes text and buttons larger or smaller')}</small></div>
+          <div class="lbl"><b>{L('Escala da interface', 'Interface scale')}</b><small>{L('tamanho de textos e botões; a automática ajusta pela resolução', 'size of text and buttons; automatic adjusts to the resolution')}</small></div>
           <div class="chips">
-            {#each [0.8, 0.9, 1, 1.1, 1.25, 1.5] as z}
+            <button class:on={!s.uiScale} onclick={() => (s.uiScale = 0)} title={L('Acompanha o tamanho da janela: o jogo fica com o mesmo aspecto em 1080p, 2K ou 4K', 'Follows the window size: the game looks the same in 1080p, 2K or 4K')}>{L('Automática', 'Automatic')} ({pct(settings.zoom)})</button>
+            {#each [0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as z}
               <button class:on={Math.abs(s.uiScale - z) < 0.01} onclick={() => (s.uiScale = z)}>{pct(z)}</button>
             {/each}
           </div>

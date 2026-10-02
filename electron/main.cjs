@@ -78,31 +78,34 @@ function after(win, event, act, then) {
   setTimeout(go, 500);
 }
 
-function applyMode(win) {
-  if (state.mode === 'fullscreen') { win.setFullScreen(true); return; }
+// Enquanto o programa troca de modo, a janela avisa estados de passagem (sai da tela cheia, solta, maximiza…):
+// esses avisos não são do jogador e são ignorados. `shown` é o último modo que o programa aplicou.
+let busyUntil = 0;
+let shown = null;
+const busy = () => Date.now() < busyUntil;
+
+function applyMode(win, leftFullScreen = false) {
+  busyUntil = Date.now() + 2500;
+  if (state.mode === 'fullscreen') { win.setFullScreen(true); shown = 'fullscreen'; return; }
   // sair da tela cheia (ou de maximizada) leva um instante: o novo modo só entra depois que a janela termina de sair
-  if (win.isFullScreen()) { after(win, 'leave-full-screen', () => win.setFullScreen(false), () => applyMode(win)); return; }
+  if (win.isFullScreen()) { after(win, 'leave-full-screen', () => win.setFullScreen(false), () => applyMode(win, true)); return; }
   if (state.mode === 'maximized') {
-    // no Wayland a janela às vezes ainda "se acha" maximizada depois de encolher, e aí maximizar não faz nada.
+    // no Wayland, depois de "em janela" a janela ainda se acha maximizada (mesmo pequena) e maximizar não faz nada.
     // Passar pela tela cheia e soltar a janela põe o estado em dia (testado: é o caminho que maximiza de novo).
-    const area = screen.getDisplayMatching(win.getBounds()).workAreaSize;
-    const small = win.getContentSize()[0] < area.width * 0.95;
-    if (win.isMaximized() && small) {
-      after(win, 'enter-full-screen', () => win.setFullScreen(true), () =>
-        after(win, 'leave-full-screen', () => win.setFullScreen(false), () =>
-          after(win, 'unmaximize', () => win.unmaximize(), () => { if (state.mode === 'maximized') win.maximize(); })));
-    } else if (!win.isMaximized()) win.maximize();
+    const stale = win.isMaximized() && win.getContentSize()[0] < biggest().width * 0.95;
+    const fresh = () => after(win, 'unmaximize', () => win.unmaximize(), () => { if (state.mode === 'maximized') { win.maximize(); shown = 'maximized'; } });
+    if (stale && leftFullScreen) fresh();
+    else if (stale) after(win, 'enter-full-screen', () => win.setFullScreen(true), () => after(win, 'leave-full-screen', () => win.setFullScreen(false), fresh));
+    else { if (!win.isMaximized()) win.maximize(); shown = 'maximized'; }
     return;
   }
-  const size = () => { win.setContentSize(state.width, state.height); win.center(); };
+  const size = () => { win.setContentSize(state.width, state.height); win.center(); shown = 'windowed'; };
   if (win.isMaximized()) after(win, 'unmaximize', () => win.unmaximize(), size);
   else size();
 }
-/** Modo em que a janela está de fato (maximizada só conta se ela ocupa mesmo a área da tela). */
-function modeOf(win) {
-  if (win.isFullScreen()) return 'fullscreen';
-  const area = screen.getDisplayMatching(win.getBounds()).workAreaSize;
-  return win.isMaximized() && win.getContentSize()[0] >= area.width * 0.95 ? 'maximized' : 'windowed';
+/** A maior tela ligada ao computador (no Wayland não dá para saber em qual a janela está). */
+function biggest() {
+  return screen.getAllDisplays().reduce((a, d) => (d.size.width * d.size.height > a.width * a.height ? { ...d.size, scale: d.scaleFactor || 1 } : a), { width: 1280, height: 720, scale: 1 });
 }
 
 function createWindow() {
@@ -121,10 +124,19 @@ function createWindow() {
     fullscreen: state.mode === 'fullscreen',
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: true, preload: path.join(__dirname, 'preload.cjs') },
   });
-  win.once('ready-to-show', () => { applyMode(win); win.webContents.setZoomFactor(state.zoom); win.show(); });
-  // o modo mudou por fora (F11, botão de maximizar): a tela de configurações acompanha
-  const tell = () => { if (!win.isDestroyed()) win.webContents.send('vs:mode', modeOf(win)); };
-  for (const ev of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) win.on(ev, tell);
+  win.once('ready-to-show', () => { applyMode(win); busyUntil = Date.now() + 4000; win.webContents.setZoomFactor(state.zoom); win.show(); });
+  // o jogador mudou o modo por fora (botão de maximizar da janela): guarda e avisa a tela de configurações
+  const external = (mode) => () => {
+    if (busy() || win.isDestroyed()) return;
+    state.mode = mode;
+    shown = mode;
+    saveWindow();
+    win.webContents.send('vs:mode', mode);
+  };
+  win.on('maximize', external('maximized'));
+  win.on('unmaximize', external('windowed'));
+  win.on('enter-full-screen', external('fullscreen'));
+  win.on('leave-full-screen', () => { if (!busy()) external(win.isMaximized() ? 'maximized' : 'windowed')(); });
   // F11 e Alt+Enter alternam a tela cheia
   win.webContents.on('before-input-event', (e, input) => {
     if (input.type !== 'keyDown') return;
@@ -133,6 +145,7 @@ function createWindow() {
       state.mode = win.isFullScreen() ? 'maximized' : 'fullscreen';
       applyMode(win);
       saveWindow();
+      win.webContents.send('vs:mode', state.mode);
     }
   });
   // links externos (créditos) abrem no navegador do sistema
@@ -165,8 +178,8 @@ ipcMain.handle('vs:zoom', (e, z) => {
 });
 ipcMain.handle('vs:info', (e) => {
   const win = own(e);
-  const d = screen.getPrimaryDisplay();
-  return { width: d.size.width, height: d.size.height, mode: win ? modeOf(win) : 'windowed' };
+  const d = biggest();
+  return { width: d.width, height: d.height, scale: d.scale, mode: win ? state.mode : 'windowed', zoom: state.zoom };
 });
 ipcMain.on('vs:quit', (e) => { if (own(e)) app.quit(); });
 

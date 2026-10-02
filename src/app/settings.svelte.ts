@@ -25,7 +25,7 @@ export interface Settings {
   display: DisplayMode;
   /** Tamanho da janela no modo "em janela": 'LARGURAxALTURA'. */
   resolution: string;
-  /** Escala da interface (1 = 100%). */
+  /** Escala da interface (1 = 100%); 0 = automática: acompanha a altura da janela, para o jogo ter o mesmo aspecto em 1080p, 2K ou 4K. */
   uiScale: number;
   quality: Quality;
   showFps: boolean;
@@ -40,21 +40,23 @@ export interface Settings {
   showLog: boolean;
   gamepad: boolean;
   keys: Record<KeyAction, string>;
+  /** Versão destas configurações (para corrigir valores de versões anteriores). */
+  rev: number;
 }
 
 const KEY = 'voidsun.settings';
 const DEFAULTS: Settings = {
-  display: 'maximized', resolution: '1600x900', uiScale: 1, quality: 'high', showFps: false,
+  display: 'maximized', resolution: '1600x900', uiScale: 0, quality: 'high', showFps: false,
   master: 1, music: 0.6, sfx: 0.8, mute: false, muteInBackground: true,
   pace: 'normal', difficulty: 'normal', timeLimit: true, showLog: true,
-  gamepad: true, keys: { ...DEFAULT_KEYS },
+  gamepad: true, keys: { ...DEFAULT_KEYS }, rev: 2,
 };
 
 /** O que o programa (Electron) oferece à página; no navegador não existe. */
 export interface Host {
   setDisplay(o: { mode: DisplayMode; width: number; height: number }): Promise<void>;
   setZoom(z: number): Promise<void>;
-  info(): Promise<{ width: number; height: number; mode: DisplayMode }>;
+  info(): Promise<{ width: number; height: number; scale: number; mode: DisplayMode; zoom: number }>;
   quit(): void;
   onMode(fn: (mode: DisplayMode) => void): void;
 }
@@ -72,7 +74,9 @@ function load(): Settings {
       for (const k of Object.keys(s) as (keyof Settings)[]) if (s[k] === undefined) delete s[k];
     } catch { /* sem dados antigos */ }
   }
-  return { ...DEFAULTS, ...s, keys: { ...DEFAULT_KEYS, ...(s.keys ?? {}) } };
+  // a 3.0 podia guardar "em janela" sozinha ao abrir, e não tinha escala automática: volta ao padrão nesses dois pontos
+  if (s.rev !== 2) { delete s.display; delete s.uiScale; }
+  return { ...DEFAULTS, ...s, keys: { ...DEFAULT_KEYS, ...(s.keys ?? {}) }, rev: 2 };
 }
 
 class SettingsState {
@@ -85,7 +89,7 @@ class SettingsState {
 
   /** Resoluções que cabem na tela deste computador. */
   get resolutions(): string[] {
-    const all = [[1280, 720], [1366, 768], [1600, 900], [1920, 1080], [2560, 1440], [3840, 2160]];
+    const all = [[1280, 720], [1366, 768], [1600, 900], [1920, 1080], [2560, 1440], [3200, 1800], [3840, 2160]];
     return all.filter(([w, h]) => w <= this.screen.width && h <= this.screen.height).map(([w, h]) => `${w}x${h}`);
   }
 
@@ -93,17 +97,37 @@ class SettingsState {
   reset(): void { this.v = { ...DEFAULTS, keys: { ...DEFAULT_KEYS } }; }
   resetKeys(): void { this.v.keys = { ...DEFAULT_KEYS }; }
 
+  /** Escala em uso agora (a escolhida ou, na automática, a calculada pela altura da janela). */
+  zoom = $state(1);
+  /** Escala automática: a interface foi desenhada para 1080 de altura; janelas maiores ampliam, menores reduzem. */
+  /** Escala do próprio monitor (telas de alta densidade); vem do programa. */
+  screenScale = 0;
+  autoZoom(): number {
+    // altura real da janela, sem a escala em uso: altura × densidade andam juntas, então a conta não depende de quando a escala entra
+    const h = (innerHeight * devicePixelRatio) / (this.screenScale || devicePixelRatio);
+    return Math.max(0.7, Math.min(2.5, Math.round((h / 1080) * 20) / 20));
+  }
+  /** Aplica só a escala (ao redimensionar a janela, na automática). */
+  applyZoom(): void {
+    const z = this.v.uiScale || this.autoZoom();
+    if (Math.abs(z - this.zoom) < 0.01) return;
+    this.zoom = z;
+    const h = host();
+    if (h) void h.setZoom(z);
+    else (document.documentElement.style as CSSStyleDeclaration & { zoom: string }).zoom = String(z);
+  }
+
   /** Aplica vídeo (janela, escala, qualidade). `win` falso = não mexe no modo da janela (ao abrir, o programa já a deixou como estava). */
   applyVideo(win = true): void {
     const s = this.v, h = host();
     const [w, hh] = s.resolution.split('x').map(Number);
-    if (h) { if (win) { this.lastSet = Date.now(); void h.setDisplay({ mode: s.display, width: w || 1600, height: hh || 900 }); } void h.setZoom(s.uiScale); }
-    else if (win || s.uiScale !== 1) {
-      // no navegador: tela cheia pelo próprio navegador e escala por CSS
-      (document.documentElement.style as CSSStyleDeclaration & { zoom: string }).zoom = String(s.uiScale);
+    if (h) { if (win) { this.lastSet = Date.now(); void h.setDisplay({ mode: s.display, width: w || 1600, height: hh || 900 }); } }
+    else if (win) {
+      // no navegador: tela cheia pelo próprio navegador
       if (s.display === 'fullscreen' && !document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
       if (s.display !== 'fullscreen' && document.fullscreenElement) void document.exitFullscreen?.().catch(() => undefined);
     }
+    this.applyZoom();
     document.body.classList.toggle('q-medium', s.quality === 'medium');
     document.body.classList.toggle('q-low', s.quality === 'low');
   }

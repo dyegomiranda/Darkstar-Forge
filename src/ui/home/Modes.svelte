@@ -8,7 +8,7 @@
   import ScreenBar from '../common/ScreenBar.svelte';
 
   let first = $state<HTMLButtonElement>();
-  onMount(() => { chip.music('menu'); first?.focus({ preventScroll: true }); });
+  onMount(() => { chip.music('title'); first?.focus({ preventScroll: true }); });
 </script>
 
 <div class="modes">
