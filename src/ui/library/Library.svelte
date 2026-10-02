@@ -45,6 +45,8 @@
   $effect(() => { if (deck && deck.editionId !== app.editionId) app.editionId = deck.editionId; });
   const decks = $derived(app.decksOf(app.editionId));
   const base = $derived(deck ? app.cardsOf(deck.id) : decks.flatMap((d) => app.cardsOf(d.id)));
+  /** Deck que serve de amostra ao editar a coleção: o aberto ou o primeiro deck de classe com cartas. */
+  const themeDeck = $derived([deck, ...decks.filter((d) => d.kind === 'class'), ...decks].find((d) => d && app.cardsOf(d.id).length));
   const editionCount = $derived(decks.reduce((n, d) => n + app.cardsOf(d.id).length, 0));
 
   function openEdition(id: string) {
@@ -261,6 +263,12 @@
           <div class="bar-col"><div class="bar" style="height:{(v / maxCurve) * 100}%"></div><span>{i === 7 ? '7+' : i}</span></div>
         {/each}
       </div>
+      {#if themeDeck}
+        <button class="btn" onclick={() => router.theme('collection', themeDeck.id)} title={L('Muda a aparência de todos os decks da coleção de uma vez (cada deck mantém as suas cores)', 'Change the look of every deck in the collection at once (each deck keeps its colors)')}><Paintbrush size={16} /> {L('Editar coleção', 'Edit collection')}</button>
+      {/if}
+      {#if deck && app.cardsOf(deck.id).length}
+        <button class="btn" onclick={() => router.theme('deck', deck.id)} title={L('Muda a aparência de todas as cartas deste deck', 'Change the look of every card in this deck')}><Paintbrush size={16} /> {L('Editar este deck', 'Edit this deck')}</button>
+      {/if}
       <button class="btn" onclick={() => artInput.click()} title={L('Escolha várias imagens: cada uma vai para a carta com o mesmo nome (ex.: pf-red_003.png ou corte-duplo.png)', 'Pick several images: each goes to the card with the same name (e.g. pf-red_003.png or corte-duplo.png)')}><ImageUp size={17} /> {L('Importar artes', 'Import art')}</button>
       <input type="file" accept="image/*" multiple hidden bind:this={artInput} onchange={(e) => importArts((e.currentTarget as HTMLInputElement).files)} />
       <button class="btn primary" onclick={newCard}><Plus size={17} /> {L('Nova carta', 'New card')}</button>

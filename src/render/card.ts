@@ -7,7 +7,7 @@ import type { Card, Deck, Edition, Lang } from '../model/types';
 import type { ComposeInput, Look } from './compose';
 
 /** Muda quando o desenho muda (invalida o cache de imagens). */
-export const RENDER_VERSION = 'r11';
+export const RENDER_VERSION = 'r12';
 
 /** Tema final = tema do deck + ajustes da carta (a carta ganha). */
 export function mergeLook(base: Look, over?: Partial<Look>): Look {
@@ -20,12 +20,18 @@ export function mergeLook(base: Look, over?: Partial<Look>): Look {
   for (const k of ['cost', 'class', 'atk', 'def', 'set'] as const) {
     if (base.icons?.[k] || over.icons?.[k]) icons[k] = { ...base.icons?.[k], ...over.icons?.[k] } as never;
   }
+  // símbolo de cada recurso: junta recurso a recurso
+  if (base.icons?.res || over.icons?.res) {
+    const res = { ...base.icons?.res };
+    for (const [r, v] of Object.entries(over.icons?.res ?? {})) res[r] = { ...res[r], ...v };
+    icons.res = res;
+  }
   return { ...base, ...over, style: over.style ?? base.style, pieces, icons };
 }
 
 /** Ids das imagens usadas pelas peças do tema (para carregar antes de desenhar). */
 export function lookMediaIds(look?: Partial<Look>): string[] {
-  const icons = (['cost', 'class', 'atk', 'def'] as const).map((k) => look?.icons?.[k]?.image?.mediaId);
+  const icons = [...(['cost', 'class', 'atk', 'def'] as const).map((k) => look?.icons?.[k]?.image?.mediaId), ...Object.values(look?.icons?.res ?? {}).map((ic) => ic?.image?.mediaId)];
   return [...Object.values(look?.pieces ?? {}).map((p) => p?.image?.mediaId), ...icons].filter(Boolean) as string[];
 }
 
@@ -41,6 +47,12 @@ function withImageSrc(look: Look, mediaUrl: (id: string) => string | undefined, 
   for (const k of ['cost', 'class', 'atk', 'def'] as const) {
     const ic = icons[k];
     if (ic?.image?.mediaId) icons[k] = { ...ic, image: { ...ic.image, src: forKey ? ic.image.mediaId : mediaUrl(ic.image.mediaId) } };
+  }
+  if (icons.res) {
+    icons.res = { ...icons.res };
+    for (const [r, ic] of Object.entries(icons.res)) {
+      if (ic?.image?.mediaId) icons.res[r] = { ...ic, image: { ...ic.image, src: forKey ? ic.image.mediaId : mediaUrl(ic.image.mediaId) } };
+    }
   }
   return { ...look, pieces, icons };
 }

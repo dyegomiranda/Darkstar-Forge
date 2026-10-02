@@ -1,45 +1,46 @@
+<!--
+  Aparência: estilo geral, cores, peças (uma a uma) e símbolos.
+
+  A mesma tela serve para a carta (ajustes só dela, por cima do tema do deck) e
+  para o tema do deck ou da coleção (aberto pela Biblioteca) — quem decide é o
+  escopo do estado recebido.
+
+  Os seletores de cor mostram sempre a cor que está de fato aplicada na carta
+  (vinda do estilo ou escolhida), lida do próprio desenho.
+-->
 <script lang="ts">
-  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2, Check, ArrowUpToLine } from '@lucide/svelte';
+  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2, Link2, Unlink2, Paintbrush } from '@lucide/svelte';
   import { ensureAll, importImage, mediaUrl } from '../../store/media';
   import { ui } from '../../app/ui.svelte';
   import { app } from '../../store/project.svelte';
+  import { router } from '../../app/router.svelte';
   import { L } from '../../app/i18n.svelte';
-  import { colorHex } from '../../model/catalog';
-  import { STYLES, piece, type PieceKind, type StyleId } from '../../render/elements';
+  import { colorHex, RESOURCES } from '../../model/catalog';
+  import { STYLES, piece, type PieceKind } from '../../render/elements';
   import { CARD_FONTS } from '../../render/fonts';
-  import { cardColors, compose, frameOn, type Look } from '../../render/compose';
+  import { cardColors, compose, composeEx, defaultFill, frameOn, type ComposeInfo, type IconChoice, type Look, type PieceSlot } from '../../render/compose';
   import { cardInput, mergeLook } from '../../render/card';
-  import { Defs } from '../../render/defs';
-  import { skeleton } from '../../render/layout';
   import { ICON_STYLES, type IconStyle } from '../../render/icons/render';
   import { ATK_CHOICES, DEF_CHOICES, iconName, RESOURCE_COLORS, classChoices, resourceChoices } from '../../render/icons/glyphs';
   import { makePalette, type BlendMode, type MetalKind } from '../../render/palette';
-    import Glyph from '../common/Glyph.svelte';
+  import { Defs } from '../../render/defs';
+  import { skeleton } from '../../render/layout';
+  import Glyph from '../common/Glyph.svelte';
   import { pieceThumb } from './thumbs';
   import PieceImagePanel from './PieceImagePanel.svelte';
-  import LookPreview from './LookPreview.svelte';
-  import type { DeckKind } from '../../model/types';
+  import type { ResourceId } from '../../model/types';
   import type { EditorState } from './editor.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 
   let open = $state<PieceKind | null>(null);
+  /** Ataque e defesa: mexer nos dois juntos ou em um só. */
+  let side = $state<'stat' | 'atk' | 'def'>('stat');
+  let openSym = $state<string | null>(null);
   const look = $derived(ed.look);
+  const theme = $derived(ed.scope !== 'card');
   /** Cores que a carta usa de fato (depois do modo de cor). */
   const colors = $derived(cardColors(ed.draft.colors.map(colorHex), look));
-  const deckCount = $derived(app.cardsOf(ed.draft.deckId).length);
-  const edition = $derived(app.edition(ed.deck.editionId));
-  const collectionCount = $derived(ed.targets.reduce((n, d) => n + app.cardsOf(d.id).length, 0));
-  const KINDS: { id: DeckKind; pt: string; en: string }[] = [
-    { id: 'class', pt: 'Decks de classe', en: 'Class decks' }, { id: 'resources', pt: 'Recursos', en: 'Resources' }, { id: 'equipment', pt: 'Equipamentos', en: 'Equipment' },
-  ];
-  const kindCount = (k: DeckKind) => app.decksOf(ed.deck.editionId).filter((d) => d.kind === k).length;
-  /** Uma carta de exemplo de cada deck que recebe a mudança (para ver como fica antes de aplicar). */
-  const samples = $derived(ed.scope === 'collection' ? ed.targets.map((d) => ({ deck: d, card: app.cardsOf(d.id)[0] })).filter((x) => !!x.card).slice(0, 10) : []);
-  const SIZE_SLOTS: { slot: 'cost' | 'class' | 'atk' | 'def' | 'set'; pt: string; en: string }[] = [
-    { slot: 'cost', pt: 'Custo', en: 'Cost' }, { slot: 'class', pt: 'Classe', en: 'Class' },
-    { slot: 'atk', pt: 'Ataque', en: 'Attack' }, { slot: 'def', pt: 'Defesa', en: 'Defense' }, { slot: 'set', pt: 'Selo da edição', en: 'Set symbol' },
-  ];
   const FONTS = [...new Set(CARD_FONTS.map((f) => f.family))];
 
   const PIECES: { kind: PieceKind; pt: string; en: string }[] = [
@@ -75,123 +76,123 @@
     return () => clearTimeout(t);
   });
 
-  /** Cor do texto que o estilo usa quando o usuário não escolheu nenhuma. */
-  function defaultInk(kind: PieceKind, st: StyleId, pieceColors: string[], metal?: MetalKind): string {
+  // o que a carta está usando de fato (cores de texto, fundo e símbolos): alimenta os seletores
+  let used = $state<ComposeInfo>({ ink: {}, fill: {}, icon: {} });
+  $effect(() => {
+    const snap = JSON.stringify(ed.draft) + JSON.stringify(ed.deckLook);
+    const t = setTimeout(() => {
+      void snap;
+      const ctx = ed.ctx();
+      if (ctx) used = composeEx({ ...cardInput(ed.draft, { ...ctx, lang: ed.lang }), uid: 'used', info: true }).info;
+    }, 120);
+    return () => clearTimeout(t);
+  });
+  const hex = (c: string | undefined, fallback: string) => (c && /^#[0-9a-f]{6}$/i.test(c) ? c : fallback);
+  /**
+   * Peça que a carta de amostra não mostra (ex.: ataque e defesa numa carta sem
+   * eles): as cores vêm do desenho da peça sozinha, com as mesmas escolhas.
+   */
+  function probe(slot: PieceSlot): { ink?: string; fill?: string } {
+    const kind: PieceKind = slot === 'atk' || slot === 'def' ? 'stat' : (slot as PieceKind);
+    const ch = ed.piece(slot);
     const S = skeleton(260);
-    const box = kind === 'stat' ? S.atk : kind === 'frame' ? S.card : (S as unknown as Record<string, typeof S.card>)[kind];
-    const ps = piece(st, kind);
-    const c = ps.render({ box, pal: makePalette(pieceColors, metal ?? ps.metal, look.blend ?? 'faixas'), defs: new Defs('ink'), opacity: 1 }).text.color;
-    return /^#[0-9a-f]{6}$/i.test(c) ? c : '#ffffff';
+    const box = slot === 'atk' || slot === 'def' ? S[slot] : kind === 'stat' ? S.atk : kind === 'frame' ? S.card : (S as unknown as Record<string, typeof S.card>)[kind];
+    const ps = piece(ch.style ?? look.style, kind);
+    const args = { box, pal: makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, look.blend ?? 'faixas'), defs: new Defs('probe'), opacity: 1, variant: slot === 'def' ? 'def' as const : kind === 'stat' ? 'atk' as const : undefined, layout: S };
+    return { ink: ps.render(args).text.color, fill: defaultFill(ps, args) };
   }
+  const inkOf = (slot: PieceSlot) => used.ink[slot] ?? probe(slot).ink;
+  const fillOf = (slot: PieceSlot) => (slot in used.ink ? used.fill[slot] : probe(slot).fill);
 
   const frameShown = $derived(frameOn(look));
-  const iconStyle = $derived((look.icons?.class?.style ?? STYLES.find((s) => s.id === look.style)?.icons ?? 'emblema') as IconStyle);
+  const iconStyle = $derived((look.icons?.cost?.style ?? look.icons?.class?.style ?? STYLES.find((s) => s.id === look.style)?.icons ?? 'emblema') as IconStyle);
   const mode = $derived(look.colorMode ?? 'classes');
   const tint = $derived(look.tint?.length ? look.tint : [colorHex(ed.draft.colors[0])]);
+  function setTint(i: number, v: string) { const t = [...tint]; t[i] = v; ed.setLook({ tint: t }); }
+  function setAllIconStyles(s: IconStyle) { for (const slot of ['cost', 'class', 'atk', 'def'] as const) ed.setIcon(slot, { style: s }); }
 
-  function setAllIconStyles(s: IconStyle) {
-    for (const slot of ['cost', 'class', 'atk', 'def'] as const) ed.setIcon(slot, { style: s });
+  /** Onde a peça aberta grava: a própria, ou só o ataque/só a defesa. */
+  const slotOf = (kind: PieceKind): PieceSlot => (kind === 'stat' ? side : kind);
+  /** De qual desenho ler as cores aplicadas (em "os dois", lê o ataque). */
+  const usedSlot = (kind: PieceKind): PieceSlot => (kind === 'stat' ? (side === 'def' ? 'def' : 'atk') : kind);
+  const statsDiffer = $derived(inkOf('atk') !== inkOf('def') || fillOf('atk') !== fillOf('def'));
+
+  // ── recursos cujo símbolo dá para escolher ──
+  /** Na carta: os recursos do custo dela. No tema: todos os que as cartas dos decks atingidos usam. */
+  const resources = $derived.by((): ResourceId[] => {
+    const cards = theme ? (ed.scope === 'deck' ? [ed.deck] : ed.targets).flatMap((d) => app.cardsOf(d.id)) : [ed.draft];
+    const seen = new Set<ResourceId>(ed.draft.cost.map((p) => p.resource));
+    for (const c of cards) for (const p of c.cost) seen.add(p.resource);
+    return (Object.keys(RESOURCES) as ResourceId[]).filter((r) => seen.has(r));
+  });
+  /** Escolha em vigor para um recurso (o formato antigo guardava a do 1º recurso junto do custo). */
+  function resPick(r: ResourceId): IconChoice {
+    const first = ed.draft.cost[0]?.resource === r;
+    const c = look.icons?.cost;
+    return { ...(first && c ? { glyph: c.glyph, color: c.color, image: c.image } : {}), ...look.icons?.res?.[r] };
   }
+
   // ── símbolos próprios (imagem enviada pelo usuário) ──
-  type Slot = 'cost' | 'class' | 'atk' | 'def';
+  type IconKey = 'class' | 'atk' | 'def' | `res:${ResourceId}`;
   let symInput: HTMLInputElement;
-  let symSlot: Slot = 'cost';
+  let symKey: IconKey = 'class';
   let symTick = $state(0);
+  const pickOf = (k: IconKey): IconChoice => (k.startsWith('res:') ? resPick(k.slice(4) as ResourceId) : look.icons?.[k as 'class'] ?? {});
+  function writeIcon(k: IconKey, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []) {
+    if (k.startsWith('res:')) ed.setResIcon(k.slice(4), patch, remove);
+    else ed.setIcon(k as 'class', patch, remove);
+  }
   $effect(() => {
-    const ids = (['cost', 'class', 'atk', 'def'] as const).map((k) => look.icons?.[k]?.image?.mediaId).filter(Boolean) as string[];
+    const ids = [...(['class', 'atk', 'def'] as const).map((k) => look.icons?.[k]?.image?.mediaId), look.icons?.cost?.image?.mediaId, ...Object.values(look.icons?.res ?? {}).map((i) => i?.image?.mediaId)].filter(Boolean) as string[];
     if (ids.some((id) => !mediaUrl(id))) void ensureAll(ids).then(() => symTick++);
   });
   const symUrl = (id: string) => { void symTick; return mediaUrl(id); };
-  function pickSymbol(slot: Slot) { symSlot = slot; symInput.click(); }
+  function pickSymbol(k: IconKey) { symKey = k; symInput.click(); }
   async function uploadSymbol(files: FileList | null) {
     const f = files?.[0];
     if (!f) return;
     try {
       const id = await importImage(f, f.name);
-      ed.setIcon(symSlot, { image: { mediaId: id, recolor: false } });
+      writeIcon(symKey, { image: { mediaId: id, recolor: false } });
       symTick++;
-    } catch (e) {
+    } catch {
       ui.toast(L('Não consegui abrir essa imagem.', 'Could not open that image.'), 'error', 5000);
     } finally { symInput.value = ''; }
   }
 
-  /** Aplica (grava) o que está pendente, com um aviso claro de onde vale. */
-  async function apply() {
-    const theme = ed.themeDirty;
-    const wide = ed.touched.some((t) => t.wide);
-    const where = !theme ? L('só nesta carta', 'on this card only')
-      : wide ? L(`em ${ed.targets.length} decks da coleção “${edition?.name ?? ''}” (${collectionCount} cartas)`, `on ${ed.targets.length} decks of “${edition?.name ?? ''}” (${collectionCount} cards)`)
-      : L(`nas ${deckCount} cartas deste deck`, `on all ${deckCount} cards of this deck`);
-    const r = await ui.confirm({
-      title: L('Aplicar mudanças?', 'Apply changes?'),
-      text: L(`As mudanças de aparência valerão ${where}.`, `The look changes will apply ${where}.`) +
-        (theme ? L('\nCartas que tinham ajuste próprio nas mesmas peças passam a seguir o tema.', '\nCards with their own tweak on the same pieces will follow the theme.') : ''),
-      ok: L('Aplicar', 'Apply'),
-    });
-    if (r !== 'ok') return;
-    const others = ed.save();
-    ui.toast(theme ? L(`Aplicado ${where}${others ? ` (${others} cartas deixaram ajustes próprios)` : ''}`, `Applied ${where}${others ? ` (${others} cards dropped own tweaks)` : ''}`) : L('Carta salva', 'Card saved'), 'ok', 5000);
+  // ── tamanhos: símbolo e número juntos (padrão) ou separados ──
+  type SizeSlot = 'cost' | 'atk' | 'def';
+  const iconSize = (s: SizeSlot | 'class' | 'set') => look.icons?.[s]?.size ?? 1;
+  /** O número do custo acompanha o símbolo se não tiver tamanho próprio; os de ataque/defesa ficam em 100%. */
+  const numSize = (s: SizeSlot) => look.icons?.[s]?.numSize ?? (s === 'cost' ? iconSize(s) : 1);
+  let split = $state<Partial<Record<SizeSlot, boolean>>>({});
+  const isSplit = (s: SizeSlot) => split[s] ?? Math.abs(iconSize(s) - numSize(s)) > 0.001;
+  /** Juntos: no custo o conjunto todo cresce (sem tamanho próprio do número); em ataque/defesa os dois recebem o mesmo valor. */
+  function setBoth(s: SizeSlot, v: number) { if (s === 'cost') ed.setIcon(s, { size: v }, ['numSize']); else ed.setIcon(s, { size: v, numSize: v }); }
+  function toggleSplit(s: SizeSlot) {
+    const now = !isSplit(s);
+    split[s] = now;
+    // ao juntar de novo, o número volta a ter o tamanho do símbolo
+    if (!now) setBoth(s, iconSize(s));
   }
-
-  function setTint(i: number, v: string) { const t = [...tint]; t[i] = v; ed.setLook({ tint: t }); }
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  const val = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 </script>
 
 <div class="stack">
-  <section class="scope" class:wide={ed.scope !== 'card'}>
-    <span class="section-title">{L('Onde as mudanças valem', 'Where changes apply')}</span>
-    <div class="seg full three">
-      <button class:on={ed.scope === 'card'} onclick={() => (ed.scope = 'card')}><b>{L('Esta carta', 'This card')}</b><small>1</small></button>
-      <button class:on={ed.scope === 'deck'} onclick={() => (ed.scope = 'deck')}><b>{L('Deck inteiro', 'Whole deck')}</b><small>{deckCount}</small></button>
-      <button class:on={ed.scope === 'collection'} onclick={() => (ed.scope = 'collection')}><b>{L('Modelo da coleção', 'Collection template')}</b><small>{collectionCount}</small></button>
-    </div>
-    <p class="note"><Info size={14} />
-      <span>
-        {#if ed.scope === 'card'}
-          {L('Ajustes só desta carta, por cima do tema do deck.', 'Tweaks for this card only, on top of the deck theme.')}
-        {:else if ed.scope === 'deck'}
-          {L(`Muda o tema das ${deckCount} cartas deste deck. As cartas que tinham ajuste próprio na mesma peça passam a seguir o tema.`,
-            `Changes the theme of all ${deckCount} cards in this deck. Cards with their own tweak on the same piece will follow the theme.`)}
-        {:else}
-          {L(`Você está editando o modelo padrão da coleção “${edition?.name ?? ''}”. Só o que você mexer aqui vai para os outros decks; cada deck mantém as suas cores e os seus símbolos de classe e de custo.`,
-            `You are editing the default template of “${edition?.name ?? ''}”. Only what you change here goes to the other decks; each deck keeps its own colors and class/cost symbols.`)}
-        {/if}
-        {L(' Nada é gravado até você clicar em Salvar.', ' Nothing is written until you click Save.')}
-      </span>
-    </p>
-    {#if ed.scope === 'collection'}
-      <div class="kinds">
-        <span class="label">{L('Quais decks recebem a mudança', 'Which decks get the change')}</span>
-        <div class="kchecks">
-          {#each KINDS.filter((k) => kindCount(k.id) > 0) as k}
-            <label class="toggle"><input type="checkbox" checked={ed.kinds.includes(k.id)} onchange={() => ed.toggleKind(k.id)} /> {L(k.pt, k.en)} <small>({kindCount(k.id)})</small></label>
-          {/each}
-        </div>
-        <span class="muted small">{L('Recursos e Equipamentos podem ter um modelo diferente: deixe-os desmarcados e edite-os a partir de uma carta deles.', 'Resources and Equipment can have a different template: leave them unchecked and edit them from one of their cards.')}</span>
-        {#if samples.length}
-          <span class="label">{L('Como fica em cada deck (antes de aplicar)', 'How each deck will look (before applying)')}</span>
-          <div class="samples">
-            {#each samples as x (x.deck.id)}<LookPreview card={x.card} look={ed.previewLook(x.deck)} label={x.deck.name[app.lang]} />{/each}
-          </div>
+  {#if !theme}
+    <section class="where">
+      <p class="note"><Info size={14} />
+        <span>{L('Aqui você ajusta só esta carta, por cima do tema do deck. Para mudar o deck inteiro ou a coleção, use “Editar este deck” ou “Editar coleção” na Biblioteca.',
+          'Here you tweak this card only, on top of the deck theme. To change the whole deck or the collection, use “Edit this deck” or “Edit collection” in the Library.')}</span></p>
+      <div class="row wrap">
+        <button class="btn sm" onclick={() => router.go(`/tema/deck/${encodeURIComponent(ed.draft.deckId)}`)}><Paintbrush size={14} /> {L('Editar o tema deste deck', 'Edit this deck\'s theme')}</button>
+        {#if ed.draft.look}
+          <button class="btn sm ghost" onclick={() => ed.resetCardLook()}><RotateCcw size={14} /> {L('Tirar os ajustes desta carta', 'Remove this card\'s tweaks')}</button>
         {/if}
       </div>
-    {/if}
-    {#if ed.scope !== 'card' && ed.hasCardLook}
-      <div class="warn">
-        <p>{ed.scope === 'deck'
-          ? L('Esta carta tem ajustes próprios que NÃO fazem parte do deck. Eles aparecem aqui só nesta carta.', 'This card has its own tweaks that are NOT part of the deck. They show here on this card only.')
-          : L('Esta carta tem ajustes próprios que NÃO fazem parte da coleção. Eles aparecem aqui só nesta carta.', 'This card has its own tweaks that are NOT part of the collection. They show here on this card only.')}</p>
-        <button class="btn sm" onclick={() => ed.promoteCardLook()}><ArrowUpToLine size={14} />
-          {ed.scope === 'deck' ? L('Levar estes ajustes para o deck inteiro', 'Move these tweaks to the whole deck') : L('Levar estes ajustes para a coleção inteira', 'Move these tweaks to the whole collection')}</button>
-      </div>
-    {/if}
-    {#if ed.scope === 'card' && ed.draft.look}
-      <button class="btn sm ghost" onclick={() => ed.resetCardLook()}><RotateCcw size={14} /> {L('Tirar todos os ajustes desta carta (usar o tema do deck)', 'Remove all tweaks on this card (use deck theme)')}</button>
-    {/if}
-    <button class="btn primary apply" disabled={!ed.dirty} onclick={apply}><Check size={15} />
-      {ed.scope === 'card' ? L('Aplicar a esta carta', 'Apply to this card')
-        : ed.scope === 'deck' ? L(`Aplicar ao deck inteiro (${deckCount} cartas)`, `Apply to whole deck (${deckCount} cards)`)
-        : L(`Aplicar a ${ed.targets.length} decks da coleção (${collectionCount} cartas)`, `Apply to ${ed.targets.length} decks of the collection (${collectionCount} cards)`)}</button>
-  </section>
+    </section>
+  {/if}
 
   <section class="stack s">
     <span class="section-title">{L('Estilo geral', 'Overall style')}</span>
@@ -215,7 +216,7 @@
     {#if mode === 'livre'}
       <div class="tints">
         {#each tint as c, i}
-          <span class="tint"><input type="color" value={c} oninput={(e) => setTint(i, (e.currentTarget as HTMLInputElement).value)} />
+          <span class="tint"><input type="color" value={c} oninput={(e) => setTint(i, val(e))} />
             {#if tint.length > 1}<button class="x" title={L('Tirar', 'Remove')} onclick={() => ed.setLook({ tint: tint.filter((_, j) => j !== i) })}><X size={12} /></button>{/if}</span>
         {/each}
         {#if tint.length < 5}<button class="btn sm ghost" onclick={() => ed.setLook({ tint: [...tint, tint[tint.length - 1]] })}><Plus size={14} /> {L('Cor', 'Color')}</button>{/if}
@@ -232,11 +233,24 @@
     {/if}
   </section>
 
+  <!-- Um seletor de cor: mostra a cor aplicada; o ponto marca que foi escolhida à mão; o botão volta ao padrão. -->
+  {#snippet colorField(label: string, value: string, custom: boolean, set: (v: string) => void, reset: () => void, resetTip: string, off = '')}
+    <div class="cf" class:off={!!off} title={off}>
+      <span class="cf-l">{label}{#if custom}<i class="dot-ch" title={L('Escolhida por você', 'Chosen by you')}></i>{/if}</span>
+      <div class="cf-r">
+        <input type="color" {value} disabled={!!off} oninput={(e) => set(val(e))} />
+        <code>{off ? '—' : value.toUpperCase()}</code>
+        <button class="btn sm ghost icon" title={resetTip} disabled={!custom} onclick={reset}><RotateCcw size={13} /></button>
+      </div>
+    </div>
+  {/snippet}
+
   <section class="stack s">
     <span class="section-title">{L('Peças (misture estilos à vontade)', 'Pieces (mix styles freely)')}</span>
     <div class="pieces">
       {#each PIECES as p (p.kind)}
-        {@const ch = ed.piece(p.kind)}
+        {@const slot = slotOf(p.kind)}
+        {@const ch = ed.piece(open === p.kind ? slot : p.kind)}
         {@const st = ch.style ?? look.style}
         {@const isFrame = p.kind === 'frame'}
         {@const pc = ch.colors?.length ? ch.colors : colors}
@@ -246,81 +260,93 @@
             <span class="sw" style="background:{pc[0]}"></span>
             <b>{L(p.pt, p.en)}</b>
             {#if changed}<span class="dot-ch" title={L('Alterada desde que abriu', 'Changed since opened')}></span>{/if}
-            <span class="muted">{isFrame && !frameShown ? L('desligada', 'off') : ch.image ? (ch.image.mediaId ? L('imagem', 'image') : L('só texto', 'text only')) : STYLES.find((x) => x.id === st)?.name}</span>
+            <span class="muted">{isFrame && !frameShown ? L('desligada', 'off') : ch.hidden && !isFrame ? L('escondida', 'hidden') : ch.image ? (ch.image.mediaId ? L('imagem', 'image') : L('sem desenho', 'no drawing')) : STYLES.find((x) => x.id === st)?.name}</span>
             <ChevronDown size={16} />
           </button>
           {#if open === p.kind}
+            {@const u = usedSlot(p.kind)}
+            {@const op = ch.opacity ?? piece(st, p.kind).opacity}
             <div class="pc-body">
               <div class="row wrap">
-                <button class="btn sm" disabled={!changed} onclick={() => ed.revertPiece(p.kind)} title={L('Desfaz só as mudanças desta peça', 'Undo only this piece')}><Undo2 size={14} /> {L('Voltar ao que estava', 'Back to how it was')}</button>
-                <button class="btn sm ghost" onclick={() => ed.setPiece(p.kind, { style: st }, ['colors', 'opacity', 'metal', 'ink', 'font', 'hidden', 'image', 'fill', 'size'])}><RotateCcw size={14} /> {L('Padrão do estilo', 'Style default')}</button>
+                {#if isFrame}
+                  <label class="toggle grow"><input type="checkbox" checked={frameShown}
+                    onchange={(e) => (e.currentTarget as HTMLInputElement).checked ? ed.setPiece('frame', { style: look.style }, ['hidden']) : ed.setPiece('frame', { hidden: true })} />
+                    {L('Mostrar a moldura', 'Show the border')}</label>
+                {:else}
+                  <label class="toggle grow"><input type="checkbox" checked={!ch.hidden} onchange={(e) => ed.setPiece(slot, { hidden: !(e.currentTarget as HTMLInputElement).checked })} />
+                    {#if ch.hidden}<EyeOff size={14} />{:else}<Eye size={14} />{/if} {L('Mostrar esta peça', 'Show this piece')}</label>
+                {/if}
+                <button class="btn sm ghost" disabled={!changed} onclick={() => ed.revertPiece(p.kind)} title={L('Desfaz o que você mudou nesta peça desde que abriu a tela', 'Undo what you changed on this piece since opening')}><Undo2 size={14} /> {L('Desfazer', 'Undo')}</button>
+                <button class="btn sm ghost" onclick={() => ed.resetPiece(p.kind)} title={L('Tira todos os ajustes desta peça: volta ao desenho do estilo geral', 'Remove every tweak on this piece: back to the overall style')}><RotateCcw size={14} /> {L('Padrão', 'Default')}</button>
               </div>
-              {#if isFrame}
-                <label class="toggle"><input type="checkbox" checked={frameShown}
-                  onchange={(e) => (e.currentTarget as HTMLInputElement).checked ? ed.setPiece('frame', { style: look.style }, ['hidden']) : ed.setPiece('frame', { hidden: true })} />
-                  {L('Mostrar moldura', 'Show the border')}</label>
-              {:else}
-                <label class="toggle"><input type="checkbox" checked={!ch.hidden} onchange={(e) => ed.setPiece(p.kind, { hidden: !(e.currentTarget as HTMLInputElement).checked })} />
-                  {#if ch.hidden}<EyeOff size={14} />{:else}<Eye size={14} />{/if} {L('Mostrar esta peça', 'Show this piece')}</label>
-              {/if}
-              <PieceImagePanel {ed} kind={p.kind} />
-              <div class="thumbs" class:dim={!!ch.image}>
-                {#each STYLES as s (s.id)}
-                  <button class="th" class:on={st === s.id} title={s.name} onclick={() => ed.setPiece(p.kind, { style: s.id })}>
-                    {@html pieceThumb(s.id, p.kind, pc)}
-                    <span>{s.name}</span>
-                  </button>
-                {/each}
-              </div>
-              <div class="grid2">
-                <div class="field"><span>{L('Cor', 'Color')}</span>
-                  <div class="row">
-                    <input type="color" value={pc[0]} oninput={(e) => ed.setPiece(p.kind, { colors: [(e.currentTarget as HTMLInputElement).value] })} />
-                    <button class="btn sm ghost" disabled={!ch.colors} onclick={() => ed.setPiece(p.kind, {}, ['colors'])}>{L('Da carta', 'Card')}</button>
+
+              {#if p.kind === 'stat'}
+                <div class="field"><span>{L('O que você está ajustando', 'What you are adjusting')}</span>
+                  <div class="seg full">
+                    <button class:on={side === 'stat'} onclick={() => (side = 'stat')}>{L('Os dois', 'Both')}</button>
+                    <button class:on={side === 'atk'} onclick={() => (side = 'atk')}>{L('Só o ataque', 'Attack only')}</button>
+                    <button class:on={side === 'def'} onclick={() => (side = 'def')}>{L('Só a defesa', 'Defense only')}</button>
                   </div>
-                </div>
-                <label class="field"><span>{L('Borda', 'Border')}</span>
-                  <select class="select" value={ch.metal ?? ''} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value as MetalKind; v ? ed.setPiece(p.kind, { metal: v }) : ed.setPiece(p.kind, {}, ['metal']); }}>
-                    {#each BORDERS as [v, pt, en]}<option value={v}>{L(pt, en)}</option>{/each}
-                  </select>
-                </label>
-              </div>
-              <label class="field"><span>{L('Opacidade do fundo', 'Background opacity')} · {Math.round((ch.opacity ?? piece(st, p.kind).opacity) * 100)}%</span>
-                <input type="range" min="0" max="1" step="0.01" value={ch.opacity ?? piece(st, p.kind).opacity} oninput={(e) => ed.setPiece(p.kind, { opacity: +(e.currentTarget as HTMLInputElement).value })} />
-              </label>
-              {#if !isFrame}
-                <div class="grid2">
-                  <div class="field"><span>{L('Cor do fundo', 'Background color')}</span>
-                    <div class="row">
-                      <input type="color" value={ch.fill ?? '#2a2320'} oninput={(e) => ed.setPiece(p.kind, { fill: (e.currentTarget as HTMLInputElement).value })} />
-                      <button class="btn sm ghost" disabled={!ch.fill} onclick={() => ed.setPiece(p.kind, {}, ['fill'])}>{L('Do estilo', 'Style')}</button>
-                    </div>
-                  </div>
-                  {#if p.kind !== 'rules'}
-                    {@const sz = ch.size ?? 1}
-                    <label class="field"><span>{L('Tamanho da peça', 'Piece size')} · {Math.round(sz * 100)}%</span>
-                      <div class="row">
-                        <input type="range" min="0.5" max="1.6" step="0.05" value={sz} oninput={(e) => ed.setPiece(p.kind, { size: +(e.currentTarget as HTMLInputElement).value })} />
-                        <button class="btn sm ghost icon" title={L('Tamanho padrão', 'Default size')} disabled={sz === 1} onclick={() => ed.setPiece(p.kind, {}, ['size'])}><RotateCcw size={13} /></button>
-                      </div>
-                    </label>
+                  {#if side === 'stat' && statsDiffer}
+                    <span class="muted small">{L('Ataque e defesa estão com cores diferentes: as cores abaixo são as do ataque. Mudar aqui iguala os dois.', 'Attack and defense have different colors: the ones below are the attack\'s. Changing here makes both equal.')}</span>
                   {/if}
                 </div>
               {/if}
-              {#if !isFrame && p.kind !== 'set'}
-                <div class="grid2">
-                  <div class="field"><span>{L('Cor do texto', 'Text color')}</span>
-                    <div class="row">
-                      <input type="color" value={ch.ink ?? defaultInk(p.kind, st, pc, ch.metal)} oninput={(e) => ed.setPiece(p.kind, { ink: (e.currentTarget as HTMLInputElement).value })} />
-                      <button class="btn sm ghost" disabled={!ch.ink} onclick={() => ed.setPiece(p.kind, {}, ['ink'])}>{L('Padrão', 'Default')}</button>
-                    </div>
-                  </div>
+
+              <div class="field"><span>{L('Desenho da peça', 'Piece drawing')}</span>
+                <div class="thumbs">
+                  {#each STYLES as s (s.id)}
+                    <button class="th" class:on={!ch.image && st === s.id} title={s.name} onclick={() => ed.setPiece(slot, { style: s.id }, ['image'])}>
+                      {@html pieceThumb(s.id, p.kind, pc)}
+                      <span>{s.name}</span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+              <PieceImagePanel {ed} {slot} />
+
+              <div class="field"><span>{L('Cores', 'Colors')}</span>
+                <div class="cfs">
+                  {@render colorField(L('Cor da peça', 'Piece color'), pc[0], !!ch.colors,
+                    (v) => ed.setPiece(slot, { colors: [v] }), () => ed.setPiece(slot, {}, ['colors']), L('Usar a cor da carta', 'Use the card color'))}
+                  {#if !isFrame || fillOf(u)}
+                    {@render colorField(L('Fundo', 'Background'), hex(ch.fill ?? fillOf(u), '#000000'), !!ch.fill,
+                      (v) => ed.setPiece(slot, { fill: v }), () => ed.setPiece(slot, {}, ['fill']), L('Usar o fundo do estilo', 'Use the style background'),
+                      ch.image ? L('Com imagem ou sem desenho, a peça não tem fundo para colorir.', 'With an image or no drawing, the piece has no background to color.')
+                        : !ch.fill && !fillOf(u) ? L('Neste estilo, esta peça não tem fundo para colorir.', 'In this style, this piece has no background to color.') : '')}
+                  {/if}
+                  {#if !isFrame && p.kind !== 'set'}
+                    {@render colorField(p.kind === 'cost' || p.kind === 'stat' ? L('Número', 'Number') : L('Texto', 'Text'), hex(ch.ink ?? inkOf(u), '#ffffff'), !!ch.ink,
+                      (v) => ed.setPiece(slot, { ink: v }), () => ed.setPiece(slot, {}, ['ink']), L('Usar a cor do estilo', 'Use the style color'),
+                      p.kind === 'class' ? L('O selo de classe só tem o símbolo: a cor dele fica em Símbolos.', 'The class seal only has the symbol: its color is under Symbols.') : '')}
+                  {/if}
+                </div>
+              </div>
+
+              <div class="grid2">
+                <label class="field"><span>{L('Borda', 'Border')}</span>
+                  <select class="select" value={ch.metal ?? ''} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value as MetalKind; v ? ed.setPiece(slot, { metal: v }) : ed.setPiece(slot, {}, ['metal']); }}>
+                    {#each BORDERS as [v, pt, en]}<option value={v}>{L(pt, en)}</option>{/each}
+                  </select>
+                </label>
+                {#if !isFrame && p.kind !== 'set'}
                   <label class="field"><span>{L('Fonte', 'Font')}</span>
-                    <select class="select" value={ch.font ?? ''} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value; v ? ed.setPiece(p.kind, { font: v }) : ed.setPiece(p.kind, {}, ['font']); }}>
+                    <select class="select" value={ch.font ?? ''} onchange={(e) => { const v = (e.currentTarget as HTMLSelectElement).value; v ? ed.setPiece(slot, { font: v }) : ed.setPiece(slot, {}, ['font']); }}>
                       <option value="">{L('Do estilo', 'Style default')}</option>
                       {#each FONTS as f}<option value={f} style="font-family:'{f}'">{f}</option>{/each}
                     </select>
                   </label>
+                {/if}
+              </div>
+              <div class="sl"><span>{L('Opacidade do fundo', 'Background opacity')}</span>
+                <input type="range" min="0" max="1" step="0.01" value={op} oninput={(e) => ed.setPiece(slot, { opacity: +val(e) })} />
+                <button class="pct" title={L('Voltar ao padrão do estilo', 'Back to the style default')} disabled={ch.opacity == null} onclick={() => ed.setPiece(slot, {}, ['opacity'])}>{pct(op)}</button>
+              </div>
+              {#if !isFrame && p.kind !== 'rules'}
+                {@const sz = ch.size ?? 1}
+                <div class="sl"><span>{L('Tamanho da peça', 'Piece size')}</span>
+                  <input type="range" min="0.5" max="1.6" step="0.05" value={sz} oninput={(e) => ed.setPiece(slot, { size: +val(e) })} />
+                  <button class="pct" title={L('Voltar a 100%', 'Back to 100%')} disabled={ch.size == null} onclick={() => ed.setPiece(slot, {}, ['size'])}>{pct(sz)}</button>
                 </div>
               {/if}
             </div>
@@ -333,67 +359,124 @@
   <section class="stack s">
     <span class="section-title">{L('Símbolos', 'Symbols')}</span>
     <div class="field"><span>{L('Acabamento (todos os símbolos)', 'Finish (all symbols)')}</span>
-      <div class="seg full">
+      <div class="seg full wrapseg">
         {#each ICON_STYLES as s}<button class:on={iconStyle === s.id} onclick={() => setAllIconStyles(s.id)}>{L(s.name, s.en)}</button>{/each}
       </div>
     </div>
 
     <div class="field">
-      <span>{L('Tamanho dos símbolos (dentro da peça)', 'Symbol size (inside the piece)')}</span>
+      <span>{L('Tamanhos (dentro da peça)', 'Sizes (inside the piece)')}</span>
       <div class="sizes">
-        {#each SIZE_SLOTS as z (z.slot)}
-          {@const v = look.icons?.[z.slot]?.size ?? 1}
-          <label class="sz"><span>{L(z.pt, z.en)}</span>
-            <input type="range" min="0.5" max="1.8" step="0.05" value={v} oninput={(e) => ed.setIcon(z.slot, { size: +(e.currentTarget as HTMLInputElement).value })} />
-            <button class="pct" title={L('Voltar ao padrão', 'Reset')} disabled={v === 1} onclick={() => ed.setIcon(z.slot, {}, ['size'])}>{Math.round(v * 100)}%</button>
-          </label>
-        {/each}
+        {#snippet sizePair(s: SizeSlot, label: string)}
+          {@const sp = isSplit(s)}
+          <div class="szg">
+            <div class="szh"><span>{label}</span>
+              <button class="link" class:on={!sp} onclick={() => toggleSplit(s)} title={sp ? L('Juntar: símbolo e número voltam a crescer juntos', 'Link: symbol and number grow together again') : L('Separar: ajustar o símbolo e o número cada um no seu tamanho', 'Unlink: size the symbol and the number separately')}>
+                {#if sp}<Unlink2 size={13} /> {L('separados', 'separate')}{:else}<Link2 size={13} /> {L('juntos', 'linked')}{/if}</button>
+            </div>
+            {#if sp}
+              <div class="sl"><span>{L('Símbolo', 'Symbol')}</span>
+                <input type="range" min="0.5" max="1.8" step="0.05" value={iconSize(s)} oninput={(e) => ed.setIcon(s, { size: +val(e), numSize: numSize(s) })} />
+                <button class="pct" title={L('Voltar a 100%', 'Back to 100%')} disabled={iconSize(s) === 1} onclick={() => ed.setIcon(s, { size: 1, numSize: numSize(s) })}>{pct(iconSize(s))}</button></div>
+              <div class="sl"><span>{L('Número', 'Number')}</span>
+                <input type="range" min="0.5" max="1.8" step="0.05" value={numSize(s)} oninput={(e) => ed.setIcon(s, { numSize: +val(e) })} />
+                <button class="pct" title={L('Voltar a 100%', 'Back to 100%')} disabled={numSize(s) === 1} onclick={() => ed.setIcon(s, { numSize: 1 })}>{pct(numSize(s))}</button></div>
+            {:else}
+              <div class="sl"><span>{L('Símbolo e número', 'Symbol and number')}</span>
+                <input type="range" min="0.5" max="1.8" step="0.05" value={iconSize(s)} oninput={(e) => setBoth(s, +val(e))} />
+                <button class="pct" title={L('Voltar a 100%', 'Back to 100%')} disabled={iconSize(s) === 1} onclick={() => ed.setIcon(s, {}, ['size', 'numSize'])}>{pct(iconSize(s))}</button></div>
+            {/if}
+          </div>
+        {/snippet}
+        {#snippet sizeOne(s: 'class' | 'set', label: string)}
+          <div class="szg"><div class="sl"><span>{label}</span>
+            <input type="range" min="0.5" max="1.8" step="0.05" value={iconSize(s)} oninput={(e) => ed.setIcon(s, { size: +val(e) })} />
+            <button class="pct" title={L('Voltar a 100%', 'Back to 100%')} disabled={iconSize(s) === 1} onclick={() => ed.setIcon(s, {}, ['size'])}>{pct(iconSize(s))}</button></div></div>
+        {/snippet}
+        {@render sizePair('cost', L('Custo', 'Cost'))}
+        {@render sizeOne('class', L('Classe', 'Class'))}
+        {@render sizePair('atk', L('Ataque', 'Attack'))}
+        {@render sizePair('def', L('Defesa', 'Defense'))}
+        {@render sizeOne('set', L('Selo da edição', 'Set symbol'))}
       </div>
     </div>
 
-    {#snippet picker(slot: 'cost' | 'class' | 'atk' | 'def', title: string, ids: string[], color: string)}
-      {@const cur = look.icons?.[slot]?.glyph ?? ids[0]}
-      {@const im = look.icons?.[slot]?.image}
-      <div class="field">
-        <div class="row"><span class="grow label">{title}</span>
-          <button class="btn sm ghost" disabled={!ed.iconChanged(slot)} onclick={() => ed.revertIcon(slot)}><Undo2 size={13} /> {L('Voltar ao que estava', 'Back to how it was')}</button></div>
-        <div class="glyphs">
-          {#each ids as g}
-            <button class="gl" class:on={cur === g} title={iconName(g, app.lang !== 'pt-BR')} onclick={() => ed.setIcon(slot, { glyph: g })}><Glyph id={g} size={26} color={look.icons?.[slot]?.color ?? color} /></button>
-          {/each}
-          <input type="color" title={L('Cor do símbolo', 'Symbol color')} value={look.icons?.[slot]?.color ?? color} oninput={(e) => ed.setIcon(slot, { color: (e.currentTarget as HTMLInputElement).value })} />
-          <button class="btn sm ghost icon" title={L('Cor padrão', 'Default color')} disabled={!look.icons?.[slot]?.color} onclick={() => ed.setIcon(slot, {}, ['color'])}><RotateCcw size={14} /></button>
-        </div>
-        <div class="row wrap symrow">
-          {#if im}
-            <span class="symimg">{#if symUrl(im.mediaId)}<img src={symUrl(im.mediaId)} alt="" />{/if}</span>
-            <label class="toggle"><input type="checkbox" checked={!!im.recolor} onchange={(e) => ed.setIcon(slot, { image: { ...im, recolor: (e.currentTarget as HTMLInputElement).checked } })} />
-              {L('Pintar na cor escolhida', 'Paint with the chosen color')}</label>
-            <button class="btn sm ghost" onclick={() => pickSymbol(slot)}><ImagePlus size={14} /> {L('Trocar', 'Change')}</button>
-            <button class="btn sm ghost" onclick={() => ed.setIcon(slot, {}, ['image'])}><Trash2 size={14} /> {L('Usar os símbolos acima', 'Use the symbols above')}</button>
-          {:else}
-            <button class="btn sm ghost" onclick={() => pickSymbol(slot)} title={L('PNG/SVG com fundo transparente; colorido ou de uma cor só', 'PNG/SVG with transparent background; full color or single color')}><ImagePlus size={14} /> {L('Enviar meu símbolo (PNG)', 'Upload my symbol (PNG)')}</button>
-          {/if}
-        </div>
+    <label class="toggle"><input type="checkbox" checked={look.icons?.hideZeroCost ?? STYLES.find((x) => x.id === look.style)?.hideZeroCost ?? false}
+      onchange={(e) => ed.setIconOption('hideZeroCost', (e.currentTarget as HTMLInputElement).checked)} />
+      {L('Esconder o selo de custo quando o custo for 0 (a barra do nome ocupa o espaço)', 'Hide the cost seal when the cost is 0 (the title bar takes the space)')}</label>
+
+    <!-- Um símbolo: qual desenho, de que cor, ou uma imagem sua. Fechado, mostra o que está em uso. -->
+    {#snippet picker(key: IconKey, title: string, ids: string[], applied: string)}
+      {@const pk = pickOf(key)}
+      {@const cur = pk.glyph ?? ids[0]}
+      {@const im = pk.image}
+      {@const custom = !!(pk.glyph || pk.color || pk.image)}
+      <div class="pc" class:open={openSym === key}>
+        <button class="pc-head" onclick={() => (openSym = openSym === key ? null : key)}>
+          <span class="cur">{#if im && symUrl(im.mediaId)}<img src={symUrl(im.mediaId)} alt="" />{:else}<Glyph id={cur} size={20} color={applied} />{/if}</span>
+          <b>{title}</b>
+          {#if custom}<span class="dot-ch" title={L('Escolhido por você', 'Chosen by you')}></span>{/if}
+          <span class="muted">{im ? L('imagem sua', 'your image') : iconName(cur, app.lang !== 'pt-BR')}</span>
+          <ChevronDown size={16} />
+        </button>
+        {#if openSym === key}
+          <div class="pc-body">
+            <div class="glyphs" class:dim={!!im}>
+              {#each ids as g}
+                <button class="gl" class:on={!im && cur === g} title={iconName(g, app.lang !== 'pt-BR')} onclick={() => writeIcon(key, { glyph: g }, ['image'])}><Glyph id={g} size={26} color={applied} /></button>
+              {/each}
+            </div>
+            <div class="cfs">
+              {@render colorField(L('Cor do símbolo', 'Symbol color'), hex(pk.color ?? applied, '#ffffff'), !!pk.color,
+                (v) => writeIcon(key, { color: v }), () => writeIcon(key, {}, ['color']), L('Usar a cor padrão', 'Use the default color'),
+                im && !im.recolor ? L('A imagem está com as cores originais. Marque “Pintar na cor escolhida” para usar esta cor.', 'The image keeps its own colors. Check “Paint with the chosen color” to use this one.') : '')}
+            </div>
+            <div class="row wrap symrow">
+              {#if im}
+                <span class="symimg">{#if symUrl(im.mediaId)}<img src={symUrl(im.mediaId)} alt="" />{/if}</span>
+                <label class="toggle"><input type="checkbox" checked={!!im.recolor} onchange={(e) => writeIcon(key, { image: { ...im, recolor: (e.currentTarget as HTMLInputElement).checked } })} />
+                  {L('Pintar na cor escolhida', 'Paint with the chosen color')}</label>
+                <button class="btn sm ghost" onclick={() => pickSymbol(key)}><ImagePlus size={14} /> {L('Trocar', 'Change')}</button>
+                <button class="btn sm ghost" onclick={() => writeIcon(key, {}, ['image'])}><Trash2 size={14} /> {L('Tirar a imagem', 'Remove image')}</button>
+              {:else}
+                <button class="btn sm ghost" onclick={() => pickSymbol(key)} title={L('PNG/SVG com fundo transparente; colorido ou de uma cor só', 'PNG/SVG with transparent background; full color or single color')}><ImagePlus size={14} /> {L('Usar uma imagem minha (PNG)', 'Use my own image (PNG)')}</button>
+              {/if}
+              <span class="grow"></span>
+              <button class="btn sm ghost" disabled={!custom} onclick={() => writeIcon(key, {}, ['glyph', 'color', 'image'])}><RotateCcw size={14} /> {L('Padrão', 'Default')}</button>
+            </div>
+          </div>
+        {/if}
       </div>
     {/snippet}
 
     <input type="file" accept="image/png,image/webp,image/svg+xml" hidden bind:this={symInput} onchange={(e) => uploadSymbol((e.currentTarget as HTMLInputElement).files)} />
-    <label class="toggle"><input type="checkbox" checked={look.icons?.hideZeroCost ?? STYLES.find((x) => x.id === look.style)?.hideZeroCost ?? false}
-      onchange={(e) => ed.setIconOption('hideZeroCost', (e.currentTarget as HTMLInputElement).checked)} />
-      {L('Esconder o selo de custo quando o custo for 0 (a barra do nome ocupa o espaço)', 'Hide the cost seal when the cost is 0 (the title bar takes the space)')}</label>
-    {#if ed.draft.cost.length}
-      {@render picker('cost', L('Custo', 'Cost') + (ed.draft.cost.length > 1 ? L(' (1º recurso)', ' (1st resource)') : ''), resourceChoices(ed.draft.cost[0].resource), RESOURCE_COLORS[ed.draft.cost[0].resource])}
-    {/if}
-    {@render picker('class', L('Classe', 'Class') + (ed.draft.colors.length > 1 && look.icons?.classMode !== 'primeira' ? L(' (1ª classe)', ' (1st class)') : ''), classChoices(ed.draft.colors[0]), '#e8dcc4')}
+    <div class="field">
+      <span>{L('Qual símbolo', 'Which symbol')}</span>
+      {#if theme && resources.length > 1}
+        <span class="muted small">{L('Há um símbolo para cada recurso: cada carta mostra o do recurso que ela custa.', 'There is one symbol per resource: each card shows the one for the resource it costs.')}</span>
+      {/if}
+      <div class="pieces">
+        {#each resources as r (r)}
+          {@render picker(`res:${r}`, `${L('Custo', 'Cost')} — ${RESOURCES[r].name[app.lang]}`, resourceChoices(r), used.icon[`res:${r}`] ?? resPick(r).color ?? RESOURCE_COLORS[r])}
+        {/each}
+        {#if ed.scope !== 'collection'}
+          {@render picker('class', L('Classe', 'Class') + (ed.draft.colors.length > 1 && look.icons?.classMode !== 'primeira' ? L(' (1ª classe)', ' (1st class)') : ''), classChoices(ed.draft.colors[0] ?? ed.deck.colors[0]), hex(used.icon.class, '#e8dcc4'))}
+        {/if}
+        {#if ed.draft.stats || theme}
+          {@render picker('atk', L('Ataque', 'Attack'), ATK_CHOICES, hex(used.icon.atk, '#d3dae3'))}
+          {@render picker('def', L('Defesa', 'Defense'), DEF_CHOICES, hex(used.icon.def, '#d3dae3'))}
+        {/if}
+      </div>
+      {#if ed.scope === 'collection'}
+        <span class="muted small">{L('O símbolo de classe é de cada deck: escolha em “Editar este deck”.', 'The class symbol belongs to each deck: choose it under “Edit this deck”.')}</span>
+      {/if}
+    </div>
     {#if ed.draft.colors.length > 1}
       <label class="toggle"><input type="checkbox" checked={look.icons?.classMode !== 'primeira'} onchange={(e) => ed.setIconOption('classMode', (e.currentTarget as HTMLInputElement).checked ? 'todas' : 'primeira')} />
         {L('Mostrar o símbolo de cada classe da carta (o selo se alarga)', 'Show a symbol for each of the card\'s classes (the seal widens)')}</label>
     {/if}
-    {#if ed.draft.stats}
-      {@render picker('atk', L('Ataque', 'Attack'), ATK_CHOICES, '#d3dae3')}
-      {@render picker('def', L('Defesa', 'Defense'), DEF_CHOICES, '#d3dae3')}
-      <div class="field"><span>{L('Como mostrar ATK/DEF', 'How to show ATK/DEF')}</span>
+    {#if ed.draft.stats || theme}
+      <div class="field"><span>{L('Como mostrar ataque e defesa', 'How to show attack and defense')}</span>
         <div class="seg full">
           <button class:on={(look.icons?.statMode ?? 'placa') === 'placa'} onclick={() => ed.setIconOption('statMode', 'placa')}>{L('Em placas', 'In plates')}</button>
           <button class:on={look.icons?.statMode === 'emblema'} onclick={() => ed.setIconOption('statMode', 'emblema')}>{L('Número no medalhão', 'Number in medallion')}</button>
@@ -404,26 +487,16 @@
 </div>
 
 <style>
-  .symrow { gap: 8px; align-items: center; margin-top: 4px; }
-  .symimg { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; overflow: hidden; background: repeating-conic-gradient(#3a3a3a 0 25%, #2a2a2a 0 50%) 0 0 / 10px 10px; }
-  .symimg img { max-width: 100%; max-height: 100%; }
-  .thumbs.dim { opacity: .45; }
-  .scope { display: flex; flex-direction: column; gap: 8px; position: sticky; top: -20px; z-index: 5; background: var(--bg); padding: 12px 0 14px; margin-top: -12px; border-bottom: 1px solid var(--line); }
-  .warn { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 9px; border: 1px solid #b7791f; background: color-mix(in srgb, #b7791f 14%, transparent); }
-  .warn p { margin: 0; font-size: 12.5px; color: var(--text); }
-  .apply { justify-content: center; }
-  .scope.wide .note { border-color: var(--accent); background: var(--accent-soft); }
-  .three button { flex-direction: column; gap: 1px; padding: 7px 4px; height: auto; }
-  .three b { font-weight: 600; font-size: 12.5px; }
-  .three small { font-size: 11px; opacity: .7; }
-  .sizes { display: flex; flex-direction: column; gap: 6px; }
-  .sz { display: grid; grid-template-columns: 110px 1fr 52px; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); }
-  .pct { border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text-2); border-radius: 7px; font: 500 12px var(--ui); padding: 3px 0; cursor: pointer; font-variant-numeric: tabular-nums; }
-  .pct:disabled { opacity: .55; cursor: default; }
-  .full { display: flex; width: 100%; }
-  .full button { flex: 1; justify-content: center; }
+  .where { display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
   .note { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--text-2); margin: 0; padding: 9px 11px; border-radius: 9px; background: var(--surface); border: 1px solid var(--line); }
   .note :global(svg) { flex: none; margin-top: 2px; color: var(--accent); }
+  .symrow { gap: 8px; align-items: center; }
+  .symimg { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; overflow: hidden; background: repeating-conic-gradient(#3a3a3a 0 25%, #2a2a2a 0 50%) 0 0 / 10px 10px; }
+  .symimg img { max-width: 100%; max-height: 100%; }
+  .full { display: flex; width: 100%; }
+  .full button { flex: 1; justify-content: center; }
+  .wrapseg { flex-wrap: wrap; }
+  .wrapseg button { flex: 1 1 30%; }
   .s { gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
   .small { font-size: 12.5px; margin: 0; }
   .wrap { flex-wrap: wrap; }
@@ -444,9 +517,11 @@
   .pc-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; background: none; color: var(--text); cursor: pointer; font: inherit; text-align: left; }
   .pc-head b { font-weight: 500; flex: 1; }
   .pc-head span.muted { font-size: 12px; }
-  .pc-head :global(svg) { color: var(--muted); transition: transform var(--t); }
-  .pc.open .pc-head :global(svg) { transform: rotate(180deg); }
-  .dot-ch { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .pc-head > :global(svg) { color: var(--muted); transition: transform var(--t); }
+  .pc.open .pc-head > :global(svg) { transform: rotate(180deg); }
+  .cur { width: 24px; height: 24px; display: grid; place-items: center; flex: none; }
+  .cur img { max-width: 100%; max-height: 100%; }
+  .dot-ch { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
   .sw { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .2); }
   .pc-body { padding: 4px 12px 14px; display: flex; flex-direction: column; gap: 12px; }
   .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -455,11 +530,27 @@
   .th.on { border-color: var(--accent); color: var(--accent-2); }
   .toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--text-2); cursor: pointer; }
   .glyphs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .glyphs.dim { opacity: .5; }
   .gl { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--bg-2); display: grid; place-items: center; cursor: pointer; }
   .gl:hover { border-color: #4a413c; background: var(--surface-2); }
   .gl.on { border-color: var(--accent); background: var(--accent-soft); }
-  .kinds { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); }
-  .kchecks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-  .kchecks small { color: var(--muted); }
-  .samples { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
+
+  /* seletores de cor: rótulo em cima, cor + código + voltar ao padrão */
+  .cfs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+  .cf { display: flex; flex-direction: column; gap: 5px; padding: 8px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg-2); min-width: 0; }
+  .cf.off { opacity: .5; }
+  .cf-l { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .cf-r { display: flex; align-items: center; gap: 6px; }
+  .cf-r input[type=color] { width: 30px; height: 30px; flex: none; }
+  .cf-r code { flex: 1; font: 500 11px ui-monospace, monospace; color: var(--text-2); min-width: 0; overflow: hidden; }
+
+  /* controles deslizantes: rótulo, barra, valor (clicar no valor volta ao padrão) */
+  .sl { display: grid; grid-template-columns: 124px 1fr 52px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-2); }
+  .pct { border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text-2); border-radius: 7px; font: 500 12px var(--ui); padding: 3px 0; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pct:disabled { opacity: .55; cursor: default; }
+  .sizes { display: flex; flex-direction: column; gap: 6px; }
+  .szg { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); }
+  .szh { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; font-weight: 600; color: var(--text); }
+  .link { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text-2); font: 500 11.5px var(--ui); cursor: pointer; }
+  .link.on { color: var(--accent-2); border-color: rgb(216 176 106 / .5); background: var(--accent-soft); }
 </style>

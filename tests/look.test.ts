@@ -31,3 +31,24 @@ describe('aparência e cache', () => {
     expect(footerText(card({ n: 4 }), { deck: deck(), lang: 'pt-BR', mediaUrl: () => '', edition: { id: 'ed1', name: '1ª', code: '1ª Ed.' } })).toBe('004/050 · PT-BR · 1ª Ed.');
   });
 });
+
+describe('o que a carta está usando', () => {
+  it('tamanho do número separado do símbolo e cores aplicadas no relatório', async () => {
+    // sem navegador: um medidor de texto de faz de conta (10 px por letra)
+    (globalThis as Record<string, unknown>).OffscreenCanvas = class { getContext() { return { font: '', measureText: (t: string) => ({ width: t.length * 10, actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 2 }) }; } };
+    const { composeEx } = await import('../src/render/compose');
+    const base = { uid: 't', colors: ['#b92d20'], colorId: 'red', name: 'A', typeLine: 'B', rules: 'C', rarity: 'common', cost: [{ resource: 'vigor', amount: 2 }], stats: { atk: 1, def: 2 } };
+    const a = composeEx({ ...base, look: { style: 'claro' }, info: true });
+    // no Claro o ataque tem fundo na cor da carta e a defesa é branca
+    expect(a.info.fill.def).toBe('#ffffff');
+    expect(a.info.fill.atk).not.toBe('#ffffff');
+    expect(a.info.ink.header).toMatch(/^#[0-9a-f]{6}$/i);
+    const b = composeEx({ ...base, look: { style: 'claro', pieces: { def: { style: 'claro', fill: '#102030' } } }, info: true });
+    expect(b.info.fill.def).toBe('#102030');
+    expect(b.info.fill.atk).toBe(a.info.fill.atk);
+    // número com tamanho próprio: o desenho muda só quando o valor muda
+    const s1 = composeEx({ ...base, look: { style: 'neutro', icons: { cost: { size: 1.4 } } } }).svg;
+    const s2 = composeEx({ ...base, look: { style: 'neutro', icons: { cost: { size: 1.4, numSize: 1 } } } }).svg;
+    expect(s1).not.toBe(s2);
+  });
+});

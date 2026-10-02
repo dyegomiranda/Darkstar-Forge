@@ -13,7 +13,8 @@ type Obj = Record<string, unknown>;
 /**
  * O que é próprio de cada deck e NÃO passa de um deck para outro quando se
  * aplica à coleção: cores das peças, cores livres e os símbolos de classe e de
- * custo (cada deck tem a sua classe e o seu recurso).
+ * custo no formato antigo (o símbolo por recurso, em `icons.res`, vale para a
+ * coleção inteira: mana é mana em qualquer deck).
  */
 export function isDeckSpecific(path: string): boolean {
   return /^pieces\.[^.]+\.colors$/.test(path) || path === 'tint' || /^icons\.(cost|class)\.(glyph|color|image)$/.test(path);
