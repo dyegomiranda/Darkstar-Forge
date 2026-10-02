@@ -45,7 +45,18 @@
 
     // configurações deste computador: som e vídeo (a janela já abre no modo guardado pelo programa)
     settings.applyAudio();
-    settings.applyVideo(false);
+    // no programa: primeiro pergunta a escala e o modo em uso (a janela já abre como foi deixada), depois aplica
+    const h = host();
+    if (h) void h.info().then((i) => {
+      settings.zoom = i.zoom;
+      settings.screenScale = i.scale;
+      settings.screen = { width: i.width, height: i.height };
+      if (settings.v.display !== i.mode) { settings.v.display = i.mode; settings.save(); }
+      settings.applyVideo(false);
+    });
+    else settings.applyVideo(false);
+    const rescale = () => settings.applyZoom();
+    addEventListener('resize', rescale);
     host()?.onMode((mode) => { if (Date.now() - settings.lastSet > 3000 && settings.v.display !== mode) { settings.v.display = mode; settings.save(); } });
     const hush = () => chip.hush(settings.v.muteInBackground && !document.hasFocus());
     addEventListener('blur', hush);
@@ -66,7 +77,7 @@
     };
     raf = requestAnimationFrame(count);
 
-    return () => { clearTimeout(tidy); removeEventListener('pagehide', flush); removeEventListener('blur', hush); removeEventListener('focus', hush); stopInput(); cancelAnimationFrame(raf); };
+    return () => { clearTimeout(tidy); removeEventListener('pagehide', flush); removeEventListener('blur', hush); removeEventListener('focus', hush); removeEventListener('resize', rescale); stopInput(); cancelAnimationFrame(raf); };
   });
 
   $effect(() => { if (router.route.name === 'editor') lastCard = router.route.id; });

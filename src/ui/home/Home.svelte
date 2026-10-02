@@ -52,7 +52,7 @@
   }
   let first = $state<HTMLButtonElement>();
   onMount(() => {
-    chip.music('menu');
+    chip.music('title');
     first?.focus({ preventScroll: true });
   });
 </script>
@@ -64,11 +64,11 @@
     <div class="stars">{#each STARS as s}<i class:big={s.big} style="left:{s.x}%; top:{s.y}%; animation-delay:-{s.d}s; animation-duration:{s.t}s"></i>{/each}</div>
     <div class="corona"></div>
     <div class="flare"></div>
+    <div class="flare l"></div>
     <div class="embers">{#each EMBERS as e}<i class:v={e.hue} style="left:{e.x}%; animation-delay:-{e.d}s; animation-duration:{e.t}s; --dx:{e.drift}cqw"></i>{/each}</div>
     <div class="logo">
       <span class="word">Void</span>
       <span class="word sun">Sun</span>
-      <span class="tag">{L('RPG de cartas', 'A card RPG')}</span>
     </div>
   </div>
   <div class="shade"></div>
@@ -127,6 +127,7 @@
   @keyframes pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
   .flare { position: absolute; left: 66%; top: 26%; width: 34cqw; height: 9cqw; pointer-events: none; mix-blend-mode: screen; background: radial-gradient(ellipse at 0% 60%, rgb(170 90 255 / .3), transparent 70%); animation: pulse 7s ease-in-out infinite reverse; }
 
+  .flare.l { left: 2%; background: radial-gradient(ellipse at 100% 60%, rgb(170 90 255 / .26), transparent 70%); animation-delay: -2s; }
   .embers { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
   .embers i { position: absolute; bottom: -2%; width: .22cqw; height: .22cqw; min-width: 3px; min-height: 3px; background: #ffd9a8; box-shadow: 0 0 .7cqw rgb(255 190 120 / .9); opacity: 0; animation: rise 14s linear infinite; }
   .embers i.v { background: #d9b8ff; box-shadow: 0 0 .7cqw rgb(180 120 255 / .9); }
@@ -139,7 +140,6 @@
     background: linear-gradient(180deg, #ffffff 8%, #ffe9c4 42%, #f0a8d8 78%, #b98bff 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 .28cqw 0 #3a1d5c) drop-shadow(0 0 1.4cqw rgb(255 190 230 / .45)); }
   .word.sun { letter-spacing: .34em; padding-left: .34em; }
-  .tag { margin-top: 1.5cqw; font: 400 .92cqw var(--pixel); letter-spacing: .62em; padding-left: .62em; text-transform: uppercase; color: #cdb6f2; opacity: .85; white-space: nowrap; }
 
   .shade { position: absolute; inset: 0; pointer-events: none; background:
     linear-gradient(90deg, rgb(5 4 10 / .78) 0%, rgb(5 4 10 / .42) 22%, transparent 42%),

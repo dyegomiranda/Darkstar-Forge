@@ -17,13 +17,19 @@ export interface Race { id: string; name: Record<string, string>; boosts: Partia
 export const RACES = racesData as Race[];
 export const raceOf = (id: string | undefined) => RACES.find((r) => r.id === id);
 
-export const STATS: { id: Stat; attr: Attr; pt: string; en: string; full: [string, string]; what: [string, string] }[] = [
-  { id: 'str', attr: 'for', pt: 'FOR', en: 'STR', full: ['Força', 'Strength'], what: ['golpes e armas pesadas', 'strikes and heavy weapons'] },
-  { id: 'dex', attr: 'des', pt: 'DES', en: 'DEX', full: ['Destreza', 'Dexterity'], what: ['arcos, lâminas leves e esquiva', 'bows, light blades and dodging'] },
-  { id: 'con', attr: 'con', pt: 'CON', en: 'CON', full: ['Constituição', 'Constitution'], what: ['resistência e fôlego', 'toughness and stamina'] },
-  { id: 'int', attr: 'int', pt: 'INT', en: 'INT', full: ['Inteligência', 'Intelligence'], what: ['magias arcanas', 'arcane spells'] },
-  { id: 'wis', attr: 'sab', pt: 'SAB', en: 'WIS', full: ['Sabedoria', 'Wisdom'], what: ['natureza, cura e percepção', 'nature, healing and perception'] },
-  { id: 'cha', attr: 'car', pt: 'CAR', en: 'CHA', full: ['Carisma', 'Charisma'], what: ['pactos, liderança e invocações', 'pacts, leadership and summons'] },
+export const STATS: { id: Stat; attr: Attr; pt: string; en: string; full: [string, string]; what: [string, string]; does: [string, string] }[] = [
+  { id: 'str', attr: 'for', pt: 'FOR', en: 'STR', full: ['Força', 'Strength'], what: ['golpes e armas pesadas', 'strikes and heavy weapons'],
+    does: ['A potência do corpo. Libera as cartas de golpes pesados, investidas e fúria: é o atributo de guerreiros e bárbaros.', 'Raw bodily power. Unlocks heavy strikes, charges and rage cards: the attribute of fighters and barbarians.'] },
+  { id: 'dex', attr: 'des', pt: 'DES', en: 'DEX', full: ['Destreza', 'Dexterity'], what: ['arcos, lâminas leves e esquiva', 'bows, light blades and dodging'],
+    does: ['Agilidade e pontaria. Libera tiros certeiros, esquivas, armadilhas e golpes rápidos: é o atributo de patrulheiros e ladinos.', 'Agility and aim. Unlocks precise shots, dodges, traps and quick strikes: the attribute of rangers and rogues.'] },
+  { id: 'con', attr: 'con', pt: 'CON', en: 'CON', full: ['Constituição', 'Constitution'], what: ['resistência e fôlego', 'toughness and stamina'],
+    does: ['Saúde e fôlego. Libera as cartas de aguentar pancada e de recuperar o fôlego; serve a qualquer herói que fica na linha de frente.', 'Health and stamina. Unlocks cards for taking hits and catching your breath; useful to any front-line hero.'] },
+  { id: 'int', attr: 'int', pt: 'INT', en: 'INT', full: ['Inteligência', 'Intelligence'], what: ['magias arcanas', 'arcane spells'],
+    does: ['Estudo e raciocínio. Libera as magias arcanas mais fortes e os truques de quem prepara o que vai lançar: é o atributo de magos.', 'Study and reasoning. Unlocks the strongest arcane spells and the tricks of those who prepare their casting: the attribute of wizards.'] },
+  { id: 'wis', attr: 'sab', pt: 'SAB', en: 'WIS', full: ['Sabedoria', 'Wisdom'], what: ['natureza, cura e percepção', 'nature, healing and perception'],
+    does: ['Instinto e ligação com o mundo. Libera curas, companheiros animais e magias da natureza: é o atributo de druidas e clérigos.', 'Instinct and a bond with the world. Unlocks healing, animal companions and nature magic: the attribute of druids and clerics.'] },
+  { id: 'cha', attr: 'car', pt: 'CAR', en: 'CHA', full: ['Carisma', 'Charisma'], what: ['pactos, liderança e invocações', 'pacts, leadership and summons'],
+    does: ['Força de presença. Libera pactos, maldições e invocações mais poderosas: é o atributo de bruxos, necromantes e bardos.', 'Force of presence. Unlocks pacts, curses and stronger summons: the attribute of warlocks, necromancers and bards.'] },
 ];
 
 /** Pontos que o jogador distribui (9 melhorias de +2). */
@@ -112,4 +118,39 @@ export function upgradeHero(c: Character, playable: Deck[]): void {
     for (const s of STATS) if (c.play.attrs[s.attr] !== now[s.attr]) c.stats[s.id] = Math.max(c.stats[s.id], 10 + 2 * c.play.attrs[s.attr]);
   }
   if (!c.avatar && !c.portraitMediaId && !c.preset) c.avatar = defaultAvatar('male');
+}
+
+// ───────────── sugestões de distribuição (para quem não tem familiaridade com RPG) ─────────────
+
+/** Uma sugestão pronta: onde gastar os 18 pontos e para quem ela serve. `spend` = pontos por atributo, em ordem de importância. */
+export interface Build { id: string; pt: string; en: string; info: [string, string]; classes: ColorId[]; spend: [Stat, number][] }
+export const BUILDS: Build[] = [
+  { id: 'berserker', pt: 'Berserker', en: 'Berserker', classes: ['red'], spend: [['str', 8], ['con', 6], ['dex', 2], ['wis', 2]],
+    info: ['Bate forte e aguenta pancada. Tudo em Força, com Constituição para ficar de pé.', 'Hits hard and takes a beating. All in on Strength, with Constitution to stay standing.'] },
+  { id: 'guardian', pt: 'Guardião', en: 'Guardian', classes: ['red', 'white'], spend: [['con', 8], ['str', 6], ['wis', 2], ['cha', 2]],
+    info: ['A muralha do grupo: muita Constituição e Força suficiente para revidar.', 'The party wall: lots of Constitution and enough Strength to hit back.'] },
+  { id: 'duelist', pt: 'Duelista', en: 'Duelist', classes: ['purple', 'red'], spend: [['dex', 8], ['str', 4], ['con', 4], ['int', 2]],
+    info: ['Rápido e preciso: Destreza no máximo, com um pouco de Força e fôlego.', 'Quick and precise: Dexterity maxed, with a bit of Strength and stamina.'] },
+  { id: 'archmage', pt: 'Arquimago', en: 'Archmage', classes: ['blue'], spend: [['int', 8], ['str', 4], ['dex', 4], ['con', 2]],
+    info: ['Vive das magias arcanas: Inteligência no máximo e o resto para não cair no primeiro golpe.', 'Lives off arcane spells: Intelligence maxed and the rest to survive the first hit.'] },
+  { id: 'ranger', pt: 'Patrulheiro', en: 'Ranger', classes: ['green'], spend: [['dex', 8], ['wis', 6], ['con', 4]],
+    info: ['Arco, armadilhas e companheiros animais: Destreza e Sabedoria juntas.', 'Bow, traps and animal companions: Dexterity and Wisdom together.'] },
+  { id: 'druid', pt: 'Druida', en: 'Druid', classes: ['green', 'white'], spend: [['wis', 8], ['con', 6], ['dex', 4]],
+    info: ['Curas e forças da natureza: Sabedoria no máximo e corpo resistente.', 'Healing and forces of nature: Wisdom maxed and a sturdy body.'] },
+  { id: 'warlock', pt: 'Bruxo', en: 'Warlock', classes: ['black', 'silver'], spend: [['cha', 8], ['dex', 6], ['con', 4]],
+    info: ['Pactos, maldições e invocações: Carisma no máximo e Destreza para a lâmina.', 'Pacts, curses and summons: Charisma maxed and Dexterity for the blade.'] },
+  { id: 'balanced', pt: 'Equilibrado', en: 'Balanced', classes: [], spend: [['str', 4], ['dex', 4], ['con', 4], ['int', 2], ['wis', 2], ['cha', 2]],
+    info: ['Um pouco de tudo. Não libera as cartas mais exigentes, mas não tem ponto fraco.', 'A bit of everything. Does not unlock the most demanding cards, but has no weak spot.'] },
+];
+
+/** Os atributos que a sugestão dá a este herói (respeita a ancestralidade, o máximo e o total de pontos). */
+export function buildStats(c: Pick<Character, 'raceId'>, b: Build): Record<Stat, number> {
+  const out = {} as Record<Stat, number>;
+  for (const s of STATS) out[s.id] = statBase(c, s.id);
+  let left = STAT_POINTS;
+  const add = (s: Stat, n: number) => { const k = Math.max(0, Math.min(n, STAT_MAX - out[s], left)); out[s] += k; left -= k; };
+  for (const [s, n] of b.spend) add(s, n);
+  // o que sobrou (atributo que bateu no máximo por causa da ancestralidade) vai para os próximos da lista, de 2 em 2
+  for (let guard = 0; left > 0 && guard < 40; guard++) for (const [s] of b.spend) add(s, Math.min(2, left));
+  return out;
 }

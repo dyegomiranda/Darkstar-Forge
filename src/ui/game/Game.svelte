@@ -393,6 +393,8 @@
       while (alive && g && g.active === foe && g.winner === undefined && steps++ < 40) {
         // espera as animações da jogada anterior terminarem, com uma pausa para dar para acompanhar
         await sleep(Math.max(0, fxUntil - Date.now()) + PACES[cfg.pace].think);
+        // jogo pausado (menu ou ajuda abertos): o oponente espera
+        while (alive && (menuOpen || helpOpen)) await sleep(120);
         if (!g || g.active !== foe) break;
         const a = botAction($state.snapshot(g) as GameState, level);
         if (a.t === 'end') await sleep(PACES[cfg.pace].end); // deixa ver a última carta antes de ela sair da mesa
@@ -748,18 +750,25 @@
   // ───────────── zoom (a carta cresce ao passar o mouse) ─────────────
   let zoom = $state<{ id: string; x: number; y: number; up: boolean } | null>(null);
   const ZW = 340;
-  /** Mão inicial: a carta cresce no próprio lugar até dar para ler, sem sair da tela. */
-  function growInPlace(e: Event) {
-    const el = e.currentTarget as HTMLElement;
-    const w = el.offsetWidth, h = el.offsetHeight;
-    // posição sem a transformação em curso (a carta pode estar no meio de uma animação)
-    const box = (el.offsetParent ?? el.parentElement!).getBoundingClientRect();
-    const cx = box.left + el.offsetLeft + w / 2, cy = box.top + el.offsetTop + h / 2;
-    const k = Math.max(1.04, Math.min(400 / w, (innerHeight - 24) / h));
-    const fit = (c: number, half: number, max: number) => Math.min(max - 12 - half, Math.max(12 + half, c)) - c;
-    el.style.setProperty('--k', k.toFixed(3));
-    el.style.setProperty('--tx', `${fit(cx, (w * k) / 2, innerWidth).toFixed(1)}px`);
-    el.style.setProperty('--ty', `${fit(cy, (h * k) / 2, innerHeight).toFixed(1)}px`);
+  /**
+   * Zoom das cartas em fileira (mão inicial e mão da batalha): a carta sob o mouse cresce
+   * na hora e as vizinhas abrem espaço para ela, sem atraso — passar o mouse pela fileira
+   * vai ampliando uma carta depois da outra. `fan` calcula o quanto cresce (até dar para
+   * ler) e o quanto as vizinhas se afastam, sem deixar nada sair da tela.
+   */
+  function fan(e: Event, target = 390, cap = 2.4) {
+    const el = e.currentTarget as HTMLElement, row = el.parentElement!;
+    const w = el.offsetWidth, box = row.getBoundingClientRect();
+    if (!w) return;
+    // posições de descanso (sem o afastamento em curso): a fileira pode já estar aberta por causa de outra carta
+    const cards = [...row.children].filter((c) => c.classList.contains(el.classList[0])) as HTMLElement[];
+    const first = cards[0], lastEl = cards[cards.length - 1];
+    const off = (c: HTMLElement) => c.offsetLeft - (row.offsetParent === c.offsetParent ? row.offsetLeft : 0);
+    // folga até as bordas da tela: é o máximo que as pontas da fileira podem se afastar
+    const room = Math.max(0, Math.min(box.left + off(first), innerWidth - (box.left + off(lastEl) + lastEl.offsetWidth)) - 10);
+    const k = Math.max(1.12, Math.min(target / w, 1 + (2 * room) / w, (box.bottom - 14) / el.offsetHeight, cap));
+    row.style.setProperty('--fk', k.toFixed(3));
+    row.style.setProperty('--fs', `${((w * (k - 1)) / 2).toFixed(1)}px`);
   }
   function hover(id: string | undefined, e: Event) {
     if (!id || !app.cards[id]) { zoom = null; return; }
@@ -1216,11 +1225,14 @@
           {@const isReact = g.defs[r.cardId]?.game.kind === 'reacao'}
           <button class="hc" class:no={!!why && !isReact} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid}
             in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })}
-            onclick={() => clickCard(r.uid)} onmouseenter={(e) => { hoverCard = r.uid; hover(r.cardId, e); }} onmouseleave={() => { hoverCard = null; zoom = null; }}
-            onfocus={(e) => { hoverCard = r.uid; hover(r.cardId, e); }} onblur={() => { hoverCard = null; zoom = null; }}>
-            {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
-            {#if isReact}<span class="rtag">{L('Reação', 'Reaction')}</span>
-            {:else if dmgBadge(r)}<span class="dmgb"><Swords size={13} /> {dmgBadge(r)}</span>{/if}
+            onclick={() => clickCard(r.uid)} onmouseenter={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onmouseleave={() => { hoverCard = null; }}
+            onfocus={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onblur={() => { hoverCard = null; }}>
+            <!-- o que cresce é a face; o botão fica do tamanho de sempre, para o mouse sair da carta sem ter de dar a volta nela -->
+            <span class="hf">
+              {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
+              {#if isReact}<span class="rtag">{L('Reação', 'Reaction')}</span>
+              {:else if dmgBadge(r)}<span class="dmgb"><Swords size={13} /> {dmgBadge(r)}</span>{/if}
+            </span>
           </button>
         {/each}
       </div>
@@ -1325,19 +1337,24 @@
       {/if}
 
       {#if menuOpen}
-        <div class="gmenu-back" onclick={() => (menuOpen = false)} role="presentation"></div>
-        <div class="gmenu" in:scale={{ duration: 140, start: 0.92 }}>
-          <span class="section-title">{L('Menu da partida', 'Match menu')}</span>
-          <button onclick={() => (menuOpen = false)}><Check size={15} /> {L('Continuar jogando', 'Keep playing')}</button>
-          <button onclick={() => { menuOpen = false; helpOpen = true; }}><CircleHelp size={15} /> {L('Como jogar', 'How to play')}</button>
-          <label><input type="checkbox" bind:checked={cfg.showLog} /> {L('Mostrar o registro da batalha', 'Show the battle log')}</label>
-          <label><input type="checkbox" bind:checked={cfg.timeLimit} /> {L('Limite de tempo por jogada', 'Time limit per play')}</label>
-          <label class="gm-sel"><Gauge size={15} /> {L('Velocidade', 'Speed')}
-            <select class="select-in" bind:value={cfg.pace}><option value="slow">{L('Lento', 'Slow')}</option><option value="normal">{L('Normal', 'Normal')}</option><option value="fast">{L('Rápido', 'Fast')}</option></select></label>
-          <hr />
-          <button onclick={() => { menuOpen = false; leave(); }}><LogOut size={15} /> {L('Sair para a seleção (sem resultado)', 'Leave to selection (no result)')}</button>
-          <button onclick={() => { menuOpen = false; leave(); router.go('/'); }}><House size={15} /> {L('Menu principal (sem resultado)', 'Main menu (no result)')}</button>
-          <button class="danger" disabled={g.winner !== undefined} onclick={askConcede}><FlagIcon size={15} /> {L('Desistir (você perde)', 'Concede (you lose)')}</button>
+        <div class="gmenu-back" onclick={() => (menuOpen = false)} role="presentation" transition:fade={{ duration: 120 }}></div>
+        <div class="gmenu" role="dialog" aria-modal="true" aria-label={L('Jogo pausado', 'Game paused')} in:scale={{ duration: 160, start: 0.92 }}>
+          <span class="gm-sun" aria-hidden="true"></span>
+          <h2>{L('Jogo pausado', 'Game paused')}</h2>
+          <small class="gm-sub">{L(`Turno ${g.turn} · ${g.active === me ? 'sua vez' : 'vez do oponente'}`, `Turn ${g.turn} · ${g.active === me ? 'your turn' : "opponent's turn"}`)}</small>
+          <!-- svelte-ignore a11y_autofocus -->
+          <button class="gm-btn" autofocus onclick={() => (menuOpen = false)}>{L('Continuar', 'Resume')}</button>
+          <button class="gm-btn" onclick={() => { menuOpen = false; helpOpen = true; }}>{L('Como jogar', 'How to play')}</button>
+          <div class="gm-opts">
+            <label><input type="checkbox" bind:checked={cfg.showLog} /> {L('Registro da batalha', 'Battle log')}</label>
+            <label><input type="checkbox" bind:checked={cfg.timeLimit} /> {L('Limite de tempo por jogada', 'Time limit per play')}</label>
+            <label class="gm-sel"><Gauge size={15} /> {L('Velocidade', 'Speed')}
+              <select class="select-in" bind:value={cfg.pace}><option value="slow">{L('Lento', 'Slow')}</option><option value="normal">{L('Normal', 'Normal')}</option><option value="fast">{L('Rápido', 'Fast')}</option></select></label>
+          </div>
+          <button class="gm-btn" onclick={() => { menuOpen = false; leave(); }}>{L('Sair para a seleção', 'Leave to selection')}</button>
+          <button class="gm-btn" onclick={() => { menuOpen = false; leave(); router.go('/'); }}>{L('Menu principal', 'Main menu')}</button>
+          <button class="gm-btn danger" disabled={g.winner !== undefined} onclick={askConcede}>{L('Desistir (você perde)', 'Concede (you lose)')}</button>
+          <small class="gm-sub">Esc · {L('continuar', 'resume')}</small>
         </div>
       {/if}
       {#if helpOpen}
@@ -1481,7 +1498,7 @@
         </div>
         <div class="hi-cards">
           {#each P.hand as r (r.uid)}
-            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} onmouseenter={growInPlace} onfocus={growInPlace} in:flyIn={{ y: 30, duration: 300 }}>
+            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} onmouseenter={fan} onfocus={fan} in:flyIn={{ y: 30, duration: 300 }}>
               {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
               {#if discardSel.includes(r.uid)}<span class="drop-tag"><X size={14} /> {L('descartar', 'discard')}</span>{/if}
             </button>
@@ -1764,13 +1781,20 @@
   .cancel-btn:hover { border-color: var(--danger); color: #ffb4a6; }
 
   .hand { display: flex; justify-content: center; align-items: flex-end; flex: 1 1 0; min-height: 90px; padding-bottom: 2px; }
-  .hc { height: 100%; max-height: calc(var(--hand) * 1.15); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; margin: 0 -6px; transition: transform .15s, margin .15s; position: relative; }
-  .hc:hover { transform: translateY(-14px); z-index: 2; }
-  .hc.no { filter: brightness(.55) saturate(.6); }
-  .hc.react { filter: brightness(.8); }
+  .hc { height: 100%; max-height: calc(var(--hand) * 1.15); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; margin: 0 -6px; transition: transform .14s cubic-bezier(.2, .8, .3, 1); position: relative; }
+  .hf { display: block; height: 100%; position: relative; transform-origin: 50% 100%; transition: transform .14s cubic-bezier(.2, .8, .3, 1), filter .14s; pointer-events: none; filter: drop-shadow(0 6px 10px rgb(0 0 0 / .5)); }
+  /* como no baralho na mão: a carta sob o mouse sobe e cresce, as vizinhas abrem espaço */
+  .hc:hover, .hc:focus-visible { z-index: 6; outline: none; }
+  .hc:hover .hf, .hc:focus-visible .hf { transform: translateY(-12px) scale(var(--fk, 1.6)); filter: drop-shadow(0 18px 34px rgb(0 0 0 / .85)); }
+  .hc:has(~ .hc:hover), .hc:has(~ .hc:focus-visible) { transform: translateX(calc(var(--fs, 50px) * -.85)); }
+  .hc:hover ~ .hc, .hc:focus-visible ~ .hc { transform: translateX(calc(var(--fs, 50px) * .85)); }
+  .hc.no .hf { filter: brightness(.55) saturate(.6); }
+  .hc.react .hf { filter: brightness(.8); }
+  .hc.no:hover .hf, .hc.react:hover .hf, .hc.no:focus-visible .hf, .hc.react:focus-visible .hf { filter: drop-shadow(0 18px 34px rgb(0 0 0 / .85)); }
   .dmgb, .rtag { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1; display: inline-flex; gap: 3px; align-items: center; font: 800 14px var(--ui); padding: 2px 9px; border-radius: 9px; background: #2a0f0b; color: #ffcf7a; border: 1.5px solid #c4473a; box-shadow: 0 3px 8px rgb(0 0 0 / .6); white-space: nowrap; }
   .rtag { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; background: #101a2e; color: #a9c8ff; border-color: #4f7fd0; }
-  .hc.sel { outline: 3px solid #7fb0ff; transform: translateY(-18px); z-index: 2; }
+  .hc.sel { z-index: 2; translate: 0 -18px; }
+  .hc.sel .hf { outline: 3px solid #7fb0ff; border-radius: 6px; }
 
   /* grimório e cemitério: cada um sobre a sua base (círculo arcano / lápide), com o nome embaixo */
   .pilebox { position: absolute; z-index: 1; display: grid; justify-items: center; gap: 14px; left: 30px; bottom: 16px; }
@@ -1943,23 +1967,31 @@
   .hi-head h2 { font-size: clamp(28px, 3vw, 42px); color: #f6ead8; line-height: 1.05; }
   .hi-foe { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
   .hi-cards { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: nowrap; max-width: 100%; }
-  .hi-card { position: relative; width: clamp(120px, 12.2vw, 236px); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; border-radius: 9px; cursor: default; transition: transform .18s ease-out, filter .15s; filter: drop-shadow(0 16px 26px rgb(0 0 0 / .75)); }
-  .hi-card:hover, .hi-card:focus-visible { transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--k, 1.04)); z-index: 3; transition-delay: .12s; }
+  .hi-card { position: relative; width: clamp(120px, 12.2vw, 236px); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; border-radius: 9px; cursor: default; transition: transform .16s cubic-bezier(.2, .8, .3, 1), filter .15s; filter: drop-shadow(0 16px 26px rgb(0 0 0 / .75)); }
+  /* a carta sob o mouse cresce; as da esquerda e da direita se afastam para dar lugar */
+  .hi-card:hover, .hi-card:focus-visible { transform: scale(var(--fk, 1.5)); z-index: 3; outline: none; }
+  .hi-card:has(~ .hi-card:hover), .hi-card:has(~ .hi-card:focus-visible) { transform: translateX(calc(var(--fs, 60px) * -1)); }
+  .hi-card:hover ~ .hi-card, .hi-card:focus-visible ~ .hi-card { transform: translateX(var(--fs, 60px)); }
   .hi-card.pick { cursor: pointer; }
-  .hi-card.drop:not(:hover, :focus-visible) { transform: translateY(14px); }
+  .hi-card.drop:not(:hover, :focus-visible) { translate: 0 14px; }
   .hi-card.drop :global(img) { filter: grayscale(.85) brightness(.45); }
   .drop-tag { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: inline-flex; gap: 4px; align-items: center; padding: 5px 12px; border-radius: 99px; background: #7a1d16; color: #ffe0da; font: 700 12px var(--ui); text-transform: uppercase; letter-spacing: .1em; filter: none; white-space: nowrap; }
   .hi-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 
   /* menu da partida */
-  .gmenu-back { position: absolute; inset: 0; z-index: 46; }
-  .gmenu { position: absolute; right: 14px; top: 52px; z-index: 47; width: 290px; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 14px; background: rgb(18 15 14 / .98); border: 1px solid var(--line-2); box-shadow: 0 22px 60px rgb(0 0 0 / .75); }
-  .gmenu button, .gmenu label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; border: 0; background: none; color: var(--text); font: 500 13.5px var(--ui); cursor: pointer; text-align: left; }
-  .gmenu button:hover:not(:disabled), .gmenu label:hover { background: var(--surface-2); }
-  .gmenu button.danger { color: #ff9c8c; }
+  .gmenu-back { position: fixed; inset: 0; z-index: 62; background: rgb(4 3 8 / .74); backdrop-filter: blur(5px); }
+  .gmenu { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 63; width: min(400px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 24px 26px 16px;
+    background: linear-gradient(180deg, #1a1630, #0e0c18); border: 3px solid #fff0c8; box-shadow: 0 0 0 3px #05040a, 0 0 0 6px #4a417a, 0 0 60px rgb(190 120 255 / .25), 0 30px 80px rgb(0 0 0 / .8); }
+  .gm-sun { align-self: center; width: 34px; height: 34px; flex: none; border-radius: 50%; background: #05040a; box-shadow: 0 0 0 3px #fff0c8, 0 0 18px 4px rgb(255 200 120 / .7), 0 0 40px 10px rgb(170 110 255 / .4); }
+  .gmenu h2 { text-align: center; font: 700 20px var(--pixel); letter-spacing: .16em; padding-left: .16em; text-transform: uppercase; color: var(--accent-2); margin-top: 8px; }
+  .gm-sub { text-align: center; font: 400 9px var(--pixel); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .gm-btn { height: 42px; flex: none; border: 2px solid #3a3260; background: #14111f; color: var(--text); font: 400 12px var(--pixel); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: all var(--t); }
+  .gm-btn:hover:not(:disabled), .gm-btn:focus-visible { border-color: var(--accent); color: var(--accent-2); background: #241e3d; outline: none; transform: translateX(4px); }
+  .gm-btn.danger:hover:not(:disabled), .gm-btn.danger:focus-visible { border-color: var(--danger); color: #ffb4ad; }
+  .gm-btn:disabled { opacity: .4; cursor: default; }
+  .gm-opts { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 2px solid #2c2647; background: #0d0b16; }
+  .gm-opts label { display: flex; align-items: center; gap: 9px; padding: 6px 2px; color: var(--text-2); font: 500 13px var(--ui); cursor: pointer; }
   .gm-sel .select-in { margin-left: auto; width: auto; }
-  .gmenu button:disabled { opacity: .4; cursor: default; }
-  .gmenu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
   .help { max-width: 560px; }
   .help ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; color: var(--text-2); font-size: 13.5px; line-height: 1.45; }
   /* contador de tempo: um pavio que vai queimando */

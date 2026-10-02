@@ -91,10 +91,10 @@
     transition: box-shadow .18s ease-out; box-shadow: 0 8px 22px rgb(0 0 0 / .45); }
   .tile:hover { z-index: 3; }
   /* passar o mouse: um leve destaque na hora; parado um instante, a carta amplia */
-  .tile:hover .zw { transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--k, 1.5)); transition: transform .22s cubic-bezier(.2, .8, .3, 1.05) .32s; }
+  .tile:hover .zw { transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--k, 1.5)); transition: transform .15s cubic-bezier(.2, .8, .3, 1) .06s; }
   /* os botões e a caixa de seleção continuam do tamanho normal, nos cantos da carta ampliada */
-  .tile:hover .acts { transform: scale(calc(1 / var(--k, 1.5))); transform-origin: 100% 0; transition: opacity var(--t), transform .22s ease-out .32s; }
-  .tile:hover .check, .tile:hover .copies { transform: scale(calc(1 / var(--k, 1.5))); transform-origin: 0 0; transition: opacity var(--t), transform .22s ease-out .32s; }
+  .tile:hover .acts { transform: scale(calc(1 / var(--k, 1.5))); transform-origin: 100% 0; transition: opacity var(--t), transform .15s ease-out .06s; }
+  .tile:hover .check, .tile:hover .copies { transform: scale(calc(1 / var(--k, 1.5))); transform-origin: 0 0; transition: opacity var(--t), transform .15s ease-out .06s; }
   .tile:hover .face { box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 24px 46px rgb(0 0 0 / .75); }
   .tile.sel .face { box-shadow: 0 0 0 3px var(--accent), 0 14px 34px rgb(0 0 0 / .6); }
   .copies { position: absolute; top: 8px; left: 42px; padding: 2px 8px; border-radius: 8px; background: rgb(12 10 10 / .8); color: #f3e6c4; font: 700 13px var(--ui); pointer-events: none; }

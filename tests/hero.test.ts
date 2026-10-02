@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blankHero, canLower, canRaise, gameAttrs, pointsLeft, setRace, STAT_MAX, STAT_POINTS, statBase, upgradeHero } from '../src/model/hero';
+import { blankHero, BUILDS, buildStats, canLower, canRaise, gameAttrs, pointsLeft, setRace, STAT_MAX, STAT_POINTS, statBase, STATS, upgradeHero } from '../src/model/hero';
 import { presetHeroes } from '../src/model/seed';
 import { heroBaseOf } from '../src/model/equipment';
 import type { Deck } from '../src/model/types';
@@ -56,6 +56,18 @@ describe('ficha do herói', () => {
     for (const h of presetHeroes()) {
       expect(pointsLeft(h), h.name).toBe(0);
       expect(gameAttrs(h), h.name).toEqual(h.play!.attrs);
+    }
+  });
+
+  it('sugestões de atributos: gastam os 18 pontos, sem passar do máximo, em qualquer ancestralidade', () => {
+    for (const race of ['human', 'elf', 'dwarf', 'orc', 'tiefling', '']) {
+      for (const b of BUILDS) {
+        const c = blankHero('red', DECKS);
+        setRace(c, race);
+        c.stats = buildStats(c, b);
+        expect(pointsLeft(c), `${b.id}/${race}`).toBe(0);
+        for (const st of STATS) expect(c.stats[st.id], `${b.id}/${race}/${st.id}`).toBeLessThanOrEqual(STAT_MAX);
+      }
     }
   });
 

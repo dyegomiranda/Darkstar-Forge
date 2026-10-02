@@ -42,6 +42,12 @@ SLOTS = [
     ('hair/mustaches/beards_horseshoe', 'Ferradura', 'Horseshoe'), ('hair/mustaches/beards_walrus', 'Morsa', 'Walrus'), ('hair/mustaches/beards_french', 'Francês', 'French'),
     ('hair/mustaches/beards_bigstache', 'Grande', 'Big'), ('hair/mustaches/beards_lampshade', 'Reto', 'Lampshade'),
   ]),
+  ('eyebrows', 'Sobrancelhas', 'Eyebrows', True, [
+    ('head/eyebrows/eyebrows_thin', 'Finas', 'Thin'), ('head/eyebrows/eyebrows_thick', 'Grossas', 'Thick'),
+  ]),
+  ('eyes', 'Olho especial', 'Special eye', True, [
+    ('head/eyes/eyes_cyclops', 'Ciclope', 'Cyclops'), ('head/eyes/eyes_cyclops2', 'Ciclope (olho grande)', 'Cyclops (big eye)'),
+  ]),
   ('nose', 'Nariz', 'Nose', True, [
     ('head/nose/head_nose_button', 'Pequeno', 'Button'), ('head/nose/head_nose_straight', 'Reto', 'Straight'), ('head/nose/head_nose_large', 'Largo', 'Large'),
     ('head/nose/head_nose_big', 'Grande', 'Big'), ('head/nose/head_nose_elderly', 'Marcado', 'Elderly'),
@@ -108,6 +114,22 @@ SLOTS = [
     ('headwear/helmets/helmets/hat_helmet_bascinet', 'Bacinete', 'Bascinet'), ('headwear/helmets/helmets/hat_helmet_legion', 'Elmo de legionário', 'Legion helm'),
     ('headwear/helmets/helmets/hat_helmet_morion', 'Morrião', 'Morion'), ('headwear/helmets/helmets/hat_helmet_norman', 'Elmo normando', 'Norman helm'),
     ('headwear/helmets/helmets/hat_helmet_pointed', 'Elmo pontudo', 'Pointed helm'), ('headwear/helmets/helmets/hat_helmet_flattop', 'Elmo de topo chato', 'Flat-top helm'),
+    ('headwear/helmets/helmets/hat_helmet_close', 'Elmo de justa', 'Close helm'), ('headwear/helmets/helmets/hat_helmet_maximus', 'Elmo de gladiador', 'Gladiator helm'),
+    ('headwear/helmets/helmets/hat_helmet_xeon', 'Elmo de cavaleiro', 'Knight helm'), ('headwear/helmets/helmets/hat_helmet_spangenhelm_viking', 'Elmo nórdico', 'Nordic helm'),
+    ('headwear/helmets/helmets/hat_helmet_barbarian_nasal', 'Elmo bárbaro nasal', 'Barbarian nasal helm'), ('headwear/helmets/helmets/hat_helmet_bascinet_round', 'Bacinete redondo', 'Round bascinet'),
+    ('headwear/helmets/helmets/hat_helmet_armet_simple', 'Elmo fechado liso', 'Plain armet'), ('headwear/helmets/helmets/hat_helmet_barbuta_simple', 'Barbuta lisa', 'Plain barbuta'),
+  ]),
+  ('crest', 'Adorno do elmo', 'Helm ornament', True, [
+    ('headwear/helmets/accessories/hat_accessory_horns_upward', 'Chifres para cima', 'Upward horns'), ('headwear/helmets/accessories/hat_accessory_horns_downward', 'Chifres para baixo', 'Downward horns'),
+    ('headwear/helmets/accessories/hat_accessory_horns_short', 'Chifres curtos', 'Short horns'), ('headwear/helmets/accessories/hat_accessory_wings', 'Asas', 'Wings'),
+    ('headwear/helmets/accessories/hat_accessory_crest', 'Crista', 'Crest'), ('headwear/helmets/accessories/hat_accessory_crest_centurion', 'Crista de centurião', 'Centurion crest'),
+    ('headwear/helmets/accessories/hat_accessory_plumage', 'Penacho', 'Plumage'), ('headwear/helmets/accessories/hat_accessory_plumage_centurion', 'Penacho de centurião', 'Centurion plumage'),
+    ('headwear/helmets/accessories/hat_accessory_plumage_legion', 'Penacho de legionário', 'Legion plumage'),
+  ]),
+  ('visor', 'Viseira', 'Visor', True, [
+    ('headwear/helmets/visors/hat_visor_slit', 'Fenda', 'Slit'), ('headwear/helmets/visors/hat_visor_slit_narrow', 'Fenda estreita', 'Narrow slit'),
+    ('headwear/helmets/visors/hat_visor_grated', 'Grade', 'Grated'), ('headwear/helmets/visors/hat_visor_grated_narrow', 'Grade estreita', 'Narrow grate'),
+    ('headwear/helmets/visors/hat_visor_round', 'Redonda', 'Round'), ('headwear/helmets/visors/hat_visor_pigface', 'Bico', 'Pigface'), ('headwear/helmets/visors/hat_visor_horned', 'Com chifres', 'Horned'),
   ]),
   ('face', 'Rosto', 'Face', True, [
     ('headwear/accessories/eyepatch/facial_eyepatch_left', 'Tapa-olho', 'Eyepatch'), ('headwear/accessories/eyepatch/facial_eyepatch_right', 'Tapa-olho (outro lado)', 'Eyepatch (other side)'),
@@ -137,13 +159,13 @@ SLOTS = [
     ('head/appendages/head_fins_fin', 'Barbatanas', 'Fins'), ('head/appendages/head_fins_fin_short', 'Barbatanas curtas', 'Short fins'),
   ]),
   ('wings', 'Asas', 'Wings', True, [
-    ('body/wings/wings_bat', 'Asas de morcego', 'Bat wings'), ('body/lizard/wings_lizard_bat', 'Asas de dragão', 'Dragon wings'), ('body/lizard/wings_lizard', 'Asas de lagarto', 'Lizard wings'),
-    ('body/wings/wings_feathered', 'Asas de penas', 'Feathered wings'), ('body/wings/wings_lunar', 'Asas lunares', 'Lunar wings'),
+    ('body/wings/wings_bat', 'Asas de demônio (morcego)', 'Demon wings (bat)'), ('body/lizard/wings_lizard_bat', 'Asas de dragão', 'Dragon wings'), ('body/lizard/wings_lizard', 'Asas de lagarto', 'Lizard wings'),
+    ('body/wings/wings_lizard_alt', 'Asas membranosas', 'Membrane wings'), ('body/wings/wings_feathered', 'Asas de penas', 'Feathered wings'), ('body/wings/wings_lunar', 'Asas lunares', 'Lunar wings'),
     ('body/wings/pixie/wings_pixie', 'Asas de fada', 'Pixie wings'), ('body/wings/dragonfly/wings_dragonfly', 'Asas de libélula', 'Dragonfly wings'), ('body/wings/monarch/wings_monarch', 'Asas de borboleta', 'Butterfly wings'),
   ]),
   ('tail', 'Cauda', 'Tail', True, [
     ('body/tails/tail_wolf', 'Cauda de lobo', 'Wolf tail'), ('body/tails/tail_wolf_fluffy', 'Cauda felpuda', 'Fluffy tail'), ('body/tails/tail_cat', 'Cauda de gato', 'Cat tail'),
-    ('body/lizard/tail_lizard', 'Cauda de lagarto', 'Lizard tail'), ('body/tails/tail_lizard_alt', 'Cauda de dragão', 'Dragon tail'),
+    ('body/lizard/tail_lizard', 'Cauda de lagarto', 'Lizard tail'), ('body/tails/tail_lizard_alt', 'Cauda de demônio (fina)', 'Demon tail (thin)'),
   ]),
   ('shield', 'Escudo', 'Shield', True, [
     ('weapons/shields/shield_round', 'Escudo redondo', 'Round shield'), ('weapons/shields/shield_kite', 'Escudo de cavaleiro', 'Kite shield'),
@@ -177,7 +199,14 @@ CREATURE_HEADS = {
   'skeleton': 'head/heads/undead/heads_skeleton', 'zombie': 'head/heads/undead/heads_zombie', 'vampire': 'head/heads/undead/heads_vampire',
   'orc': 'head/heads/fantasy/heads_orc_male', 'goblin': 'head/heads/fantasy/heads_goblin', 'troll': 'head/heads/fantasy/heads_troll',
   'minotaur': 'head/heads/beast/heads_minotaur', 'wolf': 'head/heads/beast/heads_wolf_male', 'boarman': 'head/heads/beast/heads_boarman', 'lizard': 'head/heads/reptile/heads_lizard_male',
+  'frankenstein': 'head/heads/undead/heads_frankenstein', 'jack': 'head/heads/undead/heads_jack', 'alien': 'head/heads/reptile/heads_alien', 'wartotaur': 'head/heads/beast/heads_wartotaur',
+  'rabbit': 'head/heads/farm/heads_rabbit', 'rat': 'head/heads/farm/heads_rat', 'pig': 'head/heads/farm/heads_pig', 'sheep': 'head/heads/farm/heads_sheep', 'mouse': 'head/heads/farm/heads_mouse',
 }
+FEMALE_HEADS = {'orc': 'head/heads/fantasy/heads_orc_female', 'minotaur': 'head/heads/beast/heads_minotaur_female', 'wolf': 'head/heads/beast/heads_wolf_female', 'lizard': 'head/heads/reptile/heads_lizard_female'}
+# olhares (expressões do rosto humano)
+FACES = [('neutral', 'Neutro', 'Neutral'), ('angry', 'Bravo', 'Angry'), ('sad', 'Triste', 'Sad'), ('happy', 'Sorrindo', 'Smiling'), ('shock', 'Arregalado', 'Wide'), ('closed', 'Fechado', 'Closed'),
+         ('closing', 'Sonolento', 'Sleepy'), ('look_l', 'Olhando para um lado', 'Looking aside'), ('look_r', 'Olhando para o outro', 'Looking the other way'), ('eyeroll', 'Revirado', 'Eye roll'),
+         ('shame', 'Envergonhado', 'Ashamed'), ('blush', 'Corado', 'Blushing'), ('angry2', 'Furioso', 'Furious'), ('sad2', 'Choroso', 'Tearful'), ('happy2', 'Alegre', 'Cheerful'), ('tears', 'Em lágrimas', 'In tears')]
 FRAMES = {'skeleton': 'body/special/body_skeleton', 'zombie': 'body/special/body_zombie'}
 # paletas próprias (rampas de 6 tons, do mais escuro ao mais claro) para peles de criaturas
 EXTRA = {
@@ -187,8 +216,45 @@ EXTRA = {
     'ember': ['#3a0d05', '#8a2408', '#d24a0c', '#f5821f', '#ffb648', '#ffe9a0'],
     'shadow': ['#0b0812', '#1d1630', '#33274f', '#4d3c74', '#6f5aa0', '#9b86cf'],
     'frost': ['#10283a', '#1f4d6e', '#3a7fa8', '#6ab3d6', '#a5daf0', '#e2f6ff'],
+    'void': ['#000000', '#040406', '#0a0a0f', '#12121a', '#1c1c27', '#2c2c3a'],
+    'ash': ['#141416', '#2e2e33', '#4a4a52', '#6b6b75', '#9a9aa5', '#cfcfd8'],
+    'blood': ['#1a0003', '#40030a', '#6e0812', '#9c1019', '#c92a2a', '#f06a5a'],
   },
-  'hair': {'flame': ['#5a1204', '#a82a06', '#e2560c', '#ff8a1c', '#ffbe45', '#fff0a8']},
+  'hair': {
+    'flame': ['#5a1204', '#a82a06', '#e2560c', '#ff8a1c', '#ffbe45', '#fff0a8'],
+    'umber': ['#070302', '#170b05', '#2a1509', '#3f2210', '#573319', '#6f4422'],
+    'coffee': ['#050202', '#130b06', '#24150c', '#362214', '#4e3222', '#66472f'],
+    'espresso': ['#040201', '#100b07', '#1e150e', '#2f2218', '#46322a', '#5e493a'],
+    'brown_black': ['#020101', '#0d0a08', '#191410', '#28221c', '#3e3231', '#574c44'],
+    'soft_black': ['#010100', '#0b0a09', '#151412', '#22221f', '#383137', '#514e4d'],
+    'dark_chocolate': ['#030100', '#100805', '#1f1009', '#331b0f', '#4d261b', '#663826'],
+    'black_brown': ['#020000', '#0c0907', '#18120f', '#271e19', '#3f2c2d', '#58443f'],
+  },
+  # olhos: [contorno, íris, brilho] e, nos de monstro, um 4º tom para o branco do olho
+  'eye': {
+    'dark_brown': ['#140d08', '#3a2414', '#5a3a1e'], 'light_brown': ['#2e2010', '#7a5524', '#b08040'], 'honey': ['#3a2508', '#96641a', '#d19a35'],
+    'hazel': ['#2a2412', '#6b5a2a', '#9a8a3c'], 'hazel_green': ['#2a2c14', '#66692e', '#93a047'], 'olive': ['#232a14', '#55692f', '#7f9a44'], 'moss': ['#1f3018', '#4a7a3a', '#74ad55'],
+    'amber': ['#4a2a05', '#c07a14', '#f2b53a'], 'ice': ['#3a4a55', '#9cc4d8', '#dff3fb'], 'teal': ['#0f3a3a', '#2a8f8a', '#63d6c8'], 'violet': ['#2a1648', '#6a3fb5', '#a98af0'],
+    'black': ['#000000', '#101014', '#2a2a32'], 'pink': ['#5a1640', '#d24a9a', '#ff9ad2'],
+    'blood': ['#2a0000', '#b00000', '#ff2a1a'], 'infernal': ['#1a0000', '#d01000', '#ff6a2a', '#0a0000'], 'void': ['#000000', '#050506', '#101014', '#000000'],
+    'blind': ['#b8b8c0', '#e6e6ec', '#ffffff', '#ffffff'], 'ghost': ['#083a4a', '#2ad0f0', '#c8fbff', '#04121a'], 'venom': ['#0a3008', '#3ee02a', '#c8ff6a', '#040c04'],
+    'abyss': ['#1a0638', '#a02af0', '#e6a8ff', '#06020e'], 'molten': ['#4a1a00', '#ff8a00', '#ffe46a', '#140600'], 'undead': ['#3a4a2a', '#b8d86a', '#f2ffb0', '#1a1e12'],
+  },
+  # metais para armaduras de conjunto: ébano, daédrico, da noite, mithril, celestial…
+  'metal': {
+    'ebony': ['#000000', '#0b0a10', '#16141d', '#24212e', '#3a3547', '#5d5670'], 'daedric': ['#0a0000', '#1d0508', '#3a0a10', '#5e0f16', '#a11a1e', '#ff5a3c'],
+    'night': ['#02030a', '#0a0f1f', '#141c33', '#1f2b4a', '#33456e', '#6b86b8'], 'mithril': ['#16202e', '#3d5a78', '#6f93b4', '#a3c4dc', '#d3e8f4', '#ffffff'],
+    'celestial': ['#3a2a10', '#a8842f', '#e0c060', '#f6e6a8', '#fff8dc', '#ffffff'], 'emerald': ['#02140c', '#0b3d26', '#157a48', '#2bb56c', '#7fe6a6', '#d6ffe6'],
+    'amethyst': ['#12041f', '#35105c', '#5e22a0', '#8f4fd6', '#c39af2', '#f0deff'], 'blood': ['#150003', '#45000a', '#7d0512', '#b5141f', '#e84a3c', '#ffb09a'],
+    'frost': ['#0c1c2a', '#235070', '#3f8ab0', '#7cc4e0', '#c2ecfa', '#ffffff'], 'bone': ['#2a2318', '#6e604a', '#a39478', '#cdbfa3', '#e9dfc8', '#fffbee'],
+    'rose_gold': ['#3a1410', '#8a4032', '#c8705a', '#e8a08a', '#fbd0bc', '#fff0e6'], 'ember': ['#1a0500', '#5a1400', '#a83200', '#e86a10', '#ffb040', '#ffe8a0'],
+  },
+  'cloth': {
+    'void': ['#000000', '#050507', '#0b0b10', '#13131b', '#1d1d28', '#2c2c3b'], 'crimson': ['#1c0004', '#4a000c', '#7c0616', '#ae1422', '#d83a3a', '#f58a7a'],
+    'midnight': ['#02030c', '#080e24', '#101a3c', '#1a2a5a', '#2c4280', '#5a78b8'], 'royal': ['#12031f', '#30095a', '#521896', '#7a38c8', '#a870ea', '#d8b8ff'],
+    'gold': ['#3a2606', '#8a6410', '#c8981e', '#eec23c', '#ffe27a', '#fff6c8'], 'ivory': ['#3a3428', '#8a8068', '#bdb298', '#ddd4bc', '#f2ecd8', '#ffffff'],
+    'emerald': ['#02140c', '#0a3a22', '#126a3c', '#209a58', '#5cc888', '#b0f0cc'],
+  },
 }
 
 copied = set()
@@ -219,7 +285,7 @@ def recolors(d):
     if not r: return []
     if 'material' in r: r = {'color_1': r}
     # a base pode vir como "ulpc.green": fica só o nome da cor
-    return [(v['material'], (v.get('base') or '').split('.')[-1] or None) for k, v in sorted(r.items()) if isinstance(v, dict) and 'material' in v]
+    return [(v['material'], (v.get('base') or '').split('.')[-1] or None, v.get('source')) for k, v in sorted(r.items()) if isinstance(v, dict) and 'material' in v]
 
 def item(defpath, pt, en, extra=None, head=None):
     if not os.path.exists(os.path.join(SRC, D + defpath + '.json')):
@@ -268,7 +334,7 @@ def item(defpath, pt, en, extra=None, head=None):
     if not layers:
         print('  !! sem arquivos:', defpath); return None
     out = {'id': os.path.basename(defpath), 'pt': pt, 'en': en, 'bodies': sorted(bodies), 'layers': layers}
-    if recs: out['recolors'] = [{'material': m, **({'base': b} if b else {})} for m, b in recs]
+    if recs: out['recolors'] = [{'material': m, **({'base': b} if b else {}), **({'source': src} if src else {})} for m, b, src in recs]
     if d.get('match_body_color'): out['skin'] = True
     if variants and any(l['fmt'] == 'variant' for l in layers):
         # bolinhas de cor das variantes prontas (pela 1ª camada que tiver arquivo)
@@ -296,7 +362,13 @@ for mat in ('body', 'hair', 'cloth', 'metal', 'eye'):
 catalog['fixed']['body'] = item('body/body', 'Corpo', 'Body')
 catalog['fixed']['head'] = {b: item(HEADS[b], 'Cabeça', 'Head') for b in BODIES}
 catalog['fixed']['face'] = item('head/faces/face_neutral', 'Rosto', 'Face', head=True)
+catalog['fixed']['faces'] = {}
+for fid, fpt, fen in FACES:
+    it = item('head/faces/face_' + fid, fpt, fen, head=True)
+    if it: catalog['fixed']['faces'][fid] = it
 catalog['fixed']['heads'] = {k: item(v, k, k) for k, v in CREATURE_HEADS.items() if os.path.exists(os.path.join(SRC, D + v + '.json'))}
+# cabeça própria do corpo feminino, quando existe (senão vale a comum)
+catalog['fixed']['heads_f'] = {k: item(v, k, k) for k, v in FEMALE_HEADS.items() if os.path.exists(os.path.join(SRC, D + v + '.json'))}
 catalog['fixed']['frames'] = {k: item(v, k, k) for k, v in FRAMES.items()}
 catalog['fixed']['ammo'] = item('weapons/ranged/bow/weapon_ranged_bow_arrow', 'Flecha', 'Arrow')
 for sid, pt, en, optional, items in SLOTS:
