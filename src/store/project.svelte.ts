@@ -199,6 +199,16 @@ class ProjectState {
       changed = true;
       for (const c of p.characters) if (c.avatar?.frame === 'skeleton') c.avatar.skin = 'bone';
     }
+    // as luvas ganharam a categoria Mãos (antes dividiam o lugar com braçadeiras e braçais)
+    const HANDS_MARK = 'gloves-hands-1';
+    if (!p.seeded?.includes(HANDS_MARK)) {
+      p.seeded = [...(p.seeded ?? []), HANDS_MARK];
+      changed = true;
+      for (const c of p.characters) {
+        const parts = c.avatar?.parts;
+        if (parts?.arms?.id === 'arms_gloves') { parts.hands = parts.arms; delete parts.arms; }
+      }
+    }
     // o jogo passou a se chamar Void Sun: os nomes que ainda eram os de fábrica acompanham (o que o usuário renomeou fica)
     const NAME_MARK = 'rename-voidsun-1';
     if (!p.seeded?.includes(NAME_MARK)) {

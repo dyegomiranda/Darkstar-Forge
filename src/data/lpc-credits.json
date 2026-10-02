@@ -3562,42 +3562,6 @@
 "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
 ]
 },
-"arms/hands/gloves/male": {
-"authors": [
-"Michael Whitlock (bigbeargames)",
-"Matthew Krohn (makrohn)",
-"Johannes Sjölund (wulax)",
-"bluecarrot16",
-"JaidynReiman"
-],
-"licenses": [
-"OGA-BY 3.0",
-"CC-BY-SA 3.0",
-"GPL 3.0"
-],
-"urls": [
-"https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
-"http://opengameart.org/content/lpc-clothing-updates"
-]
-},
-"arms/hands/gloves/thin": {
-"authors": [
-"Michael Whitlock (bigbeargames)",
-"Matthew Krohn (makrohn)",
-"Johannes Sjölund (wulax)",
-"bluecarrot16",
-"JaidynReiman"
-],
-"licenses": [
-"OGA-BY 3.0",
-"CC-BY-SA 3.0",
-"GPL 3.0"
-],
-"urls": [
-"https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
-"http://opengameart.org/content/lpc-clothing-updates"
-]
-},
 "arms/bracers": {
 "authors": [
 "Matthew Krohn (makrohn)",
@@ -3672,6 +3636,54 @@
 "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
 "https://opengameart.org/content/lpc-combat-armor-for-women",
 "http://opengameart.org/content/lpc-clothing-updates"
+]
+},
+"arms/hands/gloves/male": {
+"authors": [
+"Michael Whitlock (bigbeargames)",
+"Matthew Krohn (makrohn)",
+"Johannes Sjölund (wulax)",
+"bluecarrot16",
+"JaidynReiman"
+],
+"licenses": [
+"OGA-BY 3.0",
+"CC-BY-SA 3.0",
+"GPL 3.0"
+],
+"urls": [
+"https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+"http://opengameart.org/content/lpc-clothing-updates"
+]
+},
+"arms/hands/gloves/thin": {
+"authors": [
+"Michael Whitlock (bigbeargames)",
+"Matthew Krohn (makrohn)",
+"Johannes Sjölund (wulax)",
+"bluecarrot16",
+"JaidynReiman"
+],
+"licenses": [
+"OGA-BY 3.0",
+"CC-BY-SA 3.0",
+"GPL 3.0"
+],
+"urls": [
+"https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+"http://opengameart.org/content/lpc-clothing-updates"
+]
+},
+"arms/hands/ring/stud": {
+"authors": [
+"bluecarrot16",
+"JaidynReiman"
+],
+"licenses": [
+"CC0"
+],
+"urls": [
+"https://opengameart.org/content/lpc-jewelry"
 ]
 },
 "shoulders/pauldrons": {

@@ -46,7 +46,7 @@ SLOTS = [
     ('head/eyebrows/eyebrows_thin', 'Finas', 'Thin'), ('head/eyebrows/eyebrows_thick', 'Grossas', 'Thick'),
   ]),
   ('eyes', 'Olho especial', 'Special eye', True, [
-    ('head/eyes/eyes_cyclops', 'Ciclope', 'Cyclops'), ('head/eyes/eyes_cyclops2', 'Ciclope (olho grande)', 'Cyclops (big eye)'),
+    ('head/eyes/eyes_cyclops', 'Ciclope', 'Cyclops'), ('head/eyes/eyes_cyclops2', 'Ciclope de olho grande', 'Big-eyed cyclops'),
   ]),
   ('nose', 'Nariz', 'Nose', True, [
     ('head/nose/head_nose_button', 'Pequeno', 'Button'), ('head/nose/head_nose_straight', 'Reto', 'Straight'), ('head/nose/head_nose_large', 'Largo', 'Large'),
@@ -90,7 +90,10 @@ SLOTS = [
     ('feet/feet_sandals', 'Sandálias', 'Sandals'), ('feet/socks/feet_socks_tabi', 'Meias tabi', 'Tabi socks'), ('feet/feet_hoofs', 'Cascos', 'Hoofs'), ('feet/feet_armour', 'Botas de placas', 'Plate boots'),
   ]),
   ('arms', 'Braços', 'Arms', True, [
-    ('arms/arms_gloves', 'Luvas', 'Gloves'), ('arms/wrists/arms_bracers', 'Braçadeiras', 'Bracers'), ('arms/wrists/wrists_cuffs', 'Punhos', 'Cuffs'), ('arms/arms_armour', 'Braçais de placas', 'Plate arms'),
+    ('arms/wrists/arms_bracers', 'Braçadeiras', 'Bracers'), ('arms/wrists/wrists_cuffs', 'Punhos', 'Cuffs'), ('arms/arms_armour', 'Braçais de placas', 'Plate arms'),
+  ]),
+  ('hands', 'Mãos', 'Hands', True, [
+    ('arms/arms_gloves', 'Luvas', 'Gloves'), ('arms/arms_hands_ring_stud', 'Anel', 'Ring'),
   ]),
   ('shoulders', 'Ombros', 'Shoulders', True, [
     ('arms/shoulders/shoulders_pauldrons', 'Ombreiras', 'Pauldrons'), ('arms/shoulders/shoulders_legion', 'Ombreiras de legionário', 'Legion shoulders'), ('arms/shoulders/shoulders_mantal', 'Manto de ombro', 'Mantle'),
@@ -132,7 +135,7 @@ SLOTS = [
     ('headwear/helmets/visors/hat_visor_round', 'Redonda', 'Round'), ('headwear/helmets/visors/hat_visor_pigface', 'Bico', 'Pigface'), ('headwear/helmets/visors/hat_visor_horned', 'Com chifres', 'Horned'),
   ]),
   ('face', 'Rosto', 'Face', True, [
-    ('headwear/accessories/eyepatch/facial_eyepatch_left', 'Tapa-olho', 'Eyepatch'), ('headwear/accessories/eyepatch/facial_eyepatch_right', 'Tapa-olho (outro lado)', 'Eyepatch (other side)'),
+    ('headwear/accessories/eyepatch/facial_eyepatch_left', 'Tapa-olho', 'Eyepatch'), ('headwear/accessories/eyepatch/facial_eyepatch_right', 'Tapa-olho esquerdo', 'Left eyepatch'),
     ('headwear/accessories/facial_mask_plain', 'Máscara', 'Mask'), ('headwear/accessories/glasses/facial_glasses_round', 'Óculos redondos', 'Round glasses'),
     ('headwear/accessories/glasses/facial_glasses', 'Óculos', 'Glasses'), ('headwear/accessories/glasses/facial_glasses_halfmoon', 'Óculos meia-lua', 'Half-moon glasses'),
     ('headwear/accessories/monocle/facial_monocle_right', 'Monóculo', 'Monocle'),
@@ -159,13 +162,13 @@ SLOTS = [
     ('head/appendages/head_fins_fin', 'Barbatanas', 'Fins'), ('head/appendages/head_fins_fin_short', 'Barbatanas curtas', 'Short fins'),
   ]),
   ('wings', 'Asas', 'Wings', True, [
-    ('body/wings/wings_bat', 'Asas de demônio (morcego)', 'Demon wings (bat)'), ('body/lizard/wings_lizard_bat', 'Asas de dragão', 'Dragon wings'), ('body/lizard/wings_lizard', 'Asas de lagarto', 'Lizard wings'),
+    ('body/wings/wings_bat', 'Asas de demônio', 'Demon wings'), ('body/lizard/wings_lizard_bat', 'Asas de dragão', 'Dragon wings'), ('body/lizard/wings_lizard', 'Asas de lagarto', 'Lizard wings'),
     ('body/wings/wings_lizard_alt', 'Asas membranosas', 'Membrane wings'), ('body/wings/wings_feathered', 'Asas de penas', 'Feathered wings'), ('body/wings/wings_lunar', 'Asas lunares', 'Lunar wings'),
     ('body/wings/pixie/wings_pixie', 'Asas de fada', 'Pixie wings'), ('body/wings/dragonfly/wings_dragonfly', 'Asas de libélula', 'Dragonfly wings'), ('body/wings/monarch/wings_monarch', 'Asas de borboleta', 'Butterfly wings'),
   ]),
   ('tail', 'Cauda', 'Tail', True, [
     ('body/tails/tail_wolf', 'Cauda de lobo', 'Wolf tail'), ('body/tails/tail_wolf_fluffy', 'Cauda felpuda', 'Fluffy tail'), ('body/tails/tail_cat', 'Cauda de gato', 'Cat tail'),
-    ('body/lizard/tail_lizard', 'Cauda de lagarto', 'Lizard tail'), ('body/tails/tail_lizard_alt', 'Cauda de demônio (fina)', 'Demon tail (thin)'),
+    ('body/lizard/tail_lizard', 'Cauda de lagarto', 'Lizard tail'), ('body/tails/tail_lizard_alt', 'Cauda de demônio', 'Demon tail'),
   ]),
   ('shield', 'Escudo', 'Shield', True, [
     ('weapons/shields/shield_round', 'Escudo redondo', 'Round shield'), ('weapons/shields/shield_kite', 'Escudo de cavaleiro', 'Kite shield'),
@@ -244,7 +247,7 @@ EXTRA = {
   },
   # metais para armaduras de conjunto: ébano, daédrico, da noite, mithril, celestial…
   'metal': {
-    'ebony': ['#000000', '#0b0a10', '#16141d', '#24212e', '#3a3547', '#5d5670'], 'daedric': ['#0a0000', '#1d0508', '#3a0a10', '#5e0f16', '#a11a1e', '#ff5a3c'],
+    'ebony': ['#000000', '#0b0a10', '#16141d', '#24212e', '#3a3547', '#5d5670'], 'daedric': ['#000000', '#7a0c10', '#0e0709', '#1c0d12', '#30141a', '#ff5a2a'],
     'night': ['#02030a', '#0a0f1f', '#141c33', '#1f2b4a', '#33456e', '#6b86b8'], 'mithril': ['#16202e', '#3d5a78', '#6f93b4', '#a3c4dc', '#d3e8f4', '#ffffff'],
     'celestial': ['#3a2a10', '#a8842f', '#e0c060', '#f6e6a8', '#fff8dc', '#ffffff'], 'emerald': ['#02140c', '#0b3d26', '#157a48', '#2bb56c', '#7fe6a6', '#d6ffe6'],
     'amethyst': ['#12041f', '#35105c', '#5e22a0', '#8f4fd6', '#c39af2', '#f0deff'], 'blood': ['#150003', '#45000a', '#7d0512', '#b5141f', '#e84a3c', '#ffb09a'],
