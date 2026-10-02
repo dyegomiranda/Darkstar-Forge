@@ -31,12 +31,14 @@ ARTS = [
      "both in profile, sparks between them, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
     # logotipo do desenvolvedor (tela de abertura): fundo preto liso, para assentar sobre a tela preta
     # (parte de uma foto do boneco do jogo, em tools/comfyui/ref: a figura sai parecida com ele, com mais detalhe e uma guitarra)
-    ('estudio', 93, 1024, 1024,
-     "one single full body chibi game character sprite on a plain pure black background, front view: a small demon knight rock guitarist with a big head and a small body. "
-     "Very long straight black hair in two big twin tails falling to the sides, two short curved bright red horns on top of the head, big glowing red eyes, a pale face, "
-     "two large dark bat wings spread open behind the back, black plate armor with dark grey edges, black boots. "
-     "The character is playing a black electric guitar with a dark red trim, held across the body, one hand on the neck and one on the strings. "
-     "Simple readable shapes, the whole figure from the horns to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
+    ('estudio', 117, 1024, 1024,
+     "one single full body chibi game character sprite on a plain pure black background: a small evil demon dark samurai with a big head and a small body, "
+     "standing in a low samurai fighting stance with legs apart, holding a katana with both hands, the long katana blade is pure black and points diagonally upward, "
+     "thick black and purple smoke rises from the black blade. "
+     "Very long straight black hair in two big twin tails, two short curved bright red horns on top of the head, glowing red eyes with a cruel evil glare under angry brows, a pale face, "
+     "the mouth is closed in a thin cold line. Two large demon bat wings spread wide open behind the back, each wing with clearly drawn bony fingers and dark crimson membranes between them. "
+     "Black samurai armor: layered lamellar shoulder guards, black chest plate tied with dark red cords, black armored skirt plates, black boots. "
+     "Simple readable shapes, the whole figure from the horns and wing tips to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
     ('campanha', 43, 1024, 1280,
      "vertical composition: a winding road through a dark fantasy world map landscape seen from a high cliff, distant ruined castle, dead forest, mountains and a glowing violet rift on the horizon, "
      "a small party of three travelers with a lantern walking the road, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
@@ -85,7 +87,7 @@ for aid, seed, w, h, prompt in ARTS:
         t0 = time.time()
         if aid == 'estudio':
             shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ref', 'estudio-ref.png'), os.path.join(os.path.expanduser('~/ComfyUI/input'), 'estudio-ref.png'))
-            g = wf(prompt, seed * 100 + v, w, h, fig=True, init='estudio-ref.png', denoise=[0.72, 0.8, 0.86, 0.92][(v - 1) % 4])
+            g = wf(prompt, seed * 100 + v, w, h, fig=True, init='estudio-ref.png', denoise=[0.86, 0.92, 0.96, 1.0][(v - 1) % 4])
         else: g = wf(prompt, seed * 100 + v, w, h)
         pid = post('/prompt', {"prompt": g})['prompt_id']
         while True:

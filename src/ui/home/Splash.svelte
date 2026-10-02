@@ -34,6 +34,9 @@
     let name: { blood: HTMLCanvasElement; ghost: HTMLCanvasElement; x: number; y: number; w: number; h: number } | null = null;
     const band = out.createLinearGradient(0, 0, W, 0);
     band.addColorStop(0, 'rgb(255 255 255 / 0)'); band.addColorStop(0.5, 'rgb(255 255 255 / .035)'); band.addColorStop(1, 'rgb(255 255 255 / 0)');
+    /** Onde a figura ficou na tela, e a lâmina da katana dentro dela (de onde sobe a fumaça). */
+    let fig: { x: number; y: number } | null = null;
+    const BLADE = { x0: 56, x1: 106, y: 67 }, SMOKE = ['#a274ff', '#6f48c0', '#43307a', '#231a3c'];
     let raf = 0, t0 = 0, exitAt = Infinity, exitLen = 520, over = false;
 
     /** A janela cabe um número inteiro de vezes na grade: cada ponto do desenho vira um quadrado exato. */
@@ -76,7 +79,7 @@
       const iw = img?.width ?? 0, ih = img?.height ?? 0, GAP = 6;
       const gx = Math.round((W - (iw + GAP + w)) / 2), top = Math.round((H - (ih + 26)) / 2);
       base.clearRect(0, 0, W, H);
-      if (img) base.drawImage(img, gx, top + 26);
+      if (img) { base.drawImage(img, gx, top + 26); fig = { x: gx, y: top + 26 }; }
       // "DEVELOPED BY", centralizado sobre o conjunto
       const by = dots('DEVELOPED BY', '400 8px "Silkscreen", monospace', 4);
       const bx = Math.round((W - by.w) / 2);
@@ -102,6 +105,23 @@
       swap = g > 0.5 && Math.random() < 0.3;
       cuts = [];
       if (name && (r > 0.86 || g > 0.25)) for (let i = 0, n = 1 + Math.floor(rnd(0, 3)); i < n; i++) cuts.push({ y: 3 * Math.floor(rnd(0, name.h / 3 - 1)), h: 3 * Math.ceil(rnd(0, 3)), dx: 3 * Math.round(rnd(-4, 4)) });
+    }
+
+    /** Número "ao acaso" estável (0 a 1) para um par de sementes. */
+    const hash = (a: number, b: number) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+    /** Fumaça negra e roxa que sobe da lâmina: nasce clara, escurece, abre e some. */
+    function smoke(t: number) {
+      if (!fig) return;
+      for (let i = 0; i < 64; i++) {
+        const life = 1.3 + hash(i, 1) * 1.5, clock = t + hash(i, 2) * life, age = (clock % life) / life, turn = Math.floor(clock / life);
+        const x = BLADE.x0 + hash(i, turn + 3) * (BLADE.x1 - BLADE.x0) + Math.sin((t + i) * 1.7) * age * 5 + age * 4;
+        const y = BLADE.y - age * (14 + hash(i, 4) * 16);
+        fb.globalAlpha = (age < 0.15 ? age / 0.15 : 1 - age) * 0.85;
+        fb.fillStyle = SMOKE[Math.min(SMOKE.length - 1, Math.floor(age * SMOKE.length + hash(i, 5) * 1.2))];
+        const size = age > 0.55 ? 3 : age > 0.2 ? 2 : 1;
+        fb.fillRect(Math.round(fig.x + x), Math.round(fig.y + y), size, size);
+      }
+      fb.globalAlpha = 1;
     }
 
     function drawName() {
@@ -153,7 +173,7 @@
       // o quadro inteiro, ainda sem falha de tela
       fb.fillStyle = '#000';
       fb.fillRect(0, 0, W, H);
-      if (!blank) { fb.drawImage(base.canvas, 0, 0); drawName(); }
+      if (!blank) { fb.drawImage(base.canvas, 0, 0); smoke(t); drawName(); }
 
       out.globalCompositeOperation = 'source-over';
       out.globalAlpha = 1;
