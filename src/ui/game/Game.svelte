@@ -59,6 +59,11 @@
   let sceneOpen = $state(false);
   /** Cenário da partida em curso. */
   let scene = $state<Scene>(sceneOf('mesa'));
+  /**
+   * Fundo da mesa. O endereço vai completo: dentro de uma variável CSS, um caminho
+   * relativo seria procurado a partir da pasta da folha de estilo (assets/), não do app.
+   */
+  const sceneStyle = $derived(scene.img ? `--scene:url("${new URL(scene.img, document.baseURI).href}")` : '');
   /** Piso de cada casa (varia de casa para casa). */
   const floorOf = (p: number, row: number, col: number) => `url(${floorTile(scene, 1 + p * 100 + (row + 1) * 10 + col)})`;
   $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog, timeLimit, scene: scenePick })); } catch { /* sem armazenamento local */ } });
@@ -511,19 +516,33 @@
     setTimeout(() => { floats = floats.filter((f) => f.key !== key); }, 2100);
   }
 
-  function hitFlash(el: HTMLElement | null, color: string) {
-    el?.animate([
-      { transform: 'translateX(0)', boxShadow: `inset 0 0 0 999px ${color}` },
-      { transform: 'translateX(-7px)', offset: 0.2 }, { transform: 'translateX(6px)', offset: 0.45 }, { transform: 'translateX(-3px)', offset: 0.7 },
-      { transform: 'translateX(0)', boxShadow: 'inset 0 0 0 999px transparent' },
-    ], { duration: 520, easing: 'ease-out' });
+  /** A figura dentro de uma casa (o boneco; sem boneco, o bloco do ícone) e a transformação que ela já tem. */
+  function figureOf(slot: HTMLElement | null): { el: HTMLElement; base: string } | null {
+    const doll = slot?.querySelector<HTMLElement>('.doll');
+    if (doll) return { el: doll, base: 'translateX(-50%) ' };
+    const unit = slot?.querySelector<HTMLElement>('.unit');
+    return unit ? { el: unit, base: '' } : null;
   }
 
-  /** Golpe corpo a corpo: a criatura avança até o alvo e volta. À distância/magia: um projétil voa. */
+  /** Levou dano/cura: a casa pisca na cor e só a figura treme (o piso fica parado). */
+  function hitFlash(el: HTMLElement | null, color: string) {
+    el?.animate([{ boxShadow: `inset 0 0 0 999px ${color}` }, { boxShadow: 'inset 0 0 0 999px transparent' }], { duration: 520, easing: 'ease-out' });
+    const fig = el?.classList.contains('slot') ? figureOf(el) : null;
+    const who = fig?.el ?? (el?.classList.contains('slot') ? null : el), b = fig?.base ?? '';
+    who?.animate([{ transform: `${b}translateX(0)` }, { transform: `${b}translateX(-7px)`, offset: 0.2 }, { transform: `${b}translateX(6px)`, offset: 0.45 }, { transform: `${b}translateX(-3px)`, offset: 0.7 }, { transform: `${b}translateX(0)` }], { duration: 520, easing: 'ease-out' });
+  }
+
+  /** Golpe corpo a corpo: a figura avança até o alvo e volta (a casa não sai do lugar). À distância/magia: um projétil voa. */
   function attackAnim(from: DOMRect, to: DOMRect, fromEl: HTMLElement | null, via: Via) {
     const dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height / 2);
     if (via === 'melee') {
-      if (fromEl) { fromEl.style.zIndex = '5'; fromEl.animate([{ transform: 'none' }, { transform: `translate(${dx * 0.55}px, ${dy * 0.55}px) scale(1.08)`, offset: 0.5 }, { transform: 'none' }], { duration: 520, easing: 'ease-in-out' }).onfinish = () => { fromEl.style.zIndex = ''; }; }
+      const fig = figureOf(fromEl);
+      if (fromEl && fig) {
+        // a casa sobe na pilha só para a figura passar por cima das vizinhas
+        fromEl.style.zIndex = '6';
+        fromEl.style.overflow = 'visible';
+        fig.el.animate([{ transform: `${fig.base}translate(0, 0)` }, { transform: `${fig.base}translate(${dx * 0.55}px, ${dy * 0.55}px) scale(1.08)`, offset: 0.5 }, { transform: `${fig.base}translate(0, 0)` }], { duration: 520, easing: 'ease-in-out' }).onfinish = () => { fromEl.style.zIndex = ''; fromEl.style.overflow = ''; };
+      }
       return;
     }
     if (!fxEl) return;
@@ -869,7 +888,7 @@
 {:else if step === 'place' && myHero && botHero}
   <!-- posicionamento: mesma estrutura da mesa, para o campo ficar exatamente onde ficará na partida -->
   <div class="table">
-    <div class="main" class:scenic={!!scene.img} style={scene.img ? `--scene:url(${scene.img})` : ''}>
+    <div class="main" class:scenic={!!scene.img} style={sceneStyle}>
       <div class="hbar dim" style="--c:{colorOf(botHero)}">
         <span class="hb-pic"><HeroPortrait hero={botChar} size={46} round /></span>
         <div class="who"><b class="display">{botHero.name}</b><small>{L('Inimigo (bot)', 'Enemy (bot)')}</small></div>
@@ -880,7 +899,9 @@
           <div class="row">
             {#each [0, 1, 2] as col}
               <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}; --floor:{floorOf(1, row, col)}">
-                {#if botHero.row === row && botHero.col === col}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span><span class="unit"><span class="u-nm">{botHero.name}</span></span>
+                {#if botHero.row === row && botHero.col === col}
+                  {#if botChar?.avatar}<span class="doll"><AvatarSprite avatar={botChar.avatar} dir="s" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span>{/if}
+                  <span class="unit"><span class="u-nm">{botHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </span>
             {/each}
@@ -896,7 +917,9 @@
             {#each [0, 1, 2] as col}
               {@const on = myPos.row === row && myPos.col === col}
               <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}; --floor:{floorOf(0, row, col)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
-                {#if on}<span class="mini"><HeroPortrait hero={myChar} size={80} /></span><span class="unit"><span class="u-nm">{myHero.name}</span></span>
+                {#if on}
+                  {#if myChar?.avatar}<span class="doll"><AvatarSprite avatar={myChar.avatar} dir="n" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={myChar} size={80} /></span>{/if}
+                  <span class="unit"><span class="u-nm">{myHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </button>
             {/each}
@@ -918,7 +941,7 @@
   {@const P = g.players[me]}
   {@const F = g.players[foe]}
   <div class="table">
-    <div class="main" class:scenic={!!scene.img} style={scene.img ? `--scene:url(${scene.img})` : ''} onmousemove={(e) => { lastMouse = { x: e.clientX, y: e.clientY }; if (sel) mouse = lastMouse; }} onclick={mainClick}
+    <div class="main" class:scenic={!!scene.img} style={sceneStyle} onmousemove={(e) => { lastMouse = { x: e.clientX, y: e.clientY }; if (sel) mouse = lastMouse; }} onclick={mainClick}
       oncontextmenu={(e) => { if (sel) { e.preventDefault(); cancel(); } }} role="presentation">
       <!-- ───── barra de herói ───── -->
       {#snippet bar(p: 0 | 1, mine: boolean)}

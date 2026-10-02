@@ -188,9 +188,13 @@ export function attackAnim(av: Avatar, fallback: Anim = 'slash'): Anim {
   return itemOf('weapon', av.parts.weapon?.id)?.attack ?? fallback;
 }
 
-/** "Foto" do boneco para o retrato: o busto de frente, ampliado sem suavizar, sobre um fundo. */
+/** "Foto" do boneco para o retrato: o busto de frente (rosto à mostra), ampliado sem suavizar, sobre um fundo. */
 export async function portrait(av: Avatar, bg = '#2a2420', px = 8): Promise<Blob> {
-  const sheet = await compose(av, 'idle');
+  // retrato é para ver o rosto: sem arma nem escudo na frente, e sem elmo de metal (capuz e chapéu de pano ficam)
+  const parts = { ...av.parts };
+  delete parts.weapon; delete parts.shield;
+  if (parts.head?.id.startsWith('hat_helmet')) delete parts.head;
+  const sheet = await compose({ ...av, parts }, 'idle');
   const off = (sheet.size - LPC.frame) / 2;
   const sx = off + 14, sy = 2 * sheet.size + off + 8, sw = 36, sh = 45; // direção "s" (de frente), do alto da cabeça ao peito
   const c = document.createElement('canvas');
