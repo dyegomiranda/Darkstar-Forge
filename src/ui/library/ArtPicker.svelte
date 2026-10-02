@@ -1,7 +1,7 @@
 <!--
   Escolher a arte de cada carta quando há variações (pf-red_001.png, pf-red_001__v2.png…).
   Lista com miniaturas + visualização ampliada (só a arte ou já na carta). Na ampliada cabem
-  poucas imagens por vez, bem grandes; setas nos cantos da tela passam para as outras.
+  até 4 imagens por vez, bem grandes; setas nos cantos da tela passam para as outras.
   Teclado: ← → passa as imagens (e, no fim, muda de carta) · 1 2 3… escolhe · 0 = nenhuma · Esc fecha.
 
   Remover uma imagem (lixeira) só a tira desta lista — o arquivo continua na pasta. As removidas
@@ -136,7 +136,7 @@
 
   // quantas imagens cabem lado a lado em tamanho grande (o resto vem pelas setas)
   let vw = $state(innerWidth);
-  const perPage = $derived(Math.max(1, Math.min(3, Math.floor((vw - 150) / 470))));
+  const perPage = $derived(Math.max(1, Math.min(4, Math.floor((vw - 150) / 360))));
   let page = $state(0);
   const zfiles = $derived(zg ? filesOf(zg) : []);
   const pages = $derived(Math.max(1, Math.ceil(zfiles.length / perPage)));
@@ -335,7 +335,7 @@
   .bpick { flex: 1; min-height: 0; display: flex; padding: 0; border: 0; background: none; cursor: pointer; }
   .bpick img { min-height: 0; max-width: 100%; height: 100%; object-fit: contain; border-radius: 8px; display: block; }
   /* a carta ocupa a altura disponível (ou menos, se forem várias lado a lado); a largura sai da proporção */
-  .cardsvg { position: relative; flex: none; height: min(calc(100vh - 235px), calc((100vw - 190px) / var(--n, 3) * 1.4 - 60px)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; }
+  .cardsvg { position: relative; flex: none; height: min(calc(100vh - 235px), calc((100vw - 190px) / var(--n, 4) * 1.4 - 60px)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; }
   .cardsvg :global(svg) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .brow { display: flex; align-items: center; gap: 14px; flex: none; }
   .blabel { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--ui); color: var(--text-2); }
