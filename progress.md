@@ -1,8 +1,14 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.0: o jogo passa a se chamar Void Sun e vira jogo em primeiro lugar)
+**Atualizado:** 02/10/2026 (versão 3.2: tela de abertura do desenvolvedor e aviso da primeira vez)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.2 (02/10/2026)
+
+- [x] Tela de abertura com o logotipo do desenvolvedor ("Developed by" + o demônio guitarrista + "Djabo"); some sozinha e qualquer clique ou tecla pula
+- [x] Aviso da primeira vez que o jogo abre (duas páginas, PT/EN): "Entendido!" não mostra mais, "Sair" fecha o jogo
+- [x] Tela inicial: à esquerda do sol só o feixe roxo (os raios do sol ficam só do lado direito)
 
 ## Versão 3.1 (02/10/2026)
 

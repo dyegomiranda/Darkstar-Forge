@@ -11,6 +11,7 @@
   import { host, settings } from '../../app/settings.svelte';
   import { ui } from '../../app/ui.svelte';
   import { chip } from '../../audio/chip';
+  import FirstRun from './FirstRun.svelte';
 
   interface Item { id: string; pt: string; en: string; hint: [string, string]; go?: () => void; wip?: boolean }
   const ITEMS: Item[] = [
@@ -50,10 +51,18 @@
     px = (e.clientX / innerWidth - 0.5) * -14;
     py = (e.clientY / innerHeight - 0.5) * -8;
   }
+  // aviso da primeira vez (fica guardado neste computador que já foi visto)
+  const SEEN = 'voidsun.aviso';
+  let notice = $state((() => { try { return localStorage.getItem(SEEN) !== '1'; } catch { return false; } })());
+  function understood() {
+    try { localStorage.setItem(SEEN, '1'); } catch { /* sem armazenamento local */ }
+    notice = false;
+    first?.focus({ preventScroll: true });
+  }
   let first = $state<HTMLButtonElement>();
   onMount(() => {
     chip.music('title');
-    first?.focus({ preventScroll: true });
+    if (!notice) first?.focus({ preventScroll: true });
   });
 </script>
 
@@ -106,6 +115,8 @@
     </span>
   </footer>
 </div>
+
+{#if notice}<FirstRun ondone={understood} />{/if}
 
 <style>
   .home { position: relative; height: 100%; overflow: hidden; background: #05040a; user-select: none; }

@@ -23,6 +23,7 @@
   import HeroCreator from '../ui/hero/HeroCreator.svelte';
   import Settings from '../ui/settings/Settings.svelte';
   import Home from '../ui/home/Home.svelte';
+  import Splash from '../ui/home/Splash.svelte';
   import Modes from '../ui/home/Modes.svelte';
   import About from '../ui/home/About.svelte';
   import ScreenBar from '../ui/common/ScreenBar.svelte';
@@ -34,6 +35,8 @@
   let error = $state('');
   let lastCard = $state<string | null>(null);
   let fps = $state(0);
+  /** Tela de abertura (logotipo do desenvolvedor): aparece uma vez, ao abrir o jogo. */
+  let splash = $state(true);
 
   onMount(() => {
     Promise.all([loadCardFonts(), app.load()]).catch((e) => { error = String(e?.message ?? e); });
@@ -90,7 +93,7 @@
   function key(e: KeyboardEvent) {
     if (!settings.is(e, 'back') && e.key !== 'Escape') return;
     setTimeout(() => {
-      if (e.defaultPrevented || ui.ask || ui.pdf || shell.ownMenu) return;
+      if (e.defaultPrevented || splash || ui.ask || ui.pdf || shell.ownMenu) return;
       if (shell.menu) { shell.menu = false; return; }
       // há uma janela aberta por cima da tela (seletor, ajuda…): o Esc é dela
       if (document.querySelector('.picker, .scene-modal, .modal, .backdrop')) return;
@@ -116,6 +119,8 @@
 <div class="shell">
   {#if error}
     <div class="fatal"><h2>{L('Não foi possível abrir o jogo', 'Could not open the game')}</h2><p>{error}</p></div>
+  {:else if splash}
+    <!-- o jogo carrega por trás da abertura -->
   {:else if !app.ready}
     <div class="loading"><span class="sun"></span><p>Void Sun</p></div>
   {:else if route === 'home'}
@@ -159,6 +164,7 @@
   {/if}
 </div>
 
+{#if splash}<Splash ondone={() => (splash = false)} />{/if}
 {#if settings.v.showFps}<div class="fps">{fps} fps</div>{/if}
 <PauseMenu />
 <Toasts />
