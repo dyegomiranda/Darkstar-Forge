@@ -77,6 +77,8 @@ export function pfCollection(): { edition: Edition; decks: Deck[]; cards: Card[]
   };
 }
 
+import { presetSlots, protoEquipment } from './equipment';
+
 export const PROTO_ID = 'proto1';
 
 /** Arma do herói dono de um deck do protótipo (deixa o texto dos golpes com o dano exato). */
@@ -88,7 +90,7 @@ export function presetHeroes(): Character[] {
   return HERO_BASES.map((b): Character => ({
     id: `hero-${b.id}`, name: b.name, raceId: '', classColors: [color(b.deckId)], level: 1, hp: 30,
     stats: { str: 10 + 2 * b.attrs.for, dex: 10 + 2 * b.attrs.des, con: 10 + 2 * b.attrs.con, int: 10 + 2 * b.attrs.int, wis: 10 + 2 * b.attrs.sab, cha: 10 + 2 * b.attrs.car },
-    slots: {}, notes: '', preset: b.id, play: structuredClone(b), avatar: structuredClone(PRESET_AVATARS[b.id]),
+    slots: presetSlots(b.id), notes: '', preset: b.id, play: structuredClone(b), avatar: structuredClone(PRESET_AVATARS[b.id]),
   }));
 }
 
@@ -116,7 +118,9 @@ export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Car
       art: { zoom: 1, x: 0, y: 0, mirror: false, icon: pc.icon }, game: structuredClone(g), createdAt: now, updatedAt: now,
     };
   }));
-  return { edition: { id: PROTO_ID, name: 'Protótipo — Mesa de teste', code: 'PROTO', deckSize: 40 }, decks, cards };
+  // as cartas de equipamento dos heróis prontos (arma + 5 peças de cada um)
+  const eq = protoEquipment(PROTO_ID);
+  return { edition: { id: PROTO_ID, name: 'Protótipo — Mesa de teste', code: 'PROTO', deckSize: 40 }, decks: [...decks, eq.deck], cards: [...cards, ...eq.cards] };
 }
 
 export function seedProject(): { project: Project; cards: Card[] } {
@@ -132,7 +136,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1'],
   };
   return { project, cards };
 }

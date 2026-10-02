@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Printer, Trash2, Minus, UserRound, X, Heart, Upload, ArrowLeft, Pencil, Swords, Shield, Sparkles } from '@lucide/svelte';
+  import { Plus, Printer, Trash2, Minus, UserRound, X, Heart, Upload, ArrowLeft, Pencil, Swords, Shield, Sparkles, Info } from '@lucide/svelte';
   import racesData from '../../data/races.json';
   import { app } from '../../store/project.svelte';
   import { importImage, ensureMedia, mediaUrl } from '../../store/media';
@@ -18,8 +18,9 @@
   import AvatarSprite from '../../avatar/AvatarSprite.svelte';
   import { defaultAvatar, portrait as avatarPortrait, type Avatar } from '../../avatar/lpc';
   import { router } from '../../app/router.svelte';
-  import { HERO_BASES, gearInfo } from '../../game/decks';
-  import { ATTRS, ATTR_NAMES, GEAR_SLOTS, type GearItem, type GearSlot, type HeroBase, type Via } from '../../game/types';
+  import { HERO_BASES } from '../../game/decks';
+  import { ATTRS, ATTR_NAMES, type HeroBase } from '../../game/types';
+  import { SLOTS, equippedCards, gearText, presetSlots } from '../../model/equipment';
   import { deckCount, heroColor, heroDef } from '../game/heroes';
 
   let { id }: { id?: string } = $props();
@@ -34,20 +35,6 @@
     { id: 'int', pt: 'INT', en: 'INT', full: ['Inteligência', 'Intelligence'] },
     { id: 'wis', pt: 'SAB', en: 'WIS', full: ['Sabedoria', 'Wisdom'] },
     { id: 'cha', pt: 'CAR', en: 'CHA', full: ['Carisma', 'Charisma'] },
-  ];
-
-  /** Espaços de equipamento e quais etiquetas de carta cabem em cada um. */
-  const SLOTS: { id: Slot; pt: string; en: string; tags: string[]; pos: [number, number] }[] = [
-    { id: 'head', pt: 'Cabeça', en: 'Head', tags: ['head'], pos: [50, 12] },
-    { id: 'hands', pt: 'Mãos', en: 'Hands', tags: ['hands'], pos: [13, 14] },
-    { id: 'amulet', pt: 'Amuleto', en: 'Amulet', tags: ['amulet'], pos: [87, 14] },
-    { id: 'chest', pt: 'Peito', en: 'Chest', tags: ['chest'], pos: [50, 38] },
-    { id: 'mainHand', pt: 'Mão principal', en: 'Main hand', tags: ['weapon'], pos: [13, 39] },
-    { id: 'offHand', pt: 'Mão secundária', en: 'Off hand', tags: ['offhand', 'weapon'], pos: [87, 39] },
-    { id: 'ring1', pt: 'Anel', en: 'Ring', tags: ['ring'], pos: [13, 64] },
-    { id: 'ring2', pt: 'Anel', en: 'Ring', tags: ['ring'], pos: [87, 64] },
-    { id: 'legs', pt: 'Pernas', en: 'Legs', tags: ['legs'], pos: [50, 64] },
-    { id: 'feet', pt: 'Pés', en: 'Feet', tags: ['feet'], pos: [50, 89] },
   ];
 
   const baseStats = (): Record<Stat, number> => ({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 });
@@ -78,7 +65,7 @@
     const color = base.deckId.replace('proto-', '') as ColorId;
     app.updateProject((p) => {
       p.characters.push({
-        id: cid, name: L('Novo herói', 'New hero'), raceId: '', classColors: [color], level: 1, hp: 30, stats: baseStats(), slots: {}, notes: '',
+        id: cid, name: L('Novo herói', 'New hero'), raceId: '', classColors: [color], level: 1, hp: 30, stats: baseStats(), slots: presetSlots(base.id), notes: '',
         play: { ...structuredClone(base), id: cid },
       });
     });
@@ -95,24 +82,10 @@
   }
 
   // ───── dados de jogo (Mesa de teste) ─────
-  const VIAS: { id: Via; pt: string; en: string }[] = [{ id: 'melee', pt: 'Corpo a corpo', en: 'Melee' }, { id: 'ranged', pt: 'À distância', en: 'Ranged' }, { id: 'magic', pt: 'Mágico', en: 'Magic' }];
-  const SLOT_IDS: GearSlot[] = ['head', 'chest', 'hands', 'feet', 'trinket'];
-  const MODS: { id: 'armor' | 'resist' | 'hp' | 'strike'; pt: string; en: string; max: number }[] = [
-    { id: 'hp', pt: 'Vida', en: 'Life', max: 6 }, { id: 'armor', pt: 'Armadura', en: 'Armor', max: 3 },
-    { id: 'resist', pt: 'Resist. mágica', en: 'Magic resist', max: 3 }, { id: 'strike', pt: 'Golpe', en: 'Strike', max: 2 },
-  ];
   const gameDecks = $derived(app.decks.filter((d) => app.cardsOf(d.id).some((c) => c.game)));
   function play(fn: (b: HeroBase) => void) { edit((c) => { if (c.play) fn(c.play); }); }
-  function gearOf(b: HeroBase, slot: GearSlot): GearItem | undefined { return b.gear.find((g) => g.slot === slot); }
-  function setGear(slot: GearSlot, fn: (g: GearItem) => void) {
-    play((b) => {
-      let it = b.gear.find((g) => g.slot === slot);
-      if (!it) { it = { slot, name: [L(GEAR_SLOTS[slot][0], GEAR_SLOTS[slot][1]), GEAR_SLOTS[slot][1]], info: ['—', '—'] }; b.gear.push(it); }
-      fn(it);
-      it.info = gearInfo(it);
-    });
-  }
-  function enablePlay(base: HeroBase) { edit((c) => { c.play = { ...structuredClone(base), id: c.id }; }); }
+  /** Liga os dados de jogo a partir de um modelo; os espaços vazios recebem as cartas de equipamento do modelo. */
+  function enablePlay(base: HeroBase) { edit((c) => { c.play = { ...structuredClone(base), id: c.id }; c.slots = { ...presetSlots(base.id), ...c.slots }; }); }
 
   function setRace(id: string) {
     edit((c) => {
@@ -148,7 +121,11 @@
   const equipment = $derived(Object.values(app.cards).filter((c) => app.deck(c.deckId)?.kind === 'equipment'));
   const slotOptions = (slot: Slot) => equipment.filter((c) => c.tags.some((t) => SLOTS.find((s) => s.id === slot)!.tags.includes(t)));
   const equipped = $derived(ch ? SLOTS.map((s) => ({ slot: s, card: ch.slots[s.id] ? app.cards[ch.slots[s.id]!] : undefined })) : []);
-  const bonus = $derived(equipped.reduce((a, e) => ({ atk: a.atk + (e.card?.stats?.atk ?? 0), def: a.def + (e.card?.stats?.def ?? 0) }), { atk: 0, def: 0 }));
+  /** Só as vestidas, com o que cada uma dá (resumo da ficha). */
+  const worn = $derived(ch ? equippedCards(ch, app.cards) : []);
+  /** Soma do que o equipamento vestido dá. */
+  const bonus = $derived(worn.reduce((a, e) => ({ strike: a.strike + (e.card.gear?.strike ?? 0), armor: a.armor + (e.card.gear?.armor ?? 0), resist: a.resist + (e.card.gear?.resist ?? 0), hp: a.hp + (e.card.gear?.hp ?? 0) }), { strike: 0, armor: 0, resist: 0, hp: 0 }));
+  const editCard = (cid: string) => { router.returnTo = null; router.editor(cid); };
 
   function equip(slot: Slot, card: Card | null) {
     edit((c) => { if (card) c.slots[slot] = card.id; else delete c.slots[slot]; });
@@ -295,7 +272,9 @@
       <!-- equipamento -->
       <section class="card gear">
         <div class="row"><h3 class="section-title grow">{L('Equipamento', 'Equipment')}</h3>
-          <span class="chip">ATK <b>{fmt(bonus.atk)}</b></span><span class="chip">DEF <b>{fmt(bonus.def)}</b></span></div>
+          <span class="chip" title={L('Vida que o equipamento soma', 'Life added by the gear')}><Heart size={12} /> <b>{fmt(bonus.hp)}</b></span>
+          <span class="chip" title={L('Armadura', 'Armor')}><Shield size={12} /> <b>{bonus.armor}</b></span>
+          <span class="chip" title={L('Resistência mágica', 'Magic resistance')}><Sparkles size={12} /> <b>{bonus.resist}</b></span></div>
         <div class="doll">
           <svg class="figure" viewBox="0 0 100 140" aria-hidden="true">
             <path d="M50 10c7 0 12 6 12 13s-5 13-12 13-12-6-12-13 5-13 12-13Zm-18 30h36c8 0 13 6 14 13l4 30c1 5-3 8-7 6l-5-2 1 36-10 3-5-28h-4l-5 28-10-3 1-36-5 2c-4 2-8-1-7-6l4-30c1-7 6-13 14-13Z" fill="currentColor" />
@@ -351,14 +330,6 @@
               <input class="input" type="number" min="10" max="60" value={b.baseHp} oninput={(e) => play((x) => { x.baseHp = num(e, 10, 60); })} /></label>
             <div class="field"><span>{L('Recursos no nível 1 (3 pontos)', 'Level 1 resources (3 points)')}</span>
               <div class="split">{#each [0, 1, 2, 3] as v}<button class:on={b.vigor === v} onclick={() => play((x) => { x.vigor = v; x.mana = 3 - v; })}>{v} Vigor · {3 - v} Mana</button>{/each}</div></div>
-            <label class="field"><span>{L('Arma', 'Weapon')}</span>
-              <input class="input" value={L(b.weapon.name[0], b.weapon.name[1])} oninput={(e) => play((x) => { x.weapon.name[app.lang === 'pt-BR' ? 0 : 1] = (e.currentTarget as HTMLInputElement).value; })} /></label>
-            <label class="field"><span>{L('Dano do golpe', 'Strike damage')}</span>
-              <input class="input" type="number" min="1" max="8" value={b.weapon.dmg} oninput={(e) => play((x) => { x.weapon.dmg = num(e, 1, 8); })} /></label>
-            <label class="field"><span>{L('Tipo do golpe', 'Strike type')}</span>
-              <select class="select" value={b.weapon.via} onchange={(e) => play((x) => { x.weapon.via = (e.currentTarget as HTMLSelectElement).value as Via; })}>
-                {#each VIAS as v}<option value={v.id}>{L(v.pt, v.en)}</option>{/each}
-              </select></label>
           </div>
           <div class="field"><span>{L('Atributos de jogo (as cartas pedem um mínimo)', 'Game attributes (cards require a minimum)')}</span>
             <div class="gattrs">
@@ -367,17 +338,21 @@
                   <div class="val"><button onclick={() => play((x) => { x.attrs[a] = Math.max(0, x.attrs[a] - 1); })}><Minus size={12} /></button><b>{b.attrs[a]}</b><button onclick={() => play((x) => { x.attrs[a] = Math.min(5, x.attrs[a] + 1); })}><Plus size={12} /></button></div></div>
               {/each}
             </div></div>
-          <div class="field"><span>{L('Equipamento vestido (cada peça soma ao herói)', 'Equipped gear (each piece adds to the hero)')}</span>
+          <div class="field"><span>{L('Equipamento vestido (resumo)', 'Equipped gear (summary)')}</span>
+            <p class="gnote"><Info size={14} /> <span>{L('A arma e as peças são as cartas de equipamento vestidas no quadro “Equipamento”, no alto da ficha. Para trocar, clique num espaço lá em cima; para mudar o nome ou os números de uma peça, edite a carta dela.', 'The weapon and pieces are the equipment cards worn in the “Equipment” board at the top of the sheet. To swap, click a slot up there; to change a piece’s name or numbers, edit its card.')}</span></p>
             <div class="gearlist">
-              {#each SLOT_IDS as slot}
-                {@const it = gearOf(b, slot)}
-                <div class="grow1">
-                  <small class="gslot">{L(GEAR_SLOTS[slot][0], GEAR_SLOTS[slot][1])}</small>
-                  <input class="input" placeholder={L('(vazio)', '(empty)')} value={it ? L(it.name[0], it.name[1]) : ''} oninput={(e) => setGear(slot, (g) => { g.name[app.lang === 'pt-BR' ? 0 : 1] = (e.currentTarget as HTMLInputElement).value; })} />
-                  {#each MODS as m}
-                    <label class="mod1"><small>{L(m.pt, m.en)}</small>
-                      <input class="input" type="number" min="0" max={m.max} value={it?.[m.id] ?? 0} oninput={(e) => setGear(slot, (g) => { const v = num(e, 0, m.max); if (v) g[m.id] = v; else delete g[m.id]; })} /></label>
-                  {/each}
+              {#each SLOTS as sl (sl.id)}
+                {@const card = ch.slots[sl.id] ? app.cards[ch.slots[sl.id]!] : undefined}
+                <div class="grow1" class:empty={!card}>
+                  <small class="gslot">{L(sl.pt, sl.en)}</small>
+                  {#if card}
+                    <b class="gname">{card.text[app.lang]?.name || card.text['pt-BR'].name}</b>
+                    <span class="gwhat">{gearText(card.gear, app.lang)}</span>
+                    <button class="btn sm ghost" onclick={() => editCard(card.id)} title={L('Abre a carta no editor (aba Jogo) para mudar nome e números', 'Opens the card in the editor (Game tab) to change name and numbers')}><Pencil size={13} /> {L('Editar carta', 'Edit card')}</button>
+                  {:else}
+                    <span class="gwhat muted">{sl.id === 'mainHand' ? L('sem arma — golpe 1, corpo a corpo', 'no weapon — strike 1, melee') : L('vazio', 'empty')}</span>
+                    <button class="btn sm ghost" onclick={() => (picking = sl.id)}><Plus size={13} /> {L('Vestir', 'Equip')}</button>
+                  {/if}
                 </div>
               {/each}
             </div></div>
@@ -417,11 +392,11 @@
       {#if opts.length}
         <div class="opts">
           {#each opts as c (c.id)}
-            <button class="opt" class:on={ch.slots[picking] === c.id} onclick={() => equip(picking!, c)}><CardImage card={c} /></button>
+            <button class="opt" class:on={ch.slots[picking] === c.id} onclick={() => equip(picking!, c)}><CardImage card={c} /><small>{gearText(c.gear, app.lang)}</small></button>
           {/each}
         </div>
       {:else}
-        <p class="muted">{L('Nenhuma carta de equipamento com a etiqueta deste espaço. Crie no deck de Equipamentos e marque a etiqueta (ex.: head, chest, weapon, ring).', 'No equipment card has this slot tag. Create one in the Equipment deck and tag it (e.g. head, chest, weapon, ring).')}</p>
+        <p class="muted">{L('Ainda não há carta de equipamento para este espaço. Crie uma no deck de Equipamentos (Biblioteca → Nova carta) e, na aba Jogo da carta, escolha o espaço e os bônus.', 'There is no equipment card for this slot yet. Create one in the Equipment deck (Library → New card) and, in the card’s Game tab, choose the slot and the bonuses.')}</p>
       {/if}
     </div>
   </div>
@@ -476,10 +451,13 @@
   .ga { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .ga small { font: 600 11px var(--display); letter-spacing: .1em; color: var(--accent); }
   .gearlist { display: flex; flex-direction: column; gap: 6px; }
-  .grow1 { display: grid; grid-template-columns: 80px minmax(140px, 1fr) repeat(4, 96px); gap: 8px; align-items: end; }
-  .gslot { color: var(--muted); font-size: 12px; padding-bottom: 9px; }
-  .mod1 { display: flex; flex-direction: column; gap: 2px; }
-  .mod1 small { font-size: 10.5px; color: var(--muted); }
+  .grow1 { display: grid; grid-template-columns: 110px minmax(140px, 1fr) minmax(160px, 1.2fr) auto; gap: 10px; align-items: center; padding: 7px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg-2); }
+  .grow1.empty { grid-template-columns: 110px 1fr auto; border-style: dashed; background: none; }
+  .gslot { color: var(--muted); font-size: 12px; }
+  .gname { font-size: 13.5px; font-weight: 600; }
+  .gwhat { font-size: 12.5px; color: var(--text-2); }
+  .gnote { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 9px 11px; border-radius: 9px; background: var(--surface); border: 1px solid var(--line); font-size: 12.5px; color: var(--text-2); }
+  .gnote :global(svg) { flex: none; margin-top: 2px; color: var(--accent); }
   .tpl { display: flex; gap: 8px; flex-wrap: wrap; }
   .tplgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .tplc { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); cursor: pointer; font: inherit; }
@@ -536,7 +514,8 @@
   .backdrop { position: fixed; inset: 0; background: rgb(5 4 4 / .72); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 50; padding: 16px; }
   .picker { width: min(820px, 100%); max-height: 86vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line-2); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
   .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-  .opt { padding: 0; border: 2px solid transparent; border-radius: 10px; background: none; cursor: pointer; }
+  .opt { padding: 0; border: 2px solid transparent; border-radius: 10px; background: none; cursor: pointer; display: flex; flex-direction: column; gap: 4px; color: var(--text-2); font: inherit; }
+  .opt small { font-size: 11.5px; padding: 0 4px 4px; text-align: center; }
   .opt.on, .opt:hover { border-color: var(--accent); }
 
   @media (max-width: 1250px) { .sheet { grid-template-columns: 320px 1fr; } .gear { grid-column: 1 / -1; } .doll { max-width: 460px; width: 100%; margin: 0 auto; } }

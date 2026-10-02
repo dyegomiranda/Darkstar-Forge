@@ -33,6 +33,15 @@ export interface CardArt {
 /** Uma parte do custo. `show`: número ao lado do símbolo ou o símbolo repetido (como no MTG). */
 export interface CostPart { resource: ResourceId; amount: number; show?: 'number' | 'repeat' }
 
+/** Bônus de uma carta de equipamento. `weapon` = é uma arma: define o dano e o tipo do golpe do herói. */
+export interface CardGear {
+  armor?: number;
+  resist?: number;
+  hp?: number;
+  strike?: number;
+  weapon?: { dmg: number; via: import('../game/types').Via };
+}
+
 export interface Card {
   id: string;
   deckId: string;
@@ -56,6 +65,8 @@ export interface Card {
   look?: Partial<Look>;
   /** O que a carta faz na Mesa de teste (protótipo do jogo). */
   game?: import('../game/types').CardGame;
+  /** Carta de equipamento: o que ela soma ao herói que a veste (o espaço vem da etiqueta: head, chest, weapon…). */
+  gear?: CardGear;
   createdAt: number;
   updatedAt: number;
 }
@@ -124,7 +135,10 @@ export interface Character {
   slots: Partial<Record<Slot, string>>;
   notes: string;
   portraitMediaId?: string;
-  /** Dados do herói na Mesa de teste (deck, atributos de jogo, arma, equipamento). Com isso ele pode entrar em partida. */
+  /**
+   * Dados do herói na Mesa de teste (deck, atributos de jogo, vida base, recursos). Com isso ele pode entrar em partida.
+   * A arma e o equipamento valem os das cartas vestidas em `slots`; os que ficam aqui são só o modelo de origem.
+   */
   play?: import('../game/types').HeroBase;
   /** Boneco em pixel art montado no criador (peças do LPC): vira a miniatura animada e o retrato. */
   avatar?: import('../avatar/lpc').Avatar;

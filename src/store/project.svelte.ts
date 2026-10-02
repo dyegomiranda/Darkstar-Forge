@@ -9,6 +9,7 @@ import { applyScoring } from '../model/scoring';
 import { PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
+import { PROTO_GEAR_DECK, migrateGear, protoEquipment } from '../model/equipment';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
 import { PRESET_AVATARS } from '../avatar/presets';
@@ -156,6 +157,24 @@ class ProjectState {
       p.seeded = [...(p.seeded ?? []), HEROES_MARK];
       changed = true;
       for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id)) p.characters.push(h);
+    }
+    // equipamento vira carta: entra o deck de Equipamentos do Protótipo e a arma/peças de cada ficha passam para cartas vestidas
+    const GEAR_MARK = 'proto-equipment-1';
+    if (!p.seeded?.includes(GEAR_MARK)) {
+      p.seeded = [...(p.seeded ?? []), GEAR_MARK];
+      changed = true;
+      const edId = p.editions.some((e) => e.id === PROTO_ID) ? PROTO_ID : p.editions[0]?.id;
+      if (edId) {
+        if (!p.decks.some((d) => d.id === PROTO_GEAR_DECK)) {
+          const eq = protoEquipment(edId);
+          p.decks.push(eq.deck);
+          for (const c of eq.cards) if (!this.cards[c.id]) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+        }
+        let n = Math.max(0, ...Object.values(this.cards).filter((c) => c.deckId === PROTO_GEAR_DECK).map((c) => c.n));
+        for (const ch of p.characters) {
+          for (const c of migrateGear(ch, this.cards, PROTO_GEAR_DECK, () => ++n)) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+        }
+      }
     }
     // os heróis prontos ganham o boneco em pixel art (uma vez; quem já tem boneco fica como está)
     const AVATARS_MARK = 'proto-avatars-1';

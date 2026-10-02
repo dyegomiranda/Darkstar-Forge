@@ -25,3 +25,48 @@ describe('regra de custo', () => {
     expect(off).toEqual([]);
   });
 });
+
+describe('equipamento vem das cartas vestidas', () => {
+  it('o herói pronto, montado pelas cartas de equipamento, é igual ao do modelo', async () => {
+    const { heroBaseOf, presetSlots, protoEquipment } = await import('../src/model/equipment');
+    const { buildHero, HERO_BASES } = await import('../src/game/decks');
+    const cards = Object.fromEntries(protoEquipment('proto1').cards.map((c) => [c.id, c]));
+    for (const b of HERO_BASES) {
+      const ch = { id: b.id, name: b.name, raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots: presetSlots(b.id), notes: '', play: b };
+      const a = buildHero(heroBaseOf(ch, cards)), ref = buildHero(b);
+      expect([a.maxHp, a.armor, a.resist, a.weapon.dmg, a.weapon.via]).toEqual([ref.maxHp, ref.armor, ref.resist, ref.weapon.dmg, ref.weapon.via]);
+      expect(a.weapon.name).toEqual(ref.weapon.name);
+    }
+  });
+
+  it('sem arma vestida o golpe é o desarmado; trocar a carta muda o herói', async () => {
+    const { heroBaseOf, presetSlots, protoEquipment } = await import('../src/model/equipment');
+    const { buildHero, HERO_BASES } = await import('../src/game/decks');
+    const cards = Object.fromEntries(protoEquipment('proto1').cards.map((c) => [c.id, c]));
+    const b = HERO_BASES[0];
+    const slots = presetSlots(b.id);
+    const full = buildHero(heroBaseOf({ id: 'x', name: 'X', raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots, notes: '', play: b }, cards));
+    delete slots.mainHand; delete slots.chest;
+    const bare = buildHero(heroBaseOf({ id: 'x', name: 'X', raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots, notes: '', play: b }, cards));
+    expect(bare.weapon.dmg).toBe(1);
+    expect(bare.maxHp).toBeLessThan(full.maxHp);
+    expect(bare.armor).toBeLessThan(full.armor);
+  });
+
+  it('ficha antiga: arma e peças viram cartas vestidas; o que foi alterado ganha carta própria', async () => {
+    const { migrateGear, protoEquipment, heroBaseOf } = await import('../src/model/equipment');
+    const { buildHero, HERO_BASES } = await import('../src/game/decks');
+    const cards = Object.fromEntries(protoEquipment('proto1').cards.map((c) => [c.id, c]));
+    const play = structuredClone(HERO_BASES[1]);
+    play.gear[0] = { ...play.gear[0], name: ['Chapéu torto', 'Crooked hat'], resist: 2 };
+    const ch = { id: 'k', name: 'K', raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots: {}, notes: '', play };
+    let n = 100;
+    const made = migrateGear(ch, cards, 'proto-equipment', () => ++n);
+    expect(made).toHaveLength(1);
+    expect(made[0].text['pt-BR'].name).toBe('Chapéu torto');
+    for (const c of made) cards[c.id] = c;
+    expect(Object.keys(ch.slots)).toHaveLength(6);
+    const a = buildHero(heroBaseOf(ch, cards)), ref = buildHero(play);
+    expect([a.maxHp, a.armor, a.resist, a.weapon.dmg]).toEqual([ref.maxHp, ref.armor, ref.resist, ref.weapon.dmg]);
+  });
+});

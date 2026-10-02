@@ -16,12 +16,33 @@
   import { FREE, PER_COST } from '../../game/value';
   import { effectsText } from '../../game/text';
   import { protoWeapon } from '../../model/seed';
+  import { SLOT_TAGS, gearText, slotTagOf } from '../../model/equipment';
+  import type { CardGear } from '../../model/types';
+  import type { Via } from '../../game/types';
 
   let { ed }: { ed: EditorState } = $props();
 
   const d = $derived(ed.draft);
   const ev = $derived(evaluate(d, { atk: L('Ataque', 'Attack'), def: L('Defesa', 'Defense') }));
   let mq = $state('');
+
+  // ── carta de equipamento: em que espaço cabe e o que soma ao herói ──
+  const isGear = $derived(app.deck(d.deckId)?.kind === 'equipment' || !!d.gear);
+  const gearTag = $derived(slotTagOf(d)?.tag ?? '');
+  const VIAS: { id: Via; pt: string; en: string }[] = [{ id: 'melee', pt: 'Corpo a corpo', en: 'Melee' }, { id: 'ranged', pt: 'À distância', en: 'Ranged' }, { id: 'magic', pt: 'Mágico', en: 'Magic' }];
+  const GEAR_MODS: { id: 'hp' | 'armor' | 'resist' | 'strike'; pt: string; en: string; max: number }[] = [
+    { id: 'hp', pt: 'Vida', en: 'Life', max: 6 }, { id: 'armor', pt: 'Armadura', en: 'Armor', max: 3 },
+    { id: 'resist', pt: 'Resist. mágica', en: 'Magic resist', max: 3 }, { id: 'strike', pt: 'Bônus no golpe', en: 'Strike bonus', max: 2 },
+  ];
+  function setGear(fn: (g: CardGear) => void) { const g: CardGear = { ...(d.gear ?? {}) }; fn(g); d.gear = g; ed.touch(); }
+  /** Troca o espaço: uma carta cabe num só. Deixar de ser arma tira o golpe; virar arma ganha um golpe padrão. */
+  function setGearTag(tag: string) {
+    const all = SLOT_TAGS.map((t) => t.tag);
+    d.tags = [...d.tags.filter((t) => !all.includes(t)), tag];
+    setGear((g) => { if (tag === 'weapon') g.weapon ??= { dmg: 3, via: 'melee' }; else delete g.weapon; });
+  }
+  const gnum = (e: Event, max: number) => Math.max(0, Math.min(max, Math.round(+(e.currentTarget as HTMLInputElement).value || 0)));
+  function gearRules() { for (const l of ['pt-BR', 'en-US'] as const) d.text[l].rules = gearText(d.gear, l); ed.touch(); }
   let tagInput = $state('');
 
   const COLOR_IDS = Object.keys(COLORS) as ColorId[];
@@ -120,6 +141,41 @@
       <span class="muted small">{L('Como as cores aparecem (mistura, dourado multicor, cor livre): aba Aparência.', 'How colors show (blend, multicolor gold, free color): Look tab.')}</span>
     </div>
   </section>
+
+  {#if isGear}
+    <section class="stack s mesa">
+      <span class="section-title">{L('Equipamento (o que dá ao herói que veste)', 'Equipment (what it gives the hero wearing it)')}</span>
+      <div class="field"><span>{L('Espaço em que cabe', 'Slot it fits')}</span>
+        <div class="gslots">
+          {#each SLOT_TAGS as t}
+            <button class="chip" class:on={gearTag === t.tag} onclick={() => setGearTag(t.tag)}><Glyph id={t.icon} size={15} color="currentColor" /> {L(t.pt, t.en)}</button>
+          {/each}
+        </div>
+        {#if !gearTag}<span class="muted small">{L('Escolha um espaço para a carta poder ser vestida na ficha do herói.', 'Choose a slot so the card can be worn on the hero sheet.')}</span>{/if}
+      </div>
+      {#if d.gear?.weapon}
+        {@const w = d.gear.weapon}
+        <div class="grid2">
+          <label class="field"><span>{L('Dano do golpe', 'Strike damage')}</span>
+            <input class="input" type="number" min="1" max="8" value={w.dmg} oninput={(e) => setGear((g) => { g.weapon = { ...w, dmg: Math.max(1, gnum(e, 8)) }; })} /></label>
+          <label class="field"><span>{L('Tipo do golpe', 'Strike type')}</span>
+            <select class="select" value={w.via} onchange={(e) => setGear((g) => { g.weapon = { ...w, via: (e.currentTarget as HTMLSelectElement).value as Via }; })}>
+              {#each VIAS as v}<option value={v.id}>{L(v.pt, v.en)}</option>{/each}
+            </select></label>
+        </div>
+      {/if}
+      <div class="grid4">
+        {#each GEAR_MODS as m}
+          <label class="field"><span>{L(m.pt, m.en)}</span>
+            <input class="input" type="number" min="0" max={m.max} value={d.gear?.[m.id] ?? 0} oninput={(e) => setGear((g) => { const v = gnum(e, m.max); if (v) g[m.id] = v; else delete g[m.id]; })} /></label>
+        {/each}
+      </div>
+      <div class="field"><span>{L('Resumo', 'Summary')}</span>
+        <p class="effects">{gearText(d.gear, ed.lang)}</p>
+        <button class="btn sm ghost" onclick={gearRules}>{L('Usar este texto nas regras da carta', 'Use this text as the card rules')}</button>
+      </div>
+    </section>
+  {/if}
 
   {#if d.game}
     {@const gm = d.game}
@@ -329,4 +385,6 @@
   .verdict.ok { border-color: rgb(90 190 120 / .5); background: rgb(90 190 120 / .1); } .verdict.ok b { color: #7fd69a; }
   .verdict.cheap { border-color: rgb(226 87 76 / .55); background: rgb(226 87 76 / .12); } .verdict.cheap b { color: #ff9c8c; }
   .verdict.dear { border-color: rgb(226 87 76 / .55); background: rgb(226 87 76 / .12); } .verdict.dear b { color: #ff9c8c; }
+  .gslots { display: flex; flex-wrap: wrap; gap: 6px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 </style>
