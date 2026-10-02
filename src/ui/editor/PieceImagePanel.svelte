@@ -9,17 +9,20 @@
   import { ensureMedia, imageSize, importImage, mediaUrl } from '../../store/media';
   import { ui } from '../../app/ui.svelte';
   import type { PieceKind } from '../../render/elements';
+  import type { PieceSlot } from '../../render/compose';
   import { skeleton } from '../../render/layout';
   import { DEFAULT_FIT, DEFAULT_PAD, type ImageFit, type PieceImage } from '../../render/pieceImage';
   import type { EditorState } from './editor.svelte';
 
-  let { ed, kind }: { ed: EditorState; kind: PieceKind } = $props();
+  /** `slot` é onde grava (pode ser só o ataque ou só a defesa); `kind` é o tipo da peça. */
+  let { ed, slot }: { ed: EditorState; slot: PieceSlot } = $props();
+  const kind = $derived<PieceKind>(slot === 'atk' || slot === 'def' ? 'stat' : slot);
 
   let input: HTMLInputElement;
   let busy = $state(false);
   let tick = $state(0);
 
-  const img = $derived(ed.piece(kind).image);
+  const img = $derived(ed.piece(slot).image);
   const url = $derived.by(() => { void tick; return img?.mediaId ? mediaUrl(img.mediaId) : undefined; });
   $effect(() => { const id = img?.mediaId; if (id && !mediaUrl(id)) void ensureMedia(id).then(() => tick++); });
 
@@ -33,8 +36,8 @@
   }
 
   function set(patch: Partial<PieceImage>) {
-    const cur = ed.piece(kind).image ?? { fit: DEFAULT_FIT[kind] };
-    ed.setPiece(kind, { image: { ...cur, ...patch } as PieceImage, ...(kind === 'frame' ? { hidden: false } : {}) });
+    const cur = ed.piece(slot).image ?? { fit: DEFAULT_FIT[kind] };
+    ed.setPiece(slot, { image: { ...cur, ...patch } as PieceImage, ...(kind === 'frame' ? { hidden: false } : {}) });
   }
 
   async function choose(files: FileList | null) {
@@ -81,7 +84,7 @@
     <p class="muted small">{L('Use a peça de um modelo pronto: a imagem entra no lugar do desenho do estilo e os textos e números continuam automáticos.', 'Use a piece from a ready-made template: the image replaces the style drawing; texts and numbers stay automatic.')}</p>
     <div class="row wrap">
       <button class="btn sm" disabled={busy} onclick={() => input.click()}><ImagePlus size={14} /> {L('Usar uma imagem…', 'Use an image…')}</button>
-      <button class="btn sm ghost" onclick={() => { set({ fit: 'stretch', pad: DEFAULT_PAD[kind] }); if (!ed.piece(kind).ink && kind !== 'frame' && kind !== 'set') ed.setPiece(kind, { ink: '#ffffff' }); }} title={L('A peça some e fica só o texto (útil quando a moldura inteira já é uma imagem)', 'The piece disappears and only its text remains (useful when the whole frame is an image)')}><Type size={14} /> {L('Só o texto, sem fundo', 'Text only, no background')}</button>
+      <button class="btn sm ghost" onclick={() => { set({ fit: 'stretch', pad: DEFAULT_PAD[kind] }); if (!ed.piece(slot).ink && kind !== 'frame' && kind !== 'set') ed.setPiece(slot, { ink: '#ffffff' }); }} title={L('O desenho da peça some e fica só o que vai dentro dela: texto, número e símbolos (útil quando a moldura inteira já é uma imagem)', 'The piece drawing disappears and only its content remains: text, number and symbols (useful when the whole frame is an image)')}><Type size={14} /> {L('Sem desenho (só o conteúdo)', 'No drawing (content only)')}</button>
     </div>
   {:else}
     <div class="row wrap">
@@ -89,12 +92,12 @@
         <span class="thumb">{#if url}<img src={url} alt="" />{/if}</span>
         <span class="muted small">{img.w}×{img.h} px</span>
       {:else}
-        <span class="muted small">{L('Sem fundo: só o texto desta peça aparece.', 'No background: only this piece\'s text shows.')}</span>
+        <span class="muted small">{L('Sem desenho: só o conteúdo desta peça aparece (texto, número e símbolos). O formato dos símbolos se escolhe em Símbolos → Acabamento.', 'No drawing: only this piece\'s content shows (text, number and symbols). The symbols\' look is chosen in Symbols → Finish.')}</span>
       {/if}
     </div>
     <div class="row wrap">
       <button class="btn sm" disabled={busy} onclick={() => input.click()}><RefreshCw size={14} /> {img.mediaId ? L('Trocar imagem', 'Change image') : L('Usar uma imagem…', 'Use an image…')}</button>
-      <button class="btn sm danger" onclick={() => ed.setPiece(kind, {}, ['image'])}><Trash2 size={14} /> {L('Voltar ao desenho do estilo', 'Back to style drawing')}</button>
+      <button class="btn sm danger" onclick={() => ed.setPiece(slot, {}, ['image'])}><Trash2 size={14} /> {L('Voltar ao desenho do estilo', 'Back to style drawing')}</button>
     </div>
 
     {#if img.mediaId}

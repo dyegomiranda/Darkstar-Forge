@@ -1,15 +1,17 @@
-/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/verso, #/ficha, #/mesa, #/ajustes. */
+/** Rotas por hash: #/biblioteca[/deck], #/carta/<id>, #/tema/deck/<deck>, #/tema/colecao/<deck>, #/verso, #/ficha, #/mesa, #/ajustes. */
 export type Route =
   | { name: 'library'; deck?: string }
   | { name: 'editor'; id: string }
+  | { name: 'theme'; scope: 'deck' | 'collection'; deck: string }
   | { name: 'back' }
   | { name: 'sheet'; id?: string }
   | { name: 'game' }
   | { name: 'settings' };
 
 function parse(hash: string): Route {
-  const [, a, b] = hash.replace(/^#/, '').split('/');
+  const [, a, b, c] = hash.replace(/^#/, '').split('/');
   if (a === 'carta' && b) return { name: 'editor', id: decodeURIComponent(b) };
+  if (a === 'tema' && (b === 'deck' || b === 'colecao') && c) return { name: 'theme', scope: b === 'deck' ? 'deck' : 'collection', deck: decodeURIComponent(c) };
   if (a === 'verso') return { name: 'back' };
   if (a === 'ficha' || a === 'heroi') return { name: 'sheet', id: b ? decodeURIComponent(b) : undefined };
   if (a === 'mesa') return { name: 'game' };
@@ -40,6 +42,8 @@ class Router {
 
   library(deck?: string) { this.go(deck ? `/biblioteca/${encodeURIComponent(deck)}` : '/biblioteca'); }
   editor(id: string) { this.go(`/carta/${encodeURIComponent(id)}`); }
+  /** Tela de tema: do deck, ou da coleção (tendo esse deck como amostra). */
+  theme(scope: 'deck' | 'collection', deck: string) { this.go(`/tema/${scope === 'deck' ? 'deck' : 'colecao'}/${encodeURIComponent(deck)}`); }
 }
 
 export const router = new Router();

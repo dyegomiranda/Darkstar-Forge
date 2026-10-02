@@ -62,3 +62,54 @@ describe('tema no editor', () => {
     expect(app.cards.w.look).toBeUndefined();
   });
 });
+
+describe('ajustes finos da aparência', () => {
+  it('ataque e defesa: "os dois" vale para os dois; um lado só não mexe no outro', () => {
+    app.putCard(card({ id: 's1', deckId: 'a' }));
+    const ed = new EditorState(app.cards.s1);
+    ed.setPiece('atk', { fill: '#ff0000' });
+    expect(ed.piece('atk').fill).toBe('#ff0000');
+    expect(ed.piece('def').fill).toBeUndefined();
+    ed.setPiece('stat', { fill: '#00ff00' });
+    expect(ed.piece('atk').fill).toBe('#00ff00');
+    expect(ed.piece('def').fill).toBe('#00ff00');
+    ed.setPiece('def', { ink: '#0000ff' });
+    expect(ed.piece('atk').ink).toBeUndefined();
+    ed.resetPiece('stat');
+    expect(ed.look.pieces?.stat).toBeUndefined();
+    expect(ed.look.pieces?.atk).toBeUndefined();
+    expect(ed.look.pieces?.def).toBeUndefined();
+  });
+
+  it('mexer no selo de custo não muda o selo de classe (nem o contrário)', () => {
+    const ed = new EditorState(app.cards.s1);
+    const before = JSON.stringify(ed.piece('class'));
+    ed.setPiece('cost', { style: 'gotico', fill: '#112233', ink: '#ffffff' }, ['image']);
+    expect(JSON.stringify(ed.piece('class'))).toBe(before);
+    expect(ed.look.icons?.class).toBeUndefined();
+  });
+
+  it('símbolo por recurso: vale para a coleção inteira; o de classe fica em cada deck', () => {
+    app.putCard(card({ id: 'm1', deckId: 'b', cost: [{ resource: 'mana', amount: 2, show: 'number' }] }));
+    const ed = new EditorState(app.cards.x, 'collection', true);
+    ed.setResIcon('mana', { glyph: 'f3d-droplet' });
+    ed.setResIcon('vigor', { glyph: 'f3d-red-heart' });
+    ed.setIcon('class', { glyph: 'brutal-helm' });
+    ed.save();
+    expect(app.deck('b')!.look.icons?.res).toEqual({ mana: { glyph: 'f3d-droplet' }, vigor: { glyph: 'f3d-red-heart' } });
+    expect(app.deck('b')!.look.icons?.class).toBeUndefined();
+    expect(app.deck('a')!.look.icons?.class).toEqual({ glyph: 'brutal-helm' });
+  });
+
+  it('tela de tema: a carta de amostra não é gravada e as cartas do deck passam a seguir o tema', () => {
+    app.putCard(card({ id: 'k1', deckId: 'a', look: { pieces: { rules: { fill: '#aaaaaa' } as never } } }));
+    const ed = new EditorState(app.cards.k1, 'deck', true);
+    expect(ed.draft.look).toBeUndefined(); // amostra sem os ajustes próprios
+    expect(ed.dirty).toBe(false);
+    ed.setPiece('rules', { fill: '#123123' });
+    ed.save();
+    expect(app.deck('a')!.look.pieces?.rules?.fill).toBe('#123123');
+    expect(app.cards.k1.look).toBeUndefined(); // o ajuste próprio na mesma peça saiu
+    expect(app.cards.k1.text['pt-BR'].name).toBe('Golpe');
+  });
+});

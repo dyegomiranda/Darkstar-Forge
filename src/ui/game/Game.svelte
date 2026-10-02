@@ -9,7 +9,7 @@
   import { onDestroy, tick } from 'svelte';
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { Swords, Move, Flag, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Menu, Flag as FlagIcon, CircleHelp, LogOut, Hourglass } from '@lucide/svelte';
+  import { Swords, ArrowLeftRight, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Menu, Flag as FlagIcon, CircleHelp, LogOut, Hourglass, Dices, Map as MapIcon, Moon, TrendingUp } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
@@ -33,6 +33,7 @@
   import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
   import { creatureOf, hasFigure, sheetOf } from '../../avatar/creatures';
   import SheetSprite from '../../avatar/SheetSprite.svelte';
+  import { SCENES, floorTile, randomScene, sceneOf, type Scene } from './scenes';
 
   // ───────────── preparação ─────────────
   const OPTS_KEY = 'darkstar.mesa';
@@ -53,7 +54,14 @@
   let showLog = $state(saved.showLog !== false);
   let timeLimit = $state(saved.timeLimit !== false);
   let starter = $state<'eu' | 'bot' | 'sorteio'>('sorteio');
-  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog, timeLimit })); } catch { /* sem armazenamento local */ } });
+  /** Cenário escolhido para o campo ('random' = sorteia a cada partida). */
+  let scenePick = $state(typeof saved.scene === 'string' ? saved.scene : 'random');
+  let sceneOpen = $state(false);
+  /** Cenário da partida em curso. */
+  let scene = $state<Scene>(sceneOf('mesa'));
+  /** Piso de cada casa (varia de casa para casa). */
+  const floorOf = (p: number, row: number, col: number) => `url(${floorTile(scene, 1 + p * 100 + (row + 1) * 10 + col)})`;
+  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, showLog, timeLimit, scene: scenePick })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
   const ready = $derived(!!myChar && !!botChar && deckCount(myChar) > 0 && deckCount(botChar) > 0);
@@ -88,8 +96,12 @@
   /** Abre a ficha do herói; o "voltar" de lá traz de volta para esta seleção. */
   function editHero(id: string) { router.returnTo = '/mesa'; router.go(`/heroi/${encodeURIComponent(id)}`); }
 
+  /** Sorteia (ou fixa) o cenário da partida; fica o mesmo no posicionamento e no jogo. */
+  function pickScene() { scene = scenePick === 'random' ? randomScene() : sceneOf(scenePick); }
+
   function toPlace() {
     if (!myHero) return;
+    pickScene();
     if (heroOff) { start(); return; }
     myPos = { row: myHero.row, col: myHero.col };
     step = 'place';
@@ -100,6 +112,8 @@
     const mine = sideFromApp({ ...myHero, row: myPos.row, col: myPos.col }, deckCards(myChar));
     const bot = sideFromApp(botHero, deckCards(botChar));
     const iStart = starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5);
+    // "jogar de novo" com cenário sorteado: sorteia outro
+    if (step === 'play' && scenePick === 'random') pickScene();
     me = iStart ? 0 : 1;
     g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront, mulligan: true });
     sel = null;
@@ -200,7 +214,7 @@
     const hp = heroPos(g, me), via = strikeVia(g, me);
     if (!reachable(g, me, via, hp).length) {
       return { can: false, why: via === 'melee' && hp.row === 1
-        ? L('Na retaguarda o herói não alcança ninguém com golpe corpo a corpo. Use “Mover” para ir à frente.', 'From the back row a melee strike reaches no one. Use “Move” to go to the front.')
+        ? L('Na retaguarda o herói não alcança ninguém com golpe corpo a corpo. Use “Trocar posição” para ir à frente.', 'From the back row a melee strike reaches no one. Use “Change position” to go to the front.')
         : L('Nenhum inimigo ao alcance do golpe.', 'No enemy within reach of the strike.') };
     }
     return { can: true, why: L('Golpe disponível: clique no herói e depois no alvo. Não custa nada, pode ser a qualquer momento do seu turno, 1 vez por turno.', 'Strike available: click the hero, then the target. It is free, any time during your turn, once per turn.') };
@@ -374,6 +388,10 @@
   let hoverPos = $state<Pos | null>(null);
   let hoverCard = $state<string | null>(null);
   let mouse = $state({ x: 0, y: 0 });
+  /** Onde o mouse está de verdade (sempre atualizado); a seta só passa a segui-lo quando há algo escolhido. */
+  let lastMouse = { x: 0, y: 0 };
+  // ao escolher uma carta/golpe, a seta nasce apontando para onde o mouse já está
+  $effect(() => { if (sel) mouse = { ...lastMouse }; });
   type Arrow = { body: string; head: string; line: string; shadow: string; tone: 'free' | 'foe' | 'ally' | 'slot' };
   let arrows = $state<Arrow[]>([]);
   const slotEl = (pos: Pos) => document.querySelector<HTMLElement>(`[data-pos="${pos.p}-${pos.row}-${pos.col}"]`);
@@ -702,6 +720,25 @@
     }
     return null;
   }
+  /** Efeitos e estados ativos de uma figura (aparecem ao lado do boneco enquanto durarem). */
+  type Status = { id: string; icon: typeof Shield; tone: 'good' | 'bad' | 'trait' | 'dim'; text?: string; tip: string };
+  function statusOf(u: Unit, p: 0 | 1): Status[] {
+    const out: Status[] = [];
+    const st = u.isHero ? g!.players[p].stance : undefined;
+    if (u.warded) out.push({ id: 'ward', icon: Shield, tone: 'good', tip: L('Protegido: o próximo dano que sofrer é anulado (a proteção some depois disso).', 'Warded: the next damage it takes is prevented (the ward is then gone).') });
+    if (u.buff > 0) out.push({ id: 'buff', icon: TrendingUp, tone: 'good', text: `+${u.buff}`, tip: L(`Fortalecido: +${u.buff} de ataque até o fim deste turno.`, `Empowered: +${u.buff} attack until the end of this turn.`) });
+    if (u.afflicted) out.push({ id: 'afflict', icon: Droplet, tone: 'bad', tip: L('Afligido: sofre 1 de dano no começo de cada turno do dono, até ser curado.', 'Afflicted: takes 1 damage at the start of each of its owner’s turns, until healed.') });
+    if (u.marked) out.push({ id: 'mark', icon: Crosshair, tone: 'bad', tip: L('Marcado: sofre +1 de todo dano, até ser curado.', 'Marked: takes +1 from all damage, until healed.') });
+    if (st?.cardId) {
+      const m = st.mods;
+      const what = [m.strike ? L(`golpe +${m.strike}`, `strike +${m.strike}`) : '', m.strikeMagic ? L('golpe mágico', 'magic strike') : '', m.strikeAfflicts ? L('golpe aflige', 'strike afflicts') : '', m.strikeHeals ? L(`golpe cura ${m.strikeHeals}`, `strike heals ${m.strikeHeals}`) : '', m.guard ? L('Guarda', 'Guard') : ''].filter(Boolean).join(', ');
+      out.push({ id: 'stance', icon: Sparkles, tone: 'good', tip: L(`Postura — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'ativa'}. Fica até outra postura entrar.`, `Stance — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'active'}. Lasts until another stance replaces it.`) });
+    }
+    if (u.keys.includes('guarda') || st?.mods.guard) out.push({ id: 'guard', icon: Users, tone: 'trait', tip: L('Guarda: enquanto houver alguém com Guarda, os golpes corpo a corpo inimigos precisam mirar nele.', 'Guard: while it stands, enemy melee attacks must target it.') });
+    if (u.keys.includes('rapido') && u.exhausted === false && !u.isHero) out.push({ id: 'swift', icon: Zap, tone: 'trait', tip: L('Rápido: pode atacar no turno em que entra.', 'Swift: can attack the turn it arrives.') });
+    if (!u.isHero && u.exhausted && p === me && g!.active === me && !u.keys.includes('parede')) out.push({ id: 'done', icon: Moon, tone: 'dim', tip: L('Já agiu: esta criatura atacou ou acabou de entrar. Volta a atacar no seu próximo turno.', 'Done: this creature attacked or just arrived. It attacks again on your next turn.') });
+    return out;
+  }
   const weaponIcon = (h: HeroDef) => (h.weapon.via === 'melee' ? 'broadsword' : h.weapon.via === 'ranged' ? 'bow-arrow' : 'wizard-staff');
   const gearIcon = (it: GearItem, h: HeroDef) => ({ weapon: weaponIcon(h), head: 'warlord-helmet', chest: 'chest-armor', hands: 'gauntlet', feet: 'boot-stomp', trinket: 'magic-swirl' }[it.slot]);
   const pips = (cur: number, max: number) => Array.from({ length: Math.max(cur, max) }, (_, i) => (i < cur ? (i >= max ? 'extra' : 'on') : 'off'));
@@ -773,37 +810,76 @@
         <div class="vs-mid"><span class="vs">VS</span></div>
         {@render side(false)}
       </div>
+      {#snippet opt(on: boolean, set: (v: boolean) => void, title: string, desc: string, sub = false)}
+        <label class="opt" class:on class:sub>
+          <input type="checkbox" checked={on} onchange={(e) => set((e.currentTarget as HTMLInputElement).checked)} />
+          <span><b>{title}</b><small>{desc}</small></span>
+        </label>
+      {/snippet}
       <footer class="vs-foot">
-        <label class="field"><span>{L('Quem começa', 'Who starts')}</span>
-          <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
-        <div class="vs-opts">
-          <label class="toggle"><input type="checkbox" bind:checked={heroOff} /> <span><b>{L('Herói fora do campo', 'Hero off the board')}</b><small>{L('o herói não ocupa um lugar no campo e pode golpear qualquer fileira ou o herói inimigo', 'the hero takes no slot on the field and can strike any row or the enemy hero')}</small></span></label>
+        <div class="opt-grid">
+          {@render opt(heroOff, (v) => (heroOff = v), L('Herói fora do campo', 'Hero off the board'), L('não ocupa um lugar no campo e pode golpear qualquer fileira ou o herói inimigo', 'takes no slot on the field and can strike any row or the enemy hero'))}
           {#if heroOff}
-            <label class="toggle sub"><input type="checkbox" bind:checked={heroOffFront} /> <span><b>{L('Exigir a frente vazia', 'Require an empty front')}</b><small>{L('o golpe corpo a corpo do herói só passa da fileira da frente inimiga se ela estiver vazia', 'the hero’s melee strike only goes past the enemy front row when it is empty')}</small></span></label>
+            {@render opt(heroOffFront, (v) => (heroOffFront = v), L('Exigir a frente vazia', 'Require an empty front'), L('o golpe corpo a corpo só passa da frente inimiga se ela estiver vazia', 'the melee strike only goes past the enemy front when it is empty'), true)}
           {/if}
-          <label class="toggle"><input type="checkbox" bind:checked={limit} /> <span><b>{L('Modo B', 'Mode B')}</b><small>{L('no máximo 3 habilidades por turno', 'at most 3 abilities per turn')}</small></span></label>
-          <label class="toggle"><input type="checkbox" bind:checked={timeLimit} /> <span><b>{L('Limite de tempo', 'Time limit')}</b><small>{L('30 s parado aparece o contador; mais 30 s e você perde', '30 s idle shows the countdown; 30 s more and you lose')}</small></span></label>
-          <label class="toggle"><input type="checkbox" bind:checked={showLog} /> <span><b>{L('Registro da batalha', 'Battle log')}</b><small>{L('botão flutuante com tudo o que aconteceu', 'floating button with everything that happened')}</small></span></label>
+          {@render opt(limit, (v) => (limit = v), L('Modo B', 'Mode B'), L('no máximo 3 habilidades por turno', 'at most 3 abilities per turn'))}
+          {@render opt(timeLimit, (v) => (timeLimit = v), L('Limite de tempo', 'Time limit'), L('30 s parado mostra o contador; mais 30 s e você perde', '30 s idle shows the countdown; 30 s more and you lose'))}
+          {@render opt(showLog, (v) => (showLog = v), L('Registro da batalha', 'Battle log'), L('botão flutuante com tudo o que aconteceu', 'floating button with everything that happened'))}
         </div>
-        <MusicPlayer />
-        <button class="btn primary big" disabled={!ready} onclick={toPlace}><Swords size={18} /> {heroOff ? L('Começar partida', 'Start match') : L('Continuar', 'Continue')}</button>
+        <div class="foot-side">
+          <button class="scene-btn" onclick={() => (sceneOpen = true)}>
+            <span class="scene-thumb" class:rand={scenePick === 'random'} style={scenePick !== 'random' && sceneOf(scenePick).img ? `background-image:url(${sceneOf(scenePick).img})` : ''}>
+              {#if scenePick === 'random'}<Dices size={22} />{:else if !sceneOf(scenePick).img}<MapIcon size={20} />{/if}</span>
+            <span class="scene-tx"><small>{L('Selecionar campo de batalha', 'Choose battlefield')}</small><b>{scenePick === 'random' ? L('Aleatório', 'Random') : L(sceneOf(scenePick).name[0], sceneOf(scenePick).name[1])}</b></span>
+            <ChevronDown size={16} />
+          </button>
+          <label class="starter"><small>{L('Quem começa', 'Who starts')}</small>
+            <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
+        </div>
+        <div class="foot-go">
+          <MusicPlayer />
+          <button class="btn primary big" disabled={!ready} onclick={toPlace}><Swords size={18} /> {heroOff ? L('Começar partida', 'Start match') : L('Continuar', 'Continue')}</button>
+        </div>
       </footer>
+      {#if sceneOpen}
+        <div class="scene-modal" onclick={() => (sceneOpen = false)} role="presentation" transition:fade={{ duration: 140 }}>
+          <div class="scene-box" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1" in:scale={{ duration: 200, start: 0.94 }}>
+            <header><div><small>{L('Onde a batalha acontece', 'Where the battle takes place')}</small><h2 class="display">{L('Campo de batalha', 'Battlefield')}</h2></div>
+              <button class="btn sm ghost icon" onclick={() => (sceneOpen = false)}><X size={16} /></button></header>
+            <div class="scene-grid">
+              <button class="scene-card rand" class:on={scenePick === 'random'} onclick={() => { scenePick = 'random'; sceneOpen = false; }}>
+                <span class="sc-img mosaic">{#each SCENES.filter((x) => x.img).slice(0, 4) as x}<i style="background-image:url({x.img})"></i>{/each}<Dices size={38} /></span>
+                <b>{L('Aleatório', 'Random')}</b><small>{L('um cenário sorteado a cada partida', 'a random scene each match')}</small>
+              </button>
+              {#each SCENES as sc (sc.id)}
+                <button class="scene-card" class:on={scenePick === sc.id} onclick={() => { scenePick = sc.id; sceneOpen = false; }}>
+                  <span class="sc-img" style={sc.img ? `background-image:url(${sc.img})` : ''}>
+                    <i class="sc-floor" style="background-image:url({floorTile(sc, 7)})"></i>
+                    {#if scenePick === sc.id}<span class="sc-check"><Check size={15} /></span>{/if}
+                  </span>
+                  <b>{L(sc.name[0], sc.name[1])}</b>
+                </button>
+              {/each}
+            </div>
+          </div>
+        </div>
+      {/if}
     {/if}
   </div>
 {:else if step === 'place' && myHero && botHero}
   <!-- posicionamento: mesma estrutura da mesa, para o campo ficar exatamente onde ficará na partida -->
   <div class="table">
-    <div class="main">
-      <div class="bar dim" style="--c:{colorOf(botHero)}">
-        <HeroPortrait hero={botChar} size={36} />
-        <div class="who"><b>{botHero.name}</b><small>{L('Inimigo (bot)', 'Enemy (bot)')}</small></div>
+    <div class="main" class:scenic={!!scene.img} style={scene.img ? `--scene:url(${scene.img})` : ''}>
+      <div class="hbar dim" style="--c:{colorOf(botHero)}">
+        <span class="hb-pic"><HeroPortrait hero={botChar} size={46} round /></span>
+        <div class="who"><b class="display">{botHero.name}</b><small>{L('Inimigo (bot)', 'Enemy (bot)')}</small></div>
       </div>
       <div class="ohand"></div>
       <div class="side-field foe dim">
         {#each [1, 0] as row}
           <div class="row">
             {#each [0, 1, 2] as col}
-              <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}">
+              <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}; --floor:{floorOf(1, row, col)}">
                 {#if botHero.row === row && botHero.col === col}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span><span class="unit"><span class="u-nm">{botHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </span>
@@ -812,14 +888,14 @@
         {/each}
         <div class="zone"><span class="zhint">{L('campo do inimigo', 'enemy field')}</span></div>
       </div>
-      <div class="mid"><span>{L('▼ Clique numa casa do SEU campo para escolher onde o seu herói começa', '▼ Click a slot on YOUR field to choose where your hero starts')}</span></div>
+      <div class="mid mine"><span class="mid-orn"></span><div class="mid-plate"><span>{L('Clique numa casa do SEU campo para escolher onde o seu herói começa', 'Click a slot on YOUR field to choose where your hero starts')}</span></div><span class="mid-orn r"></span></div>
       <div class="side-field">
         <div class="zone"><span class="zhint">{L('seu campo', 'your field')}</span></div>
         {#each [0, 1] as row}
           <div class="row">
             {#each [0, 1, 2] as col}
               {@const on = myPos.row === row && myPos.col === col}
-              <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
+              <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}; --floor:{floorOf(0, row, col)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
                 {#if on}<span class="mini"><HeroPortrait hero={myChar} size={80} /></span><span class="unit"><span class="u-nm">{myHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </button>
@@ -830,10 +906,9 @@
       <div class="hand place-help">
         <p>{L('Na frente, o herói golpeia corpo a corpo e protege quem está atrás. Na retaguarda, fica protegido de golpes corpo a corpo.', 'In front, the hero can melee and protects the back row. In the back, it is safe from melee.')}</p>
       </div>
-      <div class="bar" style="--c:{colorOf(myHero)}">
-        <HeroPortrait hero={myChar} size={36} />
-        <div class="who"><b>{myHero.name}</b><small>{L(myHero.className[0], myHero.className[1])}</small></div>
-        <div class="grow"></div>
+      <div class="hbar mine" style="--c:{colorOf(myHero)}">
+        <span class="hb-pic"><HeroPortrait hero={myChar} size={46} round /></span>
+        <div class="who"><b class="display">{myHero.name}</b><small>{L(myHero.className[0], myHero.className[1])}</small></div>
         <button class="btn sm" onclick={() => (step = 'heroes')}>{L('Voltar', 'Back')}</button>
         <button class="btn sm primary" onclick={start}><Swords size={15} /> {L('Começar partida', 'Start match')}</button>
       </div>
@@ -843,15 +918,15 @@
   {@const P = g.players[me]}
   {@const F = g.players[foe]}
   <div class="table">
-    <div class="main" onmousemove={(e) => { if (sel) mouse = { x: e.clientX, y: e.clientY }; }} onclick={mainClick}
+    <div class="main" class:scenic={!!scene.img} style={scene.img ? `--scene:url(${scene.img})` : ''} onmousemove={(e) => { lastMouse = { x: e.clientX, y: e.clientY }; if (sel) mouse = lastMouse; }} onclick={mainClick}
       oncontextmenu={(e) => { if (sel) { e.preventDefault(); cancel(); } }} role="presentation">
       <!-- ───── barra de herói ───── -->
       {#snippet bar(p: 0 | 1, mine: boolean)}
         {@const pl = g!.players[p]}
         {@const h = heroOf(p)}
-        <div class="bar" style="--c:{colorOf(pl.hero)}" class:active={g!.active === p}>
-          <HeroPortrait hero={characterOf(pl.hero.id)} size={36} />
-          <div class="who"><b>{pl.hero.name}</b><small>{L(pl.hero.className[0], pl.hero.className[1])}</small></div>
+        <div class="hbar" class:mine style="--c:{colorOf(pl.hero)}" class:active={g!.active === p}>
+          <span class="hb-pic"><HeroPortrait hero={characterOf(pl.hero.id)} size={46} round /><i class="hb-lv" title={L('Nível', 'Level')}>{pl.level}</i></span>
+          <div class="who"><b class="display">{pl.hero.name}</b><small>{L(pl.hero.className[0], pl.hero.className[1])}</small></div>
           {#if h}
             <div class="stat" use:tip={L('Vida: se chegar a 0, o herói cai e a partida acaba. O dano fica até ser curado.', 'Life: at 0 the hero falls and the match ends. Damage stays until healed.')}>
               <span class="cap">{L('Vida', 'Life')}</span>
@@ -878,34 +953,28 @@
             <span class="cap">{L('Defesa', 'Defense')}</span>
             <span class="val"><Shield size={14} /> <b>{pl.hero.armor}</b> <Sparkles size={13} color="#9a7bff" /> <b>{pl.hero.resist}</b></span>
           </div>
-          {#if mine}
-            <div class="grow"></div>
-            <button class="btn sm" class:lit={canStrike} disabled={!myTurn} onclick={startStrike} use:tip={myTurn ? strikeInfo().why : ''}><Swords size={15} /> {L('Golpear', 'Strike')}</button>
-            {#if !g!.heroOff}<button class="btn sm" disabled={!myTurn || pl.moved} onclick={startMove}><Move size={15} /> {L('Mover', 'Move')}</button>{/if}
-            <button class="btn sm primary" disabled={!myTurn} onclick={() => act({ t: 'end' })}><Flag size={15} /> {L('Encerrar turno', 'End turn')}</button>
-          {:else}
-            <div class="grow"></div>
-            {#if g!.active === p && g!.winner === undefined}<span class="thinking">{awaiting ? L('Esperando a sua resposta…', 'Waiting for your response…') : L('Bot jogando…', 'Bot playing…')}</span>{/if}
-            <button class="btn sm" onclick={() => (menuOpen = !menuOpen)}><Menu size={15} /> {L('Menu', 'Menu')}</button>
-          {/if}
+          {#if !mine && g!.active === p && g!.winner === undefined}<span class="thinking">{awaiting ? L('Esperando a sua resposta…', 'Waiting for your response…') : L('Jogando…', 'Playing…')}</span>{/if}
         </div>
       {/snippet}
 
       {#snippet marks(u: Unit, p: 0 | 1)}
-        <span class="u-mk">
-          {#if u.afflicted}<i use:tip={L('Afligido: 1 de dano no começo do turno do dono, até ser curado', 'Afflicted: 1 damage at its owner’s turn start, until healed')}><Droplet size={14} /></i>{/if}
-          {#if u.marked}<i use:tip={L('Marcado: sofre +1 de todo dano, até ser curado', 'Marked: takes +1 from all damage, until healed')}><Crosshair size={14} /></i>{/if}
-          {#if u.warded}<i use:tip={L('Protegido: o próximo dano é anulado', 'Warded: the next damage is prevented')}><Shield size={14} /></i>{/if}
-          {#if u.keys.includes('guarda') || (u.isHero && g!.players[p].stance?.mods.guard)}<i use:tip={L('Guarda: enquanto houver alguém com Guarda, os golpes corpo a corpo inimigos precisam mirar nele.', 'Guard: while it stands, enemy melee attacks must target it.')}><Users size={14} /></i>{/if}
-          {#if u.keys.includes('rapido')}<i use:tip={L('Rápido: pode atacar no turno em que entra.', 'Swift: can attack the turn it arrives.')}><Zap size={14} /></i>{/if}
-        </span>
+        {@const fx = statusOf(u, p)}
+        {#if u.warded}<span class="ward-bubble" in:scale={{ duration: 260, start: 0.5 }} out:fade={{ duration: 200 }}></span>{/if}
+        {#if u.marked}<span class="mark-ring" transition:fade={{ duration: 200 }}><Crosshair size={30} /></span>{/if}
+        {#if fx.length}
+          <span class="u-fx">
+            {#each fx as f (f.id)}
+              <i class="fx {f.tone}" use:tip={f.tip} in:scale={{ duration: 220, start: 0.4 }} out:fade={{ duration: 160 }}><f.icon size={13} strokeWidth={2.6} />{#if f.text}<b>{f.text}</b>{/if}</i>
+            {/each}
+          </span>
+        {/if}
       {/snippet}
 
       <!-- ───── o herói (miniatura com o retrato) ───── -->
       {#snippet heroBody(u: Unit, p: 0 | 1)}
         {@const av = avatarOf(p)}
         {#if av}
-          <span class="doll" class:tall={g!.heroOff}><AvatarSprite avatar={av} anim={heroAnim[p]} dir={p === me ? 'n' : 's'} scale={g!.heroOff ? 3 : 2} loop={heroAnim[p] === 'idle'} onend={() => animEnd(p)} /></span>
+          <span class="doll" class:tall={g!.heroOff} class:sick={u.afflicted}><AvatarSprite avatar={av} anim={heroAnim[p]} dir={p === me ? 'n' : 's'} scale={g!.heroOff ? 3 : 2} loop={heroAnim[p] === 'idle'} onend={() => animEnd(p)} /></span>
         {:else}
           <span class="mini"><HeroPortrait hero={characterOf(g!.players[p].hero.id)} size={120} /></span>
         {/if}
@@ -925,7 +994,7 @@
         {@const u = unitAt(g!, pos)}
         <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
           class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && hasFigure(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
-          data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
+          data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}; --floor:{row === -1 ? 'none' : floorOf(p, row, col)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
           <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
           {#each u ? [u] : [] as x (x.id)}
@@ -934,8 +1003,8 @@
             {:else}
               {@const cr = creatureOf(x.icon)}
               {@const sh = cr ? undefined : sheetOf(x.icon)}
-              {#if sh}<span class="doll"><SheetSprite id={sh.id} def={sh.def} attacking={!!unitAnim[x.id]} back={p === me} scale={2} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
-              {#if cr}<span class="doll"><AvatarSprite avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={p === me ? 'n' : 's'} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
+              {#if sh}<span class="doll" class:sick={x.afflicted}><SheetSprite id={sh.id} def={sh.def} attacking={!!unitAnim[x.id]} back={p === me} scale={2} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
+              {#if cr}<span class="doll" class:sick={x.afflicted}><AvatarSprite avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={p === me ? 'n' : 's'} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
               <span class="unit" in:recvU={{ key: x.id }} out:sendU={{ key: x.id }}>
                 {#if !cr && !sh}<span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>{/if}
                 <span class="u-nm">{L(x.name[0], x.name[1])}</span>
@@ -980,17 +1049,24 @@
       <!-- ───── grimório e cemitério ───── -->
       {#snippet piles(p: 0 | 1, top: boolean)}
         {@const pl = g!.players[p]}
-        <div class="pile deck" class:top id="deck-{p}" use:tip={L(`Grimório: ${pl.deck.length} cartas`, `Grimoire: ${pl.deck.length} cards`)}>
-          {#if pl.deck.length}<span class="stack" style="--n:{Math.min(4, Math.ceil(pl.deck.length / 10))}">{#if backUrl}<img src={backUrl} alt="" />{/if}</span>{/if}
-          <span class="pcount"><BookOpen size={12} /> {pl.deck.length}</span>
+        <div class="pilebox deckbox" class:top use:tip={L(`Grimório: as cartas que ainda vão ser compradas (${pl.deck.length}).`, `Grimoire: the cards still to be drawn (${pl.deck.length}).`)}>
+          <span class="pbase"><span class="prune"></span></span>
+          <div class="pile deck" id="deck-{p}">
+            {#if pl.deck.length}<span class="stack" style="--n:{Math.min(4, Math.ceil(pl.deck.length / 10))}">{#if backUrl}<img src={backUrl} alt="" />{/if}</span>
+            {:else}<span class="gempty"><Glyph id="spell-book" size={34} color="currentColor" /></span>{/if}
+          </div>
+          <span class="plabel"><Glyph id="spell-book" size={15} color="currentColor" /> {L('Grimório', 'Grimoire')} <b>{pl.deck.length}</b></span>
         </div>
-        <button class="pile grave" class:top id="grave-{p}" onclick={() => (graveOf = p)} use:tip={L('Cemitério (clique para ver)', 'Graveyard (click to view)')}>
-          {#each pl.discard.slice(-1) as r (r.uid)}
-            <span class="gtop" in:receive={fly(r.uid, { from: `#zone-${p}` })}>{#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}</span>
-          {/each}
-          {#if !pl.discard.length}<span class="gempty"><Skull size={20} /></span>{/if}
-          <span class="pcount"><Skull size={12} /> {pl.discard.length}</span>
-        </button>
+        <div class="pilebox gravebox" class:top use:tip={L('Cemitério: as cartas já usadas. Clique para ver todas.', 'Graveyard: the cards already used. Click to see them all.')}>
+          <span class="pbase"><span class="prune"></span></span>
+          <button class="pile grave" id="grave-{p}" onclick={() => (graveOf = p)}>
+            {#each pl.discard.slice(-1) as r (r.uid)}
+              <span class="gtop" in:receive={fly(r.uid, { from: `#zone-${p}` })}>{#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}</span>
+            {/each}
+            {#if !pl.discard.length}<span class="gempty"><Glyph id="tombstone" size={36} color="currentColor" /></span>{/if}
+          </button>
+          <span class="plabel"><Glyph id="tombstone" size={15} color="currentColor" /> {L('Cemitério', 'Graveyard')} <b>{pl.discard.length}</b></span>
+        </div>
       {/snippet}
 
       <!-- ───── equipamento (vem da ficha do herói) ───── -->
@@ -1024,11 +1100,15 @@
         {@render field(foe)}
         {@render zone(foe)}
       </div>
-      <div class="mid" class:warn={!!msg && warn} class:aiming={!!sel}>
-        {#key msg || caption}
-          <span in:fade={{ duration: 160 }}>{msg || caption || (awaiting ? L('O oponente jogou uma carta: reaja ou aceite', 'The opponent played a card: react or accept') : myTurn ? L('Seu turno', 'Your turn') : g.winner === undefined ? L('Turno do bot', "Bot's turn") : '')}</span>
-        {/key}
-        {#if sel}<button class="cancel-btn" onclick={() => cancel()}><X size={13} /> {L('Cancelar (Esc ou botão direito)', 'Cancel (Esc or right-click)')}</button>{/if}
+      <div class="mid" class:warn={!!msg && warn} class:aiming={!!sel} class:mine={myTurn || awaiting} class:foe={!myTurn && !awaiting && g.winner === undefined}>
+        <span class="mid-orn"></span>
+        <div class="mid-plate">
+          {#key msg || caption}
+            <span in:fade={{ duration: 160 }}>{msg || caption || (awaiting ? L('O oponente jogou uma carta: reaja ou aceite', 'The opponent played a card: react or accept') : myTurn ? L('Seu turno', 'Your turn') : g.winner === undefined ? L(`Turno de ${F.hero.name}`, `${F.hero.name}'s turn`) : '')}</span>
+          {/key}
+          {#if sel}<button class="cancel-btn" onclick={() => cancel()}><X size={13} /> {L('Cancelar (Esc ou botão direito)', 'Cancel (Esc or right-click)')}</button>{/if}
+        </div>
+        <span class="mid-orn r"></span>
       </div>
       <div class="side-field">
         {@render zone(me)}
@@ -1051,6 +1131,41 @@
 
       {@render piles(foe, true)}
       {@render piles(me, false)}
+
+      <!-- ───── ações do turno (flutuam acima do cemitério) ───── -->
+      <div class="actions" class:idle={!myTurn} style="--c:{colorOf(P.hero)}">
+        <span class="act-title"><i></i>{myTurn ? L('Suas ações', 'Your actions') : L('Aguarde a sua vez', 'Wait for your turn')}<i></i></span>
+        <button class="act strike" class:lit={canStrike} disabled={!myTurn} onclick={startStrike} use:tip={myTurn ? strikeInfo().why : ''}>
+          <span class="act-ic"><Swords size={19} /></span>
+          <span class="act-tx"><b>{L('Golpear', 'Strike')}</b><small>{P.struck ? L('já usado', 'already used') : L(`${strikeDmg(me)} de dano · grátis`, `${strikeDmg(me)} damage · free`)}</small></span>
+        </button>
+        {#if !g.heroOff}
+          <button class="act" disabled={!myTurn || P.moved} onclick={startMove} use:tip={L('Trocar posição: leva o herói para outra casa livre do seu campo (frente ou retaguarda). 1 vez por turno.', 'Change position: moves the hero to another free slot on your field (front or back). Once per turn.')}>
+            <span class="act-ic"><ArrowLeftRight size={19} /></span>
+            <span class="act-tx"><b>{L('Trocar posição', 'Change position')}</b><small>{P.moved ? L('já trocou', 'already changed') : L('1 vez por turno', 'once per turn')}</small></span>
+          </button>
+        {/if}
+        <button class="act end" disabled={!myTurn} onclick={() => act({ t: 'end' })}>
+          <span class="act-ic"><Hourglass size={19} /></span>
+          <span class="act-tx"><b>{L('Encerrar turno', 'End turn')}</b><small>{L('passa a vez', 'pass the turn')}</small></span>
+        </button>
+      </div>
+      <div class="toolbar">
+        {#if showLog}
+          <div class="flog" class:open={logOpen}>
+            <button class="tool" class:on={logOpen} onclick={() => (logOpen = !logOpen)} title={L('Registro da batalha', 'Battle log')}><ScrollText size={16} /></button>
+            {#if logOpen}
+              <div class="flog-panel" in:scale={{ duration: 140, start: 0.94 }}>
+                <div class="flog-head"><span class="section-title">{L('Registro da batalha', 'Battle log')}</span>
+                  <button class="btn sm ghost icon" onclick={() => (logOpen = false)} title={L('Fechar', 'Close')}><X size={15} /></button></div>
+                <div class="log" bind:this={logEl}>{#each g.log as line}<p class:turn={line.startsWith('—')}>{line}</p>{/each}</div>
+              </div>
+            {/if}
+          </div>
+        {/if}
+        <MusicPlayer float />
+        <button class="tool" class:on={menuOpen} onclick={() => (menuOpen = !menuOpen)} title={L('Menu da partida', 'Match menu')}><Menu size={16} /></button>
+      </div>
       {@render gear(foe, true)}
       {@render gear(me, false)}
 
@@ -1131,7 +1246,7 @@
             <h2>{L('Como jogar', 'How to play')}</h2>
             <ul>
               <li>{L('Vence quem levar a Vida do herói inimigo a 0.', 'Reduce the enemy hero’s Life to 0 to win.')}</li>
-              <li>{L('No seu turno: use cartas (pagando Vigor ou Mana), golpeie com o herói (de graça, 1 vez por turno), ataque com as suas criaturas e, se quiser, mova o herói. Depois, “Encerrar turno”.', 'On your turn: play cards (paying Vigor or Mana), strike with the hero (free, once per turn), attack with your creatures and optionally move the hero. Then “End turn”.')}</li>
+              <li>{L('No seu turno: use cartas (pagando Vigor ou Mana), golpeie com o herói (de graça, 1 vez por turno), ataque com as suas criaturas e, se quiser, troque o herói de posição. Depois, “Encerrar turno”.', 'On your turn: play cards (paying Vigor or Mana), strike with the hero (free, once per turn), attack with your creatures and optionally change the hero’s position. Then “End turn”.')}</li>
               <li>{L('Clicou numa carta ou no herói? Escolha o alvo dourado. Para desistir da escolha: Esc, botão direito ou clique fora.', 'Clicked a card or the hero? Pick a golden target. To cancel: Esc, right-click or click outside.')}</li>
               <li>{L('Vigor e Mana enchem no começo do seu turno. O que sobrar paga Reações no turno do oponente.', 'Vigor and Mana refill at the start of your turn. What is left pays Reactions on the opponent’s turn.')}</li>
               <li>{L('Corpo a corpo só alcança a fileira da frente inimiga (ou a retaguarda, se a frente estiver vazia). À distância e magia alcançam qualquer um.', 'Melee only reaches the enemy front row (or the back, if the front is empty). Ranged and magic reach anyone.')}</li>
@@ -1148,20 +1263,6 @@
         </div>
       {/if}
 
-      <MusicPlayer float />
-
-      <!-- ───── registro da batalha (flutuante) ───── -->
-      {#if showLog}
-        <div class="flog" class:open={logOpen}>
-          {#if logOpen}
-            <div class="flog-head"><span class="section-title">{L('Registro da batalha', 'Battle log')}</span>
-              <button class="btn sm ghost icon" onclick={() => (logOpen = false)} title={L('Minimizar', 'Minimize')}><ChevronDown size={15} /></button></div>
-            <div class="log" bind:this={logEl}>{#each g.log as line}<p class:turn={line.startsWith('—')}>{line}</p>{/each}</div>
-          {:else}
-            <button class="flog-btn" onclick={() => (logOpen = true)} title={L('Abrir o registro da batalha', 'Open the battle log')}><ScrollText size={15} /> {L('Registro', 'Log')}</button>
-          {/if}
-        </div>
-      {/if}
     </div>
 
     {#if tipBox}
@@ -1360,13 +1461,48 @@
   .vs-mid { display: grid; place-items: center; width: 70px; }
   .vs { font: 800 34px var(--display, serif); letter-spacing: .04em; color: #f0d8c8; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle, #2a221d, #100d0b); border: 1px solid var(--accent); box-shadow: 0 0 0 5px rgb(0 0 0 / .5), 0 0 40px rgb(216 176 106 / .35); }
-  .vs-foot { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center; padding: 12px 18px; border-radius: 16px; background: rgb(16 14 12 / .88); border: 1px solid var(--line); max-width: 1560px; width: 100%; margin: 0 auto; }
-  .select-in { height: 36px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); padding: 0 10px; font: inherit; }
-  .vs-opts { display: flex; gap: 18px; flex-wrap: wrap; flex: 1; justify-content: center; }
-  .vs-opts .toggle { display: flex; gap: 8px; align-items: flex-start; max-width: 300px; cursor: pointer; }
-  .vs-opts .toggle span { display: flex; flex-direction: column; }
-  .vs-opts .toggle b { font-size: 13px; }
-  .vs-opts .toggle small { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+  .vs-foot { display: grid; grid-template-columns: minmax(0, 1.5fr) 270px minmax(300px, 1fr); gap: 14px 22px; align-items: center; padding: 14px 18px; border-radius: 16px; background: rgb(16 14 12 / .88); border: 1px solid var(--line); max-width: 1560px; width: 100%; margin: 0 auto; }
+  /* opções da partida: cartões iguais, alinhados numa grade */
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+  .opt { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; padding: 9px 11px; border-radius: 11px; cursor: pointer; border: 1px solid rgb(255 255 255 / .07); background: rgb(255 255 255 / .025); transition: border-color var(--t), background var(--t); }
+  .opt:hover { border-color: rgb(255 255 255 / .16); }
+  .opt.on { border-color: rgb(74 222 128 / .35); background: rgb(74 222 128 / .05); }
+  .opt.sub { margin-left: 0; border-style: dashed; }
+  .opt input { margin-top: 1px; }
+  .opt span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .opt b { font-size: 13px; line-height: 1.2; color: var(--text); }
+  .opt small { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+  .foot-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .foot-go { display: flex; flex-direction: column; gap: 10px; align-items: stretch; min-width: 0; }
+  @media (max-width: 1200px) { .vs-foot { grid-template-columns: 1fr; } }
+  .starter { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .starter small { font-size: 12px; color: var(--muted); }
+  .select-in { height: 34px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); padding: 0 10px; font: inherit; }
+  .scene-btn { display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; border-radius: 12px; border: 1px solid #6b5533; background: linear-gradient(180deg, #241d18, #14100d); color: var(--text); cursor: pointer; font: inherit; text-align: left; transition: border-color var(--t), box-shadow var(--t); }
+  .scene-btn:hover { border-color: var(--accent); box-shadow: 0 0 18px rgb(216 176 106 / .22); }
+  .scene-thumb { width: 74px; height: 44px; flex: none; border-radius: 8px; background: #1d1815 center / cover; image-rendering: pixelated; display: grid; place-items: center; color: var(--accent-2); border: 1px solid rgb(255 255 255 / .14); }
+  .scene-thumb.rand { background: repeating-linear-gradient(45deg, #2a221c 0 8px, #201914 8px 16px); }
+  .scene-tx { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .scene-tx small { font: 600 10px var(--ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .scene-tx b { font-size: 14px; }
+  .scene-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: rgb(4 3 3 / .72); backdrop-filter: blur(6px); }
+  .scene-box { width: min(1040px, 100%); max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 22px 24px 24px; border-radius: 20px;
+    background: linear-gradient(170deg, #211a16, #100d0b 70%); border: 1px solid #8a6d3b; box-shadow: 0 0 0 5px rgb(0 0 0 / .5), 0 30px 80px rgb(0 0 0 / .8), 0 0 80px rgb(240 196 90 / .12); }
+  .scene-box header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .scene-box header small { font: 700 11px var(--ui); letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+  .scene-box h2 { font-size: 30px; color: #f6ead8; line-height: 1.1; }
+  .scene-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .scene-card { display: flex; flex-direction: column; gap: 6px; padding: 7px 7px 10px; border-radius: 14px; border: 2px solid rgb(255 255 255 / .08); background: rgb(255 255 255 / .03); color: var(--text); cursor: pointer; font: inherit; text-align: left; transition: transform .15s, border-color .15s, box-shadow .15s; }
+  .scene-card:hover { transform: translateY(-3px); border-color: rgb(255 255 255 / .28); }
+  .scene-card.on { border-color: #f0c45a; box-shadow: 0 0 24px rgb(240 196 90 / .3); }
+  .scene-card b { font-size: 14px; padding: 0 4px; }
+  .scene-card small { font-size: 11.5px; color: var(--muted); padding: 0 4px; margin-top: -4px; }
+  .sc-img { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: 9px; overflow: hidden; background: radial-gradient(ellipse at 50% 50%, #241e1a, #100e0c) center / cover; image-rendering: pixelated; color: #fff; }
+  .sc-floor { position: absolute; left: 50%; top: 50%; width: 26%; aspect-ratio: 27 / 20; transform: translate(-50%, -50%); background: center / 100% 100% no-repeat; image-rendering: pixelated; opacity: .92; }
+  .sc-check { position: absolute; right: 6px; top: 6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #f0c45a; color: #1a120b; }
+  .sc-img.mosaic { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .sc-img.mosaic i { width: 100%; height: 100%; background: center / cover; filter: brightness(.6); }
+  .sc-img.mosaic :global(svg) { position: absolute; filter: drop-shadow(0 2px 8px #000); }
   .btn.big { height: 46px; padding: 0 26px; font-size: 15px; }
   .dim { opacity: .45; pointer-events: none; }
   .place-help { align-items: center; }
@@ -1375,28 +1511,37 @@
   /* ───── mesa ───── */
   .table { --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 22vh, 300px);
     height: 100%; display: grid; grid-template-columns: 1fr; min-height: 0; position: relative; }
-  .main { position: relative; display: flex; flex-direction: column; gap: 5px; padding: 6px 14px; min-height: 0; overflow: hidden;
+  .main { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: 5px; padding: 8px 14px 10px; min-height: 0; overflow: hidden;
     background: radial-gradient(ellipse at 50% 50%, #241e1a 0%, #100e0c 70%); }
-  .bar { display: flex; align-items: center; gap: 14px; padding: 6px 12px; border-radius: 12px; background: rgb(22 19 17 / .92); border: 1px solid var(--line); flex: none; z-index: 2; }
-  .bar.active { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 0 18px color-mix(in srgb, var(--c) 35%, transparent); }
-  .who { min-width: 92px; }
-  .who b { display: block; font-size: 15px; }
-  .who small { color: var(--muted); font-size: 12px; }
-  .stat { display: flex; flex-direction: column; gap: 1px; padding: 0 12px; border-left: 1px solid rgb(255 255 255 / .07); cursor: help; }
-  .cap { font: 600 9.5px var(--ui); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  /* cenário: a imagem em pixel art por baixo e um escurecido por cima (mais forte em cima e embaixo, onde ficam mão e barras) */
+  .main.scenic::before { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--scene) center / cover no-repeat; image-rendering: pixelated; }
+  .main.scenic::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(180deg, rgb(8 6 5 / .82) 0%, rgb(8 6 5 / .34) 20%, rgb(8 6 5 / .22) 48%, rgb(8 6 5 / .4) 66%, rgb(8 6 5 / .9) 100%), radial-gradient(ellipse at 50% 46%, transparent 40%, rgb(0 0 0 / .5) 100%); }
+
+  /* placa do herói: couro escuro com filete de ouro, retrato num medalhão */
+  .hbar { position: relative; display: flex; align-items: center; gap: 12px; padding: 5px 20px 5px 12px; flex: none; z-index: 2; align-self: center; max-width: 100%;
+    background: linear-gradient(180deg, #2c241e 0%, #1a1511 55%, #120f0c 100%); border: 1px solid #6b5533; border-radius: 30px 14px 14px 30px;
+    box-shadow: 0 0 0 3px rgb(0 0 0 / .42), 0 10px 26px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 220 150 / .16), inset 0 -1px 0 rgb(0 0 0 / .6); }
+  .hbar::after { content: ''; position: absolute; right: -6px; top: 50%; width: 10px; height: 10px; margin-top: -5px; transform: rotate(45deg); background: linear-gradient(135deg, #f3d68c, #9a6f24); border: 1px solid #1a120b; }
+  .hbar.active { border-color: color-mix(in srgb, var(--c) 70%, #f0c45a); box-shadow: 0 0 0 3px rgb(0 0 0 / .42), 0 0 22px color-mix(in srgb, var(--c) 45%, transparent), 0 10px 26px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 220 150 / .2); }
+  .hb-pic { position: relative; flex: none; line-height: 0; margin: -10px 0 -10px -6px; border-radius: 50%; box-shadow: 0 0 0 2px #14100d, 0 0 0 4px color-mix(in srgb, var(--c) 80%, #000), 0 0 0 5px #d9b56a, 0 6px 14px rgb(0 0 0 / .7); }
+  .hb-lv { position: absolute; right: -5px; bottom: -5px; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; display: grid; place-items: center; font: 800 11px/1 var(--ui); font-style: normal; color: #2a1a05; background: linear-gradient(180deg, #ffe7a6, #c9962f); border: 1.5px solid #14100d; }
+  .who { min-width: 96px; }
+  .who b { display: block; font-size: 16px; line-height: 1.1; color: #f6ead8; letter-spacing: .03em; }
+  .who small { color: color-mix(in srgb, var(--c) 45%, #cfc6b8); font-size: 11.5px; }
+  .stat { display: flex; flex-direction: column; gap: 1px; padding: 0 12px; border-left: 1px solid rgb(255 220 150 / .12); cursor: help; }
+  .cap { font: 600 9.5px var(--ui); text-transform: uppercase; letter-spacing: .1em; color: #a89a86; }
   .val { display: inline-flex; align-items: center; gap: 4px; font: 600 14px var(--ui); font-variant-numeric: tabular-nums; min-height: 20px; border-radius: 6px; }
   .val small { color: var(--muted); font-weight: 500; font-size: 11.5px; margin-left: 2px; }
   .hpv { color: #e8a59a; }
-  .hpbar { width: 96px; height: 7px; border-radius: 4px; background: var(--bg-2); overflow: hidden; margin-left: 6px; }
-  .hpbar i { display: block; height: 100%; background: linear-gradient(90deg, #8f2a20, #d4503f); transition: width .4s; }
+  .hpbar { width: 96px; height: 8px; border-radius: 4px; background: #0b0908; overflow: hidden; margin-left: 6px; box-shadow: inset 0 1px 2px #000, 0 0 0 1px rgb(255 220 150 / .14); }
+  .hpbar i { display: block; height: 100%; background: linear-gradient(180deg, #ef6a55, #a02c20); transition: width .4s; }
   .vig { color: #e5866f; } .man { color: #7fb0ff; } .xpv { color: var(--accent); } .stk { color: #f0c45a; }
   .stk.used { opacity: .45; }
   .pip { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .35; }
   .pip.on { background: currentColor; opacity: 1; }
   .pip.extra { background: #fff; border-color: #fff; opacity: 1; box-shadow: 0 0 6px currentColor; }
-  .btn.lit { border-color: #f0c45a; color: #f0c45a; box-shadow: 0 0 12px rgb(240 196 90 / .3); }
-  .vs-opts .toggle.sub { padding-left: 14px; border-left: 2px solid var(--line-2); }
-  .thinking { color: var(--accent-2); font-size: 13px; animation: pulse 1.2s ease-in-out infinite; margin-left: auto; }
+  .thinking { color: var(--accent-2); font-size: 12.5px; animation: pulse 1.2s ease-in-out infinite; padding-left: 12px; border-left: 1px solid rgb(255 220 150 / .12); white-space: nowrap; }
   @keyframes pulse { 50% { opacity: .45; } }
 
   .ohand { display: flex; justify-content: center; height: calc(var(--zone) * 1.35); flex: none; }
@@ -1408,34 +1553,63 @@
   .rows { display: flex; flex-direction: column; gap: 6px; }
   .off-spacer { width: calc(var(--row) * 1.35); flex: none; }
   .row { display: grid; grid-template-columns: repeat(3, calc(var(--row) * 1.35)); gap: 10px; }
-  .slot { height: var(--row); border-radius: 12px; border: 1px dashed rgb(255 255 255 / .1); background: rgb(255 255 255 / .02); color: var(--text); display: grid; place-items: center; cursor: pointer; font: inherit; position: relative; padding: 4px; overflow: hidden; }
-  .slot.off { width: calc(var(--row) * 1.35); height: auto; flex: none; }
-  .slot:has(.unit) { border: 1px solid rgb(255 255 255 / .14); background: linear-gradient(180deg, color-mix(in srgb, var(--c) 32%, #15120f), #15120f 85%); box-shadow: 0 6px 16px rgb(0 0 0 / .5); }
-  .slot.hero { border: 2px solid var(--c); overflow: visible; z-index: 3; }
+  /* casa: um retalho de piso em pixel art, no clima do cenário */
+  .slot { height: var(--row); border-radius: 10px; border: 0; background: none; color: var(--text); display: grid; place-items: center; cursor: pointer; font: inherit; position: relative; padding: 4px; overflow: hidden; }
+  .slot::before { content: ''; position: absolute; inset: 0; z-index: 0; background: var(--floor, none) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: .88; filter: drop-shadow(0 3px 0 rgb(0 0 0 / .35)); }
+  .slot:hover::before { opacity: 1; }
+  .slot.off { width: calc(var(--row) * 1.35); height: auto; flex: none; border-radius: 14px; }
+  .slot.off::before { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 30%, rgb(21 18 15 / .86)), rgb(14 12 10 / .9) 85%); opacity: 1; filter: none; border-radius: 14px; }
+  /* ocupada: o piso escurece embaixo (para ler nome e números) e ganha um aro na cor do dono */
+  .slot:has(.unit)::before { opacity: 1; border-radius: 10px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 22%, transparent) 0%, rgb(0 0 0 / .1) 38%, rgb(6 5 4 / .82) 100%), var(--floor, none) center / 100% 100% no-repeat; }
+  .slot:has(.unit) { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 65%, #000), 0 6px 16px rgb(0 0 0 / .55); }
+  .slot.off:has(.unit)::before { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 34%, rgb(21 18 15 / .9)), rgb(12 10 9 / .94) 85%); }
+  .slot.hero { box-shadow: 0 0 0 2px var(--c), 0 0 0 3px rgb(0 0 0 / .5), 0 0 18px color-mix(in srgb, var(--c) 40%, transparent), 0 6px 16px rgb(0 0 0 / .55); overflow: visible; z-index: 3; }
   /* o boneco fica de pé sobre a casa (passa da borda de cima) */
   .doll { position: absolute; left: 50%; bottom: 30%; transform: translateX(-50%); line-height: 0; z-index: 0; filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)); }
   .doll.tall { bottom: 26%; }
+  /* afligido: aura roxa pulsando no boneco */
+  .doll.sick { animation: sick 1.6s ease-in-out infinite; }
+  @keyframes sick { 0%, 100% { filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)) drop-shadow(0 0 3px #b06bff); } 50% { filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)) drop-shadow(0 0 11px #b06bff) hue-rotate(-12deg); } }
   .slot.hero.ready { animation: readyPulse 1.6s ease-in-out infinite; }
   @keyframes readyPulse { 50% { box-shadow: 0 0 0 2px #f0c45a, 0 0 22px rgb(240 196 90 / .55); } }
-  .slot.exh { opacity: .55; }
-  .slot.target { border: 2px solid #f0c45a; box-shadow: 0 0 16px rgb(240 196 90 / .5); cursor: crosshair; animation: none; }
-  .slot.selected { border: 2px solid #7fb0ff; box-shadow: 0 0 16px rgb(127 176 255 / .5); animation: none; }
+  .slot.exh .doll, .slot.exh .u-ic { filter: grayscale(.7) brightness(.72) drop-shadow(0 3px 3px rgb(0 0 0 / .6)); }
+  .slot.target { box-shadow: 0 0 0 2px #f0c45a, 0 0 18px rgb(240 196 90 / .6); cursor: crosshair; animation: none; }
+  .slot.selected { box-shadow: 0 0 0 2px #7fb0ff, 0 0 18px rgb(127 176 255 / .6); animation: none; }
   .unit { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; z-index: 1; }
-  .mini { position: absolute; inset: 0; line-height: 0; }
+  .mini { position: absolute; inset: 0; line-height: 0; z-index: 0; border-radius: 10px; overflow: hidden; }
   .mini :global(.hp) { width: 100% !important; height: 100% !important; border-radius: 0; }
   .mini::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgb(8 6 5 / .88) 82%); }
   .slot.fig { overflow: visible; z-index: 2; }
-  .slot.hero .unit, .slot.fig .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000; }
-  .strike-tag { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; border: 1px solid rgb(255 255 255 / .14); z-index: 4; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: rgb(10 8 7 / .8); color: var(--muted); }
-  .strike-tag.on { background: #f0c45a; color: #1a120b; }
-  .empty { font-size: 11px; color: rgb(255 255 255 / .25); text-transform: uppercase; letter-spacing: .08em; }
+  .slot.hero .unit, .slot.fig .unit { align-self: end; padding-bottom: 2px; text-shadow: 0 1px 4px #000, 0 0 2px #000; }
+  .strike-tag { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); white-space: nowrap; border: 1px solid rgb(255 255 255 / .14); z-index: 4; font: 700 9px var(--ui); text-transform: uppercase; letter-spacing: .08em; padding: 2px 7px; border-radius: 6px; background: rgb(10 8 7 / .86); color: var(--muted); }
+  .strike-tag.on { background: linear-gradient(180deg, #ffd98a, #d9a23a); color: #1a120b; border-color: #fff0c4; box-shadow: 0 0 10px rgb(240 196 90 / .5); }
+  .empty { position: relative; z-index: 1; font: 700 9.5px var(--ui); color: #fff; text-transform: uppercase; letter-spacing: .1em; padding: 2px 7px; border-radius: 99px; background: rgb(0 0 0 / .32); opacity: .75; }
   .u-nm { font-size: 12.5px; font-weight: 600; text-align: center; line-height: 1.1; }
   .u-st { display: flex; gap: 12px; font: 700 14px var(--ui); }
   .atk { color: #f0c45a; display: inline-flex; gap: 3px; align-items: center; }
   .atk.used { opacity: .4; }
   .def { color: #e8a59a; display: inline-flex; gap: 3px; align-items: center; }
-  .u-mk { position: absolute; top: 6px; right: 7px; display: flex; gap: 4px; color: #cdb8ff; z-index: 2; filter: drop-shadow(0 1px 2px #000); }
-  .u-mk i { font-style: normal; }
+
+  /* efeitos ativos: uma coluna de selos ao lado do boneco (passe o mouse para ler) */
+  .u-fx { position: absolute; left: 4px; top: 4px; z-index: 5; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+  .slot.hero .u-fx, .slot.fig .u-fx { left: -7px; top: -4px; }
+  .fx { font-style: normal; display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 12px; cursor: help;
+    border: 1.5px solid var(--k1); background: radial-gradient(circle at 35% 28%, var(--k2), var(--k3)); color: #fff; box-shadow: 0 2px 5px rgb(0 0 0 / .7), 0 0 8px color-mix(in srgb, var(--k1) 55%, transparent); }
+  .fx b { font: 800 11px/1 var(--ui); }
+  .fx.good { --k1: #8ec5ff; --k2: #4f8fe0; --k3: #17376b; }
+  .fx.bad { --k1: #e3a3ff; --k2: #a54fd6; --k3: #46155f; animation: fxBad 1.8s ease-in-out infinite; }
+  .fx.trait { --k1: #f0d089; --k2: #b98a2c; --k3: #4a3410; }
+  .fx.dim { --k1: #8b8580; --k2: #4f4a46; --k3: #24211f; color: #d6d0c8; box-shadow: 0 2px 5px rgb(0 0 0 / .7); }
+  @keyframes fxBad { 50% { box-shadow: 0 2px 5px rgb(0 0 0 / .7), 0 0 14px #c56bff; } }
+  /* protegido: uma bolha de escudo em volta do boneco */
+  .ward-bubble { position: absolute; left: 10%; bottom: 20%; width: 80%; aspect-ratio: 1; border-radius: 50%; z-index: 1; pointer-events: none;
+    background: radial-gradient(circle at 34% 28%, rgb(215 235 255 / .42), rgb(110 165 255 / .1) 52%, rgb(110 165 255 / .3) 100%); border: 2px solid rgb(165 210 255 / .85);
+    box-shadow: 0 0 18px rgb(110 170 255 / .7), inset 0 0 14px rgb(170 215 255 / .5); animation: ward 2.4s ease-in-out infinite; }
+  @keyframes ward { 50% { box-shadow: 0 0 28px rgb(110 170 255 / .95), inset 0 0 20px rgb(190 225 255 / .7); } }
+  /* marcado: uma mira vermelha sobre o boneco */
+  .mark-ring { position: absolute; left: 50%; top: 18%; margin-left: -15px; z-index: 2; pointer-events: none; color: #ff5a48; line-height: 0; filter: drop-shadow(0 0 5px #ff2a1a) drop-shadow(0 1px 1px #000); animation: markSpin 6s linear infinite; }
+  @keyframes markSpin { to { transform: rotate(360deg); } }
 
   /* área atingida (fileira ou campo inteiro) */
   .row.aoe, .rows.aoe { border-radius: 14px; outline: 2px solid #ff6a4a; outline-offset: 4px; background: rgb(255 90 60 / .1); box-shadow: 0 0 26px rgb(255 90 60 / .35); animation: aoePulse 1.1s ease-in-out infinite; }
@@ -1461,11 +1635,20 @@
   .zc.stance { outline: 2px solid var(--accent); outline-offset: 1px; }
   .ztag { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 1; font: 600 10px var(--ui); padding: 1px 6px; border-radius: 6px; background: var(--accent); color: #1a120b; white-space: nowrap; display: inline-flex; gap: 3px; align-items: center; }
   .zhint { font-size: 11px; color: rgb(255 255 255 / .22); text-transform: uppercase; letter-spacing: .08em; }
-  .mid { text-align: center; color: var(--accent-2); font-size: 14px; min-height: 26px; flex: none; border-top: 1px solid rgb(255 255 255 / .06); border-bottom: 1px solid rgb(255 255 255 / .06); padding: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mid.aiming { display: flex; justify-content: center; align-items: center; gap: 14px; overflow: visible; }
-  .cancel-btn { display: inline-flex; gap: 4px; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--line-2); background: rgb(22 19 17 / .9); color: var(--text-2); font: 600 12px var(--ui); cursor: pointer; }
+  /* faixa do meio: de quem é a vez e o que fazer agora */
+  .mid { --mc: #8a7a66; display: flex; align-items: center; justify-content: center; gap: 12px; flex: none; min-height: 32px; }
+  .mid.mine { --mc: #f0c45a; } .mid.foe { --mc: #d0584a; } .mid.warn { --mc: #ff7a66; }
+  .mid-orn { position: relative; flex: 1; max-width: 300px; height: 2px; background: linear-gradient(90deg, transparent, var(--mc)); }
+  .mid-orn::after { content: ''; position: absolute; right: -4px; top: 50%; width: 8px; height: 8px; margin-top: -4px; transform: rotate(45deg); background: var(--mc); box-shadow: 0 0 8px var(--mc); }
+  .mid-orn.r { transform: scaleX(-1); }
+  .mid-plate { display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 250px; max-width: 70%; padding: 4px 26px; border-radius: 99px;
+    background: linear-gradient(180deg, #2a221c, #14100d); border: 1px solid var(--mc); color: color-mix(in srgb, var(--mc) 70%, #fff);
+    box-shadow: 0 0 0 3px rgb(0 0 0 / .4), 0 6px 18px rgb(0 0 0 / .55), 0 0 16px color-mix(in srgb, var(--mc) 25%, transparent), inset 0 1px 0 rgb(255 255 255 / .1);
+    font: 600 14.5px var(--display, serif); letter-spacing: .05em; }
+  .mid-plate > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .mid.warn .mid-plate { background: linear-gradient(180deg, #3a1813, #1c0c0a); color: #ffcabf; font-weight: 700; }
+  .cancel-btn { flex: none; display: inline-flex; gap: 4px; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--line-2); background: rgb(22 19 17 / .9); color: var(--text-2); font: 600 12px var(--ui); letter-spacing: 0; cursor: pointer; }
   .cancel-btn:hover { border-color: var(--danger); color: #ffb4a6; }
-  .mid.warn { color: #ffb4a6; background: rgb(196 71 58 / .16); border-color: rgb(196 71 58 / .5); font-weight: 600; }
 
   .hand { display: flex; justify-content: center; align-items: flex-end; flex: 1 1 0; min-height: 90px; padding-bottom: 2px; }
   .hc { height: 100%; max-height: calc(var(--hand) * 1.15); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; margin: 0 -6px; transition: transform .15s, margin .15s; position: relative; }
@@ -1476,19 +1659,63 @@
   .rtag { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; background: #101a2e; color: #a9c8ff; border-color: #4f7fd0; }
   .hc.sel { outline: 3px solid #7fb0ff; transform: translateY(-18px); z-index: 2; }
 
-  .pile { position: absolute; width: calc(var(--hand) * .55); aspect-ratio: 750 / 1050; border-radius: 7px; border: 1px dashed rgb(255 255 255 / .12); background: rgb(0 0 0 / .25); display: grid; place-items: center; }
-  .pile.deck { left: 16px; bottom: 74px; }
-  .pile.grave { right: 16px; bottom: 74px; cursor: pointer; padding: 0; color: var(--muted); }
-  .pile.deck.top { top: 62px; bottom: auto; }
-  .pile.grave.top { top: 62px; bottom: auto; }
+  /* grimório e cemitério: cada um sobre a sua base (círculo arcano / lápide), com o nome embaixo */
+  .pilebox { position: absolute; z-index: 1; display: grid; justify-items: center; gap: 14px; left: 30px; bottom: 16px; }
+  .pilebox.gravebox { left: auto; right: 30px; }
+  .pilebox.top { bottom: auto; top: 56px; }
+  .pbase { position: absolute; inset: -12px -16px 24px; border-radius: 16px; z-index: -1; overflow: hidden; }
+  .deckbox .pbase { background: radial-gradient(circle at 50% 46%, #3d2c74 0%, #1b1436 55%, #0e0b1c 100%); border: 1px solid #7a62c9; box-shadow: 0 0 0 3px rgb(0 0 0 / .45), 0 10px 26px rgb(0 0 0 / .65), 0 0 22px rgb(122 98 201 / .28), inset 0 1px 0 rgb(220 200 255 / .2); }
+  .gravebox .pbase { background: radial-gradient(circle at 50% 30%, #3c4442 0%, #1e2322 55%, #101312 100%); border: 1px solid #76827c; box-shadow: 0 0 0 3px rgb(0 0 0 / .45), 0 10px 26px rgb(0 0 0 / .65), 0 0 22px rgb(120 200 160 / .12), inset 0 1px 0 rgb(220 240 230 / .16); }
+  .prune { position: absolute; left: 50%; top: 50%; width: 150%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; opacity: .5;
+    background: repeating-conic-gradient(from 0deg, rgb(190 165 255 / .5) 0deg 4deg, transparent 4deg 15deg); -webkit-mask-image: radial-gradient(circle, transparent 46%, #000 48%, #000 54%, transparent 56%); mask-image: radial-gradient(circle, transparent 46%, #000 48%, #000 54%, transparent 56%); animation: runeSpin 40s linear infinite; }
+  .gravebox .prune { animation: none; opacity: .35; background: radial-gradient(ellipse at 50% 100%, rgb(130 230 180 / .5), transparent 60%); -webkit-mask-image: none; mask-image: none; width: 100%; aspect-ratio: auto; height: 60%; top: auto; bottom: 0; transform: translateX(-50%); border-radius: 0; }
+  @keyframes runeSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+  .pile { position: relative; width: calc(var(--hand) * .55); aspect-ratio: 750 / 1050; border-radius: 7px; border: 1px dashed rgb(255 255 255 / .16); background: rgb(0 0 0 / .3); display: grid; place-items: center; }
+  .pile.grave { cursor: pointer; padding: 0; color: #9fb0a8; transition: transform .15s; }
+  .pile.grave:hover { transform: translateY(-3px); }
+  .pile.deck { color: #b9a6f2; }
   .stack { position: absolute; inset: 0; border-radius: 7px; overflow: hidden; box-shadow: calc(var(--n) * 1px) calc(var(--n) * 2px) 0 #1c1815, calc(var(--n) * 2px) calc(var(--n) * 4px) 0 #12100e, 0 8px 18px rgb(0 0 0 / .6); }
   .stack img { width: 100%; height: 100%; display: block; }
   .gtop { position: absolute; inset: 0; border-radius: 7px; overflow: hidden; box-shadow: 0 8px 18px rgb(0 0 0 / .6); }
-  .gempty { opacity: .35; }
-  .pcount { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); z-index: 2; font: 700 12px var(--ui); padding: 1px 8px; border-radius: 8px; background: #0f0d0c; border: 1px solid var(--line-2); color: var(--text); display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
+  .gempty { opacity: .5; line-height: 0; }
+  .plabel { display: inline-flex; gap: 6px; align-items: center; padding: 3px 12px; border-radius: 99px; white-space: nowrap; font: 700 10.5px var(--ui); letter-spacing: .12em; text-transform: uppercase; background: #0f0d0c; border: 1px solid; box-shadow: 0 4px 10px rgb(0 0 0 / .6); }
+  .plabel b { font-size: 13px; letter-spacing: 0; color: #fff; }
+  .deckbox .plabel { color: #cbbcff; border-color: #7a62c9; }
+  .gravebox .plabel { color: #c4d2ca; border-color: #76827c; }
 
-  .gear-panel { position: absolute; left: 16px; width: 212px; bottom: calc(74px + var(--hand) * .77 + 26px); display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border-radius: 10px; background: rgb(14 12 11 / .82); border: 1px solid rgb(255 255 255 / .08); border-left: 3px solid var(--c); z-index: 1; }
-  .gear-panel.top { bottom: auto; top: calc(62px + var(--hand) * .77 + 26px); }
+  /* ações do turno: painel flutuante acima do cemitério */
+  .actions { position: absolute; right: 14px; bottom: calc(16px + var(--hand) * .77 + 62px); z-index: 6; width: 214px; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 16px;
+    background: linear-gradient(170deg, color-mix(in srgb, var(--c) 16%, #1e1915), #100d0b 75%); border: 1px solid #8a6d3b;
+    box-shadow: 0 0 0 4px rgb(0 0 0 / .42), 0 18px 40px rgb(0 0 0 / .7), 0 0 30px rgb(240 196 90 / .1), inset 0 1px 0 rgb(255 220 150 / .14); transition: opacity .2s, filter .2s; }
+  .actions.idle { opacity: .7; filter: saturate(.55); }
+  .act-title { display: flex; align-items: center; gap: 8px; font: 700 9.5px var(--ui); letter-spacing: .18em; text-transform: uppercase; color: #d9b56a; white-space: nowrap; }
+  .act-title i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #8a6d3b); }
+  .act-title i:last-child { transform: scaleX(-1); }
+  .act { display: flex; gap: 10px; align-items: center; padding: 7px 10px 7px 7px; border-radius: 12px; cursor: pointer; font: inherit; text-align: left; color: var(--text);
+    background: linear-gradient(180deg, rgb(255 255 255 / .07), rgb(0 0 0 / .28)); border: 1px solid rgb(255 255 255 / .12); transition: transform .12s, border-color .12s, box-shadow .12s; }
+  .act:hover:not(:disabled) { transform: translateX(-3px); border-color: #d9b56a; box-shadow: 0 6px 18px rgb(0 0 0 / .5); }
+  .act:disabled { opacity: .42; cursor: default; }
+  .act-ic { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #f0d089; background: radial-gradient(circle at 35% 30%, #4a3a22, #14100d); border: 1px solid #8a6d3b; }
+  .act-tx { display: flex; flex-direction: column; min-width: 0; }
+  .act-tx b { font: 700 12.5px var(--display, serif); letter-spacing: .02em; white-space: nowrap; }
+  .act-tx small { font-size: 11px; color: var(--muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .act.lit { border-color: #f0c45a; box-shadow: 0 0 14px rgb(240 196 90 / .32); }
+  .act.lit .act-ic { background: linear-gradient(180deg, #ffe7a6, #c9962f); color: #2a1a05; border-color: #fff0c4; }
+  .act.end:not(:disabled) { background: linear-gradient(180deg, #edcb7c, #b5862b); color: #24160a; border-color: #ffe9b0; }
+  .act.end:not(:disabled) .act-ic { background: radial-gradient(circle at 35% 30%, #3a2c16, #14100d); color: #ffdf94; border-color: #5b4420; }
+  .act.end:not(:disabled) small { color: #4d3711; }
+
+  /* canto de cima: registro, música e menu */
+  .toolbar { position: absolute; right: 14px; top: 10px; z-index: 31; display: flex; gap: 6px; align-items: flex-start; }
+  .tool { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid #6b5533; background: linear-gradient(180deg, #2a221c, #14100d); color: #d8c9ae; cursor: pointer; box-shadow: 0 6px 16px rgb(0 0 0 / .55); }
+  .tool:hover, .tool.on { color: #ffdf94; border-color: #d9b56a; }
+  .toolbar :global(.mp.float) { position: relative; right: auto; top: auto; transform: none; }
+  .toolbar :global(.mp.float .pill) { width: 36px; height: 36px; padding: 0; justify-content: center; border-radius: 10px; border-color: #6b5533; background: linear-gradient(180deg, #2a221c, #14100d); color: #d8c9ae; }
+  .toolbar :global(.mp.float .pill span) { display: none; }
+  .toolbar :global(.mp.float.open) { position: absolute; right: 42px; top: 0; }
+
+  .gear-panel { position: absolute; left: 14px; width: 214px; bottom: calc(16px + var(--hand) * .77 + 62px); display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border-radius: 12px; background: rgb(14 12 11 / .86); border: 1px solid rgb(255 220 150 / .14); border-left: 3px solid var(--c); z-index: 1; box-shadow: 0 10px 24px rgb(0 0 0 / .5); }
+  .gear-panel.top { bottom: auto; top: calc(56px + var(--hand) * .77 + 62px); }
   .gtitle { font: 600 9.5px var(--ui); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gi { display: flex; gap: 8px; align-items: center; cursor: help; }
   .gic { width: 32px; height: 32px; flex: none; border-radius: 8px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #000), color-mix(in srgb, var(--c) 18%, #000)); border: 1px solid rgb(255 255 255 / .12); }
@@ -1555,11 +1782,9 @@
   .rr:hover { transform: translateY(-4px); box-shadow: 0 0 22px rgb(79 127 208 / .6); }
   .rr span { padding: 5px 0; text-transform: uppercase; letter-spacing: .1em; }
 
-  /* registro flutuante */
-  .flog { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 30; }
-  .flog-btn { display: inline-flex; gap: 6px; align-items: center; padding: 8px 12px; border-radius: 99px; border: 1px solid var(--line-2); background: rgb(22 19 17 / .92); color: var(--text-2); font: 600 12px var(--ui); cursor: pointer; box-shadow: 0 8px 20px rgb(0 0 0 / .5); }
-  .flog-btn:hover { color: var(--accent-2); border-color: var(--accent); }
-  .flog.open { width: 300px; height: min(420px, 56vh); display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 14px; background: rgb(18 15 14 / .96); border: 1px solid var(--line-2); box-shadow: 0 18px 50px rgb(0 0 0 / .7); }
+  /* registro da batalha: abre a partir do botão no canto */
+  .flog { position: relative; }
+  .flog-panel { position: absolute; right: 0; top: 42px; width: 310px; height: min(430px, 56vh); display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 14px; background: rgb(18 15 14 / .97); border: 1px solid #6b5533; box-shadow: 0 18px 50px rgb(0 0 0 / .75); }
   .flog-head { display: flex; align-items: center; justify-content: space-between; }
   .log { flex: 1; overflow-y: auto; font-size: 12.5px; color: var(--text-2); min-height: 0; }
   .log p { margin: 2px 0; }
@@ -1615,7 +1840,7 @@
 
   /* menu da partida */
   .gmenu-back { position: absolute; inset: 0; z-index: 46; }
-  .gmenu { position: absolute; right: 16px; top: 58px; z-index: 47; width: 290px; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 14px; background: rgb(18 15 14 / .98); border: 1px solid var(--line-2); box-shadow: 0 22px 60px rgb(0 0 0 / .75); }
+  .gmenu { position: absolute; right: 14px; top: 52px; z-index: 47; width: 290px; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 14px; background: rgb(18 15 14 / .98); border: 1px solid var(--line-2); box-shadow: 0 22px 60px rgb(0 0 0 / .75); }
   .gmenu button, .gmenu label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; border: 0; background: none; color: var(--text); font: 500 13.5px var(--ui); cursor: pointer; text-align: left; }
   .gmenu button:hover:not(:disabled), .gmenu label:hover { background: var(--surface-2); }
   .gmenu button.danger { color: #ff9c8c; }

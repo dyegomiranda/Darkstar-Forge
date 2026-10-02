@@ -52,6 +52,24 @@ export interface IconChoice {
   style?: IconStyle; glyph?: string; color?: string; image?: IconImage;
   /** Tamanho do símbolo (1 = padrão do estilo; 0,5 a 1,8). */
   size?: number;
+  /**
+   * Tamanho do número ao lado do símbolo (custo, ataque, defesa). Sem valor, o
+   * número do custo acompanha o símbolo e os de ataque/defesa ficam no padrão.
+   */
+  numSize?: number;
+}
+
+/** Peças que podem ter escolhas próprias: as do estilo e, dentro de "stat", o ataque e a defesa separados. */
+export type PieceSlot = PieceKind | 'atk' | 'def';
+
+/** O que a carta está usando de fato (para o editor mostrar nos seletores a cor que está aplicada). */
+export interface ComposeInfo {
+  /** Cor do texto de cada peça. */
+  ink: Partial<Record<PieceSlot, string>>;
+  /** Cor do fundo de cada peça (ausente = o estilo não tem fundo trocável nessa peça). */
+  fill: Partial<Record<PieceSlot, string>>;
+  /** Cor de cada símbolo: classe, ataque, defesa e um por recurso do custo (`res:mana`…). */
+  icon: Record<string, string>;
 }
 
 /** Aumenta/diminui um desenho em volta do centro (cx, cy). */
@@ -81,9 +99,12 @@ function symbol(defs: Defs, pick: IconChoice | undefined, glyph: string, style: 
 export interface Look {
   /** Estilo usado nas peças sem escolha própria. */
   style: StyleId;
-  pieces?: Partial<Record<PieceKind, PieceChoice>>;
+  pieces?: Partial<Record<PieceSlot, PieceChoice>>;
   icons?: {
+    /** Custo: acabamento e tamanhos (valem para todos os recursos). O símbolo/cor daqui vale só para o 1º recurso (formato antigo). */
     cost?: IconChoice;
+    /** Símbolo, cor ou imagem de cada recurso (mana, vigor…). */
+    res?: Partial<Record<string, IconChoice>>;
     class?: IconChoice;
     atk?: IconChoice;
     def?: IconChoice;
@@ -165,6 +186,8 @@ export interface ComposeInput {
   look: Look;
   /** Imagem do símbolo da edição (logo do set). */
   setIcon?: string;
+  /** Preencher também o relatório do que foi aplicado (cores de texto, fundo e símbolos) — só o editor pede. */
+  info?: boolean;
   /** Tamanhos de fonte de referência (px no espaço 750×1050). */
   sizes?: Partial<typeof SIZES>;
 }
@@ -196,8 +219,10 @@ function renderPiece(kind: PieceKind, ps: PieceStyle, ch: PieceChoice, args: Par
   return out;
 }
 
-function choose(look: Look, kind: PieceKind): { ps: PieceStyle; ch: PieceChoice } {
-  const own = look.pieces?.[kind];
+function choose(look: Look, kind: PieceKind, slot?: 'atk' | 'def'): { ps: PieceStyle; ch: PieceChoice } {
+  // ataque e defesa: o que vale para os dois + o que for só de um
+  const side = slot ? look.pieces?.[slot] : undefined;
+  const own = side ? ({ ...look.pieces?.[kind], ...side } as PieceChoice) : look.pieces?.[kind];
   // peça que o estilo esconde por padrão, se o usuário não disse nada sobre ela
   const hiddenByStyle = own?.hidden === undefined && !!styleInfo(look.style).hidden?.includes(kind);
   const ch = own ? (hiddenByStyle ? { ...own, hidden: true } : own) : { style: look.style, ...(hiddenByStyle ? { hidden: true } : {}) };
@@ -239,15 +264,16 @@ export function centered(defs: Defs, text: string, look: TextLook, size: number,
   return drawLines(wrap(text, f, 1e9), f, box, { align, valign: 'middle', filter });
 }
 
-export function compose(inp: ComposeInput): string {
+export function composeEx(inp: ComposeInput): { svg: string; info: ComposeInfo } {
   const defs = new Defs(inp.uid);
   const sz = { ...SIZES, ...inp.sizes };
   const look = inp.look;
   const colors = cardColors(inp.colors, look);
   const blend = look.blend ?? 'faixas';
-  const iconStyleFor = (kind: PieceKind, pick?: IconChoice): IconStyle =>
-    pick?.style ?? styleInfo(choose(look, kind).ch.style ?? look.style).icons;
-  const costIcons = iconStyleFor('cost', look.icons?.cost);
+  // acabamento dos símbolos: o escolhido ou o do estilo geral (trocar o estilo de uma peça não mexe nos símbolos)
+  const iconStyleFor = (pick?: IconChoice): IconStyle => pick?.style ?? styleInfo(look.style).icons;
+  const costIcons = iconStyleFor(look.icons?.cost);
+  const used: ComposeInfo = { ink: {}, fill: {}, icon: {} };
   // {mana}, {vigor}… no texto viram o símbolo do recurso
   const iconFn: IconFn = (id, x, y, s) => (isResource(id) ? drawGlyph(defs, resourceIcon(id)!, costIcons, x, y, s, { color: RESOURCE_COLORS[id] }) : '');
   const knownIcon = isResource;
@@ -289,8 +315,8 @@ export function compose(inp: ComposeInput): string {
   // tamanho escolhido por peça: a caixa cresce/encolhe em volta do centro
   const resize = (b: Box, k?: number): Box => (!k || Math.abs(k - 1) < 0.005 ? b : { x: b.x + (b.w * (1 - k)) / 2, y: b.y + (b.h * (1 - k)) / 2, w: b.w * k, h: b.h * k });
   for (const k of ['cost', 'class', 'set', 'header', 'typeBar', 'footer'] as const) S[k] = resize(S[k], look.pieces?.[k]?.size);
-  S.atk = resize(S.atk, look.pieces?.stat?.size);
-  S.def = resize(S.def, look.pieces?.stat?.size);
+  S.atk = resize(S.atk, look.pieces?.atk?.size ?? look.pieces?.stat?.size);
+  S.def = resize(S.def, look.pieces?.def?.size ?? look.pieces?.stat?.size);
 
   // 2) Arte (cobre a carta inteira: full art)
   const clip = defs.add('cardclip', (id) => `<clipPath id="${id}"><path d="${roundRect(S.card, CARD_RADIUS)}"/></clipPath>`);
@@ -315,12 +341,17 @@ export function compose(inp: ComposeInput): string {
   const outs: Partial<Record<Slot, { out: PieceOut; ch: PieceChoice; ps: PieceStyle; args: Parameters<PieceStyle['render']>[0] }>> = {};
   let pieces = '';
   const add = (kind: PieceKind, box: Box, slot: Slot = kind, variant?: 'atk' | 'def', draw = true) => {
-    const { ps, ch } = choose(look, kind);
+    const { ps, ch } = choose(look, kind, variant);
     if (ch.hidden) return;
     const pal = makePalette(ch.colors?.length ? ch.colors : colors, ch.metal ?? ps.metal, blend);
     const args = { box, pal, defs, opacity: ch.opacity ?? ps.opacity, variant, layout: S, fill: ch.fill };
     const out = renderPiece(kind, ps, ch, args);
     outs[slot] = { out, ch, ps, args };
+    if (inp.info) {
+      used.ink[slot] = textOf(out, ch).color;
+      const f = ch.image ? undefined : ch.fill ?? defaultFill(ps, args);
+      if (f) used.fill[slot] = f;
+    }
     if (!draw) return;
     if (out.glass && artImg) {
       const gid = defs.add(`glass:${slot}`, (id) => `<clipPath id="${id}"><path d="${out.glass}"/></clipPath>`);
@@ -435,22 +466,34 @@ export function compose(inp: ComposeInput): string {
     text = '';
     const x0 = c.x + (c.w - costPlan.width) / 2;
     const first = inp.cost[0].resource;
+    const cs = look.icons?.cost;
+    // tamanhos: sem tamanho próprio do número, o conjunto todo cresce junto; com ele, símbolo e número crescem cada um no seu lugar
+    const split = cs?.numSize != null;
     for (const u of costPlan.units) {
       const res = inp.cost[u.part].resource;
-      // o símbolo/cor escolhidos na Aparência valem para o recurso principal (o primeiro)
-      const pick = res === first ? look.icons?.cost : undefined;
+      // símbolo de cada recurso; o escolhido no formato antigo (icons.cost) vale para o primeiro
+      const own = look.icons?.res?.[res];
+      const pick: IconChoice | undefined = own || res === first ? { ...(res === first ? cs : undefined), ...own } : undefined;
       const glyph = pick?.glyph ?? resourceIcon(res);
       const color = pick?.color ?? RESOURCE_COLORS[res as ResourceId];
+      used.icon[`res:${res}`] = color;
+      const sx = x0 + u.x + u.s / 2, sy = c.y + u.y + u.s / 2;
+      let sym = '';
       if (glyph && C.out.costOrbs) {
         // esfera de energia na cor do recurso, com o símbolo escuro por cima
-        const r = u.s * 0.56, ox = x0 + u.x + u.s / 2, oy = c.y + u.y + u.s / 2;
-        text += `<circle cx="${ox}" cy="${oy}" r="${r + 1.5}" fill="#0c0c0e"/>` +
-          `<circle cx="${ox}" cy="${oy}" r="${r}" fill="${defs.radial([[0, lighten(color, 0.55)], [0.55, color], [1, darken(color, 0.35)]], 0.38, 0.3, 0.8)}"/>` +
-          symbol(defs, pick, glyph, costIcons, ox - r * 0.72, oy - r * 0.72, r * 1.44, '#141416');
-      } else if (glyph) text += pix(C.out, symbol(defs, pick, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, color));
-      if (u.num) text += centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 });
+        const r = u.s * 0.56;
+        sym = `<circle cx="${sx}" cy="${sy}" r="${r + 1.5}" fill="#0c0c0e"/>` +
+          `<circle cx="${sx}" cy="${sy}" r="${r}" fill="${defs.radial([[0, lighten(color, 0.55)], [0.55, color], [1, darken(color, 0.35)]], 0.38, 0.3, 0.8)}"/>` +
+          symbol(defs, pick, glyph, costIcons, sx - r * 0.72, sy - r * 0.72, r * 1.44, '#141416');
+      } else if (glyph) sym = pix(C.out, symbol(defs, pick, glyph, costIcons, x0 + u.x, c.y + u.y, u.s, color));
+      text += split ? scaled(sym, sx, sy, cs?.size) : sym;
+      if (u.num) {
+        const nb = { x: x0 + u.num.x, y: c.y + u.y - u.s * 0.2, w: u.num.w + 2, h: u.s * 1.4 };
+        const num = centered(defs, u.num.text, textOf(C.out, C.ch), u.num.size, nb);
+        text += split ? scaled(num, nb.x + nb.w / 2, nb.y + nb.h / 2, cs?.numSize) : num;
+      }
     }
-    text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, look.icons?.cost?.size);
+    text = before + (split ? text : scaled(text, c.x + c.w / 2, c.y + c.h / 2, cs?.size));
   }
 
   const K = outs.class;
@@ -459,7 +502,7 @@ export function compose(inp: ComposeInput): string {
     const pick = look.icons?.class;
     const before = text;
     text = '';
-    const style = iconStyleFor('class', pick);
+    const style = iconStyleFor(pick);
     if (classPlan) {
       // várias classes: cada símbolo na cor da sua classe (a escolha da Aparência vale para a 1ª)
       const x0 = c.x + (c.w - classPlan.width) / 2;
@@ -467,12 +510,14 @@ export function compose(inp: ComposeInput): string {
         const id = classIds[u.part];
         const glyph = (u.part === 0 && pick?.glyph) || classIcon(id);
         const color = (u.part === 0 && pick?.color) || K.out.iconColor || lighten(vivid(inp.colors[u.part] ?? K.args.pal.base), 0.3);
+        if (u.part === 0) used.icon.class = color;
         text += pix(K.out, symbol(defs, u.part === 0 ? pick : undefined, glyph, style, x0 + u.x, c.y + u.y, u.s, color));
       }
     } else {
       const s = Math.min(c.w, c.h) * 0.94;
       const glyph = pick?.glyph ?? classIcon(inp.colorId);
       const color = pick?.color ?? K.out.iconColor ?? lighten(vivid(K.args.pal.base), 0.3);
+      used.icon.class = color;
       text += pix(K.out, symbol(defs, pick, glyph, style, c.x + (c.w - s) / 2, c.y + (c.h - s) / 2, s, color));
     }
     text = before + scaled(text, c.x + c.w / 2, c.y + c.h / 2, pick?.size);
@@ -493,9 +538,10 @@ export function compose(inp: ComposeInput): string {
     const pick = look.icons?.[k];
     const num = String(inp.stats[k]);
     const tl = textOf(P.out, P.ch);
-    const style = iconStyleFor('stat', pick);
+    const style = iconStyleFor(pick);
     const glyph = pick?.glyph ?? (k === 'atk' ? ATK_ICON : DEF_ICON);
     const color = pick?.color ?? P.out.iconColor ?? STEEL;
+    used.icon[k] = color;
     if (emblemStats) {
       // número dentro de um medalhão com o símbolo apagado ao fundo, sem caixa
       const b = P.args.box;
@@ -504,16 +550,46 @@ export function compose(inp: ComposeInput): string {
       const badge = (pick?.image?.src
         ? symbol(defs, pick, glyph, style, cx - s / 2, cy - s / 2, s, color)
         : drawStatBadge(defs, glyph, style, cx, cy, s, color, pick?.color ?? '#c9a45c')) +
-        centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 });
+        scaled(centered(defs, num, { ...tl, color: '#ffffff' }, sz.stat * 1.08, { x: cx - s * 0.36, y: cy - s * 0.3, w: s * 0.72, h: s * 0.6 }), cx, cy, pick?.numSize != null ? pick.numSize / (pick.size ?? 1) : 1);
+      if (inp.info) used.ink[k] = '#ffffff';
       text += scaled(badge, cx, cy, pick?.size);
       continue;
     }
     const c = P.out.content;
     const iconS = c.h * 0.98;
     text += scaled(symbol(defs, pick, glyph, style, c.x, c.y + (c.h - iconS) / 2, iconS, color), c.x + iconS / 2, c.y + c.h / 2, pick?.size);
-    text += centered(defs, num, tl, sz.stat * (c.h / 56), { x: c.x + iconS, y: c.y, w: c.w - iconS, h: c.h });
+    const nb = { x: c.x + iconS, y: c.y, w: c.w - iconS, h: c.h };
+    text += scaled(centered(defs, num, tl, sz.stat * (c.h / 56), nb), nb.x + nb.w / 2, nb.y + nb.h / 2, pick?.numSize);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_W} ${CARD_H}" width="${CARD_W}" height="${CARD_H}">` +
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_W} ${CARD_H}" width="${CARD_W}" height="${CARD_H}">` +
     `${defs}<g clip-path="url(#${clip})">${art}${pieces}${text}</g></svg>`;
+  return { svg, info: used };
+}
+
+/** A carta desenhada (SVG). */
+export const compose = (inp: ComposeInput): string => composeEx(inp).svg;
+
+/**
+ * Cor de fundo que o estilo usa numa peça quando o usuário não escolheu nenhuma:
+ * desenha a peça com uma cor-marcador e vê o que estava no lugar dela. Devolve
+ * `undefined` se a peça não tem fundo trocável nesse estilo.
+ */
+export function defaultFill(ps: PieceStyle, args: Parameters<PieceStyle['render']>[0]): string | undefined {
+  const MARK = '#01fe02';
+  const d0 = new Defs('f'), d1 = new Defs('f');
+  const a = ps.render({ ...args, defs: d0, fill: undefined });
+  const b = ps.render({ ...args, defs: d1, fill: MARK });
+  const sa = (a.under ?? '') + a.svg, sb = (b.under ?? '') + b.svg;
+  const at = sb.indexOf(MARK);
+  if (at < 0) return undefined;
+  // o marcador entrou no lugar de uma cor ou de um degradê: lê o que havia ali (até a aspa)
+  const was = sa.slice(at, sa.indexOf('"', at));
+  if (/^#[0-9a-f]{6}$/i.test(was)) return was;
+  if (/^#[0-9a-f]{3}$/i.test(was)) return '#' + [...was.slice(1)].map((ch) => ch + ch).join('');
+  const id = /^url\(#([^)]+)\)/.exec(was)?.[1];
+  if (!id) return undefined;
+  const grad = new RegExp(`id="${id}"[^>]*>(.*?)</(?:linear|radial)Gradient>`).exec(d0.toString())?.[1];
+  const stops = [...(grad ?? '').matchAll(/stop-color="(#[0-9a-f]{6})"/gi)].map((m) => m[1]);
+  return stops.length ? stops[Math.floor(stops.length / 2)] : undefined;
 }

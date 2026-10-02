@@ -3,9 +3,13 @@
  * e "Descartar" volta de verdade ao que estava salvo.
  *
  * A aparência pode ser editada em três escopos:
- *  card       — só esta carta (ajustes por cima do tema do deck)
+ *  card       — só esta carta (ajustes por cima do tema do deck) — é o que o editor de carta faz
  *  deck       — tema do deck: vale para todas as cartas dele
  *  collection — tema de todos os decks da coleção (cada deck mantém as suas cores)
+ *
+ * Deck e coleção são editados na tela de tema (aberta pela Biblioteca): ali o
+ * estado é "só tema" — a carta é apenas a amostra, mostrada sem os ajustes
+ * próprios, e nunca é gravada.
  *
  * Deck e coleção também são rascunho: a pré-visualização já mostra o resultado,
  * o botão Salvar fica ativo e, ao salvar, os ajustes próprios que as cartas
@@ -15,7 +19,7 @@ import { app } from '../../store/project.svelte';
 import { applyScoring } from '../../model/scoring';
 import { clearPath, copyPath, isDeckSpecific } from '../../model/lookPaths';
 import type { Card, Deck, DeckKind, Lang } from '../../model/types';
-import type { IconChoice, Look, PieceChoice } from '../../render/compose';
+import type { IconChoice, Look, PieceChoice, PieceSlot } from '../../render/compose';
 import { mergeLook, type CardContext } from '../../render/card';
 import { styleInfo, type PieceKind, type StyleId } from '../../render/elements';
 import { ctxFor } from '../common/cardCtx';
@@ -51,8 +55,13 @@ export class EditorState {
   #openCard: Partial<Look> | undefined;
   #openDeck: Look;
 
-  constructor(card: Card) {
-    this.draft = clone(card);
+  /** Só o tema está sendo editado (tela de tema): a carta é amostra e não é gravada. */
+  readonly themeOnly: boolean;
+
+  constructor(card: Card, scope: LookScope = 'card', themeOnly = false) {
+    this.themeOnly = themeOnly;
+    this.scope = scope;
+    this.draft = themeOnly ? { ...clone(card), look: undefined } : clone(card);
     this.#deckId = card.deckId;
     this.deckLook = clone(app.deck(card.deckId)!.look);
     this.kinds = [app.deck(card.deckId)!.kind];
@@ -63,7 +72,13 @@ export class EditorState {
   }
 
   #serialize(): string {
-    return JSON.stringify({ c: this.draft, d: this.deckLook, t: this.touched });
+    return JSON.stringify({ c: this.themeOnly ? null : this.draft, d: this.deckLook, t: this.touched });
+  }
+
+  /** Tela de tema: troca a carta de amostra (outra carta do mesmo deck), sem mexer no rascunho do tema. */
+  setSample(card: Card): void {
+    if (!this.themeOnly || card.deckId !== this.#deckId) return;
+    this.draft = { ...clone(card), look: undefined };
   }
 
   get dirty(): boolean { return this.#serialize() !== this.#saved; }
@@ -119,8 +134,8 @@ export class EditorState {
   }
 
   #restore(json: string) {
-    const s = JSON.parse(json) as { c: Card; d: Look; t: Touched[] };
-    this.draft = s.c;
+    const s = JSON.parse(json) as { c: Card | null; d: Look; t: Touched[] };
+    if (s.c) this.draft = s.c;
     this.deckLook = s.d;
     this.touched = s.t;
   }
@@ -148,10 +163,10 @@ export class EditorState {
 
   /** Grava a carta e, se houver, o tema do deck/coleção. Devolve quantas outras cartas mudaram. */
   save(): number {
-    applyScoring(this.draft);
+    if (!this.themeOnly) applyScoring(this.draft);
     let others = 0;
     if (this.touched.length) others = this.#applyTheme();
-    app.putCard(this.draft);
+    if (!this.themeOnly) app.putCard(this.draft);
     this.touched = [];
     this.#openDeck = clone(this.deckLook);
     this.#saved = this.#last = this.#serialize();
@@ -178,7 +193,7 @@ export class EditorState {
     const changed: Card[] = [];
     const strip = (cards: Card[], ps: string[]) => {
       for (const c of cards) {
-        if (c.id === this.draft.id || !c.look || !ps.length) continue;
+        if ((!this.themeOnly && c.id === this.draft.id) || !c.look || !ps.length) continue;
         const before = JSON.stringify(c.look);
         const l = clone(c.look);
         for (const path of ps) clearPath(l as never, path);
@@ -193,7 +208,7 @@ export class EditorState {
 
   discard(): void {
     const c = app.cards[this.draft.id];
-    if (c) this.draft = clone(c);
+    if (c) this.draft = this.themeOnly ? { ...clone(c), look: undefined } : clone(c);
     this.deckLook = clone(app.deck(this.#deckId)!.look);
     this.touched = [];
     this.#saved = this.#last = this.#serialize();
@@ -234,20 +249,40 @@ export class EditorState {
     });
   }
 
-  piece(kind: PieceKind): PieceChoice {
-    const own = this.look.pieces?.[kind];
-    // o estilo pode esconder a peça por padrão (ex.: Neutro sem selo de classe)
+  /** Escolhas em vigor de uma peça. `atk`/`def`: o que vale para os dois + o que for só daquele lado. */
+  piece(slot: PieceSlot): PieceChoice {
+    const side = slot === 'atk' || slot === 'def';
+    const kind: PieceKind = side ? 'stat' : (slot as PieceKind);
+    const own = side ? ({ ...this.look.pieces?.stat, ...this.look.pieces?.[slot] } as PieceChoice) : this.look.pieces?.[slot];
+    // o estilo pode esconder a peça por padrão
     const byStyle = own?.hidden === undefined && !!styleInfo(this.look.style).hidden?.includes(kind);
     return { ...(own ?? { style: this.look.style }), ...(byStyle ? { hidden: true } : {}) };
   }
 
-  setPiece(kind: PieceKind, patch: Partial<PieceChoice>, remove: (keyof PieceChoice)[] = []): void {
-    const paths = [...Object.keys(patch), ...remove].map((k) => `pieces.${kind}.${k}`);
+  /**
+   * Muda uma peça. Em `stat` (ataque e defesa juntos) o valor passa a valer para
+   * os dois: o que cada lado tinha de próprio naquele ajuste sai (ou, se vier do
+   * tema de baixo, é coberto com o mesmo valor).
+   */
+  setPiece(slot: PieceSlot, patch: Partial<PieceChoice>, remove: (keyof PieceChoice)[] = []): void {
+    const keys = [...Object.keys(patch), ...remove] as (keyof PieceChoice)[];
+    const sides: PieceSlot[] = slot === 'stat' ? ['atk', 'def'] : [];
+    const paths = [slot, ...sides].flatMap((s) => keys.map((k) => `pieces.${s}.${k}`));
+    const below = this.scope === 'card' ? this.baseLook.pieces : undefined;
     this.#write(paths, (l) => {
       l.pieces ??= {};
-      const cur = { ...(l.pieces[kind] ?? {}), ...patch } as PieceChoice;
+      const cur = { ...(l.pieces[slot] ?? {}), ...patch } as PieceChoice;
       for (const k of remove) delete cur[k];
-      l.pieces[kind] = cur;
+      l.pieces[slot] = cur;
+      for (const s of sides) {
+        const side = { ...(l.pieces[s] ?? {}) } as Record<string, unknown>;
+        for (const k of keys) {
+          // o tema de baixo tem um valor só desse lado: cobre com o novo; senão, o lado volta a seguir "os dois"
+          if (below?.[s] && k in below[s]! && k in patch) side[k] = (patch as Record<string, unknown>)[k];
+          else delete side[k];
+        }
+        if (Object.keys(side).length) l.pieces[s] = side as unknown as PieceChoice; else delete l.pieces[s];
+      }
     });
   }
 
@@ -258,6 +293,22 @@ export class EditorState {
       const cur = { ...(l.icons[slot] ?? {}), ...patch } as IconChoice;
       for (const k of remove) delete cur[k];
       (l.icons as Record<string, IconChoice>)[slot] = cur;
+    });
+  }
+
+  /** Símbolo, cor ou imagem de um recurso do custo (mana, vigor…). */
+  setResIcon(res: string, patch: Partial<IconChoice>, remove: (keyof IconChoice)[] = []): void {
+    const keys = [...Object.keys(patch), ...remove];
+    // o formato antigo guardava o símbolo do 1º recurso em icons.cost: sai junto, para não brigar com o novo
+    const legacy = keys.filter((k) => k === 'glyph' || k === 'color' || k === 'image').map((k) => `icons.cost.${k}`);
+    this.#write([...keys.map((k) => `icons.res.${res}.${k}`), ...legacy], (l) => {
+      l.icons ??= {};
+      const all = { ...(l.icons.res ?? {}) };
+      const cur = { ...(all[res] ?? {}), ...patch } as IconChoice;
+      for (const k of remove) delete cur[k];
+      if (Object.keys(cur).length) all[res] = cur; else delete all[res];
+      if (Object.keys(all).length) l.icons.res = all; else delete l.icons.res;
+      if (l.icons.cost) for (const k of ['glyph', 'color', 'image'] as const) if (keys.includes(k)) delete l.icons.cost[k];
     });
   }
 
@@ -276,18 +327,34 @@ export class EditorState {
   #opened(): Partial<Look> | undefined { return this.scope === 'card' ? this.#openCard : this.#openDeck; }
 
   /** A peça mudou desde que a carta foi aberta? */
-  pieceChanged(kind: PieceKind): boolean {
-    return JSON.stringify(this.#current()?.pieces?.[kind] ?? null) !== JSON.stringify(this.#opened()?.pieces?.[kind] ?? null);
+  pieceChanged(kind: PieceSlot): boolean {
+    const slots: PieceSlot[] = kind === 'stat' ? ['stat', 'atk', 'def'] : [kind];
+    return slots.some((s) => JSON.stringify(this.#current()?.pieces?.[s] ?? null) !== JSON.stringify(this.#opened()?.pieces?.[s] ?? null));
   }
 
   /** Volta só esta peça ao que estava quando a carta foi aberta. */
-  revertPiece(kind: PieceKind): void {
-    const before = this.#opened()?.pieces?.[kind];
-    this.#write([`pieces.${kind}`], (l) => {
+  revertPiece(kind: PieceSlot): void {
+    const slots: PieceSlot[] = kind === 'stat' ? ['stat', 'atk', 'def'] : [kind];
+    const opened = this.#opened()?.pieces;
+    this.#write(slots.map((s) => `pieces.${s}`), (l) => {
       l.pieces ??= {};
-      if (before) l.pieces[kind] = clone(before);
-      else delete l.pieces[kind];
+      for (const s of slots) {
+        const before = opened?.[s];
+        if (before) l.pieces[s] = clone(before);
+        else delete l.pieces[s];
+      }
     });
+  }
+
+  /** Tira todos os ajustes de uma peça (fica o desenho padrão do estilo geral). */
+  resetPiece(kind: PieceSlot): void {
+    const slots: PieceSlot[] = kind === 'stat' ? ['stat', 'atk', 'def'] : [kind];
+    this.#write(slots.map((s) => `pieces.${s}`), (l) => { for (const s of slots) delete l.pieces?.[s]; });
+  }
+
+  /** Os símbolos de um recurso mudaram desde que a tela foi aberta? */
+  resIconChanged(res: string): boolean {
+    return JSON.stringify(this.#current()?.icons?.res?.[res] ?? null) !== JSON.stringify(this.#opened()?.icons?.res?.[res] ?? null);
   }
 
   iconChanged(slot: IconSlot | 'set'): boolean {

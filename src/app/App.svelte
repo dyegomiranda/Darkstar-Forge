@@ -10,6 +10,7 @@
   import { L } from './i18n.svelte';
   import Library from '../ui/library/Library.svelte';
   import Editor from '../ui/editor/Editor.svelte';
+  import ThemeEditor from '../ui/editor/ThemeEditor.svelte';
   import Sheet from '../ui/sheet/Sheet.svelte';
   import Settings from '../ui/settings/Settings.svelte';
   import Toasts from '../ui/common/Toasts.svelte';
@@ -53,7 +54,7 @@
       <img src="/brand/logo.png" alt="" />
     </button>
     {#each nav as n (n.id)}
-      <button class="nav" class:on={router.route.name === n.id} onclick={n.go} title={n.label}>
+      <button class="nav" class:on={router.route.name === n.id || (n.id === 'library' && router.route.name === 'theme')} onclick={n.go} title={n.label}>
         <n.icon size={21} strokeWidth={1.8} />
         <span>{n.label}</span>
       </button>
@@ -80,6 +81,8 @@
       <Library deckId={router.route.deck} />
     {:else if router.route.name === 'editor'}
       {#key router.route.id}<Editor id={router.route.id} />{/key}
+    {:else if router.route.name === 'theme'}
+      {#key router.route.scope + router.route.deck}<ThemeEditor scope={router.route.scope} deckId={router.route.deck} />{/key}
     {:else if router.route.name === 'back'}
       <Back />
     {:else if router.route.name === 'game'}
