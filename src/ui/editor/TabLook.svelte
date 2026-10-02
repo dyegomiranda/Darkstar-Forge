@@ -36,8 +36,6 @@
   let { ed }: { ed: EditorState } = $props();
 
   let open = $state<PieceKind | null>(null);
-  /** Ataque e defesa: mexer nos dois juntos ou em um só. */
-  let side = $state<'stat' | 'atk' | 'def'>('stat');
   let openSym = $state<string | null>(null);
   const look = $derived(ed.look);
   const theme = $derived(ed.scope !== 'card');
@@ -113,11 +111,8 @@
   function setTint(i: number, v: string) { const t = [...tint]; t[i] = v; ed.setLook({ tint: t }); }
   function setAllIconStyles(s: IconStyle) { for (const slot of ['cost', 'class', 'atk', 'def'] as const) ed.setIcon(slot, { style: s }); }
 
-  /** Onde a peça aberta grava: a própria, ou só o ataque/só a defesa. */
-  const slotOf = (kind: PieceKind): PieceSlot => (kind === 'stat' ? side : kind);
-  /** De qual desenho ler as cores aplicadas (em "os dois", lê o ataque). */
-  const usedSlot = (kind: PieceKind): PieceSlot => (kind === 'stat' ? (side === 'def' ? 'def' : 'atk') : kind);
-  const statsDiffer = $derived(inkOf('atk') !== inkOf('def') || fillOf('atk') !== fillOf('def'));
+  /** Ataque e defesa: o desenho, a borda e a fonte valem para os dois; as cores, cada um tem as suas. */
+  const SIDES: { id: 'atk' | 'def'; pt: string; en: string }[] = [{ id: 'atk', pt: 'Ataque', en: 'Attack' }, { id: 'def', pt: 'Defesa', en: 'Defense' }];
 
   // ── recursos cujo símbolo dá para escolher ──
   /** Na carta: os recursos do custo dela. No tema: todos os que as cartas dos decks atingidos usam. */
@@ -192,6 +187,8 @@
     // ao juntar de novo, o número volta a ter o tamanho do símbolo
     if (!now) setBoth(s, iconSize(s));
   }
+  /** Espaço extra entre o símbolo do custo e o número. */
+  const cgap = $derived(look.icons?.cost?.gap ?? 0);
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const val = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 </script>
@@ -266,8 +263,8 @@
     <span class="section-title">{L('Peças (misture estilos à vontade)', 'Pieces (mix styles freely)')}</span>
     <div class="pieces">
       {#each PIECES as p (p.kind)}
-        {@const slot = slotOf(p.kind)}
-        {@const ch = ed.piece(open === p.kind ? slot : p.kind)}
+        {@const slot = p.kind}
+        {@const ch = ed.piece(p.kind)}
         {@const st = ch.style ?? look.style}
         {@const isFrame = p.kind === 'frame'}
         {@const pc = ch.colors?.length ? ch.colors : colors}
@@ -281,7 +278,6 @@
             <ChevronDown size={16} />
           </button>
           {#if open === p.kind}
-            {@const u = usedSlot(p.kind)}
             {@const op = ch.opacity ?? piece(st, p.kind).opacity}
             <div class="pc-body">
               <div class="row wrap">
@@ -297,19 +293,6 @@
                 <button class="btn sm ghost" onclick={() => ed.resetPiece(p.kind)} title={L('Tira todos os ajustes desta peça: volta ao desenho do estilo geral', 'Remove every tweak on this piece: back to the overall style')}><RotateCcw size={14} /> {L('Padrão', 'Default')}</button>
               </div>
 
-              {#if p.kind === 'stat'}
-                <div class="field"><span>{L('O que você está ajustando', 'What you are adjusting')}</span>
-                  <div class="seg full">
-                    <button class:on={side === 'stat'} onclick={() => (side = 'stat')}>{L('Os dois', 'Both')}</button>
-                    <button class:on={side === 'atk'} onclick={() => (side = 'atk')}>{L('Só o ataque', 'Attack only')}</button>
-                    <button class:on={side === 'def'} onclick={() => (side = 'def')}>{L('Só a defesa', 'Defense only')}</button>
-                  </div>
-                  {#if side === 'stat' && statsDiffer}
-                    <span class="muted small">{L('Ataque e defesa estão com cores diferentes: as cores abaixo são as do ataque. Mudar aqui iguala os dois.', 'Attack and defense have different colors: the ones below are the attack\'s. Changing here makes both equal.')}</span>
-                  {/if}
-                </div>
-              {/if}
-
               <div class="field"><span>{L('Desenho da peça', 'Piece drawing')}</span>
                 <div class="thumbs">
                   {#each STYLES as s (s.id)}
@@ -322,23 +305,45 @@
               </div>
               <PieceImagePanel {ed} {slot} />
 
-              <div class="field"><span>{L('Cores', 'Colors')}</span>
+              <!-- cores de uma peça (ou de um lado, no ataque/defesa): fundo, texto e destaque -->
+              {#snippet colorsOf(sl: PieceSlot)}
+                {@const c = ed.piece(sl)}
+                {@const cc = c.colors?.length ? c.colors : colors}
+                {@const sd = sl === 'atk' || sl === 'def' ? sl : null}
+                {@const drop = (k: 'fill' | 'ink' | 'colors') => (sd ? ed.clearSide(sd, k) : ed.setPiece(sl, {}, [k]))}
                 <div class="cfs">
-                  {@render colorField(L('Cor da peça', 'Piece color'), pc[0], !!ch.colors,
-                    (v) => ed.setPiece(slot, { colors: [v] }), () => ed.setPiece(slot, {}, ['colors']), L('Usar a cor da carta', 'Use the card color'))}
-                  {#if !isFrame || fillOf(u)}
-                    {@render colorField(L('Fundo', 'Background'), hex(ch.fill ?? fillOf(u), '#000000'), !!ch.fill,
-                      (v) => ed.setPiece(slot, { fill: v }), () => ed.setPiece(slot, {}, ['fill']), L('Usar o fundo do estilo', 'Use the style background'),
-                      ch.image ? L('Com imagem ou sem desenho, a peça não tem fundo para colorir.', 'With an image or no drawing, the piece has no background to color.')
-                        : !ch.fill && !fillOf(u) ? L('Neste estilo, esta peça não tem fundo para colorir.', 'In this style, this piece has no background to color.') : '')}
+                  {#if !isFrame || fillOf(sl)}
+                    {@render colorField(L('Fundo', 'Background'), hex(c.fill ?? fillOf(sl), '#000000'), !!c.fill,
+                      (v) => ed.setPiece(sl, { fill: v }), () => drop('fill'), L('Usar o fundo do estilo', 'Use the style background'),
+                      c.image ? L('Com imagem ou sem desenho, a peça não tem fundo para colorir.', 'With an image or no drawing, the piece has no background to color.')
+                        : !c.fill && !fillOf(sl) ? L('Neste estilo, esta peça não tem fundo para colorir.', 'In this style, this piece has no background to color.') : '')}
                   {/if}
                   {#if !isFrame && p.kind !== 'set'}
-                    {@render colorField(p.kind === 'cost' || p.kind === 'stat' ? L('Número', 'Number') : L('Texto', 'Text'), hex(ch.ink ?? inkOf(u), '#ffffff'), !!ch.ink,
-                      (v) => ed.setPiece(slot, { ink: v }), () => ed.setPiece(slot, {}, ['ink']), L('Usar a cor do estilo', 'Use the style color'),
+                    {@render colorField(p.kind === 'cost' || p.kind === 'stat' ? L('Número', 'Number') : L('Texto', 'Text'), hex(c.ink ?? inkOf(sl), '#ffffff'), !!c.ink,
+                      (v) => ed.setPiece(sl, { ink: v }), () => drop('ink'), L('Usar a cor do estilo', 'Use the style color'),
                       p.kind === 'class' ? L('O selo de classe só tem o símbolo: a cor dele fica em Símbolos.', 'The class seal only has the symbol: its color is under Symbols.') : '')}
                   {/if}
+                  {@render colorField(L('Destaque (bordas e detalhes)', 'Accent (borders and details)'), cc[0], !!c.colors,
+                    (v) => ed.setPiece(sl, { colors: [v] }), () => drop('colors'), L('Usar a cor da carta', 'Use the card color'))}
+                  {#if sd}
+                    {@render colorField(L('Símbolo', 'Symbol'), hex(look.icons?.[sd]?.color ?? used.icon[sd], '#d3dae3'), !!look.icons?.[sd]?.color,
+                      (v) => ed.setIcon(sd, { color: v }), () => ed.setIcon(sd, {}, ['color']), L('Usar a cor padrão', 'Use the default color'),
+                      look.icons?.[sd]?.image && !look.icons[sd]!.image!.recolor ? L('O símbolo é uma imagem com as cores originais.', 'The symbol is an image with its own colors.') : '')}
+                  {/if}
                 </div>
-              </div>
+              {/snippet}
+              {#if p.kind === 'stat'}
+                <div class="field"><span>{L('Cores — cada lado tem as suas', 'Colors — each side has its own')}</span>
+                  <div class="sides">
+                    {#each SIDES as sd (sd.id)}
+                      <div class="sidecol"><b>{L(sd.pt, sd.en)}</b>{@render colorsOf(sd.id)}</div>
+                    {/each}
+                  </div>
+                  <span class="muted small">{L('O “Destaque” é a cor que o desenho usa nas bordas e detalhes; em alguns desenhos ele também pinta o fundo enquanto você não escolher um “Fundo”.', 'The “Accent” is the color the drawing uses for borders and details; in some drawings it also paints the background until you pick a “Background”.')}</span>
+                </div>
+              {:else}
+                <div class="field"><span>{L('Cores', 'Colors')}</span>{@render colorsOf(slot)}</div>
+              {/if}
 
               <div class="grid2">
                 <label class="field"><span>{L('Borda', 'Border')}</span>
@@ -411,6 +416,9 @@
             <button class="pct" title={L('Voltar a 100%', 'Back to 100%')} disabled={iconSize(s) === 1} onclick={() => ed.setIcon(s, {}, ['size'])}>{pct(iconSize(s))}</button></div></div>
         {/snippet}
         {@render sizePair('cost', L('Custo', 'Cost'))}
+        <div class="szg"><div class="sl"><span>{L('Espaço entre o símbolo e o número do custo', 'Space between the cost symbol and number')}</span>
+          <input type="range" min="-0.1" max="0.5" step="0.01" value={cgap} oninput={(e) => ed.setIcon('cost', { gap: +val(e) })} />
+          <button class="pct" title={L('Voltar ao padrão', 'Back to default')} disabled={cgap === 0} onclick={() => ed.setIcon('cost', {}, ['gap'])}>{cgap > 0 ? '+' : ''}{Math.round(cgap * 100)}</button></div></div>
         {@render sizeOne('class', L('Classe', 'Class'))}
         {@render sizePair('atk', L('Ataque', 'Attack'))}
         {@render sizePair('def', L('Defesa', 'Defense'))}
@@ -553,6 +561,11 @@
   .cfs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
   .cf { display: flex; flex-direction: column; gap: 5px; padding: 8px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg-2); min-width: 0; }
   .cf.off { opacity: .5; }
+  /* ataque e defesa: duas colunas, cada uma com as suas cores */
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sidecol { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface-2); }
+  .sidecol > b { font-size: 12.5px; font-weight: 600; }
+  .sidecol .cfs { grid-template-columns: 1fr; }
   .cf-l { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
   .cf-r { display: flex; align-items: center; gap: 6px; }
   .cf-r input[type=color] { width: 30px; height: 30px; flex: none; }

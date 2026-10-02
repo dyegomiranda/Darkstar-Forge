@@ -57,6 +57,8 @@ export interface IconChoice {
    * número do custo acompanha o símbolo e os de ataque/defesa ficam no padrão.
    */
   numSize?: number;
+  /** Custo: espaço extra entre o símbolo e o número (fração da altura do selo; negativo aproxima). */
+  gap?: number;
 }
 
 /** Peças que podem ter escolhas próprias: as do estilo e, dentro de "stat", o ataque e a defesa separados. */
@@ -383,7 +385,7 @@ export function composeEx(inp: ComposeInput): { svg: string; info: ComposeInfo }
     const probeOut = renderPiece('cost', costPick.ps, costPick.ch, { box: S.cost, pal: makePalette(colors, undefined, blend), defs: new Defs('probe'), opacity: 1 });
     const c0 = probeOut.content;
     const tl = textOf(probeOut, costPick.ch);
-    costPlan = planCost(inp.cost, c0.h, (t, size) => measure(t, { ...tl, size }), sz.cost * (c0.h / 90), c0.w + COST_MAX_W - S.cost.w);
+    costPlan = planCost(inp.cost, c0.h, (t, size) => measure(t, { ...tl, size }), sz.cost * (c0.h / 90), c0.w + COST_MAX_W - S.cost.w, undefined, look.icons?.cost?.gap ?? 0);
     const need = costPlan.width + c0.h * 0.08 - c0.w;
     if (need > 0) {
       S.cost = { ...S.cost, w: S.cost.w + need };
@@ -470,7 +472,8 @@ export function composeEx(inp: ComposeInput): { svg: string; info: ComposeInfo }
     const first = inp.cost[0].resource;
     const cs = look.icons?.cost;
     // tamanhos: sem tamanho próprio do número, o conjunto todo cresce junto; com ele, símbolo e número crescem cada um no seu lugar
-    const split = cs?.numSize != null;
+    // (tamanhos iguais contam como "juntos": o conjunto cresce inteiro, sem o símbolo encostar no número)
+    const split = cs?.numSize != null && Math.abs(cs.numSize - (cs.size ?? 1)) > 0.001;
     for (const u of costPlan.units) {
       const res = inp.cost[u.part].resource;
       // símbolo de cada recurso; o escolhido no formato antigo (icons.cost) vale para o primeiro

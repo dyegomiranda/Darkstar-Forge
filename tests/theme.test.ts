@@ -126,3 +126,18 @@ describe('símbolo por classe', () => {
     expect(app.deck('a')!.look.icons?.class?.glyph).toBeUndefined();
   });
 });
+
+describe('cores de ataque e defesa lado a lado', () => {
+  it('voltar um lado ao padrão não mexe no outro, mesmo quando a cor valia para os dois', () => {
+    const ed = new EditorState(app.cards.s1);
+    ed.setPiece('stat', { fill: '#111111' });
+    ed.setPiece('def', { fill: '#222222' });
+    ed.clearSide('atk', 'fill');
+    expect(ed.piece('atk').fill).toBeUndefined();
+    expect(ed.piece('def').fill).toBe('#222222');
+    ed.setPiece('stat', { ink: '#aaaaaa' });
+    ed.clearSide('def', 'ink');
+    expect(ed.piece('def').ink).toBeUndefined();
+    expect(ed.piece('atk').ink).toBe('#aaaaaa');
+  });
+});
