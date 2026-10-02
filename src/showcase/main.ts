@@ -308,7 +308,7 @@ function render(deck: DeckId) {
 
   app.innerHTML = `
     <header class="top">
-      <h1>Darkstar Forge — Mostruário de estilos</h1>
+      <h1>Void Sun — Mostruário de estilos</h1>
       <p>Cada peça da carta existe em vários estilos e pode ser trocada sozinha. Cor, transparência, metal, cor do texto e fonte de cada peça são ajustáveis; os símbolos têm 4 estilos de desenho.</p>
     </header>
     <section><h2>1. Monte sua carta</h2><div id="bench"></div></section>

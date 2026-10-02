@@ -45,7 +45,7 @@ function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1, off: boolean): Play
   };
 }
 
-export interface Side { hero: HeroDef; cards: CardDef[] }
+export interface Side { hero: HeroDef; cards: CardDef[]; /** Cartas a mais na mão inicial (vantagem do bot no nível Muito difícil). */ extraCards?: number }
 
 /** Nova partida. O jogador 0 começa (e não compra no 1º turno); os dois recebem 7 cartas. */
 export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: boolean; heroOff?: boolean; heroOffFront?: boolean; mulligan?: boolean } = {}): GameState {
@@ -60,8 +60,8 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
     defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, heroOff: !!opts.heroOff, heroOffFront: !!opts.heroOffFront, seq: 0, fx: [],
   };
   for (const p of s.players) shuffle(s, p.deck);
-  draw(s, 0, START_HAND);
-  draw(s, 1, START_HAND);
+  draw(s, 0, START_HAND + (a.extraCards ?? 0));
+  draw(s, 1, START_HAND + (b.extraCards ?? 0));
   log(s, `Partida: ${a.hero.name} × ${b.hero.name}. ${a.hero.name} começa.`);
   // com mulligan, o 1º turno só começa depois que os dois ficarem com a mão
   if (opts.mulligan) s.setup = { mull: [0, 0], kept: [false, false] };

@@ -4,8 +4,9 @@
 
   function key(e: KeyboardEvent) {
     if (!ui.ask) return;
-    if (e.key === 'Escape') ui.ask.resolve('cancel');
-    if (e.key === 'Enter') ui.ask.resolve('ok');
+    if (e.key === 'Escape') { e.preventDefault(); ui.ask.resolve('cancel'); }
+    // Enter confirma, a não ser que o foco esteja em outro botão da janela (teclado/controle)
+    if (e.key === 'Enter' && !(document.activeElement instanceof HTMLButtonElement)) ui.ask.resolve('ok');
   }
 </script>
 
@@ -29,11 +30,13 @@
 {/if}
 
 <style>
-  .backdrop { position: fixed; inset: 0; background: rgb(5 4 4 / .7); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 70; animation: fade .15s; padding: 16px; }
-  .dialog { width: min(460px, 100%); background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-lg); animation: pop .18s ease-out; }
-  h3 { font-size: 17px; margin-bottom: 8px; }
-  p { color: var(--text-2); margin: 0 0 22px; white-space: pre-line; }
+  .backdrop { position: fixed; inset: 0; background: rgb(4 3 8 / .78); backdrop-filter: blur(4px); display: grid; place-items: center; z-index: 70; animation: fade .15s; padding: 16px; }
+  .dialog { width: min(540px, 100%); background: linear-gradient(180deg, #1a1630, #0e0c18); border: 3px solid #fff0c8; padding: 24px 24px 20px;
+    box-shadow: 0 0 0 3px #05040a, 0 0 0 6px #4a417a, 0 0 60px rgb(190 120 255 / .22), 0 30px 80px rgb(0 0 0 / .8); animation: pop .18s cubic-bezier(.2, .9, .3, 1.2); }
+  h3 { font: 400 16px var(--pixel); letter-spacing: .06em; color: var(--accent-2); margin-bottom: 10px; }
+  p { color: var(--text-2); margin: 0 0 22px; white-space: pre-line; line-height: 1.55; }
   .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .actions :global(.btn) { border-radius: 0; border-width: 2px; height: 38px; }
   @keyframes fade { from { opacity: 0; } }
-  @keyframes pop { from { opacity: 0; transform: scale(.96); } }
+  @keyframes pop { from { opacity: 0; transform: scale(.94); } }
 </style>

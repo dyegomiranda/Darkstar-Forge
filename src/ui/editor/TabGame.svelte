@@ -180,7 +180,7 @@
   {#if d.game}
     {@const gm = d.game}
     <section class="stack s mesa">
-      <span class="section-title">{L('Mesa de teste (jogo)', 'Test table (game)')}</span>
+      <span class="section-title">{L('Batalha (o que a carta faz no jogo)', 'Battle (what the card does in the game)')}</span>
       <p class="muted small">{L(`${KIND_NAMES[gm.kind][0]}. O custo (Vigor/Mana) e o ATK/DEF de invocações vêm dos campos abaixo.`, `${KIND_NAMES[gm.kind][1]}. Cost (Vigor/Mana) and summon ATK/DEF come from the fields below.`)}</p>
       <div class="grid3">
         <label class="field"><span>{L('Cópias no deck', 'Copies in deck')}</span>

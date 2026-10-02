@@ -11,7 +11,7 @@ import raw from '../data/lpc.json';
 export type Body = 'male' | 'female' | 'muscular';
 export type Anim = 'idle' | 'walk' | 'slash' | 'thrust' | 'shoot' | 'spellcast' | 'hurt';
 export type Dir = 'n' | 'w' | 's' | 'e';
-export type SlotId = 'hair' | 'beard' | 'torso' | 'legs' | 'feet' | 'arms' | 'shoulders' | 'head' | 'cape' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon';
+export type SlotId = 'hair' | 'beard' | 'mustache' | 'nose' | 'ears' | 'torso' | 'legs' | 'feet' | 'arms' | 'shoulders' | 'head' | 'face' | 'neck' | 'belt' | 'cape' | 'back' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon';
 export type Material = 'body' | 'hair' | 'cloth' | 'metal' | 'eye';
 
 /** A aparência escolhida pelo jogador (é o que a ficha guarda). */
@@ -31,6 +31,8 @@ export interface Item {
   id: string; pt: string; en: string; bodies: Body[]; layers: Layer[];
   recolors?: { material: Material; base?: string }[]; skin?: boolean; variants?: Record<string, string>;
   attack?: Anim; ammo?: boolean;
+  /** Peça translúcida (barba por fazer: a pele aparece por baixo). */
+  alpha?: number;
 }
 interface Catalog {
   frame: number;
@@ -47,11 +49,15 @@ export const SKINS = Object.keys(LPC.palettes.body.colors);
 export const slotOf = (id: SlotId) => LPC.slots.find((s) => s.id === id)!;
 export const itemOf = (slot: SlotId, id: string | undefined): Item | undefined => (id ? slotOf(slot).items.find((i) => i.id === id) : undefined);
 
-/** Cores que uma peça aceita: variantes prontas ou a paleta do material. */
-export function colorsOf(item: Item): { name: string; hex: string }[] {
+/** Partes do corpo com cor própria (chifres, asas, cauda): podem seguir a pele ou ter outra cor da mesma paleta. */
+export const OWN_SKIN: SlotId[] = ['horns', 'wings', 'tail'];
+
+/** Cores que uma peça aceita: variantes prontas ou a paleta do material. `slot` diz se a peça de pele pode ter cor própria. */
+export function colorsOf(item: Item, slot?: SlotId): { name: string; hex: string }[] {
   if (item.variants) return Object.entries(item.variants).map(([name, hex]) => ({ name, hex }));
-  const mat = item.recolors?.find((r) => r.material !== 'body' && r.material !== 'eye')?.material;
-  if (!mat) return [];
+  const own = !!slot && OWN_SKIN.includes(slot);
+  const mat = item.recolors?.find((r) => r.material !== 'eye' && (r.material !== 'body' || own))?.material;
+  if (!mat || !LPC.palettes[mat]) return [];
   return Object.entries(LPC.palettes[mat].colors).map(([name, ramp]) => ({ name, hex: ramp[Math.min(3, ramp.length - 1)] }));
 }
 export const swatch = (mat: Material, name: string) => { const r = LPC.palettes[mat].colors[name]; return r ? r[Math.min(3, r.length - 1)] : '#888'; };
@@ -109,9 +115,9 @@ function recolor(im: HTMLImageElement, maps: { from: string[]; to: string[] }[])
 
 // ───────────── montagem ─────────────
 
-interface Draw { rel: string; z: number; size: number; hold0: boolean; maps: { from: string[]; to: string[] }[]; slot?: SlotId }
+interface Draw { rel: string; z: number; size: number; hold0: boolean; maps: { from: string[]; to: string[] }[]; slot?: SlotId; alpha?: number }
 
-function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined): Draw[] {
+function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined, ownSkin = false): Draw[] {
   const pick = (a: Anim) => {
     const custom = item.layers.filter((l) => l.custom === a && l.paths[av.body]);
     return custom.length ? custom : item.layers.filter((l) => !l.custom && l.anims.includes(a) && l.paths[av.body]);
@@ -120,9 +126,10 @@ function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined):
   // sem quadros de "parado": usa o 1º quadro de "andar" (armas e algumas roupas)
   if (!layers.length && anim === 'idle') { layers = pick('walk'); hold0 = true; src = 'walk'; }
   const variant = item.variants ? (color && item.variants[color] ? color : Object.keys(item.variants)[0]) : undefined;
-  const maps = (item.recolors ?? []).map((r) => {
+  const maps = (item.recolors ?? []).filter((r) => LPC.palettes[r.material]).map((r) => {
     const pal = LPC.palettes[r.material];
-    const to = r.material === 'body' ? av.skin : r.material === 'eye' ? av.eyes : color ?? pal.base;
+    // partes do corpo (chifres, asas, cauda) usam a cor escolhida para elas; sem escolha, a da pele
+    const to = r.material === 'body' ? (ownSkin && color && pal.colors[color] ? color : av.skin) : r.material === 'eye' ? av.eyes : color ?? pal.base;
     return { from: pal.colors[r.base ?? pal.base] ?? [], to: pal.colors[to] ?? pal.colors[pal.base] };
   }).filter((m) => m.from !== m.to);
   return layers.map((l) => {
@@ -130,7 +137,7 @@ function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined):
     const rel = l.custom
       ? (l.fmt === 'variant' ? `${p}${variant}.png` : `${p.replace(/\/$/, '')}.png`)
       : (l.fmt === 'variant' ? `${p}${src}/${variant}.png` : `${p}${src}.png`);
-    return { rel, z: l.z, size: l.size ?? LPC.frame, hold0, maps: l.fmt === 'recolor' ? maps : [] };
+    return { rel, z: l.z, size: l.size ?? LPC.frame, hold0, maps: l.fmt === 'recolor' ? maps : [], alpha: item.alpha };
   });
 }
 
@@ -141,7 +148,7 @@ const sheets = new Map<string, Promise<Sheet>>();
 export function compose(av: Avatar, anim: Anim): Promise<Sheet> {
   const key = JSON.stringify([av, anim]);
   let p = sheets.get(key);
-  if (!p) { p = build(av, anim); sheets.set(key, p); if (sheets.size > 120) sheets.delete(sheets.keys().next().value!); }
+  if (!p) { p = build(av, anim); sheets.set(key, p); if (sheets.size > 500) sheets.delete(sheets.keys().next().value!); }
   return p;
 }
 
@@ -158,7 +165,7 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
     const part = av.parts[s.id];
     const item = itemOf(s.id, part?.id);
     if (!item || !item.bodies.includes(av.body)) continue;
-    draws.push(...drawsOf(item, av, anim, part?.color).map((d) => ({ ...d, slot: s.id })));
+    draws.push(...drawsOf(item, av, anim, part?.color, OWN_SKIN.includes(s.id)).map((d) => ({ ...d, slot: s.id })));
     if (item.ammo && anim === 'shoot') draws.push(...drawsOf(LPC.fixed.ammo, av, anim, undefined));
   }
   draws.sort((a, b) => a.z - b.z);
@@ -173,11 +180,13 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
     const src: CanvasImageSource = d.maps.length ? recolor(im, d.maps) : im;
     const off = (size - d.size) / 2;
     const cols = Math.floor(im.width / d.size), rws = Math.max(1, Math.floor(im.height / d.size));
+    to.globalAlpha = d.alpha ?? 1;
     for (let r = 0; r < rows; r++) for (let f = 0; f < frames; f++) {
       const sf = d.hold0 ? 0 : f;
       if (sf >= cols || r >= rws) continue;
       to.drawImage(src, sf * d.size, r * d.size, d.size, d.size, f * size + off, r * size + off, d.size, d.size);
     }
+    to.globalAlpha = 1;
   };
   const layer = () => { const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height; const x = c.getContext('2d', { willReadFrequently: true })!; x.imageSmoothingEnabled = false; return x; };
 
@@ -233,4 +242,19 @@ export async function portrait(av: Avatar, bg = '#2a2420', px = 8): Promise<Blob
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(sheet.canvas, sx, sy, sw, sh, 0, 0, c.width, c.height);
   return new Promise((ok) => c.toBlob((b) => ok(b!), 'image/png'));
+}
+
+/**
+ * Miniatura parada do boneco (de frente), para as caixinhas de escolha do criador.
+ * `crop` = recorte dentro do quadro de 64 px: [x, y, largura, altura].
+ */
+export async function thumb(av: Avatar, crop: readonly [number, number, number, number] = [0, 0, 64, 64], dir: Dir = 's'): Promise<HTMLCanvasElement> {
+  const sheet = await compose(av, 'idle');
+  const off = (sheet.size - LPC.frame) / 2;
+  const c = document.createElement('canvas');
+  c.width = crop[2]; c.height = crop[3];
+  const ctx = c.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(sheet.canvas, off + crop[0], DIRS.indexOf(dir) * sheet.size + off + crop[1], crop[2], crop[3], 0, 0, crop[2], crop[3]);
+  return c;
 }

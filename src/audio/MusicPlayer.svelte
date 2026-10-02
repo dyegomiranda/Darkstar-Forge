@@ -6,6 +6,7 @@
   import { Music, Pause, Play, Square, SkipForward, Volume2, VolumeX, ChevronDown } from '@lucide/svelte';
   import { L } from '../app/i18n.svelte';
   import { chip } from './chip';
+  import { settings } from '../app/settings.svelte';
 
   let { float = false }: { float?: boolean } = $props();
 
@@ -15,11 +16,10 @@
   $effect(() => chip.onchange(() => tick++));
   const name = $derived.by(() => { void tick; const t = chip.current; return t ? L(t.def.name[0], t.def.name[1]) : L('sem música', 'no music'); });
   const paused = $derived.by(() => { void tick; return chip.paused; });
-  const muted = $derived.by(() => { void tick; return chip.muted; });
-  let musicVol = $state(chip.musicVol);
-  let sfxVol = $state(chip.sfxVol);
-  $effect(() => { chip.setMusicVol(musicVol); });
-  $effect(() => { chip.setSfxVol(sfxVol); });
+  // volumes e mudo são os das configurações do jogo (o mesmo valor aqui e lá)
+  const cfg = settings.v;
+  const muted = $derived(cfg.mute);
+  $effect(() => { void [cfg.music, cfg.sfx, cfg.mute]; settings.applyAudio(); settings.save(); });
 </script>
 
 <div class="mp" class:float class:open>
@@ -39,11 +39,11 @@
       {/if}
       <button class="ic" onclick={() => chip.stop()} title={L('Parar', 'Stop')}><Square size={14} /></button>
       <button class="ic" onclick={() => chip.next()} title={L('Próxima faixa', 'Next track')}><SkipForward size={15} /></button>
-      <button class="ic" onclick={() => chip.setMute(!muted)} title={muted ? L('Ligar o som', 'Unmute') : L('Silenciar tudo', 'Mute all')}>{#if muted}<VolumeX size={15} />{:else}<Volume2 size={15} />{/if}</button>
+      <button class="ic" onclick={() => (cfg.mute = !cfg.mute)} title={muted ? L('Ligar o som', 'Unmute') : L('Silenciar tudo', 'Mute all')}>{#if muted}<VolumeX size={15} />{:else}<Volume2 size={15} />{/if}</button>
     </div>
     <div class="vols">
-      <label><small>{L('Música', 'Music')}</small><input type="range" min="0" max="1" step="0.05" bind:value={musicVol} /></label>
-      <label><small>{L('Sons', 'Sounds')}</small><input type="range" min="0" max="1" step="0.05" bind:value={sfxVol} /></label>
+      <label><small>{L('Música', 'Music')}</small><input type="range" min="0" max="1" step="0.05" bind:value={cfg.music} /></label>
+      <label><small>{L('Sons', 'Sounds')}</small><input type="range" min="0" max="1" step="0.05" bind:value={cfg.sfx} /></label>
     </div>
   {/if}
 </div>

@@ -22,7 +22,7 @@ export function show(styles: StyleId[], o: { w?: number; look?: Partial<Look>; o
     if (o.only != null && o.only !== i) return;
     const d = document.createElement('div');
     d.style.cssText = `width:${o.w ?? 330}px;flex:none`;
-    d.innerHTML = compose({ uid: `dev-${st}-${i}`, footer: 'PROTO · 012/071 · Darkstar', ...c, look: { style: st, ...o.look } } as ComposeInput);
+    d.innerHTML = compose({ uid: `dev-${st}-${i}`, footer: 'PROTO · 012/071 · Void Sun', ...c, look: { style: st, ...o.look } } as ComposeInput);
     (d.firstChild as SVGElement).style.cssText = 'width:100%;height:auto;display:block;border-radius:14px';
     wrap.appendChild(d);
   });

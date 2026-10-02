@@ -16,7 +16,7 @@ import { circle, rng, roundRect, star } from './shapes';
 export const defaultBack = (): CardBack => ({
   style: 'neutro', colors: ['#6b3eb6', '#1a1330'], blend: 'degrade', pattern: 'raios', frame: true,
   emblem: 'logo', icon: 'pentagram-rose', iconStyle: 'emblema', emblemSize: 0.44, medallion: true,
-  showTitle: true, title: 'Darkstar',
+  showTitle: true, title: 'Void Sun',
 });
 
 export interface BackInput {

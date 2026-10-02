@@ -7,6 +7,7 @@ import { newId } from './id';
 import type { Card, CardGear, Character, Deck, Lang, Slot } from './types';
 import { GEAR_SLOTS, type GearItem, type GearSlot, type HeroBase, type Via } from '../game/types';
 import { gearInfo, HERO_BASES } from '../game/decks';
+import { gameAttrs } from './hero';
 
 /** Espaços da ficha: nome, etiquetas de carta que cabem e o tipo de peça. */
 export const SLOTS: { id: Slot; pt: string; en: string; tags: string[]; gear: GearSlot; pos: [number, number] }[] = [
@@ -70,7 +71,7 @@ export function heroBaseOf(c: Character, cards: Record<string, Card>): HeroBase 
     gear.unshift({ slot: 'offhand', name: lang(main.card), info: gearInfo(mods), ...mods, icon: main.card.art.icon, cardId: main.card.id });
   }
   return {
-    ...c.play!, id: c.id, name: c.name || '?',
+    ...c.play!, id: c.id, name: c.name || '?', attrs: gameAttrs(c),
     weapon: main && mg?.weapon ? { name: lang(main.card), dmg: mg.weapon.dmg, via: mg.weapon.via } : UNARMED,
     gear,
   };
