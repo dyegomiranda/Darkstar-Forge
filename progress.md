@@ -1,8 +1,16 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.2: tela de abertura do desenvolvedor e aviso da primeira vez)
+**Atualizado:** 02/10/2026 (versão 3.2.1: raça Demônio, pele no boneco inteiro, peças dos conjuntos avulsas)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.2.1 (02/10/2026)
+
+- [x] Raça Demônio (pele, chifres, cauda e olhos próprios) e o título da seção passa a ser só "Raça"
+- [x] A cor da pele pinta o boneco inteiro em todas as raças (esqueleto, zumbi, coelho, rato, ovelha e camundongo ficavam pela metade)
+- [x] Cores e efeitos aparecem logo abaixo da última fileira de opções; a categoria Olhos aparece sempre
+- [x] Orelhas: a primeira opção chama "Humano"; cada peça dos conjuntos pode ser vestida sozinha na sua categoria
+- [x] Configurações: as resoluções são sempre clicáveis (escolher uma passa o jogo para janela desse tamanho)
 
 ## Versão 3.2 (02/10/2026)
 

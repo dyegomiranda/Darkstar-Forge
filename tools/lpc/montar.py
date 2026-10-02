@@ -219,6 +219,8 @@ EXTRA = {
     'void': ['#000000', '#040406', '#0a0a0f', '#12121a', '#1c1c27', '#2c2c3a'],
     'ash': ['#141416', '#2e2e33', '#4a4a52', '#6b6b75', '#9a9aa5', '#cfcfd8'],
     'blood': ['#1a0003', '#40030a', '#6e0812', '#9c1019', '#c92a2a', '#f06a5a'],
+    # a cor em que o esqueleto é desenhado: assim ele também troca de "pele"
+    'bone': ['#281820', '#4D4A5D', '#958080', '#C4B59F', '#E5E6C7', '#FFFFFF'],
   },
   'hair': {
     'flame': ['#5a1204', '#a82a06', '#e2560c', '#ff8a1c', '#ffbe45', '#fff0a8'],
@@ -370,6 +372,10 @@ catalog['fixed']['heads'] = {k: item(v, k, k) for k, v in CREATURE_HEADS.items()
 # cabeça própria do corpo feminino, quando existe (senão vale a comum)
 catalog['fixed']['heads_f'] = {k: item(v, k, k) for k, v in FEMALE_HEADS.items() if os.path.exists(os.path.join(SRC, D + v + '.json'))}
 catalog['fixed']['frames'] = {k: item(v, k, k) for k, v in FRAMES.items()}
+# a pele vale para o boneco inteiro: o esqueleto (desenhado em tons de osso) e o corpo do zumbi também trocam de cor
+for it in (catalog['fixed']['heads']['skeleton'], catalog['fixed']['frames']['skeleton']):
+    it['recolors'] = [{'material': 'body', 'base': 'bone'}]; it['skin'] = True
+catalog['fixed']['frames']['zombie']['recolors'] = [{'material': 'body', 'base': 'zombie'}]; catalog['fixed']['frames']['zombie']['skin'] = True
 catalog['fixed']['ammo'] = item('weapons/ranged/bow/weapon_ranged_bow_arrow', 'Flecha', 'Arrow')
 for sid, pt, en, optional, items in SLOTS:
     its = []
