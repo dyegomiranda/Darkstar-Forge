@@ -14,7 +14,7 @@ export const PRESET_AVATARS: Record<string, Avatar> = {
     body: 'male', skin: 'amber', eyes: 'blue',
     parts: {
       hair: { id: 'hair_parted', color: 'dark_brown' }, torso: { id: 'torso_clothes_longsleeve', color: 'blue' }, cape: { id: 'cape_solid', color: 'navy' },
-      legs: { id: 'legs_pants', color: 'navy' }, feet: { id: 'feet_boots_basic', color: 'brown' }, arms: { id: 'arms_gloves', color: 'leather' },
+      legs: { id: 'legs_pants', color: 'navy' }, feet: { id: 'feet_boots_basic', color: 'brown' }, hands: { id: 'arms_gloves', color: 'leather' },
       weapon: { id: 'weapon_magic_crystal', color: 'blue' },
     },
   },
@@ -22,7 +22,7 @@ export const PRESET_AVATARS: Record<string, Avatar> = {
     body: 'female', skin: 'olive', eyes: 'green',
     parts: {
       hair: { id: 'hair_long', color: 'blonde' }, head: { id: 'hat_hood_cloth', color: 'forest' }, torso: { id: 'torso_armour_leather', color: 'leather' },
-      legs: { id: 'legs_leggings', color: 'forest' }, feet: { id: 'feet_boots_fold', color: 'leather' }, arms: { id: 'arms_gloves', color: 'leather' },
+      legs: { id: 'legs_leggings', color: 'forest' }, feet: { id: 'feet_boots_fold', color: 'leather' }, hands: { id: 'arms_gloves', color: 'leather' },
       cape: { id: 'cape_solid', color: 'forest' }, weapon: { id: 'weapon_ranged_bow_normal', color: 'medium' },
     },
   },

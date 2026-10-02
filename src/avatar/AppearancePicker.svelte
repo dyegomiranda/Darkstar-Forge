@@ -28,7 +28,7 @@
     { pt: 'Roupas e armaduras', en: 'Clothes & armor', cats: [
       { id: 'sets', icon: Swords, crop: FULL, px: 2 },
       { id: 'torso', icon: Shirt, crop: FULL, px: 2 }, { id: 'legs', icon: Footprints, crop: LEGS, px: 3 }, { id: 'feet', icon: Footprints, crop: LEGS, px: 3 },
-      { id: 'arms', icon: Hand, crop: FULL, px: 2 }, { id: 'shoulders', icon: Shield, crop: FULL, px: 2 }, { id: 'head', icon: Crown, crop: HEAD, px: 3 },
+      { id: 'arms', icon: Shield, crop: FULL, px: 2 }, { id: 'hands', icon: Hand, crop: FULL, px: 2 }, { id: 'shoulders', icon: Shield, crop: FULL, px: 2 }, { id: 'head', icon: Crown, crop: HEAD, px: 3 },
       { id: 'crest', icon: Flame, crop: HEAD, px: 3 }, { id: 'visor', icon: Glasses, crop: HEAD, px: 3 },
       { id: 'face', icon: Glasses, crop: HEAD, px: 3 }, { id: 'neck', icon: Gem, crop: FULL, px: 2 }, { id: 'belt', icon: Ribbon, crop: FULL, px: 2 },
       { id: 'cape', icon: Wind, crop: WIDE, px: 2, dir: 'n' }, { id: 'back', icon: Backpack, crop: WIDE, px: 2, dir: 'n' },
@@ -111,7 +111,7 @@
     return a;
   };
   const withFace = (f: string): Avatar => { const a = clone(); if (f === 'neutral') delete a.face; else a.face = f; delete a.parts.eyes; return a; };
-  const pick = (id: string | null) => onchange(withPart(id));
+  const pick = (id: string | null) => { if (slotId) delete chosen[slotId]; onchange(withPart(id)); };
 
   /** As peças dos conjuntos que cabem nesta categoria (cada uma já com o metal ou o tecido do conjunto). */
   const setPieces = $derived.by(() => {
@@ -124,9 +124,18 @@
       return [{ set: st, part: p, item: it }];
     });
   });
-  const isPiece = (p: Part) => part?.id === p.id && part?.color === p.color;
+  /**
+   * Qual peça de conjunto o jogador escolheu em cada categoria. Várias peças são o mesmo modelo em metais
+   * diferentes: guardar a escolha mantém a caixinha marcada (e com a cor nova) quando ele troca a cor depois.
+   */
+  let chosen = $state<Partial<Record<SlotId, string>>>({});
+  const pieceOn = $derived.by(() => {
+    if (!slotId || !part) return undefined;
+    const kept = setPieces.find((x) => x.set.id === chosen[slotId] && x.part.id === part.id);
+    return (kept ?? setPieces.find((x) => x.part.id === part.id && x.part.color === part.color))?.set.id;
+  });
   const withPiece = (p: Part): Avatar => { const a = clone(); if (slotId) a.parts[slotId] = { ...a.parts[slotId], ...p }; return a; };
-  const onPiece = $derived(setPieces.some((x) => isPiece(x.part)));
+  const pickPiece = (setId: string, p: Part) => { if (slotId) chosen[slotId] = setId; onchange(withPiece(p)); };
 
   // cores de olhos: primeiro as de gente, depois as de monstro (têm o branco do olho pintado ou brilham)
   const EYES = Object.entries(LPC.palettes.eye.colors);
@@ -220,7 +229,7 @@
         <div class="tiles">
           {#each SETS as st (st.id)}
             {@const on = wearing(avatar, st)}
-            <button class="tile set" class:on onclick={() => onchange(wearSet(avatar, st))} title={L(st.info[0], st.info[1])}>
+            <button class="tile set" class:on onclick={() => { for (const k of Object.keys(st.parts) as SlotId[]) chosen[k] = st.id; onchange(wearSet(avatar, st)); }} title={L(st.info[0], st.info[1])}>
               <span class="tpic"><DollThumb avatar={wearSet(avatar, st)} crop={FULL} px={2} /></span>
               <span class="tname">{L(st.pt, st.en)}</span>
               <small>{L(st.info[0], st.info[1])}</small>
@@ -238,7 +247,7 @@
             </button>
           {/if}
           {#each items as it (it.id)}
-            {@const on = current?.id === it.id && !onPiece}
+            {@const on = current?.id === it.id && !pieceOn}
             <button class="tile" class:on onclick={() => pick(it.id)} title={L(it.pt, it.en)}>
               <span class="tpic"><DollThumb avatar={withPart(it.id)} crop={view.crop} px={view.px} dir={view.dir} /></span>
               <span class="tname">{L(it.pt, it.en)}</span>
@@ -250,9 +259,9 @@
           <span class="sub">{L('Peças dos conjuntos', 'Set pieces')}</span>
           <div class="tiles">
             {#each setPieces as sp (sp.part.id + sp.part.color)}
-              {@const on = isPiece(sp.part)}
-              <button class="tile set" class:on onclick={() => onchange(withPiece(sp.part))} title={L(sp.set.pt, sp.set.en)}>
-                <span class="tpic"><DollThumb avatar={withPiece(sp.part)} crop={view.crop} px={view.px} dir={view.dir} /></span>
+              {@const on = pieceOn === sp.set.id}
+              <button class="tile set" class:on onclick={() => pickPiece(sp.set.id, sp.part)} title={L(sp.set.pt, sp.set.en)}>
+                <span class="tpic"><DollThumb avatar={on ? avatar : withPiece(sp.part)} crop={view.crop} px={view.px} dir={view.dir} /></span>
                 <span class="tname">{L(sp.set.pt, sp.set.en)}</span>
                 <small>{L(sp.item.pt, sp.item.en)}</small>
                 {#if on}<span class="tcheck"><Check size={12} strokeWidth={3} /></span>{/if}

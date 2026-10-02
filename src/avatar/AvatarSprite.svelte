@@ -31,6 +31,15 @@
     ctx.clearRect(0, 0, s.size, s.size);
     const row = s.rows === 1 ? 0 : DIRS.indexOf(dir);
     ctx.drawImage(s.canvas, f * s.size, row * s.size, s.size, s.size, 0, 0, s.size, s.size);
+    if (s.glow) {
+      // os veios de brasa respiram: acendem e apagam devagar, com um tremor curto por cima
+      const t = performance.now() / 1000;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = Math.max(0, 0.3 + 0.3 * Math.sin(t * 2.4) + 0.08 * Math.sin(t * 13));
+      ctx.drawImage(s.glow, f * s.size, row * s.size, s.size, s.size, 0, 0, s.size, s.size);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
     if (s.fx) magic(ctx, s, f, row);
   }
 
@@ -107,7 +116,7 @@
       draw(s, frame);
     }, 1000 / FPS[a]);
     // o efeito mágico tem o seu próprio ritmo (mexe mesmo com o boneco parado)
-    const glow = s.fx ? setInterval(() => draw(s, Math.min(frame, s.frames - 1)), 75) : undefined;
+    const glow = s.fx || s.glow ? setInterval(() => draw(s, Math.min(frame, s.frames - 1)), 75) : undefined;
     return () => { clearInterval(timer); clearInterval(glow); };
   });
 

@@ -9,7 +9,7 @@ import { itemOf, type Avatar, type Part, type SlotId } from './lpc';
 export interface GearSet { id: string; pt: string; en: string; info: [string, string]; parts: Partial<Record<SlotId, Part | null>> }
 
 const plate = (metal: string, helm: string, extra: Partial<Record<SlotId, Part | null>> = {}): Partial<Record<SlotId, Part | null>> => ({
-  head: { id: helm, color: metal }, torso: { id: 'torso_armour_plate', color: metal }, arms: { id: 'arms_armour', color: metal }, shoulders: { id: 'shoulders_legion', color: metal },
+  head: { id: helm, color: metal }, torso: { id: 'torso_armour_plate', color: metal }, arms: { id: 'arms_armour', color: metal }, hands: { id: 'arms_gloves', color: metal }, shoulders: { id: 'shoulders_legion', color: metal },
   legs: { id: 'legs_armour', color: metal }, feet: { id: 'feet_armour', color: metal }, crest: null, visor: null, face: null, belt: null, neck: null, ...extra,
 });
 
@@ -19,12 +19,12 @@ export const SETS: GearSet[] = [
   { id: 'ebony', pt: 'Ébano', en: 'Ebony', info: ['placas de ébano e grande elmo fechado', 'ebony plate and a closed great helm'],
     parts: plate('ebony', 'hat_helmet_greathelm', { cape: { id: 'cape_solid', color: 'void' } }) },
   { id: 'night', pt: 'Sombra da noite', en: 'Nightshade', info: ['couro negro, capuz, máscara e capa: feito para não ser visto', 'black leather, hood, mask and cape: made not to be seen'],
-    parts: { head: { id: 'hat_hood_cloth', color: 'void' }, face: { id: 'facial_mask_plain', color: 'black' }, torso: { id: 'torso_armour_leather', color: 'black' }, arms: { id: 'arms_gloves', color: 'night' },
+    parts: { head: { id: 'hat_hood_cloth', color: 'void' }, face: { id: 'facial_mask_plain', color: 'black' }, torso: { id: 'torso_armour_leather', color: 'black' }, arms: null, hands: { id: 'arms_gloves', color: 'night' },
       shoulders: null, legs: { id: 'legs_leggings', color: 'void' }, feet: { id: 'feet_boots_fold', color: 'void' }, cape: { id: 'cape_solid', color: 'midnight' }, crest: null, visor: null, belt: { id: 'belt_leather', color: 'charcoal' } } },
   { id: 'celestial', pt: 'Celestial', en: 'Celestial', info: ['placas de ouro claro e elmo alado', 'pale gold plate and a winged helm'],
     parts: plate('celestial', 'hat_helmet_armet', { crest: { id: 'hat_accessory_wings', color: 'celestial' }, cape: { id: 'cape_trim', color: 'ivory' } }) },
   { id: 'mithril', pt: 'Mithril élfico', en: 'Elven mithril', info: ['malha leve azul-prateada e capa verde', 'light silver-blue mail and a green cape'],
-    parts: { head: { id: 'hat_helmet_pointed', color: 'mithril' }, torso: { id: 'torso_chainmail', color: 'mithril' }, arms: { id: 'arms_bracers', color: 'mithril' }, shoulders: { id: 'shoulders_legion', color: 'mithril' },
+    parts: { head: { id: 'hat_helmet_pointed', color: 'mithril' }, torso: { id: 'torso_chainmail', color: 'mithril' }, arms: { id: 'arms_bracers', color: 'mithril' }, hands: { id: 'arms_gloves', color: 'mithril' }, shoulders: { id: 'shoulders_legion', color: 'mithril' },
       legs: { id: 'legs_armour', color: 'mithril' }, feet: { id: 'feet_armour', color: 'mithril' }, cape: { id: 'cape_solid', color: 'emerald' }, crest: null, visor: null, face: null } },
   { id: 'dragon', pt: 'Sangue de dragão', en: 'Dragonblood', info: ['placas rubras e chifres curvados para baixo', 'crimson plate and downward horns'],
     parts: plate('blood', 'hat_helmet_barbuta', { crest: { id: 'hat_accessory_horns_downward', color: 'blood' }, cape: { id: 'cape_tattered', color: 'void' } }) },
@@ -38,15 +38,15 @@ export const SETS: GearSet[] = [
     parts: plate('amethyst', 'hat_helmet_close', { crest: { id: 'hat_accessory_horns_short', color: 'amethyst' }, cape: { id: 'cape_solid', color: 'royal' } }) },
   { id: 'legion', pt: 'Legionário', en: 'Legionary', info: ['armadura de legião em bronze, com crista vermelha', 'bronze legion armour with a red crest'],
     parts: { head: { id: 'hat_helmet_legion', color: 'bronze' }, crest: { id: 'hat_accessory_plumage_legion', color: 'red' }, torso: { id: 'torso_armour_legion', color: 'bronze' }, shoulders: { id: 'shoulders_legion', color: 'bronze' },
-      arms: { id: 'arms_bracers', color: 'bronze' }, legs: { id: 'legs_skirts_legion', color: 'maroon' }, feet: { id: 'feet_sandals', color: 'leather' }, cape: { id: 'cape_solid', color: 'red' }, visor: null, face: null } },
+      arms: { id: 'arms_bracers', color: 'bronze' }, hands: null, legs: { id: 'legs_skirts_legion', color: 'maroon' }, feet: { id: 'feet_sandals', color: 'leather' }, cape: { id: 'cape_solid', color: 'red' }, visor: null, face: null } },
   { id: 'barbarian', pt: 'Bárbaro do norte', en: 'Northern barbarian', info: ['elmo nórdico, faixas no peito e manto de pele', 'nordic helm, chest wraps and a fur mantle'],
-    parts: { head: { id: 'hat_helmet_spangenhelm_viking', color: 'iron' }, torso: { id: 'torso_bandages', color: 'white' }, shoulders: { id: 'shoulders_mantal', color: 'walnut' }, arms: { id: 'arms_bracers', color: 'iron' },
+    parts: { head: { id: 'hat_helmet_spangenhelm_viking', color: 'iron' }, torso: { id: 'torso_bandages', color: 'white' }, shoulders: { id: 'shoulders_mantal', color: 'walnut' }, arms: { id: 'arms_bracers', color: 'iron' }, hands: null,
       legs: { id: 'legs_pantaloons', color: 'walnut' }, feet: { id: 'feet_boots_rim', color: 'brown' }, cape: null, crest: null, visor: null, face: null, belt: { id: 'belt_leather', color: 'brown' } } },
   { id: 'hunter', pt: 'Caçador', en: 'Hunter', info: ['capuz, couro e aljava', 'hood, leather and a quiver'],
-    parts: { head: { id: 'hat_hood_cloth', color: 'forest' }, torso: { id: 'torso_armour_leather', color: 'leather' }, arms: { id: 'arms_gloves', color: 'bronze' }, shoulders: null,
+    parts: { head: { id: 'hat_hood_cloth', color: 'forest' }, torso: { id: 'torso_armour_leather', color: 'leather' }, arms: null, hands: { id: 'arms_gloves', color: 'bronze' }, shoulders: null,
       legs: { id: 'legs_leggings', color: 'forest' }, feet: { id: 'feet_boots_fold', color: 'leather' }, cape: { id: 'cape_solid', color: 'forest' }, back: { id: 'quiver' }, crest: null, visor: null, face: null } },
   { id: 'archmage', pt: 'Arquimago', en: 'Archmage', info: ['chapéu pontudo, veste e capa de púrpura real', 'pointed hat, garment and a royal purple cape'],
-    parts: { head: { id: 'hat_magic_wizard', color: 'base_black' }, torso: { id: 'torso_clothes_longsleeve', color: 'royal' }, arms: null, shoulders: { id: 'shoulders_mantal', color: 'midnight' },
+    parts: { head: { id: 'hat_magic_wizard', color: 'base_black' }, torso: { id: 'torso_clothes_longsleeve', color: 'royal' }, arms: null, hands: null, shoulders: { id: 'shoulders_mantal', color: 'midnight' },
       legs: { id: 'legs_skirts_plain', color: 'royal' }, feet: { id: 'feet_shoes_basic', color: 'void' }, cape: { id: 'cape_trim', color: 'royal' }, crest: null, visor: null, face: null, neck: { id: 'neck_amulet_star' } } },
 ];
 

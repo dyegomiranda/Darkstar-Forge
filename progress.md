@@ -1,8 +1,18 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.2.1: raça Demônio, pele no boneco inteiro, peças dos conjuntos avulsas)
+**Atualizado:** 02/10/2026 (versão 3.3: abertura com falha de tela, logotipo novo, Daédrico com veios de brasa, categoria Mãos)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.3 (02/10/2026)
+
+- [x] Abertura refeita: tela antiga que liga, falha e desliga (fatias que escorregam, cores separadas, chuvisco, linhas de varredura)
+- [x] Logotipo novo, no estilo dos bonecos do jogo (cabeça grande, mais detalhe), colado ao nome; "Developed by" maior
+- [x] "Djabo" em letra de terminal inclinada, vermelho sangue com fantasma ciano e falha própria
+- [x] Daédrico: placas negras com veios de brasa que pulsam no boneco animado; manoplas nos conjuntos de placas
+- [x] Categoria Mãos (luvas e anel), separada de Braços
+- [x] Peça de conjunto continua marcada, e com a cor nova, quando se troca a cor dela
+- [x] Nomes de peças sem observações entre parênteses
 
 ## Versão 3.2.1 (02/10/2026)
 

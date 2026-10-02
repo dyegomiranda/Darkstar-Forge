@@ -13,7 +13,8 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'publ
 os.makedirs(OUT, exist_ok=True)
 PRE = "UMEMPART, modern pixel art, highly detailed 16-bit fantasy game key art, crisp square pixels, limited color palette, dramatic lighting, "
 END = " Dark, mysterious, cosmic mood. No text, no letters, no logo, no UI, no border, no frame, no watermark."
-PRE_FIG = "UMEMPART, modern pixel art, highly detailed 16-bit game character art, crisp square pixels, limited color palette, dramatic red rim lighting, "
+# figura do logotipo: no estilo dos bonecos do jogo (cabeça grande, corpo pequeno, contorno escuro), só que maior e com mais detalhe
+PRE_FIG = "UMEMPART, modern pixel art, low resolution 16-bit JRPG character sprite, super deformed chibi proportions, thick dark outlines, flat cel shading with few tones, very limited color palette, big chunky square pixels, no gradients, no realism, "
 END_FIG = " No text, no letters, no logo, no UI, no border, no frame, no watermark, no scenery, no ground." 
 # (id, semente, largura, altura, descrição)
 ARTS = [
@@ -29,12 +30,12 @@ ARTS = [
      "vertical composition: two rival heroes facing each other in a duel on a dark stone arena, on the left an armored knight with a sword and red cape, on the right a hooded mage with a glowing blue staff, "
      "both in profile, sparks between them, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
     # logotipo do desenvolvedor (tela de abertura): fundo preto liso, para assentar sobre a tela preta
-    ('estudio', 51, 1024, 1024,
-     "full body character on a plain pure black background: a fearsome black-skinned demon rock guitarist standing with legs apart, shredding a black electric guitar held across his body. "
-     "He has four big curved black horns (two rising from the forehead and two sweeping out from the sides of the head), glowing red eyes, a snarling mouth with fangs, "
-     "a huge wild mane of long shaggy black hair, long black fur hanging from the forearms and shoulders, a muscular bare chest with a leather guitar strap, clawed hands on the fretboard and strings, "
-     "ragged black fur around the waist and legs, clawed feet. Strong red rim light outlining the whole silhouette, faint red embers. "
-     "The whole figure from the horns to the feet is inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
+    ('estudio', 77, 1024, 1024,
+     "one single full body chibi game character sprite on a plain pure black background: a little black-furred demon rock guitarist with a big head and a small stocky body, standing with legs apart, "
+     "playing a black electric guitar with a red trim held across his body. He has two big curved black horns, two round glowing red eyes, a wide grin with white fangs, "
+     "a wild mane of spiky shaggy black hair, shaggy black fur on the arms and legs, a short pointed tail, clawed feet. "
+     "Dark charcoal and deep purple-grey shading with a bright red rim light so the black figure reads clearly against the black background. "
+     "Simple readable shapes, front view, the whole figure from the horns to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
     ('campanha', 43, 1024, 1280,
      "vertical composition: a winding road through a dark fantasy world map landscape seen from a high cliff, distant ruined castle, dead forest, mountains and a glowing violet rift on the horizon, "
      "a small party of three travelers with a lantern walking the road, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
@@ -82,5 +83,7 @@ for aid, seed, w, h, prompt in ARTS:
         imgs = [i for o in hist[pid]['outputs'].values() for i in o.get('images', [])]
         if not imgs: print('ERRO', aid, v, flush=True); continue
         raw = urllib.request.urlopen(API + '/view?' + urllib.parse.urlencode(imgs[0])).read()
-        pixelar(raw).save(dst, 'WEBP', quality=90, method=6)
+        # o logotipo fica na grade dos bonecos (pixels grandes, poucas cores) e sem perdas
+        if aid == 'estudio': pixelar(raw, grade=4, cores=56).save(dst, 'WEBP', lossless=True)
+        else: pixelar(raw).save(dst, 'WEBP', quality=90, method=6)
         print('ok', aid, v, int(time.time() - t0), 's', flush=True)

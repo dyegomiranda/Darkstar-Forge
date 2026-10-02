@@ -11,7 +11,7 @@ import raw from '../data/lpc.json';
 export type Body = 'male' | 'female' | 'muscular';
 export type Anim = 'idle' | 'walk' | 'slash' | 'thrust' | 'shoot' | 'spellcast' | 'hurt';
 export type Dir = 'n' | 'w' | 's' | 'e';
-export type SlotId = 'hair' | 'beard' | 'mustache' | 'eyebrows' | 'eyes' | 'nose' | 'ears' | 'torso' | 'legs' | 'feet' | 'arms' | 'shoulders' | 'head' | 'crest' | 'visor' | 'face' | 'neck' | 'belt' | 'cape' | 'back' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon';
+export type SlotId = 'hair' | 'beard' | 'mustache' | 'eyebrows' | 'eyes' | 'nose' | 'ears' | 'torso' | 'legs' | 'feet' | 'arms' | 'hands' | 'shoulders' | 'head' | 'crest' | 'visor' | 'face' | 'neck' | 'belt' | 'cape' | 'back' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon';
 export type Material = 'body' | 'hair' | 'cloth' | 'metal' | 'eye';
 
 /** Efeitos de "magia imbuída" de uma arma. */
@@ -226,7 +226,7 @@ function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined, 
   });
 }
 
-export interface Sheet { canvas: HTMLCanvasElement; size: number; frames: number; rows: number; /** Efeito mágico da arma: só os pixels dela (de onde o efeito nasce), o tipo e a cor. */ fx?: { mask: HTMLCanvasElement; kind: FxKind; color: string } }
+export interface Sheet { canvas: HTMLCanvasElement; size: number; frames: number; rows: number; /** Veios de brasa (armadura daédrica): só esses pixels, para o boneco animado fazê-los pulsar. */ glow?: HTMLCanvasElement; /** Efeito mágico da arma: só os pixels dela (de onde o efeito nasce), o tipo e a cor. */ fx?: { mask: HTMLCanvasElement; kind: FxKind; color: string } }
 const sheets = new Map<string, Promise<Sheet>>();
 
 /** Folha de quadros do boneco para uma animação: `frames` colunas × 4 direções (n, o, s, l). */
@@ -319,7 +319,21 @@ async function build(av: Avatar, anim: Anim): Promise<Sheet> {
     draws.forEach((d, i) => { if (d.slot === 'weapon' && imgs[i]) paint(m, d, imgs[i]!); });
     fx = { mask: m.canvas, kind: wp.fx, color: wp.fxColor && FX_COLORS[wp.fxColor] ? wp.fxColor : 'purple' };
   }
-  return { canvas, size, frames, rows, fx };
+  // armadura daédrica: os veios de brasa (os tons 2 e 6 do metal) ficam numa camada à parte, que pulsa
+  let glow: HTMLCanvasElement | undefined;
+  const ember = LPC.palettes.metal.colors.daedric;
+  if (ember && Object.values(av.parts).some((p) => p?.color === 'daedric')) {
+    const veins = [ember[1], ember[5]].map(rgb);
+    const src = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const g = layer(), data = g.createImageData(canvas.width, canvas.height), d = data.data;
+    let any = false;
+    for (let i = 0; i < src.length; i += 4) {
+      if (!src[i + 3] || !veins.some((v) => v[0] === src[i] && v[1] === src[i + 1] && v[2] === src[i + 2])) continue;
+      d[i] = 255; d[i + 1] = 110; d[i + 2] = 40; d[i + 3] = 255; any = true;
+    }
+    if (any) { g.putImageData(data, 0, 0); glow = g.canvas; }
+  }
+  return { canvas, size, frames, rows, fx, glow };
 }
 
 /** Animação de ataque do boneco conforme a arma que ele segura. */
