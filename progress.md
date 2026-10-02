@@ -4,6 +4,11 @@
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
 
+## Versão 3.4.1 (02/10/2026)
+
+- [x] Logotipo: samurai sombrio (boca fechada, olhar cruel, asas de demônio, katana negra) no lugar do guitarrista; fumaça negra e roxa sobe da lâmina
+- [x] Daédrico mais agressivo: ombreiras de chifre, peitoral em quilhas com fenda de brasa, pontas nos ombros e na cintura do peitoral, garras em braços, pernas e botas; rebites das luvas na cor do conjunto
+
 ## Versão 3.4 (02/10/2026)
 
 - [x] Conjuntos de placas com feitio próprio, trabalhado em cima da peça e quadro a quadro: Daédrico (espinhos, runa no peito, veios e fagulhas de brasa), Ébano (friso e faixas), Sangue de dragão (escamas), Guardião do gelo (cristais), Celestial (sol), Paladino (cruz), Senhor dos ossos (costelas), Cavaleiro do vazio (gema)
