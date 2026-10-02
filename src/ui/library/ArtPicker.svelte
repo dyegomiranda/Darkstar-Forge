@@ -1,10 +1,14 @@
 <!--
   Escolher a arte de cada carta quando há variações (pf-red_001.png, pf-red_001__v2.png…).
-  Lista com miniaturas + visualização ampliada (só a arte ou já na carta), navegável pelo teclado:
-  ← → muda de carta · 1 2 3… escolhe a versão · 0 = nenhuma · Esc fecha.
+  Lista com miniaturas + visualização ampliada (só a arte ou já na carta). Na ampliada cabem
+  poucas imagens por vez, bem grandes; setas nos cantos da tela passam para as outras.
+  Teclado: ← → passa as imagens (e, no fim, muda de carta) · 1 2 3… escolhe · 0 = nenhuma · Esc fecha.
+
+  Remover uma imagem (lixeira) só a tira desta lista — o arquivo continua na pasta. As removidas
+  ficam lembradas, então não voltam ao abrir a mesma pasta de novo; dá para trazê-las de volta.
 -->
 <script lang="ts">
-  import { Check, X, Maximize2, ChevronLeft, ChevronRight, Image as ImageIcon, RectangleVertical, Sparkles, LoaderCircle } from '@lucide/svelte';
+  import { Check, X, Maximize2, ChevronLeft, ChevronRight, Image as ImageIcon, RectangleVertical, Sparkles, LoaderCircle, Trash2, Undo2 } from '@lucide/svelte';
   import { onDestroy } from 'svelte';
   import { L } from '../../app/i18n.svelte';
   import { app } from '../../store/project.svelte';
@@ -30,7 +34,25 @@
   // ── gerar mais variações pelo ComfyUI (quando nenhuma serviu) ──
   /** Imagens novas geradas nesta janela, por carta (somam-se às que vieram da pasta). */
   let extra = $state<Record<string, File[]>>({});
-  const filesOf = (g: ArtGroup): File[] => [...g.files, ...(extra[g.card.id] ?? [])];
+  /** Imagens tiradas da lista (pelo nome do arquivo); lembradas entre aberturas. */
+  const REMOVED = 'darkstar.artesRemovidas';
+  let removed = $state<string[]>((() => { try { const v = JSON.parse(localStorage.getItem(REMOVED) ?? '[]'); return Array.isArray(v) ? v as string[] : []; } catch { return []; } })());
+  $effect(() => { try { localStorage.setItem(REMOVED, JSON.stringify(removed.slice(-2000))); } catch { /* sem armazenamento local */ } });
+  const allOf = (g: ArtGroup): File[] => [...g.files, ...(extra[g.card.id] ?? [])];
+  /** As imagens de uma carta que ainda estão na lista. */
+  const filesOf = (g: ArtGroup): File[] => allOf(g).filter((f) => !removed.includes(f.name));
+  const removedOf = (g: ArtGroup): File[] => allOf(g).filter((f) => removed.includes(f.name));
+  function remove(g: ArtGroup, f: File) {
+    const before = filesOf(g), i = before.indexOf(f);
+    removed = [...removed, f.name];
+    // era a escolhida: passa para a vizinha (ou nenhuma, se era a última)
+    if (pick[g.card.id] === f.name) pick[g.card.id] = (before[i + 1] ?? before[i - 1])?.name ?? '';
+    page = Math.min(page, Math.max(0, Math.ceil(filesOf(g).length / perPage) - 1));
+  }
+  function restore(g: ArtGroup) {
+    const names = new Set(removedOf(g).map((f) => f.name));
+    removed = removed.filter((n) => !names.has(n));
+  }
   /** Carta com a caixa de prompt aberta e o texto de cada uma. */
   let asking = $state<string | null>(null);
   let promptText = $state<Record<string, string>>({});
@@ -69,26 +91,28 @@
   let saved: Record<string, string> = {};
   try { saved = JSON.parse(localStorage.getItem(SAVED) ?? '{}') ?? {}; } catch { saved = {}; }
 
-  /** Escolha por carta: índice da imagem ou -1 (nenhuma). Começa na escolha guardada ou na 1ª. */
-  let pick = $state<Record<string, number>>(Object.fromEntries(groups.map((g) => {
+  /** Escolha por carta: o nome do arquivo ou '' (nenhuma). Começa na escolha guardada ou na 1ª imagem. */
+  let pick = $state<Record<string, string>>(Object.fromEntries(groups.map((g) => {
     const s = saved[g.card.id];
-    if (s === '') return [g.card.id, -1];
-    const i = s ? g.files.findIndex((f) => f.name === s) : -1;
-    return [g.card.id, i >= 0 ? i : 0];
+    const list = filesOf(g);
+    if (s === '') return [g.card.id, ''];
+    return [g.card.id, (list.find((f) => f.name === s) ?? list[0])?.name ?? ''];
   })));
   const restored = groups.filter((g) => saved[g.card.id] !== undefined).length;
+  /** A imagem escolhida de uma carta (se ainda estiver na lista). */
+  const picked = (g: ArtGroup): File | undefined => filesOf(g).find((f) => f.name === pick[g.card.id]);
 
   // grava a cada mudança (sobrevive a fechar a janela ou o programa)
   $effect(() => {
     const out = { ...saved };
-    for (const g of groups) { const i = pick[g.card.id]; out[g.card.id] = i >= 0 ? filesOf(g)[i]?.name ?? '' : ''; }
+    for (const g of groups) out[g.card.id] = picked(g)?.name ?? '';
     try { localStorage.setItem(SAVED, JSON.stringify(out)); } catch { /* sem armazenamento local */ }
   });
-  const chosen = $derived(groups.filter((g) => pick[g.card.id] >= 0).length);
+  const chosen = $derived(groups.filter((g) => !!picked(g)).length);
   const nameOf = (c: Card) => c.text[app.lang]?.name ?? c.text['pt-BR'].name;
 
   function confirm() {
-    onconfirm(groups.filter((g) => pick[g.card.id] >= 0 && filesOf(g)[pick[g.card.id]]).map((g) => ({ card: g.card, file: filesOf(g)[pick[g.card.id]] })));
+    onconfirm(groups.flatMap((g) => { const f = picked(g); return f ? [{ card: g.card, file: f }] : []; }));
   }
 
   // ── visualização ampliada ──
@@ -110,22 +134,45 @@
   // logo da edição e imagens de peças/símbolos precisam estar carregados para desenhar a carta
   $effect(() => { if (zg && mode === 'carta') void ensureCardMedia(zg.card).then(() => ready++); });
 
+  // quantas imagens cabem lado a lado em tamanho grande (o resto vem pelas setas)
+  let vw = $state(innerWidth);
+  const perPage = $derived(Math.max(1, Math.min(3, Math.floor((vw - 150) / 470))));
+  let page = $state(0);
+  const zfiles = $derived(zg ? filesOf(zg) : []);
+  const pages = $derived(Math.max(1, Math.ceil(zfiles.length / perPage)));
+  const shown = $derived(zfiles.slice(page * perPage, page * perPage + perPage));
+
+  /** Abre a ampliada numa carta, já na página da imagem escolhida. */
+  function openZoom(gi: number, last = false) {
+    zoom = gi;
+    const list = filesOf(groups[gi]);
+    const i = last ? list.length - 1 : Math.max(0, list.findIndex((f) => f.name === pick[groups[gi].card.id]));
+    page = Math.floor(Math.max(0, i) / perPage);
+  }
   function go(delta: number) {
     if (zoom === null) return;
-    zoom = Math.min(groups.length - 1, Math.max(0, zoom + delta));
+    const next = Math.min(groups.length - 1, Math.max(0, zoom + delta));
+    if (next !== zoom) openZoom(next, delta < 0);
   }
+  /** Seta: passa as imagens; no fim (ou no começo) delas, muda de carta. */
+  function turn(delta: number) {
+    if (page + delta >= 0 && page + delta < pages) page += delta;
+    else go(delta);
+  }
+  const canTurn = (delta: number) => zoom !== null && (page + delta >= 0 && page + delta < pages || (delta < 0 ? zoom > 0 : zoom < groups.length - 1));
 
   function key(e: KeyboardEvent) {
+    if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
     if (e.key === 'Escape') { e.preventDefault(); if (zoom !== null) zoom = null; else oncancel(); return; }
     if (zoom === null || !zg) return;
-    if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
-    else if (e.key === '0') pick[zg.card.id] = -1;
-    else if (/^[1-9]$/.test(e.key) && +e.key <= filesOf(zg).length) pick[zg.card.id] = +e.key - 1;
+    if (e.key === 'ArrowRight') { e.preventDefault(); turn(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); turn(-1); }
+    else if (e.key === '0') pick[zg.card.id] = '';
+    else if (/^[1-9]$/.test(e.key) && +e.key <= zfiles.length) { pick[zg.card.id] = zfiles[+e.key - 1].name; page = Math.floor((+e.key - 1) / perPage); }
   }
 </script>
 
-<svelte:window onkeydown={key} />
+<svelte:window onkeydown={key} bind:innerWidth={vw} />
 
 <div class="backdrop" role="presentation">
   <div class="dialog" role="dialog" aria-modal="true" aria-label={L('Escolher as artes', 'Choose the artwork')}>
@@ -142,7 +189,7 @@
         <div class="row">
           <div class="name">
             <b>{nameOf(g.card)}</b><small>#{String(g.card.n).padStart(3, '0')}</small>
-            <button class="btn sm" onclick={() => (zoom = gi)}><Maximize2 size={14} /> {L('Ver grande', 'View large')}</button>
+            <button class="btn sm" disabled={!filesOf(g).length} onclick={() => openZoom(gi)}><Maximize2 size={14} /> {L('Ver grande', 'View large')}</button>
             <button class="btn sm" disabled={!!busy[g.card.id]} onclick={() => openPrompt(g)} title={L('Nenhuma serviu? Gera novas variações pelo ComfyUI (ele precisa estar aberto).', 'None works? Generates new variations with ComfyUI (it must be open).')}>
               {#if busy[g.card.id]}<LoaderCircle size={14} class="spin" /> {L(`Gerando ${busy[g.card.id]}…`, `Generating ${busy[g.card.id]}…`)}{:else}<Sparkles size={14} /> {L('Gerar mais', 'Generate more')}{/if}</button>
           </div>
@@ -159,15 +206,21 @@
                 </div>
               </div>
             {/if}
-            {#each filesOf(g) as f, i}
-              <button class="opt" class:on={pick[g.card.id] === i} title={f.name} onclick={() => (pick[g.card.id] = i)} ondblclick={() => (zoom = gi)}>
-                <img src={url(f)} alt={f.name} loading="lazy" />
+            {#each filesOf(g) as f, i (f)}
+              <div class="opt" class:on={pick[g.card.id] === f.name}>
+                <button class="optpick" title={f.name} onclick={() => (pick[g.card.id] = f.name)} ondblclick={() => openZoom(gi)}>
+                  <img src={url(f)} alt={f.name} loading="lazy" />
+                </button>
                 <span class="num">{i + 1}</span>
-                {#if pick[g.card.id] === i}<span class="tick"><Check size={14} /></span>{/if}
-              </button>
+                {#if pick[g.card.id] === f.name}<span class="tick"><Check size={14} /></span>{/if}
+                <button class="trash" title={L('Tirar esta imagem da lista (o arquivo continua na pasta)', 'Remove this image from the list (the file stays in the folder)')} onclick={() => remove(g, f)}><Trash2 size={14} /></button>
+              </div>
             {/each}
             {#each Array(busy[g.card.id] ?? 0) as _}<span class="opt wait"><LoaderCircle size={22} class="spin" /><span>{L('gerando…', 'generating…')}</span></span>{/each}
-            <button class="opt none" class:on={pick[g.card.id] === -1} onclick={() => (pick[g.card.id] = -1)}><X size={16} /><span>{L('Nenhuma', 'None')}</span></button>
+            <button class="opt none" class:on={!picked(g)} onclick={() => (pick[g.card.id] = '')}><X size={16} /><span>{L('Nenhuma', 'None')}</span></button>
+            {#if removedOf(g).length}
+              <button class="btn sm ghost undo" onclick={() => restore(g)}><Undo2 size={13} /> {removedOf(g).length === 1 ? L('Trazer de volta 1 removida', 'Bring back 1 removed') : L(`Trazer de volta ${removedOf(g).length} removidas`, `Bring back ${removedOf(g).length} removed`)}</button>
+            {/if}
           </div>
         </div>
       {/each}
@@ -194,17 +247,36 @@
       </div>
       <button class="btn primary" onclick={() => (zoom = null)}><Check size={16} /> {L('Voltar à lista', 'Back to list')}</button>
     </header>
-    <div class="big" style="--n:{filesOf(zg).length}">
-      {#each filesOf(zg) as f, i (f)}
-        <button class="bopt" class:on={pick[zg.card.id] === i} onclick={() => (pick[zg.card.id] = i)} title={f.name}>
-          {#if mode === 'carta'}<div class="cardsvg">{@html cardWith(zg, f, i)}</div>{:else}<img src={url(f)} alt={f.name} />{/if}
-          <span class="blabel">{#if pick[zg.card.id] === i}<Check size={15} /> {L('Escolhida', 'Chosen')}{:else}{L(`Versão ${i + 1}`, `Version ${i + 1}`)} · {L('clique para escolher', 'click to choose')}{/if}</span>
-        </button>
-      {/each}
+    <div class="stage">
+      <button class="side" disabled={!canTurn(-1)} title={page > 0 ? L('Imagens anteriores (←)', 'Previous images (←)') : L('Carta anterior (←)', 'Previous card (←)')} onclick={() => turn(-1)}><ChevronLeft size={34} /></button>
+      <div class="big" style="--n:{Math.max(1, shown.length)}">
+        {#each shown as f (f)}
+          {@const i = zfiles.indexOf(f)}
+          <div class="bopt" class:on={pick[zg.card.id] === f.name}>
+            <button class="bpick" onclick={() => (pick[zg.card.id] = f.name)} title={f.name}>
+              {#if mode === 'carta'}<div class="cardsvg">{@html cardWith(zg, f, i)}</div>{:else}<img src={url(f)} alt={f.name} />{/if}
+            </button>
+            <div class="brow">
+              <span class="blabel">{#if pick[zg.card.id] === f.name}<Check size={15} /> {L('Escolhida', 'Chosen')}{:else}{L(`Versão ${i + 1}`, `Version ${i + 1}`)} · {L('clique para escolher', 'click to choose')}{/if}</span>
+              <button class="btn sm danger" onclick={() => remove(zg, f)} title={L('Tirar esta imagem da lista (o arquivo continua na pasta)', 'Remove this image from the list (the file stays in the folder)')}><Trash2 size={14} /> {L('Apagar', 'Delete')}</button>
+            </div>
+          </div>
+        {:else}
+          <p class="muted empty">{L('Esta carta ficou sem imagens na lista.', 'This card has no images left in the list.')}
+            {#if removedOf(zg).length}<button class="btn sm" onclick={() => restore(zg)}><Undo2 size={13} /> {L('Trazer de volta as removidas', 'Bring back the removed ones')}</button>{/if}</p>
+        {/each}
+      </div>
+      <button class="side" disabled={!canTurn(1)} title={page < pages - 1 ? L('Próximas imagens (→)', 'Next images (→)') : L('Próxima carta (→)', 'Next card (→)')} onclick={() => turn(1)}><ChevronRight size={34} /></button>
     </div>
     <footer>
-      <button class="btn sm" class:danger={pick[zg.card.id] === -1} onclick={() => (pick[zg.card.id] = -1)}><X size={14} /> {L('Nenhuma serve (deixar a carta como está)', 'None works (leave the card as is)')}</button>
-      <span class="muted small">{L('Teclado: ← → muda de carta · 1, 2, 3 escolhe · 0 nenhuma · Esc volta', 'Keys: ← → change card · 1, 2, 3 choose · 0 none · Esc back')}</span>
+      <button class="btn sm" class:danger={!picked(zg)} onclick={() => (pick[zg.card.id] = '')}><X size={14} /> {L('Nenhuma serve (deixar a carta como está)', 'None works (leave the card as is)')}</button>
+      {#if pages > 1}
+        <span class="pager">
+          {#each Array(pages) as _, p}<button class="pg" class:on={p === page} onclick={() => (page = p)} title={L(`Imagens ${p * perPage + 1} a ${Math.min(zfiles.length, (p + 1) * perPage)}`, `Images ${p * perPage + 1} to ${Math.min(zfiles.length, (p + 1) * perPage)}`)}></button>{/each}
+          <small>{L(`imagens ${page * perPage + 1}–${Math.min(zfiles.length, (page + 1) * perPage)} de ${zfiles.length}`, `images ${page * perPage + 1}–${Math.min(zfiles.length, (page + 1) * perPage)} of ${zfiles.length}`)}</small>
+        </span>
+      {/if}
+      <span class="muted small">{L('Teclado: ← → passa as imagens e as cartas · 1, 2, 3 escolhe · 0 nenhuma · Esc volta', 'Keys: ← → browse images and cards · 1, 2, 3 choose · 0 none · Esc back')}</span>
     </footer>
   </div>
 {/if}
@@ -225,10 +297,16 @@
   .name b { font-size: 13.5px; font-weight: 600; }
   .name small { color: var(--muted); font-size: 11.5px; }
   .opts { display: flex; gap: 10px; flex-wrap: wrap; }
-  .opt { position: relative; width: 140px; aspect-ratio: 832 / 1152; padding: 0; border: 2px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--bg-2); cursor: pointer; opacity: .8; transition: all var(--t); }
+  .opt { position: relative; width: 140px; aspect-ratio: 832 / 1152; padding: 0; border: 2px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--bg-2); cursor: pointer; opacity: .8; transition: all var(--t); font: inherit; }
   .opt:hover { opacity: 1; }
   .opt.on { border-color: var(--accent); opacity: 1; box-shadow: 0 0 0 3px var(--accent-soft); }
   .opt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .optpick { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: pointer; }
+  /* lixeira: aparece ao passar o mouse na imagem */
+  .trash { position: absolute; right: 5px; bottom: 5px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgb(255 140 125 / .5); background: rgb(40 10 8 / .88); color: #ffb4ad; display: grid; place-items: center; cursor: pointer; opacity: 0; transform: translateY(4px); transition: opacity var(--t), transform var(--t), background var(--t); }
+  .opt:hover .trash, .trash:focus-visible { opacity: 1; transform: none; }
+  .trash:hover { background: #b3261e; color: #fff; border-color: #ff8a7d; }
+  .undo { align-self: center; }
   .num { position: absolute; left: 5px; top: 5px; min-width: 20px; height: 20px; border-radius: 6px; background: rgb(0 0 0 / .65); color: #fff; font: 600 11px/20px var(--ui); text-align: center; }
   .tick { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
   .none { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-size: 12px; }
@@ -245,16 +323,27 @@
   .ztitle { display: flex; flex-direction: column; min-width: 0; }
   .ztitle b { font-size: 16px; }
   .ztitle small { color: var(--muted); font-size: 12px; }
-  .big { flex: 1; min-height: 0; display: flex; gap: 18px; justify-content: center; align-items: stretch; padding: 16px 18px; overflow-x: auto; }
-  .bopt { flex: 0 1 auto; display: flex; flex-direction: column; gap: 8px; align-items: center; padding: 8px; border: 2px solid transparent; border-radius: 12px; background: none; cursor: pointer; min-height: 0; }
+  /* poucas imagens por vez, bem grandes; as setas dos lados trazem as outras */
+  .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: 64px 1fr 64px; align-items: stretch; }
+  .side { border: 0; background: none; color: var(--text-2); cursor: pointer; display: grid; place-items: center; transition: background var(--t), color var(--t); }
+  .side:hover:not(:disabled) { background: rgb(255 255 255 / .05); color: var(--accent-2); }
+  .side:disabled { opacity: .18; cursor: default; }
+  .big { min-height: 0; min-width: 0; display: flex; gap: 18px; justify-content: center; align-items: stretch; padding: 16px 4px; }
+  .bopt { flex: 0 1 auto; display: flex; flex-direction: column; gap: 8px; align-items: center; padding: 8px; border: 2px solid transparent; border-radius: 12px; min-height: 0; min-width: 0; }
   .bopt:hover { border-color: var(--line-2); }
   .bopt.on { border-color: var(--accent); background: var(--accent-soft); }
-  .bopt img { flex: 1; min-height: 0; max-width: 100%; height: 100%; object-fit: contain; border-radius: 8px; display: block; }
-  /* a carta ocupa a altura disponível e a largura sai da proporção (o SVG não impõe o próprio tamanho) */
-  /* altura = o que cabe na tela (ou menos, se forem muitas versões lado a lado); a largura sai da proporção da carta */
-  .cardsvg { position: relative; flex: none; height: min(calc(100vh - 215px), calc((100vw - 60px) / var(--n, 4) * 1.4 - 50px)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; }
+  .bpick { flex: 1; min-height: 0; display: flex; padding: 0; border: 0; background: none; cursor: pointer; }
+  .bpick img { min-height: 0; max-width: 100%; height: 100%; object-fit: contain; border-radius: 8px; display: block; }
+  /* a carta ocupa a altura disponível (ou menos, se forem várias lado a lado); a largura sai da proporção */
+  .cardsvg { position: relative; flex: none; height: min(calc(100vh - 235px), calc((100vw - 190px) / var(--n, 3) * 1.4 - 60px)); aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; }
   .cardsvg :global(svg) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .brow { display: flex; align-items: center; gap: 14px; flex: none; }
   .blabel { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--ui); color: var(--text-2); }
   .bopt.on .blabel { color: var(--accent-2); font-weight: 600; }
+  .empty { align-self: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .pager { display: inline-flex; align-items: center; gap: 6px; }
+  .pager small { color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .pg { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: var(--bg-2); cursor: pointer; }
+  .pg.on { background: var(--accent); border-color: var(--accent); }
   .zoom > footer { display: flex; align-items: center; gap: 14px; justify-content: space-between; padding: 10px 18px 14px; border-top: 1px solid var(--line); }
 </style>
