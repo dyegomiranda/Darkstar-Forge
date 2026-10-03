@@ -7,9 +7,9 @@
  *  - Ao subir de nível (a cada 3 XP): +1 Vigor, +1 Mana ou +3 Vida.
  *  - Campo de 2 fileiras × 3 lugares por lado; o herói ocupa um lugar.
  *  - O dano fica até ser curado. Só três números na mesa: dano, recursos, XP.
- *  - Marcadores binários (sem contagem): Aflição (1 de dano no começo do turno
- *    do dono; some com qualquer cura), Marca (sofre +1 de todo dano) e
- *    Proteção (anula o próximo dano).
+ *  - Marcadores: Aflição (acumula até 3; 1 de dano por acúmulo no começo do
+ *    turno do dono; some com qualquer cura), Marca (sofre +1 de todo dano; não
+ *    acumula) e Proteção (anula o próximo dano; não acumula).
  */
 
 export type Attr = 'for' | 'des' | 'con' | 'int' | 'sab' | 'car';
@@ -175,7 +175,8 @@ export interface Unit {
   isHero: boolean;
   /** Já atacou neste turno (ou acabou de entrar). */
   exhausted: boolean;
-  afflicted: boolean;
+  /** Acúmulos de Aflição (0 = sem): cada um tira 1 PV no começo do turno do dono. */
+  afflicted: number;
   marked: boolean;
   warded: boolean;
   /** Bônus de ATK até o fim do turno. */
@@ -276,7 +277,8 @@ export type Action =
   | { t: 'play'; uid: string; target?: Pos; slot?: Pos }
   | { t: 'strike'; target: Pos }
   | { t: 'attack'; from: Pos; target: Pos }
-  | { t: 'move'; to: Pos }
+  /** Move uma peça sua (`from`; sem ele, o herói) para um lugar livre do seu campo. */
+  | { t: 'move'; to: Pos; from?: Pos }
   | { t: 'levelup'; choice: 'vigor' | 'mana' | 'vida' }
   /** Resposta a uma carta do oponente: usar uma Reação ou aceitar. */
   | { t: 'react'; uid: string }

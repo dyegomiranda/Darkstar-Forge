@@ -137,7 +137,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-6', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
   };
   return { project, cards };
 }
