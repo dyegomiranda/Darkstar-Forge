@@ -39,6 +39,8 @@ export interface Settings {
   timeLimit: boolean;
   showLog: boolean;
   gamepad: boolean;
+  /** Mostrar o alerta de IA e as boas-vindas toda vez que o jogo abre (normalmente aparece só na primeira vez). */
+  welcome: boolean;
   keys: Record<KeyAction, string>;
   /** Versão destas configurações (para corrigir valores de versões anteriores). */
   rev: number;
@@ -49,7 +51,7 @@ const DEFAULTS: Settings = {
   display: 'maximized', resolution: '1600x900', uiScale: 0, quality: 'high', showFps: false,
   master: 1, music: 0.6, sfx: 0.8, mute: false, muteInBackground: true,
   pace: 'normal', difficulty: 'normal', timeLimit: true, showLog: true,
-  gamepad: true, keys: { ...DEFAULT_KEYS }, rev: 2,
+  gamepad: true, welcome: false, keys: { ...DEFAULT_KEYS }, rev: 2,
 };
 
 /** O que o programa (Electron) oferece à página; no navegador não existe. */

@@ -31,13 +31,14 @@ ARTS = [
      "both in profile, sparks between them, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
     # logotipo do desenvolvedor (tela de abertura): fundo preto liso, para assentar sobre a tela preta
     # (parte da arte aprovada, em tools/comfyui/ref: `denoise` baixo mexe pouco nela)
-    ('estudio', 163, 1024, 1024,
-     "one single full body chibi game character sprite on a plain pure black background: a small evil male demon dark samurai, a man, with a big head and a small body, "
-     "standing in a low samurai fighting stance with legs apart, holding a black katana horizontally with both hands, thick black and purple smoke around his feet and rising from the blade. "
-     "He is clearly a man: a masculine face, thick angry black eyebrows, narrow glowing red eyes with a cruel evil glare, a full black beard of medium length covering the jaw and chin, "
-     "the mouth closed in a thin cold line. Short cropped messy black hair that does not reach the ears, no topknot, no bun, no ponytail, nothing tied on top of the head. Two curved bright red horns on top of the head, a pale face. "
-     "Two large dark demon bat wings spread open behind his back. Broad shoulders. Black samurai armor: layered lamellar shoulder guards, black chest plate tied with dark red cords, black armored skirt plates, black boots. "
-     "Simple readable shapes, the whole figure from the horns and wing tips to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
+    ('estudio', 181, 1024, 1024,
+     "one single full body chibi game character sprite on a plain pure black background: a small evil male demon samurai, a man, with a big head and a small body. "
+     "Dynamic samurai pose: three-quarter view, feet planted wide in a deep low stance, body twisted, both hands gripping a long black katana raised high above the head ready to strike down (jodan stance), "
+     "thick black and purple smoke rising from the black blade. "
+     "Very short cropped black hair close to the scalp, messy short spikes, no topknot, no bun, no long hair. Two medium-sized curved red demon horns, about as long as a hand, not huge. "
+     "Glowing red eyes with a cruel evil glare under angry brows, a full black beard of medium length, the mouth closed in a thin cold line. "
+     "Two large dark demon bat wings spread behind his back. Black samurai armor with layered shoulder guards, dark red cords and a dark red sash, black armored skirt plates, black boots. "
+     "Simple readable shapes, the whole figure from the katana tip and wing tips to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
     ('campanha', 43, 1024, 1280,
      "vertical composition: a winding road through a dark fantasy world map landscape seen from a high cliff, distant ruined castle, dead forest, mountains and a glowing violet rift on the horizon, "
      "a small party of three travelers with a lantern walking the road, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
@@ -84,7 +85,9 @@ for aid, seed, w, h, prompt in ARTS:
         dst = os.path.join(OUT, f"{aid}.webp" if v == 1 else f"{aid}__v{v}.webp")
         if os.path.exists(dst): continue
         t0 = time.time()
-        if aid == 'estudio':
+        if aid == 'estudio' and os.environ.get('SEM_REF'):
+            g = wf(prompt, seed * 100 + v, w, h, fig=True)
+        elif aid == 'estudio':
             shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ref', 'estudio-ref.png'), os.path.join(os.path.expanduser('~/ComfyUI/input'), 'estudio-ref.png'))
             g = wf(prompt, seed * 100 + v, w, h, fig=True, init='estudio-ref.png', denoise=[0.8, 0.84, 0.88, 0.92][(v - 1) % 4])
         else: g = wf(prompt, seed * 100 + v, w, h)

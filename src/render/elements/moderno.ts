@@ -52,11 +52,15 @@ export const moderno: PieceStyle[] = [
   {
     style: 'moderno', kind: 'cost', opacity: 1, metal: 'deck',
     render(a) {
-      const { cx, cy } = center(a.box);
-      // caixa larga (vários custos): losango esticado em hexágono
+      const c = center(a.box);
+      // caixa larga (vários custos): o losango só estica para os lados — continua com as 4 pontas
+      // (antes virava um hexágono, de pontas de cima e de baixo cortadas)
       const ext = Math.max(0, (a.box.w - a.box.h) / 2);
       const r = Math.min(a.box.w, a.box.h) / 2 + 6;
-      const long = (k: number) => ext ? poly([[cx - ext - k, cy], [cx - ext, cy - k], [cx + ext, cy - k], [cx + ext + k, cy], [cx + ext, cy + k], [cx - ext, cy + k]]) : diamond(cx, cy, k, k);
+      const rx = (k: number) => k + ext * 2.2, ry = (k: number) => k * (ext ? 1.08 : 1);
+      // a ponta da esquerda não passa mais da borda do que no losango simples: o selo anda para a direita
+      const cx = c.cx + Math.max(0, a.box.x - 6 - (c.cx - rx(r))), cy = c.cy;
+      const long = (k: number) => diamond(cx, cy, rx(k), ry(k));
       const svg = slab(a, long(r), '#101010', 6, 6) +
         `<path d="${long(r - 7)}" fill="${flat(a.defs, a.pal)}"/>`;
       const ci = r * 0.62;

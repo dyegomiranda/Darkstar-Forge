@@ -17,7 +17,7 @@
  */
 import { app } from '../../store/project.svelte';
 import { applyScoring } from '../../model/scoring';
-import { clearPath, copyPath, isDeckSpecific } from '../../model/lookPaths';
+import { clearPath, copyPath, isDeckSpecific, syncLook } from '../../model/lookPaths';
 import type { Card, Deck, DeckKind, Lang } from '../../model/types';
 import type { IconChoice, Look, PieceChoice, PieceSlot } from '../../render/compose';
 import { mergeLook, type CardContext } from '../../render/card';
@@ -84,6 +84,14 @@ export class EditorState {
   get dirty(): boolean { return this.#serialize() !== this.#saved; }
   /** Há mudanças de tema (deck/coleção) esperando o Salvar. */
   get themeDirty(): boolean { return this.touched.length > 0; }
+
+  /** Usa um estilo salvo: o tema inteiro dele entra no deck aberto (as cores e os símbolos próprios do deck ficam). */
+  adoptLook(look: Look): void {
+    this.deckLook = syncLook(clone(this.deckLook) as never, clone(look) as never) as Look;
+    const wide = this.scope === 'collection';
+    this.touched = [...this.touched.filter((t) => !['style', 'pieces', 'layout'].includes(t.path)), { path: 'style', wide }, { path: 'pieces', wide }, { path: 'layout', wide }];
+    this.touch();
+  }
   get deck(): Deck { return app.deck(this.draft.deckId)!; }
   /** Tema do deck em uso na pré-visualização (o rascunho, se for o mesmo deck). */
   get baseLook(): Look { return this.draft.deckId === this.#deckId ? this.deckLook : this.deck.look; }
@@ -165,7 +173,8 @@ export class EditorState {
   save(): number {
     if (!this.themeOnly) applyScoring(this.draft);
     let others = 0;
-    if (this.touched.length) others = this.#applyTheme();
+    // (na coleção, aplicar sem mexer em nada também vale: leva o tema do deck aberto aos outros)
+    if (this.touched.length || this.scope === 'collection') others = this.#applyTheme();
     if (!this.themeOnly) app.putCard(this.draft);
     this.touched = [];
     this.#openDeck = clone(this.deckLook);
@@ -177,11 +186,14 @@ export class EditorState {
     const deck = app.deck(this.#deckId)!;
     const paths = [...new Set(this.touched.map((t) => t.path))];
     const wide = [...new Set(this.touched.filter((t) => t.wide).map((t) => t.path))].filter((p) => !isDeckSpecific(p));
-    const others = wide.length ? this.targets.filter((d) => d.id !== deck.id) : [];
+    // coleção: os outros decks recebem o tema INTEIRO (não só o que foi mexido agora), cada um com as suas cores
+    const whole = this.scope === 'collection';
+    const others = wide.length || whole ? this.targets.filter((d) => d.id !== deck.id) : [];
     const look = clone(this.deckLook);
     app.updateProject((p) => {
       for (const d of p.decks) {
         if (d.id === deck.id) d.look = structuredClone(look);
+        else if (whole && others.some((o) => o.id === d.id)) d.look = syncLook(structuredClone($state.snapshot(d.look) as Look) as never, look as never) as Look;
         else if (others.some((o) => o.id === d.id)) {
           const l = structuredClone($state.snapshot(d.look) as Look);
           for (const path of wide) copyPath(l as never, look as never, path, isDeckSpecific);

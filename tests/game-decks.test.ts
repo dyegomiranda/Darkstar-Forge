@@ -26,6 +26,20 @@ describe('regra de custo', () => {
   });
 });
 
+describe('curva de poder', () => {
+  it('nenhuma carta vale menos que outra mais barata e de nível menor (ou igual) do mesmo deck', async () => {
+    const { gameValue } = await import('../src/game/value');
+    // o valor dos efeitos, sem os descontos (nível, atributo): é o poder da carta na mesa
+    const raw = (g: Parameters<typeof gameValue>[0]) => gameValue(g).filter((l) => !/Exige|Reação|Item/.test(l.label)).reduce((n, l) => n + l.points, 0);
+    const bad: string[] = [];
+    for (const d of PROTO_DECKS) {
+      const cs = d.cards.filter((c) => c.game.kind !== 'item' && c.game.kind !== 'reacao').map((c) => ({ n: c.name[0], lv: c.game.level, cost: (c.game.vigor ?? 0) + (c.game.mana ?? 0), raw: raw(c.game) }));
+      for (const a of cs) for (const b of cs) if (a !== b && a.lv <= b.lv && a.cost <= b.cost && (a.lv < b.lv || a.cost < b.cost) && a.raw > b.raw) bad.push(`${d.hero.name}: ${a.n} (nível ${a.lv}, custo ${a.cost}) vale mais que ${b.n} (nível ${b.lv}, custo ${b.cost})`);
+    }
+    expect(bad).toEqual([]);
+  });
+});
+
 describe('equipamento vem das cartas vestidas', () => {
   it('o herói pronto, montado pelas cartas de equipamento, é igual ao do modelo', async () => {
     const { heroBaseOf, presetSlots, protoEquipment } = await import('../src/model/equipment');
@@ -48,7 +62,9 @@ describe('equipamento vem das cartas vestidas', () => {
     const full = buildHero(heroBaseOf({ id: 'x', name: 'X', raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots, notes: '', play: b }, cards));
     delete slots.mainHand; delete slots.chest;
     const bare = buildHero(heroBaseOf({ id: 'x', name: 'X', raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots, notes: '', play: b }, cards));
-    expect(bare.weapon.dmg).toBe(1);
+    // desarmado: golpe 1, mais o que as outras peças vestidas somam ao golpe
+    expect(bare.weapon.name[0]).toBe('Desarmado');
+    expect(bare.weapon.dmg).toBeLessThan(full.weapon.dmg);
     expect(bare.maxHp).toBeLessThan(full.maxHp);
     expect(bare.armor).toBeLessThan(full.armor);
   });
@@ -58,14 +74,15 @@ describe('equipamento vem das cartas vestidas', () => {
     const { buildHero, HERO_BASES } = await import('../src/game/decks');
     const cards = Object.fromEntries(protoEquipment('proto1').cards.map((c) => [c.id, c]));
     const play = structuredClone(HERO_BASES[1]);
-    play.gear[0] = { ...play.gear[0], name: ['Chapéu torto', 'Crooked hat'], resist: 2 };
+    const gi = play.gear.findIndex((g) => g.slot !== 'weapon');
+    play.gear[gi] = { ...play.gear[gi], name: ['Chapéu torto', 'Crooked hat'], resist: 2 };
     const ch = { id: 'k', name: 'K', raceId: '', classColors: [], level: 1, hp: 30, stats: {} as never, slots: {}, notes: '', play };
     let n = 100;
     const made = migrateGear(ch, cards, 'proto-equipment', () => ++n);
     expect(made).toHaveLength(1);
     expect(made[0].text['pt-BR'].name).toBe('Chapéu torto');
     for (const c of made) cards[c.id] = c;
-    expect(Object.keys(ch.slots)).toHaveLength(6);
+    expect(Object.keys(ch.slots)).toHaveLength(1 + play.gear.filter((g) => g.slot !== 'weapon').length);
     const a = buildHero(heroBaseOf(ch, cards)), ref = buildHero(play);
     expect([a.maxHp, a.armor, a.resist, a.weapon.dmg]).toEqual([ref.maxHp, ref.armor, ref.resist, ref.weapon.dmg]);
   });

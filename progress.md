@@ -1,8 +1,22 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.5: equipamentos refeitos, decks Roxo, Bege e Prata, cenários, música e dificuldade)
+**Atualizado:** 02/10/2026 (versão 3.6: vida pela ficha, fichas completas, estilos salvos, coleções e equilíbrio)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.6 (02/10/2026)
+
+- [x] Vida do herói calculada pela ficha (14 + ancestralidade + classe + 2 × CON, mais a CON das peças); não é mais editável
+- [x] Todos os heróis com todas as partes equipadas conforme a classe; armas de uma mão cabem na mão secundária (duas espadas, duas adagas)
+- [x] Peças de cabeça, mãos e pernas dão Vida em vez de Armadura; anéis de Força, Agilidade e do Berserker, colar de presas
+- [x] Cartas baratas mais fortes que caras corrigidas (teste de dominância); níveis de magias do Kael revistos; equilíbrio entre heróis 42–59%
+- [x] Estilos salvos no tema do deck; aplicar estilo à coleção alcança todos os decks
+- [x] Coleção 1ª Edição removida; botões para criar e apagar coleções
+- [x] Selo de custo do Moderno não corta com dois recursos; texto "sem desenho" não vaza do painel
+- [x] Música de batalha sem a aceleração repentina
+- [x] Casas do tabuleiro como área translúcida, sem a grama
+- [x] Opção em Configurações para rever o alerta de IA e boas-vindas
+- [x] Logotipo: cabelo curto, chifres médios, nova pose de samurai
 
 ## Versão 3.5 (02/10/2026)
 

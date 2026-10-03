@@ -229,13 +229,16 @@ class Chip {
     post.gain.value = 0.085;
     gtr.connect(shaper).connect(lp).connect(post).connect(gain);
     const id = track.def.id;
-    const p: Player = { track, gain, gtr, next: ctx.currentTime + 0.08, step: 0, timer: setInterval(() => this.#schedule(id), 60) };
+    // (cada relógio agenda só o seu próprio tocador: uma faixa que volta a tocar enquanto a anterior some
+    // não ganha dois relógios no mesmo tocador, o que a deixaria acelerada)
+    const p: Player = { track, gain, gtr, next: ctx.currentTime + 0.08, step: 0, timer: 0 as unknown as ReturnType<typeof setInterval> };
+    p.timer = setInterval(() => this.#schedule(p), 60);
     this.#players.set(id, p);
   }
 
-  #schedule(id: string) {
-    const ctx = this.ctx, p = this.#players.get(id);
-    if (!ctx || !p) return;
+  #schedule(p: Player) {
+    const ctx = this.ctx;
+    if (!ctx) return;
     const { track } = p, sec = 60 / track.def.bpm / 4;
     // a janela ficou em segundo plano: retoma do tempo atual, sem despejar notas atrasadas
     if (p.next < ctx.currentTime - 0.3) p.next = ctx.currentTime + 0.05;
@@ -268,6 +271,8 @@ class Chip {
       if (++p.step >= track.steps) {
         // terminou a faixa: passa para a próxima do mesmo clima (menos repetição)
         p.step = 0;
+        // (um tocador que está sumindo não troca a faixa de ninguém: só para)
+        if (this.#players.get(track.def.id) !== p) { clearInterval(p.timer); return; }
         if (this.mood === track.def.mood && TRACKS.filter((x) => x.mood === this.mood).length > 1) { setTimeout(() => this.next(1.2), 0); return; }
       }
     }
@@ -290,7 +295,7 @@ class Chip {
     if (!ctx) return;
     const cur = this.current;
     for (const [id, p] of this.#players) {
-      if (cur && id === cur.def.id) { p.next = ctx.currentTime + 0.06; p.gain.gain.setTargetAtTime(this.musicVol, ctx.currentTime, 0.1); clearInterval(p.timer); p.timer = setInterval(() => this.#schedule(id), 60); }
+      if (cur && id === cur.def.id) { p.next = ctx.currentTime + 0.06; p.gain.gain.setTargetAtTime(this.musicVol, ctx.currentTime, 0.1); clearInterval(p.timer); p.timer = setInterval(() => this.#schedule(p), 60); }
     }
     this.#play(0.6);
   }

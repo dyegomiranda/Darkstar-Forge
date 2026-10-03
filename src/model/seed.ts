@@ -3,7 +3,6 @@
  * coleção "Classes" (9 cartas por deck, fiéis ao Pathfinder 2e, geradas por
  * tools/pf-cards.py com custo e raridade pela tabela de pontuação).
  */
-import seedCards from '../data/seed-cards.json';
 import pfCards from '../data/pf-cards.json';
 import { HERO_BASES, PROTO_DECKS } from '../game/decks';
 import { PRESET_AVATARS } from '../avatar/presets';
@@ -24,7 +23,8 @@ interface SeedCard {
   rarity: string; mechanics: string[]; tags: string[];
 }
 
-export const EDITION_ID = 'ed1';
+/** A antiga 1ª Edição (amostra de cartas sem jogo), que saiu na 3.6. */
+export const OLD_EDITION_ID = 'ed1';
 
 /** Tema padrão de um deck novo: Neutro (vidro escuro), sem moldura. */
 export const defaultLook = (): Look => ({ style: 'neutro' });
@@ -35,7 +35,7 @@ const deckName = (id: ColorId): Record<Lang, string> => ({
 });
 
 /** Os 9 decks de uma edição. `prefix` diferencia os ids entre edições. */
-function editionDecks(editionId: string, prefix = ''): Deck[] {
+export function editionDecks(editionId: string, prefix = ''): Deck[] {
   return [
     ...CLASS_COLORS.map((c, i): Deck => ({ id: prefix + c, editionId, name: deckName(c), kind: 'class', colors: [c], look: defaultLook(), order: i })),
     { id: prefix + 'resources', editionId, name: { 'pt-BR': 'Recursos', 'en-US': 'Resources' }, kind: 'resources', colors: ['orange'], look: { style: 'neutro', pieces: { class: { style: 'neutro', hidden: true } } }, order: 7 },
@@ -126,18 +126,18 @@ export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Car
 export function seedProject(): { project: Project; cards: Card[] } {
   const pf = pfCollection();
   const proto = protoCollection();
-  const decks = [...editionDecks(EDITION_ID), ...pf.decks, ...proto.decks];
-  // (a amostra antiga de equipamentos, sem bônus de jogo, ficou de fora: o jogo usa o catálogo de src/game/gear.ts)
-  const cards = [...toCards((seedCards as SeedCard[]).filter((c) => c.deck !== 'equipment'), '', 'manual'), ...pf.cards, ...proto.cards];
+  // o jogo abre na coleção Protótipo (a do jogo); a de Classes — Pathfinder fica como exemplo de cartas
+  const decks = [...proto.decks, ...pf.decks];
+  const cards = [...proto.cards, ...pf.cards];
   const project: Project = {
     version: PROJECT_VERSION,
     name: 'Void Sun',
     lang: 'pt-BR',
-    editions: [{ id: EDITION_ID, name: '1ª Edição', code: '1ª Ed.' }, pf.edition, proto.edition],
+    editions: [proto.edition, pf.edition],
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
   };
   return { project, cards };
 }

@@ -6,6 +6,7 @@
 import type { Attr, CardGame, CardKind, Effect, GearItem, HeroBase, HeroDef, UnitDef, Via } from './types';
 import { ATTR_NAMES } from './types';
 import { gearOf } from './gear';
+import { lifeOf } from './life';
 
 export interface ProtoCard {
   name: [string, string];
@@ -82,7 +83,8 @@ export function buildHero(base: HeroBase): HeroDef {
   for (const it of base.gear) for (const [a, n] of Object.entries(it.attrs ?? {}) as [Attr, number][]) attrs[a] = (attrs[a] ?? 0) + n;
   return {
     id: base.id, name: base.name, className: base.className, deckId: base.deckId, attrs,
-    maxHp: Math.max(1, base.baseHp + sum('hp')), weapon: { ...w, dmg }, armor: Math.max(0, sum('armor')), resist: Math.max(0, sum('resist')),
+    // a Constituição que as peças dão também soma vida (2 por ponto, como na ficha)
+    maxHp: Math.max(1, base.baseHp + sum('hp') + 2 * base.gear.reduce((n, it) => n + (it.attrs?.con ?? 0), 0)), weapon: { ...w, dmg }, armor: Math.max(0, sum('armor')), resist: Math.max(0, sum('resist')),
     gear: [weaponItem, ...base.gear.map((it) => ({ ...it, info: gearInfo(it) }))],
     vigor: Math.max(0, base.vigor + sum('vigor')), mana: Math.max(0, base.mana + sum('mana')), row: base.row, col: base.col, icon: base.icon,
   };
@@ -90,11 +92,27 @@ export function buildHero(base: HeroBase): HeroDef {
 
 /** Os 4 heróis prontos, antes de somar o equipamento (viram fichas editáveis no app). */
 export const HERO_BASES: HeroBase[] = [];
-const preset = (base: HeroBase): HeroDef => { HERO_BASES.push(base); return buildHero(base); };
+const preset = (base: HeroBase): HeroDef => {
+  // o que a própria arma dá além do golpe (Mana do cajado, Armadura do montante…) entra como uma peça
+  const wd = base.weapon.cardId ? gearOf(base.weapon.cardId.replace(/^eq-/, '')) : undefined;
+  const wm = wd ? modsOf(wd) : {};
+  if (wd && Object.keys(wm).length) base.gear.unshift({ slot: 'weapon', name: wd.name, info: gearInfo(wm), ...wm, icon: wd.icon, cardId: base.weapon.cardId });
+  HERO_BASES.push(base);
+  return buildHero(base);
+};
 
 const POTION: ProtoCard = c(['Poção de Cura', 'Healing Potion'], ['Consumível', 'Consumable'], 'health-potion', 'item', {}, 1, [{ k: 'heal', n: 4, tgt: 'ally' }], 2);
 
 const unit = (pt: string, en: string, atk: number, def: number, keys: UnitDef['keys'], icon: string): UnitDef => ({ name: [pt, en], atk, def, keys, icon });
+
+// Atributos dos heróis prontos (9 pontos cada). A vida sai deles: veja src/game/life.ts.
+const ATTRS_BRUNHILD = { for: 4, des: 1, con: 3, int: 0, sab: 1, car: 0 };
+const ATTRS_KAEL = { for: 2, des: 2, con: 1, int: 4, sab: 0, car: 0 };
+const ATTRS_LYRA = { for: 0, des: 4, con: 2, int: 0, sab: 3, car: 0 };
+const ATTRS_MORGANA = { for: 0, des: 3, con: 2, int: 0, sab: 0, car: 4 };
+const ATTRS_VEX = { for: 0, des: 4, con: 2, int: 2, sab: 1, car: 0 };
+const ATTRS_ALDRIC = { for: 3, des: 0, con: 2, int: 0, sab: 2, car: 2 };
+const ATTRS_REN = { for: 0, des: 3, con: 1, int: 0, sab: 3, car: 2 };
 
 // ═════════ VERMELHO — Brunhild, bárbara de linha de frente (só Vigor) ═════════
 const BAR: [string, string] = ['Bárbaro', 'Barbarian'];
@@ -103,9 +121,9 @@ const red: ProtoDeck = {
   color: 'red',
   hero: preset({
     id: 'brunhild', name: 'Brunhild', className: ['Bárbara', 'Barbarian'], deckId: 'proto-red',
-    attrs: { for: 4, des: 1, con: 3, int: 0, sab: 1, car: 0 }, baseHp: 21,
+    attrs: ATTRS_BRUNHILD, baseHp: lifeOf(8, 'red', ATTRS_BRUNHILD.con),
     weapon: arm('greataxe'),
-    gear: [g('hide'), g('leatherpants'), g('healthamulet')],
+    gear: [g('ironhelm'), g('hide'), g('ogregauntlets'), g('leatherpants'), g('elvenboots'), g('fangnecklace'), g('strengthring'), g('berserkerring')],
     vigor: 3, mana: 0, row: 0, col: 1, icon: 'horned-helm',
   }),
   cards: [
@@ -136,9 +154,9 @@ const blue: ProtoDeck = {
   color: 'blue',
   hero: preset({
     id: 'kael', name: 'Kael', className: ['Mago de batalha', 'Battle mage'], deckId: 'proto-blue',
-    attrs: { for: 2, des: 2, con: 1, int: 4, sab: 0, car: 0 }, baseHp: 38,
+    attrs: ATTRS_KAEL, baseHp: lifeOf(8, 'blue', ATTRS_KAEL.con),
     weapon: arm('staff'),
-    gear: [g('headband'), g('chainshirt'), g('runegloves'), g('leatherpants'), g('wardamulet')],
+    gear: [g('headband'), g('chainshirt'), g('gauntlets'), g('greaves'), g('elvenboots'), g('healthamulet'), g('protectionring'), g('agilityring')],
     vigor: 0, mana: 3, row: 1, col: 1, icon: 'pentacle',
   }),
   cards: [
@@ -153,10 +171,10 @@ const blue: ProtoDeck = {
     c(['Elemental de Pedra', 'Stone Elemental'], MAG, 'rock-golem', 'invocacao', { m: 3 }, 2, [{ k: 'summon', unit: unit('Elemental de pedra', 'Stone elemental', 2, 5, ['guarda'], 'rock-golem') }], 3, ['int', 2]),
     c(['Postura do Mago de Batalha', 'Battle Mage Stance'], MAG, 'crystal-wand', 'postura', { m: 2 }, 2, [{ k: 'stance', mods: { strike: 1, strikeMagic: true } }], 2, ['for', 2]),
     c(['Lança de Fogo', 'Fire Lance'], MAG, 'fire-spell-cast', 'magia', { m: 3 }, 2, [{ k: 'dmg', n: 7, tgt: 'enemy', via: 'magic' }], 2),
-    c(['Bola de Fogo', 'Fireball'], MAG, 'fireball', 'magia', { m: 3 }, 3, [{ k: 'dmg', n: 3, tgt: 'enemyRow', via: 'magic' }], 2, ['int', 3]),
-    c(['Relâmpago em Cadeia', 'Chain Lightning'], MAG, 'bolt-spell-cast', 'magia', { m: 3 }, 3, [{ k: 'dmg', n: 2, tgt: 'allEnemies', via: 'magic' }], 2, ['int', 3]),
-    c(['Elemental de Fogo', 'Fire Elemental'], MAG, 'fire-silhouette', 'invocacao', { m: 2 }, 3, [{ k: 'summon', unit: unit('Elemental de fogo', 'Fire elemental', 4, 3, ['rapido'], 'fire-silhouette') }], 2, ['int', 4]),
-    c(['Meteoro', 'Meteor'], MAG, 'burning-meteor', 'magia', { m: 6 }, 6, [{ k: 'dmg', n: 4, tgt: 'allEnemies', via: 'magic' }], 1, ['int', 4]),
+    c(['Bola de Fogo', 'Fireball'], MAG, 'fireball', 'magia', { m: 3 }, 2, [{ k: 'dmg', n: 3, tgt: 'enemyRow', via: 'magic' }], 2, ['int', 3]),
+    c(['Relâmpago em Cadeia', 'Chain Lightning'], MAG, 'bolt-spell-cast', 'magia', { m: 3 }, 2, [{ k: 'dmg', n: 2, tgt: 'allEnemies', via: 'magic' }], 2, ['int', 3]),
+    c(['Elemental de Fogo', 'Fire Elemental'], MAG, 'fire-silhouette', 'invocacao', { m: 3 }, 2, [{ k: 'summon', unit: unit('Elemental de fogo', 'Fire elemental', 4, 3, ['rapido'], 'fire-silhouette') }], 2, ['int', 4]),
+    c(['Meteoro', 'Meteor'], MAG, 'burning-meteor', 'magia', { m: 6 }, 5, [{ k: 'dmg', n: 4, tgt: 'allEnemies', via: 'magic' }], 1, ['int', 4]),
     c(['Poção de Mana', 'Mana Potion'], ['Consumível', 'Consumable'], 'magic-potion', 'item', {}, 1, [{ k: 'gain', res: 'mana', n: 2 }], 2),
     POTION,
     r(['Contramágica', 'Counterspell'], MAG, 'spell-book', { m: 2 }, 1, 'magia', [{ k: 'counter' }], 2),
@@ -170,9 +188,9 @@ const green: ProtoDeck = {
   color: 'green',
   hero: preset({
     id: 'lyra', name: 'Lyra', className: ['Patrulheira', 'Ranger'], deckId: 'proto-green',
-    attrs: { for: 0, des: 4, con: 2, int: 0, sab: 3, car: 0 }, baseHp: 30,
+    attrs: ATTRS_LYRA, baseHp: lifeOf(8, 'green', ATTRS_LYRA.con),
     weapon: arm('longbow'),
-    gear: [g('hood'), g('studded'), g('thiefgloves'), g('leatherpants'), g('elvenboots'), g('healthamulet')],
+    gear: [g('hood'), g('studded'), g('thiefgloves'), g('leatherpants'), g('elvenboots'), g('healthamulet'), g('agilityring'), g('protectionring')],
     vigor: 2, mana: 1, row: 1, col: 1, icon: 'bowman',
   }),
   cards: [
@@ -185,7 +203,7 @@ const green: ProtoDeck = {
     c(['Enredar', 'Entangle'], DRU, 'thorny-vine', 'magia', { m: 1 }, 1, [{ k: 'dmg', n: 1, tgt: 'enemy', via: 'magic' }, { k: 'push', tgt: 'enemy' }], 3),
     c(['Camuflagem', 'Camouflage'], PAT, 'hooded-figure', 'postura', { v: 2 }, 1, [{ k: 'stance', mods: { strike: 1 } }, { k: 'ward', tgt: 'hero' }], 2, ['des', 2]),
     c(['Tiro Duplo', 'Double Shot'], PAT, 'bowman', 'ataque', { v: 2 }, 2, [{ k: 'strike', bonus: 3, times: 2 }], 3, ['des', 3]),
-    c(['Seiva Curativa', 'Healing Sap'], DRU, 'leaf-swirl', 'magia', { m: 1 }, 2, [{ k: 'heal', n: 4, tgt: 'ally' }], 2, ['sab', 2]),
+    c(['Seiva Curativa', 'Healing Sap'], DRU, 'leaf-swirl', 'magia', { m: 1 }, 2, [{ k: 'heal', n: 5, tgt: 'ally' }], 2, ['sab', 2]),
     c(['Instinto Selvagem', 'Wild Instinct'], PAT, 'direwolf', 'tecnica', { v: 1 }, 2, [{ k: 'buff', atk: 1, tgt: 'allAllies' }, { k: 'draw', n: 1 }], 2),
     c(['Chuva de Flechas', 'Arrow Rain'], PAT, 'arrow-cluster', 'ataque', { v: 2 }, 3, [{ k: 'dmg', n: 3, tgt: 'enemyRow', via: 'ranged' }], 2, ['des', 3]),
     c(['Urso Companheiro', 'Bear Companion'], PAT, 'bear-head', 'invocacao', { v: 1, m: 2 }, 3, [{ k: 'summon', unit: unit('Urso', 'Bear', 3, 6, ['guarda'], 'bear-head') }], 2, ['sab', 3]),
@@ -203,9 +221,9 @@ const black: ProtoDeck = {
   color: 'black',
   hero: preset({
     id: 'morgana', name: 'Morgana', className: ['Bruxa da lâmina', 'Hexblade'], deckId: 'proto-black',
-    attrs: { for: 0, des: 3, con: 2, int: 0, sab: 0, car: 4 }, baseHp: 31,
+    attrs: ATTRS_MORGANA, baseHp: lifeOf(8, 'black', ATTRS_MORGANA.con),
     weapon: arm('katana'),
-    gear: [g('hood'), g('shadowcloak'), g('leatherpants'), g('travelboots'), g('wardamulet'), g('patronring')],
+    gear: [g('circlet'), g('shadowcloak'), g('gauntlets'), g('leatherpants'), g('elvenboots'), g('healthamulet'), g('patronring'), g('protectionring')],
     vigor: 1, mana: 2, row: 0, col: 1, icon: 'daemon-skull',
   }),
   cards: [
@@ -218,13 +236,13 @@ const black: ProtoDeck = {
     c(['Garras do Vazio', 'Void Claws'], BRU, 'shadow-grasp', 'magia', { m: 1 }, 1, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'magic' }, { k: 'push', tgt: 'enemy' }], 2),
     c(['Dança das Sombras', 'Shadow Dance'], BRU, 'two-shadows', 'tecnica', { v: 2 }, 1, [{ k: 'ward', tgt: 'hero' }, { k: 'draw', n: 1 }], 2, ['des', 2]),
     c(['Sussurro do Patrono', "Patron's Whisper"], BRU, 'spark-spirit', 'tecnica', { m: 2 }, 1, [{ k: 'draw', n: 2 }], 2),
-    c(['Lâmina do Pacto', 'Pact Blade'], BRU, 'cursed-star', 'ataque', { v: 1, m: 1 }, 2, [{ k: 'strike', bonus: 5 }], 3, ['car', 2]),
+    c(['Lâmina do Pacto', 'Pact Blade'], BRU, 'cursed-star', 'ataque', { v: 1, m: 1 }, 2, [{ k: 'strike', bonus: 6 }], 3, ['car', 2]),
     c(['Postura da Lâmina Sombria', 'Shadow Blade Stance'], BRU, 'eclipse', 'postura', { m: 2 }, 2, [{ k: 'stance', mods: { strike: 1, strikeAfflicts: true } }], 2, ['car', 2]),
-    c(['Raio Sombrio', 'Shadow Bolt'], BRU, 'spiky-eclipse', 'magia', { m: 2 }, 2, [{ k: 'dmg', n: 4, tgt: 'enemy', via: 'magic' }], 2),
-    c(['Demônio Vinculado', 'Bound Demon'], BRU, 'daemon-skull', 'invocacao', { m: 3 }, 3, [{ k: 'summon', unit: unit('Demônio', 'Demon', 4, 4, ['rapido'], 'daemon-skull') }], 2, ['car', 3]),
+    c(['Raio Sombrio', 'Shadow Bolt'], BRU, 'spiky-eclipse', 'magia', { m: 2 }, 2, [{ k: 'dmg', n: 5, tgt: 'enemy', via: 'magic' }], 2),
+    c(['Demônio Vinculado', 'Bound Demon'], BRU, 'daemon-skull', 'invocacao', { m: 3 }, 2, [{ k: 'summon', unit: unit('Demônio', 'Demon', 4, 4, ['rapido'], 'daemon-skull') }], 2, ['car', 3]),
     c(['Praga', 'Plague'], NEC, 'death-skull', 'magia', { m: 3 }, 2, [{ k: 'afflict', tgt: 'allEnemies' }], 2, ['car', 2]),
-    c(['Legião de Ossos', 'Bone Legion'], NEC, 'crossed-bones', 'invocacao', { m: 3 }, 4, [{ k: 'summon', unit: unit('Esqueleto', 'Skeleton', 1, 2, ['guarda'], 'death-skull'), n: 2 }], 2),
-    c(['Ceifar Almas', 'Reap Souls'], BRU, 'grim-reaper', 'magia', { m: 5 }, 5, [{ k: 'dmg', n: 3, tgt: 'allEnemies', via: 'magic' }, { k: 'heal', n: 3, tgt: 'hero' }], 1, ['car', 4]),
+    c(['Legião de Ossos', 'Bone Legion'], NEC, 'crossed-bones', 'invocacao', { m: 4 }, 4, [{ k: 'summon', unit: unit('Esqueleto', 'Skeleton', 2, 2, ['guarda'], 'death-skull'), n: 2 }], 2),
+    c(['Ceifar Almas', 'Reap Souls'], BRU, 'grim-reaper', 'magia', { m: 5 }, 4, [{ k: 'dmg', n: 3, tgt: 'allEnemies', via: 'magic' }, { k: 'heal', n: 3, tgt: 'hero' }], 1, ['car', 4]),
     POTION,
     r(['Represália Sombria', 'Shadow Reprisal'], BRU, 'magic-palm', { m: 1 }, 1, 'ataque', [{ k: 'afflict', tgt: 'enemyHero' }, { k: 'dmg', n: 1, tgt: 'enemyHero', via: 'magic' }], 2),
   ],
@@ -239,9 +257,9 @@ const purple: ProtoDeck = {
   color: 'purple',
   hero: preset({
     id: 'vex', name: 'Vex', className: ['Assassina', 'Assassin'], deckId: 'proto-purple',
-    attrs: { for: 0, des: 4, con: 2, int: 2, sab: 1, car: 0 }, baseHp: 28,
+    attrs: ATTRS_VEX, baseHp: lifeOf(8, 'purple', ATTRS_VEX.con),
     weapon: arm('shortsword'),
-    gear: [off('dagger'), g('hood'), g('studded'), g('leatherpants'), g('travelboots')],
+    gear: [off('dagger'), g('hood'), g('studded'), g('thiefgloves'), g('leatherpants'), g('elvenboots'), g('healthamulet'), g('vigorring'), g('agilityring')],
     vigor: 2, mana: 1, row: 0, col: 1, icon: 'hooded-assassin',
   }),
   cards: [
@@ -275,10 +293,10 @@ const white: ProtoDeck = {
   color: 'white',
   hero: preset({
     id: 'aldric', name: 'Aldric', className: ['Paladino', 'Paladin'], deckId: 'proto-white',
-    attrs: { for: 3, des: 0, con: 2, int: 0, sab: 2, car: 2 }, baseHp: 25,
+    attrs: ATTRS_ALDRIC, baseHp: lifeOf(8, 'white', ATTRS_ALDRIC.con),
     weapon: arm('longsword'),
-    gear: [g('shield'), g('clericvest'), g('wardamulet')],
-    vigor: 2, mana: 2, row: 0, col: 1, icon: 'templar-shield',
+    gear: [g('buckler'), g('ironhelm'), g('chainshirt'), g('gauntlets'), g('leatherpants'), g('ironboots'), g('periapt'), g('patronring'), g('strengthring')],
+    vigor: 1, mana: 2, row: 0, col: 1, icon: 'templar-shield',
   }),
   cards: [
     c(['Golpe Divino', 'Divine Smite'], PAL, 'sunbeams', 'ataque', { v: 1, m: 1 }, 1, [{ k: 'strike', bonus: 2, smite: 2 }], 4),
@@ -311,9 +329,9 @@ const silver: ProtoDeck = {
   color: 'silver',
   hero: preset({
     id: 'ren', name: 'Ren', className: ['Monge', 'Monk'], deckId: 'proto-silver',
-    attrs: { for: 0, des: 3, con: 1, int: 0, sab: 3, car: 2 }, baseHp: 38,
+    attrs: ATTRS_REN, baseHp: lifeOf(8, 'silver', ATTRS_REN.con),
     weapon: arm('handwraps'),
-    gear: [g('monkgarb'), g('leatherpants'), g('elvenboots'), g('periapt')],
+    gear: [g('hood'), g('monkgarb'), g('thiefgloves'), g('leatherpants'), g('elvenboots'), g('healthamulet'), g('agilityring'), g('protectionring')],
     vigor: 1, mana: 2, row: 0, col: 1, icon: 'meditation',
   }),
   cards: [

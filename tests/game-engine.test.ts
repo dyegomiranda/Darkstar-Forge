@@ -15,7 +15,7 @@ describe('motor', () => {
     const s = newGame(side(0), side(1), { seed: 1 });
     expect(s.players[0].hand.length).toBe(7);
     expect(s.players[1].hand.length).toBe(7);
-    expect(s.players[0].vigor).toBe(3);
+    expect(s.players[0].vigor).toBe(side(0).hero.vigor);
     expect(s.players[0].xp).toBe(1);
   });
 
@@ -37,7 +37,7 @@ describe('motor', () => {
     expect(apply(s, { t: 'end' })).toMatch(/nível/);
     apply(s, { t: 'levelup', choice: 'vigor' });
     expect(s.players[0].level).toBe(2);
-    expect(s.players[0].maxVigor).toBe(4);
+    expect(s.players[0].maxVigor).toBe(side(0).hero.vigor + 1);
   });
 
   it('invocar ocupa um lugar livre; golpear tira vida', () => {
@@ -45,7 +45,8 @@ describe('motor', () => {
     const before = heroHp(s, 1);
     expect(apply(s, { t: 'strike', target: heroPos(s, 1) })).toBeNull();
     if (s.pending) apply(s, { t: 'pass' }); // Brunhild tem uma Reação na mão e aceita o golpe
-    expect(heroHp(s, 1)).toBe(before - 3); // katana 5 − armadura 2 de Brunhild (gibão de peles)
+    // golpe de Morgana (arma + equipamento) menos a armadura de Brunhild
+    expect(heroHp(s, 1)).toBe(before - Math.max(1, side(3).hero.weapon.dmg - side(0).hero.armor));
     const free = emptySlots(s, 0).length;
     s.players[0].hand.unshift({ uid: 'x', cardId: 'black-4' }); // Erguer Esqueleto
     s.players[0].mana = 5;

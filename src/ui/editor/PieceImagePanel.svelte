@@ -133,7 +133,9 @@
 </div>
 
 <style>
-  .pimg { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed var(--line-2); border-radius: 10px; background: var(--bg-2); }
+  .pimg { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed var(--line-2); border-radius: 10px; background: var(--bg-2); min-width: 0; }
+  /* os botões quebram a linha em vez de passar da borda do painel */
+  .pimg .row button { white-space: normal; height: auto; min-height: 30px; max-width: 100%; text-align: left; line-height: 1.25; padding-block: 5px; }
   .label { font: 600 12px var(--ui); color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
   .small { font-size: 12.5px; margin: 0; }
   .thumb { width: 64px; height: 44px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; overflow: hidden;

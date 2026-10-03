@@ -7,7 +7,7 @@ import type { Card, Deck, Edition, Lang } from '../model/types';
 import type { ComposeInput, Look } from './compose';
 
 /** Muda quando o desenho muda (invalida o cache de imagens). */
-export const RENDER_VERSION = 'r14';
+export const RENDER_VERSION = 'r15';
 
 /** Tema final = tema do deck + ajustes da carta (a carta ganha). */
 export function mergeLook(base: Look, over?: Partial<Look>): Look {

@@ -191,6 +191,13 @@
           <div class="chips"><button class:on={app.lang === 'pt-BR'} onclick={() => setLang('pt-BR')}>Português</button><button class:on={app.lang === 'en-US'} onclick={() => setLang('en-US')}>English</button></div>
         </div>
         <div class="row3">
+          <div class="lbl"><b>{L('Alerta de IA e boas-vindas', 'AI notice and welcome')}</b><small>{L('o aviso que aparece na primeira vez que o jogo abre', 'the notice shown the first time the game opens')}</small></div>
+          <div class="chips">
+            <button class:on={s.welcome} onclick={() => (s.welcome = !s.welcome)}>{s.welcome ? L('Mostrar ao abrir: sim', 'Show on start: yes') : L('Mostrar ao abrir: não', 'Show on start: no')}</button>
+            <button onclick={() => { try { localStorage.removeItem('voidsun.aviso'); sessionStorage.removeItem('voidsun.aviso.sessao'); } catch { /* sem armazenamento local */ } router.go('/'); }}>{L('Ver agora', 'Show now')}</button>
+          </div>
+        </div>
+        <div class="row3">
           <div class="lbl"><b>{L('Dificuldade do oponente', 'Opponent difficulty')}</b><small>{L(DIFFICULTIES.find((d) => d.id === s.difficulty)!.info[0], DIFFICULTIES.find((d) => d.id === s.difficulty)!.info[1])}</small></div>
           <div class="chips">{#each DIFFICULTIES as d (d.id)}<button class:on={s.difficulty === d.id} onclick={() => (s.difficulty = d.id)}>{L(d.name[0], d.name[1])}</button>{/each}</div>
         </div>

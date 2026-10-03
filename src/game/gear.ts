@@ -4,8 +4,10 @@
  *
  *  - Arma: dano do golpe básico (d4 → 2, d6 → 3, d8 → 4, d10 → 5, d12/2d6 → 6) e o tipo
  *    (corpo a corpo, à distância ou mágico). Armas de duas mãos deixam a outra mão vazia;
- *    as de haste têm alcance (golpeiam corpo a corpo da retaguarda); as leves cabem na
- *    mão secundária e somam ao golpe.
+ *    as de haste têm alcance (golpeiam corpo a corpo da retaguarda); toda arma de uma mão
+ *    cabe também na mão secundária (luta com duas armas) e lá soma ao golpe — as leves, mais.
+ *  - Armadura só vem do que protege o corpo de verdade: a armadura do peito, o escudo (e um
+ *    ou outro item mágico). Elmos, manoplas, grevas e botas dão Vida, não Armadura.
  *  - Armadura: leve, média e pesada. Quanto mais pesada, mais Armadura, mais Força pede e
  *    mais atrapalha a conjuração (Mana a menos) e o fôlego (Vigor a menos).
  *  - Foco arcano, divino ou da natureza, vestes e joias: Mana, Resistência mágica,
@@ -49,15 +51,15 @@ export const GEAR: GearDef[] = [
     flavor: ['Leve e discreta; cabe também na outra mão.', 'Light and discreet; fits the other hand too.'] },
   { key: 'shortsword', slot: 'weapon', name: ['Espada curta', 'Shortsword'], icon: 'broad-dagger', rarity: 'common', ...w(3, 'melee'), dual: 2,
     flavor: ['A arma de quem luta com uma lâmina em cada mão.', 'The weapon of those who fight with a blade in each hand.'] },
-  { key: 'mace', slot: 'weapon', name: ['Maça', 'Mace'], icon: 'spiked-mace', rarity: 'common', ...w(3, 'melee'), resist: 1,
+  { key: 'mace', slot: 'weapon', name: ['Maça', 'Mace'], icon: 'spiked-mace', rarity: 'common', ...w(3, 'melee'), resist: 1, dual: 1,
     flavor: ['Abençoada nos templos: protege quem a empunha da magia.', 'Blessed in the temples: wards its wielder against magic.'] },
-  { key: 'spear', slot: 'weapon', name: ['Lança', 'Spear'], icon: 'broadhead-arrow', rarity: 'common', ...w(3, 'melee', { reach: true }),
+  { key: 'spear', slot: 'weapon', name: ['Lança', 'Spear'], icon: 'broadhead-arrow', rarity: 'common', ...w(3, 'melee', { reach: true }), dual: 1,
     flavor: ['Alcança o inimigo por cima do ombro de um aliado.', "Reaches the foe over an ally's shoulder."] },
-  { key: 'longsword', slot: 'weapon', name: ['Espada longa', 'Longsword'], icon: 'broadsword', rarity: 'common', ...w(4, 'melee'), req: ['for', 2],
+  { key: 'longsword', slot: 'weapon', name: ['Espada longa', 'Longsword'], icon: 'broadsword', rarity: 'common', ...w(4, 'melee'), dual: 2, req: ['for', 2],
     flavor: ['Equilíbrio entre alcance, peso e corte.', 'A balance of reach, weight and edge.'] },
-  { key: 'rapier', slot: 'weapon', name: ['Rapieira', 'Rapier'], icon: 'sword-brandish', rarity: 'uncommon', ...w(4, 'melee'), req: ['des', 3],
+  { key: 'rapier', slot: 'weapon', name: ['Rapieira', 'Rapier'], icon: 'sword-brandish', rarity: 'uncommon', ...w(4, 'melee'), dual: 2, req: ['des', 3],
     flavor: ['Estocadas precisas: pede agilidade, não força.', 'Precise thrusts: it asks for agility, not strength.'] },
-  { key: 'battleaxe', slot: 'weapon', name: ['Machado de batalha', 'Battleaxe'], icon: 'battle-axe', rarity: 'uncommon', ...w(5, 'melee'), req: ['for', 3],
+  { key: 'battleaxe', slot: 'weapon', name: ['Machado de batalha', 'Battleaxe'], icon: 'battle-axe', rarity: 'uncommon', ...w(5, 'melee'), dual: 2, req: ['for', 3],
     flavor: ['Pesado para uma mão só, mas deixa a outra livre para o escudo.', 'Heavy for one hand, but leaves the other free for a shield.'] },
   { key: 'katana', slot: 'weapon', name: ['Katana', 'Katana'], icon: 'curvy-knife', rarity: 'uncommon', ...w(5, 'melee', { hands: 2 }), req: ['des', 3],
     flavor: ['Lâmina curva de duas mãos, feita para cortes rápidos.', 'A curved two-handed blade made for quick cuts.'] },
@@ -72,7 +74,7 @@ export const GEAR: GearDef[] = [
   // ───── armas à distância ─────
   { key: 'sling', slot: 'weapon', name: ['Funda', 'Sling'], icon: 'rune-stone', rarity: 'common', ...w(2, 'ranged'),
     flavor: ['Pedras à distância, com a outra mão livre.', 'Stones from afar, with the other hand free.'] },
-  { key: 'handcrossbow', slot: 'weapon', name: ['Besta de mão', 'Hand crossbow'], icon: 'crossbow', rarity: 'uncommon', ...w(3, 'ranged'), req: ['des', 2],
+  { key: 'handcrossbow', slot: 'weapon', name: ['Besta de mão', 'Hand crossbow'], icon: 'crossbow', rarity: 'uncommon', ...w(3, 'ranged'), dual: 1, req: ['des', 2],
     flavor: ['Pequena o bastante para uma mão só.', 'Small enough for a single hand.'] },
   { key: 'shortbow', slot: 'weapon', name: ['Arco curto', 'Shortbow'], icon: 'bow-arrow', rarity: 'common', ...w(3, 'ranged', { hands: 2 }),
     flavor: ['Fácil de puxar, para qualquer um.', 'Easy to draw, for anyone.'] },
@@ -81,7 +83,7 @@ export const GEAR: GearDef[] = [
   { key: 'heavycrossbow', slot: 'weapon', name: ['Besta pesada', 'Heavy crossbow'], icon: 'crossbow', rarity: 'rare', ...w(5, 'ranged', { hands: 2 }), vigor: -1, req: ['for', 2],
     flavor: ['O virote atravessa escudos, mas recarregar cansa.', 'The bolt pierces shields, but reloading is tiring.'] },
   // ───── focos de conjuração ─────
-  { key: 'wand', slot: 'weapon', name: ['Varinha', 'Wand'], icon: 'crystal-wand', rarity: 'common', ...w(3, 'magic'),
+  { key: 'wand', slot: 'weapon', name: ['Varinha', 'Wand'], icon: 'crystal-wand', rarity: 'common', ...w(3, 'magic'), dual: 1,
     flavor: ['Dispara magia com uma mão e deixa a outra para um orbe ou grimório.', 'Fires magic with one hand and leaves the other for an orb or tome.'] },
   { key: 'staff', slot: 'weapon', name: ['Cajado arcano', 'Arcane staff'], icon: 'wizard-staff', rarity: 'uncommon', ...w(4, 'magic', { hands: 2 }), mana: 1, req: ['int', 2],
     flavor: ['Guarda energia arcana para o próximo feitiço.', 'Stores arcane energy for the next spell.'] },
@@ -109,11 +111,11 @@ export const GEAR: GearDef[] = [
   // ───── cabeça ─────
   { key: 'hood', slot: 'head', name: ['Capuz', 'Hood'], icon: 'hooded-figure', rarity: 'common', attrs: { des: 1 },
     flavor: ['Esconde o rosto e o próximo passo.', 'Hides the face and the next step.'] },
-  { key: 'ironhelm', slot: 'head', name: ['Elmo de ferro', 'Iron helm'], icon: 'visored-helm', rarity: 'common', armor: 1,
+  { key: 'ironhelm', slot: 'head', name: ['Elmo de ferro', 'Iron helm'], icon: 'visored-helm', rarity: 'common', hp: 2,
     flavor: ['Simples e confiável.', 'Simple and reliable.'] },
-  { key: 'hornedhelm', slot: 'head', name: ['Elmo com chifres', 'Horned helm'], icon: 'horned-helm', rarity: 'uncommon', armor: 1, strike: 1, req: ['for', 2],
+  { key: 'hornedhelm', slot: 'head', name: ['Elmo com chifres', 'Horned helm'], icon: 'horned-helm', rarity: 'uncommon', strike: 1, hp: 1, req: ['for', 2],
     flavor: ['Protege e assusta; o choque dos chifres também fere.', 'Protects and frightens; the horns hurt too.'] },
-  { key: 'greathelm', slot: 'head', name: ['Elmo fechado', 'Great helm'], icon: 'black-knight-helm', rarity: 'uncommon', armor: 2, mana: -1, req: ['for', 2],
+  { key: 'greathelm', slot: 'head', name: ['Elmo fechado', 'Great helm'], icon: 'black-knight-helm', rarity: 'uncommon', hp: 3, mana: -1, req: ['for', 2],
     flavor: ['Nada passa, nem a concentração do conjurador.', "Nothing gets through, not even a caster's focus."] },
   { key: 'wizardhat', slot: 'head', name: ['Chapéu de mago', 'Wizard hat'], icon: 'pointy-hat', rarity: 'common', mana: 1,
     flavor: ['Velho e remendado, guarda o conhecimento de gerações.', 'Old and patched, it keeps the lore of generations.'] },
@@ -151,7 +153,7 @@ export const GEAR: GearDef[] = [
     flavor: ['A melhor proteção que existe, ao preço do fôlego e da magia.', 'The best protection there is, at the price of breath and magic.'] },
 
   // ───── mãos ─────
-  { key: 'gauntlets', slot: 'hands', name: ['Manoplas de aço', 'Steel gauntlets'], icon: 'gauntlet', rarity: 'common', armor: 1,
+  { key: 'gauntlets', slot: 'hands', name: ['Manoplas de aço', 'Steel gauntlets'], icon: 'gauntlet', rarity: 'common', hp: 2,
     flavor: ['Protegem as mãos e os antebraços.', 'Protect hands and forearms.'] },
   { key: 'ogregauntlets', slot: 'hands', name: ['Manoplas da força do ogro', 'Gauntlets of ogre power'], icon: 'thor-fist', rarity: 'rare', attrs: { for: 1 },
     flavor: ['Quem as veste aperta como um ogro.', 'Whoever wears them grips like an ogre.'] },
@@ -163,7 +165,7 @@ export const GEAR: GearDef[] = [
   // ───── pernas ─────
   { key: 'leatherpants', slot: 'legs', name: ['Calças de couro', 'Leather breeches'], icon: 'leg-armor', rarity: 'common', hp: 2,
     flavor: ['Couro curtido que aguenta a estrada.', 'Tanned leather that endures the road.'] },
-  { key: 'greaves', slot: 'legs', name: ['Grevas de aço', 'Steel greaves'], icon: 'leg-armor', rarity: 'common', armor: 1, hp: 1, req: ['for', 2],
+  { key: 'greaves', slot: 'legs', name: ['Grevas de aço', 'Steel greaves'], icon: 'leg-armor', rarity: 'common', hp: 3, req: ['for', 2],
     flavor: ['Placas sobre as canelas e os joelhos.', 'Plates over shins and knees.'] },
   { key: 'elvenleggings', slot: 'legs', name: ['Perneiras élficas', 'Elven leggings'], icon: 'vine-leaf', rarity: 'uncommon', resist: 1,
     flavor: ['Tecidas com fios que repelem encantos.', 'Woven with threads that repel charms.'] },
@@ -171,7 +173,7 @@ export const GEAR: GearDef[] = [
   // ───── pés ─────
   { key: 'travelboots', slot: 'feet', name: ['Botas de viagem', 'Traveler boots'], icon: 'boot-stomp', rarity: 'common', vigor: 1,
     flavor: ['Gastas de tanto caminhar; o fôlego vem com elas.', 'Worn from long walks; stamina comes with them.'] },
-  { key: 'ironboots', slot: 'feet', name: ['Botas de ferro', 'Iron boots'], icon: 'metal-boot', rarity: 'common', armor: 1,
+  { key: 'ironboots', slot: 'feet', name: ['Botas de ferro', 'Iron boots'], icon: 'metal-boot', rarity: 'common', hp: 2,
     flavor: ['Pesadas e firmes.', 'Heavy and steady.'] },
   { key: 'elvenboots', slot: 'feet', name: ['Botas élficas', 'Elven boots'], icon: 'boot-kick', rarity: 'uncommon', attrs: { des: 1 },
     flavor: ['Não fazem barulho em pedra nem em folha seca.', 'Silent on stone and dry leaves alike.'] },
@@ -185,6 +187,8 @@ export const GEAR: GearDef[] = [
     flavor: ['Traz a calma de quem já viu de tudo.', 'Brings the calm of one who has seen it all.'] },
   { key: 'arcanemedallion', slot: 'trinket', name: ['Medalhão arcano', 'Arcane medallion'], icon: 'magic-swirl', rarity: 'uncommon', mana: 1,
     flavor: ['Um círculo de prata que nunca esfria.', 'A silver ring of metal that never cools.'] },
+  { key: 'fangnecklace', slot: 'trinket', name: ['Colar de presas', 'Fang necklace'], icon: 'triple-claws', rarity: 'common', attrs: { for: 1 }, hp: 1,
+    flavor: ['Troféus da primeira caçada.', 'Trophies from the first hunt.'] },
   { key: 'wardamulet', slot: 'trinket', name: ['Amuleto de proteção', 'Amulet of warding'], icon: 'heraldic-sun', rarity: 'common', resist: 1, hp: 1,
     flavor: ['Gravado com o sol: a magia sombria escorrega nele.', 'Engraved with the sun: dark magic slides off it.'] },
 
@@ -197,6 +201,12 @@ export const GEAR: GearDef[] = [
     flavor: ['Queima a mana do próprio sangue.', "Burns mana from the wearer's own blood."] },
   { key: 'bloodring', slot: 'ring', name: ['Anel de sangue', 'Blood ring'], icon: 'skull-ring', rarity: 'rare', strike: 2, hp: -3,
     flavor: ['Cada golpe cobra um pouco de quem o dá.', 'Each blow takes a little from the one who deals it.'] },
+  { key: 'strengthring', slot: 'ring', name: ['Anel da força', 'Ring of strength'], icon: 'power-ring', rarity: 'uncommon', attrs: { for: 1 },
+    flavor: ['Um aro de ferro grosso, quente ao toque.', 'A thick iron band, warm to the touch.'] },
+  { key: 'agilityring', slot: 'ring', name: ['Anel da agilidade', 'Ring of agility'], icon: 'fire-ring', rarity: 'uncommon', attrs: { des: 1 },
+    flavor: ['Leve como uma pena: os dedos ficam mais rápidos.', 'Light as a feather: the fingers grow quicker.'] },
+  { key: 'berserkerring', slot: 'ring', name: ['Anel do berserker', "Berserker's ring"], icon: 'skull-ring', rarity: 'rare', strike: 1, armor: -1, req: ['for', 3],
+    flavor: ['A fúria esquece a guarda.', 'Rage forgets the guard.'] },
   { key: 'patronring', slot: 'ring', name: ['Anel do patrono', "Patron's ring"], icon: 'cursed-star', rarity: 'rare', mana: 1, attrs: { car: 1 }, hp: -1,
     flavor: ['O pacto aparece na pele, junto do poder.', 'The pact shows on the skin, along with the power.'] },
 ];
