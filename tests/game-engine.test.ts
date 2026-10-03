@@ -23,7 +23,7 @@ describe('motor', () => {
     const s = newGame(side(0), side(1), { seed: 2 }); // Brunhild (frente) × Kael (retaguarda)
     const kael = heroPos(s, 1);
     expect(reachable(s, 0, 'melee', heroPos(s, 0)).some((p) => p.row === kael.row && p.col === kael.col)).toBe(true); // frente vazia: alcança
-    s.players[1].board[0][1] = { id: 'w', name: ['Muralha', 'Wall'], atk: 0, def: 4, dmg: 0, keys: ['guarda'], isHero: false, exhausted: true, afflicted: false, marked: false, warded: false, buff: 0 };
+    s.players[1].board[0][1] = { id: 'w', name: ['Muralha', 'Wall'], atk: 0, def: 4, dmg: 0, keys: ['guarda'], isHero: false, exhausted: true, afflicted: 0, marked: false, warded: false, buff: 0 };
     const r = reachable(s, 0, 'melee', heroPos(s, 0));
     expect(r).toEqual([{ p: 1, row: 0, col: 1 }]);
   });
@@ -95,7 +95,7 @@ describe('reações, herói fora do campo e empurrão', () => {
     const react = legalActions(s).find((a) => a.t === 'react')!;
     expect(apply(s, react)).toBeNull();
     expect(s.pending).toBeUndefined();
-    expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(false); // a maldição não fez efeito
+    expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(0); // a maldição não fez efeito
     expect(s.players[1].mana).toBe(s.players[1].maxMana - 2);
   });
 
@@ -105,7 +105,7 @@ describe('reações, herói fora do campo e empurrão', () => {
     findUid(s, 1, 'Aparar');
     apply(s, { t: 'play', uid: curse, target: heroPos(s, 1) });
     expect(s.pending).toBeUndefined();
-    expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(true);
+    expect(unitAt(s, heroPos(s, 1))!.afflicted).toBe(1);
   });
 
   it('herói fora do campo: não ocupa lugar; com a regra opcional, o corpo a corpo só passa com a frente vazia', () => {
@@ -113,7 +113,7 @@ describe('reações, herói fora do campo e empurrão', () => {
     expect(emptySlots(s, 1).length).toBe(6);
     expect(heroPos(s, 1).row).toBe(-1);
     expect(reachable(s, 0, 'melee', heroPos(s, 0)).some((p) => p.row === -1)).toBe(true);
-    s.players[1].board[0][0] = { id: 'w', name: ['Muralha', 'Wall'], atk: 0, def: 4, dmg: 0, keys: [], isHero: false, exhausted: true, afflicted: false, marked: false, warded: false, buff: 0 };
+    s.players[1].board[0][0] = { id: 'w', name: ['Muralha', 'Wall'], atk: 0, def: 4, dmg: 0, keys: [], isHero: false, exhausted: true, afflicted: 0, marked: false, warded: false, buff: 0 };
     expect(reachable(s, 0, 'melee', heroPos(s, 0)).some((p) => p.row === -1)).toBe(false);
     expect(legalActions(s).some((a) => a.t === 'move')).toBe(false);
   });
@@ -131,7 +131,7 @@ describe('reações, herói fora do campo e empurrão', () => {
 
 describe('herói fora do campo: golpe livre', () => {
   it('golpeia qualquer fileira e o herói inimigo; com a regra opcional, só com a frente vazia', () => {
-    const wall = { id: 'w', name: ['Muralha', 'Wall'] as [string, string], atk: 0, def: 4, dmg: 0, keys: [], isHero: false, exhausted: true, afflicted: false, marked: false, warded: false, buff: 0 };
+    const wall = { id: 'w', name: ['Muralha', 'Wall'] as [string, string], atk: 0, def: 4, dmg: 0, keys: [], isHero: false, exhausted: true, afflicted: 0, marked: false, warded: false, buff: 0 };
     const free = newGame(side(0), side(1), { seed: 9, heroOff: true });
     free.players[1].board[0][0] = { ...wall };
     free.players[1].board[1][2] = { ...wall, id: 'b' };

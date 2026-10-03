@@ -44,17 +44,24 @@ export function evaluate(s: GameState, p: 0 | 1): number {
   if (s.winner === other(p)) return -1e6;
   const me = s.players[p], op = s.players[other(p)];
   const unitValue = (side: 0 | 1) => figures(s, side).reduce((v, f) => {
-    if (f.u.isHero) return v + (f.u.afflicted ? -1.5 : 0) + (f.u.marked ? -0.8 : 0) + (f.u.warded ? 1 : 0);
+    if (f.u.isHero) return v + -1.5 * f.u.afflicted + (f.u.marked ? -0.8 : 0) + (f.u.warded ? 1 : 0);
     const life = f.u.def - f.u.dmg;
     // corpo a corpo na retaguarda não ataca: vale bem menos
     const stuck = f.pos.row === 1 && !f.u.keys.includes('distancia') && !f.u.keys.includes('parede');
-    return v + f.u.atk * (stuck ? 0.4 : 1.4) + life * 0.9 + (f.u.keys.includes('guarda') ? 1.2 : 0) + (f.u.afflicted ? -1 : 0) + (f.u.warded ? 0.8 : 0);
+    return v + f.u.atk * (stuck ? 0.4 : 1.4) + life * 0.9 + (f.u.keys.includes('guarda') ? 1.2 : 0) + -1 * f.u.afflicted + (f.u.warded ? 0.8 : 0);
   }, 0);
   return heroHp(s, p) * 1.0 - heroHp(s, other(p)) * 1.5
     + unitValue(p) - unitValue(other(p))
     + me.hand.length * 0.6 - op.hand.length * 0.3
     + (me.level + me.xp / 3) * 2.5 - (op.level + op.xp / 3) * 1.5
     + (me.stance ? 2 : 0) - (op.stance ? 2 : 0);
+}
+
+/** Jogar a postura que já está ativa não muda nada (uma postura por vez): o bot não gasta a carta. */
+function sameStance(s: GameState, a: Action): boolean {
+  if (a.t !== 'play') return false;
+  const pl = s.players[s.active], ref = pl.hand.find((c) => c.uid === a.uid);
+  return !!ref && s.defs[ref.cardId].game.kind === 'postura' && pl.stance?.cardId === ref.cardId;
 }
 
 /** Ajustes do nível Muito difícil (o simulador mexe aqui para comparar). */
@@ -105,7 +112,7 @@ function planTurn(s: GameState, p: 0 | 1): Action {
     const next: Node[] = [];
     for (const node of frontier) {
       for (const a of legalActions(node.s)) {
-        if (a.t === 'end' || a.t === 'levelup') continue;
+        if (a.t === 'end' || a.t === 'levelup' || sameStance(node.s, a)) continue;
         const sim = clone(node.s);
         if (apply(sim, a)) continue;
         if (sim.pending) apply(sim, { t: 'pass' });
@@ -133,7 +140,7 @@ export function botAction(s: GameState, level: Difficulty = 'hard', exact = fals
   let best: Action = { t: 'end' };
   let bestScore = base + 0.05;
   for (const a of legalActions(s)) {
-    if (a.t === 'end' || a.t === 'levelup') continue;
+    if (a.t === 'end' || a.t === 'levelup' || sameStance(s, a)) continue;
     const sim = clone(s);
     if (apply(sim, a)) continue;
     if (sim.pending) apply(sim, { t: 'pass' }); // conta que o oponente aceita

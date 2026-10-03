@@ -9,12 +9,13 @@
   import { onDestroy, tick } from 'svelte';
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
+  import { flip } from 'svelte/animate';
   import { Swords, ArrowLeftRight, RotateCcw, Shield, Droplet, Crosshair, Sparkles, Zap, Heart, Users, X, Skull, BookOpen, Pencil, ScrollText, ChevronDown, Check, UserRound, Menu, Flag as FlagIcon, CircleHelp, LogOut, Hourglass, Dices, Map as MapIcon, Moon, TrendingUp, Gauge, House } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
   import { ui } from '../../app/ui.svelte';
-  import { actor, apply, cannotPlay, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS, MAX_MULLIGANS } from '../../game/engine';
+  import { actor, apply, cannotPlay, figures, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS, MAX_MULLIGANS } from '../../game/engine';
   import { botAction, botMulligan, DIFFICULTIES, EDGE, type Difficulty } from '../../game/bot';
   import { settings } from '../../app/settings.svelte';
   import { shell } from '../../app/shell.svelte';
@@ -179,7 +180,7 @@
   function leave() { g = null; step = 'heroes'; }
 
   // ───────────── jogo ─────────────
-  type Sel = { kind: 'card'; uid: string } | { kind: 'strike' } | { kind: 'unit'; pos: Pos } | { kind: 'move' } | null;
+  type Sel = { kind: 'card'; uid: string } | { kind: 'strike' } | { kind: 'unit'; pos: Pos } | { kind: 'move'; from?: Pos } | null;
   let sel = $state<Sel>(null);
   const foe = $derived(other(me));
   /** Uma carta do oponente espera a minha resposta (Reação ou aceitar). */
@@ -197,8 +198,11 @@
     }
     if (sel.kind === 'strike') return reachable(g, me, strikeVia(g, me), heroPos(g, me));
     if (sel.kind === 'unit') { const u = unitAt(g, sel.pos); return u ? reachable(g, me, u.keys.includes('distancia') ? 'ranged' : 'melee', sel.pos) : []; }
-    return emptySlots(g, me);
+    // mover: primeiro a peça (qualquer uma sua no campo), depois o lugar livre
+    return sel.from ? emptySlots(g, me) : movable();
   });
+  /** Peças suas que podem ser movidas (as que estão no campo). */
+  const movable = (): Pos[] => (g ? figures(g, me).filter((f) => f.pos.row >= 0).map((f) => f.pos) : []);
   const isTarget = (pos: Pos) => targets.some((t) => same(t, pos));
 
   /**
@@ -214,6 +218,7 @@
     player: ['Selecione o jogador-alvo', 'Select the target player'],
     row: ['Selecione a fileira-alvo', 'Select the target row'],
     slot: ['Selecione um lugar livre no seu campo', 'Select a free slot on your field'],
+    piece: ['Selecione a peça sua que quer mover', 'Select the piece of yours to move'],
     enchantment: ['Selecione um encantamento-alvo', 'Select a target enchantment'],
     grimoire: ['Selecione o grimório-alvo', 'Select the target grimoire'],
     graveyard: ['Selecione o cemitério-alvo', 'Select the target graveyard'],
@@ -235,7 +240,7 @@
     const hp = heroPos(g, me), via = strikeVia(g, me);
     if (!reachable(g, me, via, hp).length) {
       return { can: false, why: via === 'melee' && hp.row === 1
-        ? L('Na retaguarda o herói não alcança ninguém com golpe corpo a corpo. Use “Trocar posição” para ir à frente.', 'From the back row a melee strike reaches no one. Use “Change position” to go to the front.')
+        ? L('Na retaguarda o herói não alcança ninguém com golpe corpo a corpo. Use “Mover peça” para ir à frente.', 'From the back row a melee strike reaches no one. Use “Move piece” to go to the front.')
         : L('Nenhum inimigo ao alcance do golpe.', 'No enemy within reach of the strike.') };
     }
     return { can: true, why: L('Golpe disponível: clique no herói e depois no alvo. Não custa nada, pode ser a qualquer momento do seu turno, 1 vez por turno.', 'Strike available: click the hero, then the target. It is free, any time during your turn, once per turn.') };
@@ -314,14 +319,34 @@
     resumeBot = null;
   }
 
-  function clickCard(uid: string) {
+  /**
+   * A carta não faria nada de novo agora? (a mesma postura já ativa; o alvo já Marcado ou Protegido,
+   * que não acumulam). Devolve o aviso, ou null. A Aflição acumula: não avisa.
+   */
+  function wasted(uid: string, target?: Pos): string | null {
+    if (!g) return null;
+    const ref = g.players[me].hand.find((c) => c.uid === uid);
+    if (!ref) return null;
+    const d = g.defs[ref.cardId];
+    if (d.game.kind === 'postura' && g.players[me].stance?.cardId === ref.cardId)
+      return L('Esta postura já está ativa. Jogar a mesma postura de novo não soma o efeito (uma postura por vez): só gasta a carta e os recursos.', 'This stance is already active. Playing the same stance again does not add up (one stance at a time): it only spends the card and the resources.');
+    const u = target ? unitAt(g, target) : null;
+    if (u && d.game.effects.every((e) => (e.k === 'mark' && u.marked) || (e.k === 'ward' && u.warded)))
+      return L(`${u.name[0]} já está ${u.marked ? 'Marcado' : 'Protegido'}, e esse efeito não acumula: a carta não faria nada.`, `${u.name[1]} is already ${u.marked ? 'Marked' : 'Warded'}, and that effect does not stack: the card would do nothing.`);
+    return null;
+  }
+  async function okToWaste(text: string): Promise<boolean> {
+    return (await ui.confirm({ title: L('Efeito já ativo', 'Effect already active'), text, ok: L('Jogar mesmo assim', 'Play anyway') })) === 'ok';
+  }
+
+  async function clickCard(uid: string) {
     if (!g || !myTurn) return;
     touch();
     const why = cannotPlay(g, me, uid);
     if (why) { say(why, true); return; }
     const ref = g.players[me].hand.find((c) => c.uid === uid)!;
     const ch = choiceOf(g.defs[ref.cardId].game.effects);
-    if (!ch) void act({ t: 'play', uid });
+    if (!ch) { const w = wasted(uid); if (!w || (await okToWaste(w))) void act({ t: 'play', uid }); }
     else if (sel?.kind === 'card' && sel.uid === uid) { sel = null; say(''); }
     else { sel = { kind: 'card', uid }; chip.sfx('select'); ask(promptOf(g.defs[ref.cardId].game.effects)); }
   }
@@ -334,12 +359,18 @@
       if (sel.kind === 'card') {
         const ref = g.players[me].hand.find((c) => c.uid === sel!.uid)!;
         const ch = choiceOf(g.defs[ref.cardId].game.effects);
-        void act(ch?.kind === 'slot' ? { t: 'play', uid: sel.uid, slot: pos } : { t: 'play', uid: sel.uid, target: t.col === -1 ? { ...pos, col: -1 } : pos });
+        const a: Action = ch?.kind === 'slot' ? { t: 'play', uid: sel.uid, slot: pos } : { t: 'play', uid: sel.uid, target: t.col === -1 ? { ...pos, col: -1 } : pos };
+        const w = ch?.kind === 'slot' ? null : wasted(sel.uid, pos);
+        if (w) void okToWaste(w).then((ok) => { if (ok) void act(a); });
+        else void act(a);
       } else if (sel.kind === 'strike') void act({ t: 'strike', target: pos });
       else if (sel.kind === 'unit') void act({ t: 'attack', from: sel.pos, target: pos });
-      else void act({ t: 'move', to: pos });
+      else if (sel.kind === 'move' && !sel.from) { sel = { kind: 'move', from: pos }; chip.sfx('select'); ask('slot'); }
+      else if (sel.kind === 'move') void act({ t: 'move', from: sel.from, to: pos });
       return;
     }
+    // movendo: clicar noutra peça sua troca a peça escolhida
+    if (sel?.kind === 'move' && sel.from && unitAt(g, pos) && pos.p === me && pos.row >= 0) { sel = { kind: 'move', from: pos }; ask('slot'); return; }
     const u = unitAt(g, pos);
     if (pos.p === me && u?.isHero) {
       const info = strikeInfo();
@@ -376,8 +407,12 @@
 
   function startMove() {
     if (!g || !myTurn || g.players[me].moved) return;
-    sel = sel?.kind === 'move' ? null : { kind: 'move' };
-    if (sel) ask('slot'); else say('');
+    if (sel?.kind === 'move') { sel = null; say(''); return; }
+    const pieces = movable();
+    if (!pieces.length) { say(L('Nenhuma peça sua no campo para mover.', 'No piece of yours on the field to move.'), true); return; }
+    // uma peça só (em geral, o herói): já fica escolhida
+    sel = pieces.length === 1 ? { kind: 'move', from: pieces[0] } : { kind: 'move' };
+    ask(sel.from ? 'slot' : 'piece');
   }
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -416,7 +451,7 @@
       if (!myTurn) return;
       if (settings.is(e, 'endTurn')) { void act({ t: 'end' }); e.preventDefault(); }
       else if (settings.is(e, 'strike')) { startStrike(); e.preventDefault(); }
-      else if (settings.is(e, 'swap') && !g?.heroOff) { startMove(); e.preventDefault(); }
+      else if (settings.is(e, 'swap')) { startMove(); e.preventDefault(); }
       return;
     }
     if (ui.ask) return;
@@ -499,7 +534,8 @@
 
   function updateArrows() {
     if (!g || !sel || !myTurn) { if (arrows.length) arrows = []; return; }
-    const src = sel.kind === 'card' ? document.querySelector<HTMLElement>('.hc.sel') : slotEl(sel.kind === 'unit' ? sel.pos : heroPos(g, me));
+    if (sel.kind === 'move' && !sel.from) { arrows = []; return; }
+    const src = sel.kind === 'card' ? document.querySelector<HTMLElement>('.hc.sel') : slotEl(sel.kind === 'unit' ? sel.pos : sel.kind === 'move' ? sel.from! : heroPos(g, me));
     if (!src) { arrows = []; return; }
     const sr = src.getBoundingClientRect();
     const x1 = sr.left + sr.width / 2, y1 = sel.kind === 'card' ? sr.top + sr.height * 0.18 : sr.top + sr.height / 2;
@@ -817,6 +853,47 @@
     zoom = { id, x, y, up };
   }
 
+  // ───────────── reordenar a mão arrastando (as outras cartas abrem espaço) ─────────────
+  let dragUid = $state<string | null>(null);
+  let dragFrom: { uid: string; x: number; y: number; grab: number; el: HTMLElement; moved: boolean } | null = null;
+  let dragged = false;
+  function handDown(e: PointerEvent, uid: string) {
+    if (e.button !== 0 || !g) return;
+    const el = e.currentTarget as HTMLElement, r = el.getBoundingClientRect();
+    dragFrom = { uid, x: e.clientX, y: e.clientY, grab: e.clientX - (r.left + r.width / 2), el, moved: false };
+  }
+  /** Centro da carta na fileira, sem os deslocamentos de animação (só a posição no leiaute). */
+  const restCenter = (el: HTMLElement) => (el.offsetParent?.getBoundingClientRect().left ?? 0) + el.offsetLeft + el.offsetWidth / 2;
+  function handMove(e: PointerEvent) {
+    const d = dragFrom;
+    if (!d || !g) return;
+    if (!d.moved) {
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
+      d.moved = true;
+      dragUid = d.uid;
+      zoom = null;
+      d.el.setPointerCapture(e.pointerId);
+    }
+    const hand = g.players[me].hand;
+    const els = [...d.el.parentElement!.querySelectorAll<HTMLElement>(':scope > .hc')];
+    const x = e.clientX - d.grab;
+    // lugar novo: quantas das outras cartas ficam à esquerda do ponteiro
+    const at = els.filter((c) => c !== d.el && restCenter(c) < x).length;
+    const cur = hand.findIndex((c) => c.uid === d.uid);
+    if (cur >= 0 && at !== cur) { const [c] = hand.splice(cur, 1); hand.splice(at, 0, c); }
+    void tick().then(() => { if (dragFrom === d) d.el.style.translate = `${x - restCenter(d.el)}px ${Math.min(0, e.clientY - d.y)}px`; });
+  }
+  function handUp() {
+    const d = dragFrom;
+    dragFrom = null;
+    if (!d?.moved) return;
+    dragged = true;
+    setTimeout(() => { dragged = false; }, 0);
+    d.el.animate([{ translate: d.el.style.translate }, { translate: '0 0' }], { duration: 160, easing: 'ease-out' });
+    d.el.style.translate = '';
+    dragUid = null;
+  }
+
   // ───────────── cemitério e registro ─────────────
   let graveOf = $state<0 | 1 | null>(null);
   let logOpen = $state(false);
@@ -845,14 +922,14 @@
   function statusOf(u: Unit, p: 0 | 1): Status[] {
     const out: Status[] = [];
     const st = u.isHero ? g!.players[p].stance : undefined;
-    if (u.warded) out.push({ id: 'ward', icon: Shield, tone: 'good', tip: L('Protegido: o próximo dano que sofrer é anulado (a proteção some depois disso).', 'Warded: the next damage it takes is prevented (the ward is then gone).') });
+    if (u.warded) out.push({ id: 'ward', icon: Shield, tone: 'good', tip: L('Protegido: o próximo dano que sofrer é anulado (a proteção some depois disso). Não acumula.', 'Warded: the next damage it takes is prevented (the ward is then gone). Does not stack.') });
     if (u.buff > 0) out.push({ id: 'buff', icon: TrendingUp, tone: 'good', text: `+${u.buff}`, tip: L(`Fortalecido: +${u.buff} de ataque até o fim deste turno.`, `Empowered: +${u.buff} attack until the end of this turn.`) });
-    if (u.afflicted) out.push({ id: 'afflict', icon: Droplet, tone: 'bad', tip: L('Afligido: sofre 1 de dano no começo de cada turno do dono, até ser curado.', 'Afflicted: takes 1 damage at the start of each of its owner’s turns, until healed.') });
-    if (u.marked) out.push({ id: 'mark', icon: Crosshair, tone: 'bad', tip: L('Marcado: sofre +1 de todo dano, até ser curado.', 'Marked: takes +1 from all damage, until healed.') });
+    if (u.afflicted) out.push({ id: 'afflict', icon: Droplet, tone: 'bad', text: u.afflicted > 1 ? `×${u.afflicted}` : undefined, tip: L(`Afligido${u.afflicted > 1 ? ` (${u.afflicted} acúmulos)` : ''}: sofre ${u.afflicted} de dano no começo de cada turno do dono, até ser curado. A Aflição acumula (até 3).`, `Afflicted${u.afflicted > 1 ? ` (${u.afflicted} stacks)` : ''}: takes ${u.afflicted} damage at the start of each of its owner’s turns, until healed. Affliction stacks (up to 3).`) });
+    if (u.marked) out.push({ id: 'mark', icon: Crosshair, tone: 'bad', tip: L('Marcado: sofre +1 de todo dano, até ser curado. Não acumula.', 'Marked: takes +1 from all damage, until healed. Does not stack.') });
     if (st?.cardId) {
       const m = st.mods;
       const what = [m.strike ? L(`golpe +${m.strike}`, `strike +${m.strike}`) : '', m.strikeMagic ? L('golpe mágico', 'magic strike') : '', m.strikeAfflicts ? L('golpe aflige', 'strike afflicts') : '', m.strikeHeals ? L(`golpe cura ${m.strikeHeals}`, `strike heals ${m.strikeHeals}`) : '', m.guard ? L('Guarda', 'Guard') : ''].filter(Boolean).join(', ');
-      out.push({ id: 'stance', icon: Sparkles, tone: 'good', tip: L(`Postura — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'ativa'}. Fica até outra postura entrar.`, `Stance — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'active'}. Lasts until another stance replaces it.`) });
+      out.push({ id: 'stance', icon: Sparkles, tone: 'good', tip: L(`Postura — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'ativa'}. Uma postura por vez: fica até outra postura entrar.`, `Stance — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'active'}. Lasts until another stance replaces it.`) });
     }
     if (u.keys.includes('guarda') || st?.mods.guard) out.push({ id: 'guard', icon: Users, tone: 'trait', tip: L('Guarda: enquanto houver alguém com Guarda, os golpes corpo a corpo inimigos precisam mirar nele.', 'Guard: while it stands, enemy melee attacks must target it.') });
     if (u.keys.includes('rapido') && u.exhausted === false && !u.isHero) out.push({ id: 'swift', icon: Zap, tone: 'trait', tip: L('Rápido: pode atacar no turno em que entra.', 'Swift: can attack the turn it arrives.') });
@@ -1128,7 +1205,7 @@
       {#snippet slot(p: 0 | 1, row: number, col: number)}
         {@const pos = { p, row, col }}
         {@const u = unitAt(g!, pos)}
-        <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
+        <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'move' && !!sel.from && same(sel.from, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
           class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && hasFigure(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
           data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
@@ -1250,13 +1327,14 @@
         {@render zone(me)}
         {@render field(me)}
       </div>
-      <div class="hand">
+      <div class="hand" class:dragging={!!dragUid}>
         {#each P.hand as r, i (r.uid)}
           {@const why = cannotPlay(g, me, r.uid)}
           {@const isReact = g.defs[r.cardId]?.game.kind === 'reacao'}
-          <button class="hc" class:no={!!why && !isReact} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid}
-            in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })}
-            onclick={() => clickCard(r.uid)} onmouseenter={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onmouseleave={() => { hoverCard = null; }}
+          <button class="hc" class:no={!!why && !isReact} class:can={myTurn && !why && !isReact} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid} class:held={dragUid === r.uid}
+            in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })} animate:flip={{ duration: dragUid === r.uid ? 0 : 200, easing: cubicOut }}
+            onpointerdown={(e) => handDown(e, r.uid)} onpointermove={handMove} onpointerup={handUp} onpointercancel={handUp}
+            onclick={() => { if (!dragged) void clickCard(r.uid); }} onmouseenter={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onmouseleave={() => { hoverCard = null; }}
             onfocus={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onblur={() => { hoverCard = null; }}>
             <!-- o que cresce é a face; o botão fica do tamanho de sempre, para o mouse sair da carta sem ter de dar a volta nela -->
             <span class="hf">
@@ -1279,12 +1357,10 @@
           <span class="act-ic"><Swords size={19} /></span>
           <span class="act-tx"><b>{L('Golpear', 'Strike')}</b><small>{P.struck ? L('já usado', 'already used') : L(`${strikeDmg(me)} de dano · grátis`, `${strikeDmg(me)} damage · free`)}</small></span>
         </button>
-        {#if !g.heroOff}
-          <button class="act" disabled={!myTurn || P.moved} onclick={startMove} use:tip={L('Trocar posição: leva o herói para outra casa livre do seu campo (frente ou retaguarda). 1 vez por turno.', 'Change position: moves the hero to another free slot on your field (front or back). Once per turn.')}>
-            <span class="act-ic"><ArrowLeftRight size={19} /></span>
-            <span class="act-tx"><b>{L('Trocar posição', 'Change position')}</b><small>{P.moved ? L('já trocou', 'already changed') : L('1 vez por turno', 'once per turn')}</small></span>
-          </button>
-        {/if}
+        <button class="act" disabled={!myTurn || P.moved || !movable().length} onclick={startMove} use:tip={L('Mover peça: leva o herói ou uma criatura sua para outra casa livre do seu campo (frente ou retaguarda). 1 vez por turno.', 'Move piece: moves your hero or one of your creatures to another free slot on your field (front or back). Once per turn.')}>
+          <span class="act-ic"><ArrowLeftRight size={19} /></span>
+          <span class="act-tx"><b>{L('Mover peça', 'Move piece')}</b><small>{P.moved ? L('já moveu', 'already moved') : L('1 vez por turno', 'once per turn')}</small></span>
+        </button>
         <button class="act end" disabled={!myTurn} data-action="end-turn" onclick={() => act({ t: 'end' })}>
           <span class="act-ic"><Hourglass size={19} /></span>
           <span class="act-tx"><b>{L('Encerrar turno', 'End turn')}</b><small>{L('passa a vez', 'pass the turn')}</small></span>
@@ -1395,7 +1471,7 @@
             <h2>{L('Como jogar', 'How to play')}</h2>
             <ul>
               <li>{L('Vence quem levar a Vida do herói inimigo a 0.', 'Reduce the enemy hero’s Life to 0 to win.')}</li>
-              <li>{L('No seu turno: use cartas (pagando Vigor ou Mana), golpeie com o herói (de graça, 1 vez por turno), ataque com as suas criaturas e, se quiser, troque o herói de posição. Depois, “Encerrar turno”.', 'On your turn: play cards (paying Vigor or Mana), strike with the hero (free, once per turn), attack with your creatures and optionally change the hero’s position. Then “End turn”.')}</li>
+              <li>{L('No seu turno: use cartas (pagando Vigor ou Mana), golpeie com o herói (de graça, 1 vez por turno), ataque com as suas criaturas e, se quiser, mova uma peça sua (1 vez por turno). Depois, “Encerrar turno”.', 'On your turn: play cards (paying Vigor or Mana), strike with the hero (free, once per turn), attack with your creatures and optionally move one of your pieces (once per turn). Then “End turn”.')}</li>
               <li>{L('Clicou numa carta ou no herói? Escolha o alvo dourado. Para desistir da escolha: Esc, botão direito ou clique fora.', 'Clicked a card or the hero? Pick a golden target. To cancel: Esc, right-click or click outside.')}</li>
               <li>{L('Vigor e Mana enchem no começo do seu turno. O que sobrar paga Reações no turno do oponente.', 'Vigor and Mana refill at the start of your turn. What is left pays Reactions on the opponent’s turn.')}</li>
               <li>{L('Corpo a corpo só alcança a fileira da frente inimiga (ou a retaguarda, se a frente estiver vazia). À distância e magia alcançam qualquer um.', 'Melee only reaches the enemy front row (or the back, if the front is empty). Ranged and magic reach anyone.')}</li>
@@ -1529,7 +1605,7 @@
         </div>
         <div class="hi-cards">
           {#each P.hand as r (r.uid)}
-            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} onmouseenter={fan} onfocus={fan} in:flyIn={{ y: 30, duration: 300 }}>
+            <button class="hi-card" class:drop={discardSel.includes(r.uid)} class:pick={!!myMulls} onclick={() => toggleDiscard(r.uid)} onmouseenter={(e) => fan(e, 390, 1.68)} onfocus={(e) => fan(e, 390, 1.68)} in:flyIn={{ y: 30, duration: 300 }}>
               {#if cardOf(r)}<CardImage card={cardOf(r)} eager />{/if}
               {#if discardSel.includes(r.uid)}<span class="drop-tag"><X size={14} /> {L('descartar', 'discard')}</span>{/if}
             </button>
@@ -1555,6 +1631,7 @@
           <div class="lv">
             <button class="btn primary big" onclick={start}><RotateCcw size={16} /> {L('Jogar de novo', 'Play again')}</button>
             <button class="btn big" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>
+            <button class="btn big" onclick={() => { leave(); router.go('/'); }}><House size={16} /> {L('Tela inicial', 'Home screen')}</button>
           </div>
         </div>
       </div>
@@ -1668,7 +1745,7 @@
   .place-help p { color: var(--muted); font-size: 13px; text-align: center; max-width: 520px; }
 
   /* ───── mesa ───── */
-  .table { --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 22vh, 300px);
+  .table { --edge: clamp(14px, 4.2vw, 96px); --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 22vh, 300px);
     height: 100%; display: grid; grid-template-columns: 1fr; min-height: 0; position: relative; }
   .main { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: 5px; padding: 8px 14px 10px; min-height: 0; overflow: hidden;
     background: radial-gradient(ellipse at 50% 50%, #241e1a 0%, #100e0c 70%); }
@@ -1821,17 +1898,27 @@
   .hc:has(~ .hc:hover), .hc:has(~ .hc:focus-visible) { transform: translateX(calc(var(--fs, 50px) * -.85)); }
   .hc:hover ~ .hc, .hc:focus-visible ~ .hc { transform: translateX(calc(var(--fs, 50px) * .85)); }
   .hc.no .hf { filter: brightness(.55) saturate(.6); }
+  /* dá para jogar agora: um halo dourado em volta da carta */
+  .hc.can .hf::after { content: ''; position: absolute; inset: -3px; border-radius: 8px; pointer-events: none; z-index: 2;
+    box-shadow: 0 0 0 2px #f6cf6a, 0 0 10px 2px rgb(246 200 90 / .85), 0 0 22px 4px rgb(240 170 50 / .45); animation: canGlow 1.8s ease-in-out infinite; }
+  @keyframes canGlow { 50% { box-shadow: 0 0 0 2px #ffe3a0, 0 0 14px 3px rgb(255 214 110 / .95), 0 0 30px 7px rgb(240 170 50 / .55); } }
+  .hc.can.sel .hf::after { display: none; }
   .hc.react .hf { filter: brightness(.8); }
   .hc.no:hover .hf, .hc.react:hover .hf, .hc.no:focus-visible .hf, .hc.react:focus-visible .hf { filter: drop-shadow(0 18px 34px rgb(0 0 0 / .85)); }
   .dmgb, .rtag { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1; display: inline-flex; gap: 3px; align-items: center; font: 800 14px var(--ui); padding: 2px 9px; border-radius: 9px; background: #2a0f0b; color: #ffcf7a; border: 1.5px solid #c4473a; box-shadow: 0 3px 8px rgb(0 0 0 / .6); white-space: nowrap; }
   .rtag { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; background: #101a2e; color: #a9c8ff; border-color: #4f7fd0; }
   .hc.sel { z-index: 2; translate: 0 -18px; }
+  /* arrastando: a carta segue o ponteiro, um pouco maior; as outras param de abrir espaço do jeito do mouse e deslizam para o lugar novo */
+  .hand.dragging .hc { transform: none !important; }
+  .hand.dragging .hc:not(.held) .hf { transform: none; }
+  .hc.held { z-index: 8; cursor: grabbing; }
+  .hc.held .hf { transform: translateY(-14px) scale(1.12) rotate(-2deg); filter: drop-shadow(0 22px 30px rgb(0 0 0 / .85)); transition: transform .12s; }
   .hc.sel .hf { outline: 3px solid #7fb0ff; border-radius: 6px; }
 
   /* grimório e cemitério: cada um sobre a sua base (círculo arcano / lápide), com o nome embaixo */
-  .pilebox { position: absolute; z-index: 1; display: grid; justify-items: center; gap: 14px; left: 30px; bottom: 16px; }
-  .pilebox.gravebox { left: auto; right: 30px; }
-  .pilebox.top { bottom: auto; top: 56px; }
+  .pilebox { position: absolute; z-index: 1; display: grid; justify-items: center; gap: 14px; left: calc(var(--edge) + 18px); bottom: 26px; }
+  .pilebox.gravebox { left: auto; right: calc(var(--edge) + 18px); }
+  .pilebox.top { bottom: auto; top: 66px; }
   .pbase { position: absolute; inset: -12px -16px 24px; border-radius: 16px; z-index: -1; overflow: hidden; }
   .deckbox .pbase { background: radial-gradient(circle at 50% 46%, #3d2c74 0%, #1b1436 55%, #0e0b1c 100%); border: 1px solid #7a62c9; box-shadow: 0 0 0 3px rgb(0 0 0 / .45), 0 10px 26px rgb(0 0 0 / .65), 0 0 22px rgb(122 98 201 / .28), inset 0 1px 0 rgb(220 200 255 / .2); }
   .gravebox .pbase { background: radial-gradient(circle at 50% 30%, #3c4442 0%, #1e2322 55%, #101312 100%); border: 1px solid #76827c; box-shadow: 0 0 0 3px rgb(0 0 0 / .45), 0 10px 26px rgb(0 0 0 / .65), 0 0 22px rgb(120 200 160 / .12), inset 0 1px 0 rgb(220 240 230 / .16); }
@@ -1853,7 +1940,7 @@
   .gravebox .plabel { color: #c4d2ca; border-color: #76827c; }
 
   /* ações do turno: painel flutuante acima do cemitério */
-  .actions { position: absolute; right: 14px; bottom: calc(16px + var(--hand) * .77 + 62px); z-index: 6; width: 214px; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 16px;
+  .actions { position: absolute; right: var(--edge); bottom: calc(26px + var(--hand) * .77 + 62px); z-index: 6; width: 214px; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 16px;
     background: linear-gradient(170deg, color-mix(in srgb, var(--c) 16%, #1e1915), #100d0b 75%); border: 1px solid #8a6d3b;
     box-shadow: 0 0 0 4px rgb(0 0 0 / .42), 0 18px 40px rgb(0 0 0 / .7), 0 0 30px rgb(240 196 90 / .1), inset 0 1px 0 rgb(255 220 150 / .14); transition: opacity .2s, filter .2s; }
   .actions.idle { opacity: .7; filter: saturate(.55); }
@@ -1883,8 +1970,8 @@
   .toolbar :global(.mp.float .pill span) { display: none; }
   .toolbar :global(.mp.float.open) { position: absolute; right: 42px; top: 0; }
 
-  .gear-panel { position: absolute; left: 14px; width: 214px; bottom: calc(16px + var(--hand) * .77 + 62px); display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border-radius: 12px; background: rgb(14 12 11 / .86); border: 1px solid rgb(255 220 150 / .14); border-left: 3px solid var(--c); z-index: 1; box-shadow: 0 10px 24px rgb(0 0 0 / .5); }
-  .gear-panel.top { bottom: auto; top: calc(56px + var(--hand) * .77 + 62px); }
+  .gear-panel { position: absolute; left: var(--edge); width: 214px; bottom: calc(26px + var(--hand) * .77 + 62px); display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border-radius: 12px; background: rgb(14 12 11 / .86); border: 1px solid rgb(255 220 150 / .14); border-left: 3px solid var(--c); z-index: 1; box-shadow: 0 10px 24px rgb(0 0 0 / .5); }
+  .gear-panel.top { bottom: auto; top: calc(66px + var(--hand) * .77 + 62px); }
   .gtitle { font: 600 9.5px var(--ui); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gi { display: flex; gap: 8px; align-items: center; cursor: help; }
   .gic { width: 32px; height: 32px; flex: none; border-radius: 8px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #000), color-mix(in srgb, var(--c) 18%, #000)); border: 1px solid rgb(255 255 255 / .12); }
@@ -1998,7 +2085,8 @@
   .hi-head { text-align: center; display: grid; gap: 4px; justify-items: center; }
   .hi-head h2 { font-size: clamp(28px, 3vw, 42px); color: #f6ead8; line-height: 1.05; }
   .hi-foe { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
-  .hi-cards { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: nowrap; max-width: 100%; }
+  /* a carta ampliada cresce para cima e para baixo: a fileira reserva esse espaço, para não cobrir o título nem os botões */
+  .hi-cards { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: nowrap; max-width: 100%; margin-block: calc(clamp(120px, 12.2vw, 236px) * 1.4 * .34); }
   .hi-card { position: relative; width: clamp(120px, 12.2vw, 236px); aspect-ratio: 750 / 1050; padding: 0; border: 0; background: none; border-radius: 9px; cursor: default; transition: transform .16s cubic-bezier(.2, .8, .3, 1), filter .15s; filter: drop-shadow(0 16px 26px rgb(0 0 0 / .75)); }
   /* a carta sob o mouse cresce; as da esquerda e da direita se afastam para dar lugar */
   .hi-card:hover, .hi-card:focus-visible { transform: scale(var(--fk, 1.5)); z-index: 3; outline: none; }

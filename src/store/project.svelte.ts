@@ -168,7 +168,7 @@ class ProjectState {
       for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id || c.preset === h.preset)) p.characters.push(h);
     }
     // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
-    const RULES = 'proto-rules-5';
+    const RULES = 'proto-rules-6';
     if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
       p.seeded = [...(p.seeded ?? []), RULES];
       changed = true;

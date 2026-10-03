@@ -32,7 +32,7 @@ function shuffle<T>(s: GameState, a: T[]): T[] {
 // ───────────── criação ─────────────
 
 function heroUnit(h: HeroDef, p: 0 | 1): Unit {
-  return { id: `hero${p}-${h.id}`, name: [h.name, h.name], atk: h.weapon.dmg, def: h.maxHp, dmg: 0, keys: [], icon: h.icon, isHero: true, exhausted: false, afflicted: false, marked: false, warded: false, buff: 0 };
+  return { id: `hero${p}-${h.id}`, name: [h.name, h.name], atk: h.weapon.dmg, def: h.maxHp, dmg: 0, keys: [], icon: h.icon, isHero: true, exhausted: false, afflicted: 0, marked: false, warded: false, buff: 0 };
 }
 
 function newPlayer(hero: HeroDef, deck: CardRef[], p: 0 | 1, off: boolean): PlayerState {
@@ -213,7 +213,8 @@ export function legalActions(s: GameState): Action[] {
     if (f.u.isHero || f.u.exhausted || f.u.keys.includes('parede') || f.u.atk + f.u.buff <= 0) continue;
     for (const target of reachable(s, p, f.u.keys.includes('distancia') ? 'ranged' : 'melee', f.pos)) out.push({ t: 'attack', from: f.pos, target });
   }
-  if (!pl.moved && !s.heroOff) for (const to of emptySlots(s, p)) out.push({ t: 'move', to });
+  // mover: qualquer peça sua no campo (o herói fora do campo não se move), 1 vez por turno
+  if (!pl.moved) for (const f of figures(s, p)) if (f.pos.row >= 0) for (const to of emptySlots(s, p)) out.push({ t: 'move', from: f.pos, to });
   out.push({ t: 'end' });
   return out;
 }
@@ -284,13 +285,17 @@ function damage(s: GameState, pos: Pos, n: number, by: 0 | 1, via: Via | 'none' 
   }
 }
 
+/** Aflição acumula (cada acúmulo tira 1 PV por turno), até este limite. */
+export const MAX_AFFLICT = 3;
+const afflict = (u: Unit) => { u.afflicted = Math.min(MAX_AFFLICT, u.afflicted + 1); };
+
 function heal(s: GameState, pos: Pos, n: number) {
   const u = unitAt(s, pos);
   if (!u) return;
   const got = Math.min(n, u.dmg);
   u.dmg -= got;
   fx(s, { k: 'heal', id: u.id, amount: got });
-  if (u.afflicted || u.marked) { u.afflicted = u.marked = false; log(s, `${nm(u)} não está mais Afligido nem Marcado.`); fx(s, { k: 'status', id: u.id, s: 'cleanse' }); }
+  if (u.afflicted || u.marked) { u.afflicted = 0; u.marked = false; log(s, `${nm(u)} não está mais Afligido nem Marcado.`); fx(s, { k: 'status', id: u.id, s: 'cleanse' }); }
   log(s, `${nm(u)} recupera ${got}.`);
 }
 
@@ -309,7 +314,7 @@ function shift(s: GameState, pos: Pos, toRow?: number): Pos | null {
 }
 
 function summon(s: GameState, p: 0 | 1, d: UnitDef, at: Pos, src?: string) {
-  const u: Unit = { src, id: `u${++s.seq}`, name: d.name, atk: d.atk, def: d.def, dmg: 0, keys: d.keys ?? [], icon: d.icon, isHero: false, exhausted: !(d.keys ?? []).includes('rapido'), afflicted: false, marked: false, warded: false, buff: 0 };
+  const u: Unit = { src, id: `u${++s.seq}`, name: d.name, atk: d.atk, def: d.def, dmg: 0, keys: d.keys ?? [], icon: d.icon, isHero: false, exhausted: !(d.keys ?? []).includes('rapido'), afflicted: 0, marked: false, warded: false, buff: 0 };
   s.players[p].board[at.row][at.col] = u;
   fx(s, { k: 'summon', id: u.id });
   log(s, `${s.players[p].hero.name} invoca ${d.name[0]} (${d.atk}/${d.def}).`);
@@ -351,7 +356,7 @@ function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: '
   if (unitAt(s, target) !== t) return;
   // golpe divino / de ki: mais dano mágico no mesmo alvo
   if (extra.smite) { damage(s, target, extra.smite, p, 'magic'); if (s.winner !== undefined || unitAt(s, target) !== t) return; }
-  if (m.strikeAfflicts || then === 'afflict') { t.afflicted = true; fx(s, { k: 'status', id: t.id, s: 'afflict' }); }
+  if (m.strikeAfflicts || then === 'afflict') { afflict(t); fx(s, { k: 'status', id: t.id, s: 'afflict' }); }
   if (then === 'mark') { t.marked = true; fx(s, { k: 'status', id: t.id, s: 'mark' }); }
   if (then === 'push' && shift(s, target)) fx(s, { k: 'status', id: t.id, s: 'push' });
 }
@@ -375,7 +380,7 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: stri
       break;
     }
     case 'heal': for (const pos of resolveTargets(s, p, e.tgt, chosen)) heal(s, pos, e.n); break;
-    case 'afflict': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.afflicted = true; log(s, `${nm(u)} fica Afligido.`); fx(s, { k: 'status', id: u.id, s: 'afflict' }); } } break;
+    case 'afflict': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { afflict(u); log(s, `${nm(u)} fica Afligido${u.afflicted > 1 ? ` (${u.afflicted} acúmulos)` : ''}.`); fx(s, { k: 'status', id: u.id, s: 'afflict' }); } } break;
     case 'mark': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.marked = true; log(s, `${nm(u)} fica Marcado.`); fx(s, { k: 'status', id: u.id, s: 'mark' }); } } break;
     case 'ward': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u) { u.warded = true; log(s, `${nm(u)} está Protegido.`); fx(s, { k: 'status', id: u.id, s: 'ward' }); } } break;
     case 'push': for (const pos of resolveTargets(s, p, e.tgt, chosen)) { const u = unitAt(s, pos); if (u && shift(s, pos)) { log(s, `${nm(u)} é empurrado para a ${pos.row === 0 ? 'retaguarda' : 'frente'}.`); fx(s, { k: 'status', id: u.id, s: 'push' }); } } break;
@@ -408,9 +413,9 @@ function startTurn(s: GameState, first = false) {
   for (const f of figures(s, p)) f.u.exhausted = false;
   log(s, `— Turno ${s.turn}: ${pl.hero.name} —`);
   fx(s, { k: 'turn', p, turn: s.turn });
-  // aflição: 1 de dano em cada criatura afligida do jogador da vez (o XP vai para o outro lado)
+  // aflição: 1 de dano por acúmulo em cada criatura afligida do jogador da vez (o XP vai para o outro lado)
   for (const f of figures(s, p)) {
-    if (f.u.afflicted) { log(s, `${nm(f.u)} sofre a Aflição.`); damage(s, f.pos, 1, other(p)); if (s.winner !== undefined) return; }
+    if (f.u.afflicted) { log(s, `${nm(f.u)} sofre a Aflição.`); damage(s, f.pos, f.u.afflicted, other(p)); if (s.winner !== undefined) return; }
   }
   if (!first) draw(s, p, 1);
   addXp(s, p, 1, 'turn');
@@ -575,15 +580,16 @@ export function apply(s: GameState, a: Action): string | null {
       return null;
     }
     case 'move': {
-      if (s.heroOff) return 'Neste modo o herói fica fora do campo.';
-      if (pl.moved) return 'O herói já se moveu neste turno.';
-      if (a.to.p !== p || unitAt(s, a.to)) return 'Escolha um lugar livre seu.';
-      const from = heroPos(s, p);
-      const h = unitAt(s, from)!;
-      pl.board[a.to.row][a.to.col] = h;
+      if (pl.moved) return 'Já moveu uma peça neste turno.';
+      const from = a.from ?? heroPos(s, p);
+      const u = unitAt(s, from);
+      if (!u || from.p !== p) return 'Escolha uma peça sua.';
+      if (from.row === -1) return 'Neste modo o herói fica fora do campo.';
+      if (a.to.p !== p || a.to.row < 0 || unitAt(s, a.to)) return 'Escolha um lugar livre seu.';
+      pl.board[a.to.row][a.to.col] = u;
       pl.board[from.row][from.col] = null;
       pl.moved = true;
-      log(s, `${pl.hero.name} vai para a ${a.to.row === 0 ? 'frente' : 'retaguarda'}.`);
+      log(s, `${nm(u)} vai para a ${a.to.row === 0 ? 'frente' : 'retaguarda'}.`);
       return null;
     }
     case 'end': {

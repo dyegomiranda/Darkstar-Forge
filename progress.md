@@ -1,8 +1,22 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.6: vida pela ficha, fichas completas, estilos salvos, coleções e equilíbrio)
+**Atualizado:** 03/10/2026 (versão 3.7: mão reordenável, halo nas cartas jogáveis, mover qualquer peça, Aflição acumulável, cenários)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.7 (03/10/2026)
+
+- [x] Mão da batalha: arrastar uma carta reordena a mão (as outras deslizam para abrir espaço)
+- [x] Cartas que dá para jogar agora ganham um halo dourado
+- [x] "Mover peça" (antes "Trocar posição"): move o herói ou qualquer criatura sua, 1 vez por turno
+- [x] Aflição acumula (até 3; 1 PV por acúmulo); Marca e Proteção não acumulam; uma postura por vez — o texto das cartas diz isso
+- [x] Jogar a postura que já está ativa (ou Marcar/Proteger quem já está) pede confirmação; o bot não desperdiça a carta
+- [x] Morgana: menos cópias de Corte Sombrio e Maldição da Ruína (compensa a Aflição acumulável)
+- [x] Cenários Masmorra, Pântano e Cripta refeitos: o campo inteiro fica sobre o chão
+- [x] Mão inicial: a carta ampliada não cobre mais os botões nem o título
+- [x] Fim de partida: botão "Tela inicial"
+- [x] Grimórios, cemitérios e painéis um pouco mais para dentro da tela
+- [x] As cartas do Protótipo recebem as regras e textos atuais (inclui os ajustes da 3.6)
 
 ## Versão 3.6 (02/10/2026)
 

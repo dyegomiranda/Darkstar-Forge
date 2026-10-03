@@ -33,14 +33,14 @@ function stance(m: StanceMods, pt: boolean): string {
   if (m.strikeHeals) parts.push(pt ? `seus golpes curam você em ${m.strikeHeals}` : `your strikes heal you for ${m.strikeHeals}`);
   if (m.guard) parts.push(pt ? 'seu herói tem Guarda' : 'your hero has Guard');
   const s = parts.join(pt ? ' e ' : ' and ');
-  return (pt ? 'Enquanto nesta postura, ' : 'While in this stance, ') + s + '.';
+  return (pt ? 'Enquanto nesta postura, ' : 'While in this stance, ') + s + (pt ? '. Uma postura por vez (não acumula).' : '. One stance at a time (does not stack).');
 }
 
 /** Lembretes curtos dos marcadores (só na 1ª vez que aparecem na carta). */
 const REMIND = {
-  afflict: [' (perde 1 PV no começo de cada turno até ser curado)', ' (loses 1 HP at the start of each turn until healed)'],
-  mark: [' (sofre +1 de todo dano até ser curado)', ' (takes +1 from all damage until healed)'],
-  ward: [' (anula o próximo dano)', ' (prevents the next damage)'],
+  afflict: [' (perde 1 PV no começo de cada turno até ser curado; acumula até 3)', ' (loses 1 HP at the start of each turn until healed; stacks up to 3)'],
+  mark: [' (sofre +1 de todo dano até ser curado; não acumula)', ' (takes +1 from all damage until healed; does not stack)'],
+  ward: [' (anula o próximo dano; não acumula)', ' (prevents the next damage; does not stack)'],
 } as const;
 
 function one(e: Effect, pt: boolean, w: Weapon | undefined, seen: Set<string>): string {
