@@ -6,7 +6,7 @@
   ampliá-la; clique num cemitério para ver tudo.
 -->
 <script lang="ts">
-  import { onDestroy, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
@@ -15,13 +15,14 @@
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
   import { ui } from '../../app/ui.svelte';
-  import { actor, apply, cannotPlay, figures, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, COLS, MAX_MULLIGANS } from '../../game/engine';
+  import { actor, apply, cannotPlay, figures, cardTargets, choiceOf, emptySlots, heroPos, newGame, other, playableRanks, reachable, reactions, strikeVia, unitAt, XP_PER_LEVEL, MAX_MULLIGANS } from '../../game/engine';
+  import { costText, effectsText } from '../../game/text';
   import { botAction, botMulligan, DIFFICULTIES, EDGE, type Difficulty } from '../../game/bot';
   import { settings } from '../../app/settings.svelte';
   import { shell } from '../../app/shell.svelte';
   import ScreenBar from '../common/ScreenBar.svelte';
   import { sideFromApp } from '../../game/fromApp';
-  import { ATTRS, ATTR_NAMES, type Action, type CardRef, type Fx, type Effect, type GameState, type GearItem, type HeroDef, type Pos, type Unit, type Via } from '../../game/types';
+  import { ATTRS, ATTR_NAMES, rankOf, type Action, type CardRef, type Fx, type Effect, type GameState, type GearItem, type HeroDef, type Pos, type Unit, type Via } from '../../game/types';
   import type { Character } from '../../model/types';
   import Glyph from '../common/Glyph.svelte';
   import CardImage from '../common/CardImage.svelte';
@@ -30,7 +31,9 @@
   import { composeBack } from '../../render/back';
   import { rasterize } from '../../render/raster';
   import { backInput } from '../back/backCtx';
-  import { characterOf, deckCards, deckCount, heroDef, playable } from './heroes';
+  import { characterOf, deckCards, deckCount, deckReady, heroDef, playable, type FixedMatch } from './heroes';
+  import { journeyDeck } from '../../game/journey';
+  import { DECK_SIZE, buildCount } from '../../model/builds';
   import AvatarSprite from '../../avatar/AvatarSprite.svelte';
   import { chip } from '../../audio/chip';
   import MusicPlayer from '../../audio/MusicPlayer.svelte';
@@ -43,10 +46,16 @@
   const OPTS_KEY = 'darkstar.mesa';
   const saved = (() => { try { return JSON.parse(localStorage.getItem(OPTS_KEY) ?? '{}') as Record<string, unknown>; } catch { return {}; } })();
 
-  let step = $state<'heroes' | 'place' | 'play'>('heroes');
+  /** `fixed`: batalha já montada (Jornada) — pula a seleção de heróis e devolve o resultado. */
+  let { fixed }: { fixed?: FixedMatch } = $props();
+  // svelte-ignore state_referenced_locally (a batalha montada não muda depois de aberta)
+  let step = $state<'heroes' | 'place' | 'play'>(fixed ? 'place' : 'heroes');
   const chars = $derived(playable());
-  let myId = $state(typeof saved.my === 'string' ? saved.my : '');
-  let botId = $state(typeof saved.bot === 'string' ? saved.bot : '');
+  // svelte-ignore state_referenced_locally
+  let myId = $state(fixed ? fixed.myId : typeof saved.my === 'string' ? saved.my : '');
+  // svelte-ignore state_referenced_locally
+  let botId = $state(fixed ? fixed.botId : typeof saved.bot === 'string' ? saved.bot : '');
+  onMount(() => { if (fixed) toPlace(); });
   const myChar = $derived<Character | undefined>(chars.find((c) => c.id === myId) ?? chars[0]);
   const botChar = $derived<Character | undefined>(chars.find((c) => c.id === botId) ?? chars[1] ?? chars[0]);
   const myHero = $derived(myChar ? heroDef(myChar) : null);
@@ -55,6 +64,8 @@
   let limit = $state(saved.limit === true);
   let heroOff = $state(saved.heroOff === true);
   let heroOffFront = $state(saved.heroOffFront === true);
+  /** Teste: heróis com 40% menos vida (partidas mais curtas). */
+  let shortLife = $state(saved.shortLife === true);
   // registro, limite de tempo, velocidade e dificuldade são configurações do jogo (valem em todas as partidas)
   const cfg = settings.v;
   $effect(() => { void [cfg.showLog, cfg.timeLimit, cfg.pace, cfg.difficulty]; settings.save(); });
@@ -80,10 +91,12 @@
    */
   const sceneStyle = $derived(scene.img ? `--scene:url("${new URL(scene.img, document.baseURI).href}")` : '');
   /** Piso de cada casa (varia de casa para casa). */
-  $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, scene: scenePick })); } catch { /* sem armazenamento local */ } });
+  $effect(() => { if (fixed) return; try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, shortLife, scene: scenePick })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
-  const ready = $derived(!!myChar && !!botChar && deckCount(myChar) > 0 && deckCount(botChar) > 0);
+  const ready = $derived(!!myChar && !!botChar && deckReady(myChar) && deckReady(botChar));
+  /** Troca o deck em uso do herói: '' = o padrão da classe; senão, um deck montado. */
+  function setBuild(c: Character, id: string) { app.updateProject(() => { if (id) c.buildId = id; else delete c.buildId; }); }
 
   // verso das cartas (mão do oponente e grimórios): desenhado uma vez só
   let backUrl = $state('');
@@ -130,14 +143,16 @@
     if (!myChar || !botChar || !myHero || !botHero) return;
     const mine = sideFromApp({ ...myHero, row: myPos.row, col: myPos.col }, deckCards(myChar));
     // a dificuldade vale para a partida inteira; no Muito difícil o bot começa com vantagem (vida e carta a mais)
-    level = cfg.difficulty;
+    level = fixed?.difficulty ?? cfg.difficulty;
     const edge = EDGE[level];
     const bot = { ...sideFromApp(edge ? { ...botHero, maxHp: botHero.maxHp + edge.hp } : botHero, deckCards(botChar)), extraCards: edge?.cards ?? 0 };
+    // Jornada: cada deck fica só com as cartas do nível do seu herói
+    if (fixed) { mine.cards = journeyDeck(mine.cards, fixed.start[0].level); bot.cards = journeyDeck(bot.cards, fixed.start[1].level); }
     const iStart = starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5);
     // "jogar de novo" com cenário sorteado: sorteia outro
     if (step === 'play' && scenePick === 'random') pickScene();
     me = iStart ? 0 : 1;
-    g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront, mulligan: true });
+    g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront, mulligan: true, hpScale: shortLife ? 0.6 : 1, start: fixed ? (iStart ? [fixed.start[0], fixed.start[1]] : [fixed.start[1], fixed.start[0]]) : undefined });
     sel = null;
     say('');
     step = 'play';
@@ -177,10 +192,10 @@
     void tick().then(() => playFx()).then(() => runBot());
   }
 
-  function leave() { g = null; step = 'heroes'; }
+  function leave() { if (fixed) { fixed.onLeave(); return; } g = null; step = 'heroes'; }
 
   // ───────────── jogo ─────────────
-  type Sel = { kind: 'card'; uid: string } | { kind: 'strike' } | { kind: 'unit'; pos: Pos } | { kind: 'move'; from?: Pos } | null;
+  type Sel = { kind: 'card'; uid: string; rank: number } | { kind: 'strike' } | { kind: 'unit'; pos: Pos } | { kind: 'move'; from?: Pos } | null;
   let sel = $state<Sel>(null);
   const foe = $derived(other(me));
   /** Uma carta do oponente espera a minha resposta (Reação ou aceitar). */
@@ -193,7 +208,7 @@
     if (sel.kind === 'card') {
       const ref = g.players[me].hand.find((c) => c.uid === sel.uid);
       if (!ref) return [];
-      const eff = g.defs[ref.cardId].game.effects;
+      const eff = rankOf(g.defs[ref.cardId].game, sel.rank).effects;
       return choiceOf(eff)?.kind === 'slot' ? emptySlots(g, me) : cardTargets(g, me, eff);
     }
     if (sel.kind === 'strike') return reachable(g, me, strikeVia(g, me), heroPos(g, me));
@@ -342,13 +357,30 @@
   async function clickCard(uid: string) {
     if (!g || !myTurn) return;
     touch();
-    const why = cannotPlay(g, me, uid);
-    if (why) { say(why, true); return; }
-    const ref = g.players[me].hand.find((c) => c.uid === uid)!;
-    const ch = choiceOf(g.defs[ref.cardId].game.effects);
-    if (!ch) { const w = wasted(uid); if (!w || (await okToWaste(w))) void act({ t: 'play', uid }); }
-    else if (sel?.kind === 'card' && sel.uid === uid) { sel = null; say(''); }
-    else { sel = { kind: 'card', uid }; chip.sfx('select'); ask(promptOf(g.defs[ref.cardId].game.effects)); }
+    if (sel?.kind === 'card' && sel.uid === uid) { sel = null; say(''); return; }
+    const ranks = playableRanks(g, me, uid);
+    if (!ranks.length) { say(cannotPlay(g, me, uid) ?? '', true); return; }
+    const gm = g.defs[g.players[me].hand.find((c) => c.uid === uid)!.cardId].game;
+    // várias versões jogáveis: se a mais forte não custa mais que as outras, vai ela; senão, o jogador escolhe
+    const top = ranks[ranks.length - 1], cost = (r: number) => rankOf(gm, r);
+    if (ranks.length > 1 && ranks.some((r) => cost(r).vigor < cost(top).vigor || cost(r).mana < cost(top).mana)) { sel = null; rankPick = { uid, ranks }; chip.sfx('select'); say(L('Escolha a versão da carta', 'Choose the version of the card')); return; }
+    await useCard(uid, top);
+  }
+  /** Versões da carta esperando a escolha do jogador (evoluções liberadas pelo nível). */
+  let rankPick = $state<{ uid: string; ranks: number[] } | null>(null);
+  async function useCard(uid: string, rank: number) {
+    if (!g) return;
+    rankPick = null;
+    const ref = g.players[me].hand.find((c) => c.uid === uid);
+    if (!ref) return;
+    const eff = rankOf(g.defs[ref.cardId].game, rank).effects;
+    if (!choiceOf(eff)) { const w = wasted(uid); if (!w || (await okToWaste(w))) void act({ t: 'play', uid, rank }); }
+    else { sel = { kind: 'card', uid, rank }; chip.sfx('select'); ask(promptOf(eff)); }
+  }
+  /** Texto de uma versão da carta, com o custo dela. */
+  function rankInfo(uid: string, rank: number): { level: number; cost: string; text: string } {
+    const gm = g!.defs[g!.players[me].hand.find((c) => c.uid === uid)!.cardId].game, r = rankOf(gm, rank);
+    return { level: r.level, cost: costText(r.vigor, r.mana, app.lang), text: effectsText(r.effects, app.lang, g!.players[me].hero.weapon) };
   }
 
   function clickSlot(pos: Pos) {
@@ -358,8 +390,8 @@
       const t = targets.find((x) => same(x, pos))!;
       if (sel.kind === 'card') {
         const ref = g.players[me].hand.find((c) => c.uid === sel!.uid)!;
-        const ch = choiceOf(g.defs[ref.cardId].game.effects);
-        const a: Action = ch?.kind === 'slot' ? { t: 'play', uid: sel.uid, slot: pos } : { t: 'play', uid: sel.uid, target: t.col === -1 ? { ...pos, col: -1 } : pos };
+        const ch = choiceOf(rankOf(g.defs[ref.cardId].game, sel.rank).effects);
+        const a: Action = ch?.kind === 'slot' ? { t: 'play', uid: sel.uid, rank: sel.rank, slot: pos } : { t: 'play', uid: sel.uid, rank: sel.rank, target: t.col === -1 ? { ...pos, col: -1 } : pos };
         const w = ch?.kind === 'slot' ? null : wasted(sel.uid, pos);
         if (w) void okToWaste(w).then((ok) => { if (ok) void act(a); });
         else void act(a);
@@ -396,13 +428,14 @@
 
   /** Desiste da carta/golpe escolhido (Esc, botão direito, clicar fora ou o botão Cancelar). */
   function cancel(text = '') {
+    if (rankPick) { rankPick = null; say(''); return; }
     if (!sel) return;
     sel = null;
     say(text || L('Seleção cancelada.', 'Selection cancelled.'));
   }
   function mainClick(e: MouseEvent) {
     // clique no fundo da mesa (fora de cartas, casas e botões)
-    if (sel && !(e.target as HTMLElement).closest('button, .hc, .slot, .zc, .pile, .respond, .flog')) cancel();
+    if ((sel || rankPick) && !(e.target as HTMLElement).closest('button, .hc, .slot, .zc, .pile, .respond, .flog, .rankpick')) cancel();
   }
 
   function startMove() {
@@ -460,7 +493,7 @@
     else if (helpOpen) helpOpen = false;
     else if (menuOpen) menuOpen = false;
     else if (graveOf !== null) { graveOf = null; zoom = null; }
-    else if (sel) cancel();
+    else if (sel || rankPick) cancel();
     else if (inMatch) { say(''); menuOpen = true; }
     else return;
     e.preventDefault();
@@ -487,7 +520,7 @@
     if (!g || !myTurn) return [];
     const uid = sel?.kind === 'card' ? sel.uid : !sel ? hoverCard : null;
     const ref = uid ? g.players[me].hand.find((c) => c.uid === uid) : undefined;
-    return ref ? g.defs[ref.cardId].game.effects : [];
+    return ref ? rankOf(g.defs[ref.cardId].game, sel?.kind === 'card' ? sel.rank : 0).effects : [];
   });
   /** Fileira que o alvo sob o mouse representa (cartas que atingem uma fileira inteira). */
   const aimRow = $derived(sel?.kind === 'card' && hoverPos && isTarget(hoverPos) && choiceOf(aimEffects)?.kind === 'target' && (choiceOf(aimEffects) as { tgt: string }).tgt === 'enemyRow' ? hoverPos : null);
@@ -543,7 +576,7 @@
     if (!locked) { const a = arrowGeom(x1, y1, mouse.x, mouse.y, 'free'); arrows = a ? [a] : []; return; }
     const tone: Arrow['tone'] = !unitAt(g, locked) && !aimRow ? 'slot' : locked.p === me ? 'ally' : 'foe';
     // uma fileira inteira: uma seta para cada criatura atingida
-    const ends = aimRow ? Array.from({ length: COLS }, (_, col) => ({ ...locked, col })).filter((q) => unitAt(g!, q)) : [locked];
+    const ends = aimRow ? Array.from({ length: g.players[locked.p].board[0].length }, (_, col) => ({ ...locked, col })).filter((q) => unitAt(g!, q)) : [locked];
     arrows = ends.map((q) => {
       const r = slotEl(q)?.getBoundingClientRect();
       return r ? arrowGeom(x1, y1, r.left + r.width / 2, r.top + r.height / 2, tone) : null;
@@ -721,10 +754,11 @@
       // a carta do oponente aparece grande ao lado (se eu posso responder, ela já está na janela de resposta)
       case 'play':
         chip.sfx('card');
-        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}`, '', PACES[cfg.pace].shown);
+        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}${e.rank ? ` · ${L('Nv', 'Lv')} ${rankOf(g.defs[e.cardId].game, e.rank).level}` : ''}`, '', PACES[cfg.pace].shown);
         // cartas que não são um golpe: o boneco conjura (o golpe tem a sua própria animação, logo depois)
-        if (!g.defs[e.cardId]?.game.effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
+        if (g.defs[e.cardId] && !rankOf(g.defs[e.cardId].game, e.rank).effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
         break;
+      case 'expand': chip.sfx('summon'); float(document.querySelector(`.rows[data-p="${e.p}"]`)?.getBoundingClientRect(), L('Campo ampliado', 'Field expanded'), 'info', L('+1 coluna', '+1 column'), true); break;
       case 'react': chip.sfx('card'); animate(e.p, 'spellcast'); showCard(e.cardId, e.p === me ? L('Você reage com', 'You react with') : `${g.players[e.p].hero.name} ${L('reage com', 'reacts with')}`, 'react', 2200); break;
       case 'countered':
         chip.sfx('counter');
@@ -911,7 +945,9 @@
   const P0 = () => g!.players[me];
   /** Número de dano mostrado na carta da mão (já com a arma e a postura). */
   function dmgBadge(r: CardRef): string | null {
-    for (const e of g?.defs[r.cardId]?.game.effects ?? []) {
+    const gm = g?.defs[r.cardId]?.game;
+    const best = gm && myTurn ? playableRanks(g!, me, r.uid).pop() ?? 0 : 0;
+    for (const e of gm ? rankOf(gm, best).effects : []) {
       if (e.k === 'strike') { const n = strikeDmg(me) - P0().hero.weapon.dmg + e.bonus; return e.times && e.times > 1 ? `${n}×${e.times}` : `${n}`; }
       if (e.k === 'dmg') return `${e.n}`;
     }
@@ -988,7 +1024,15 @@
                 {/each}
                 <small>{L(h.weapon.name[0], h.weapon.name[1])} · {L(VIA[h.weapon.via][0], VIA[h.weapon.via][1])}</small>
               </div>
-              <span class="sc-deck" class:bad={deckCount(c) === 0}>{app.deck(h.deckId)?.name[app.lang] ?? L('sem deck', 'no deck')} · {deckCount(c)} {L('cartas', 'cards')}</span>
+              <div class="sc-deck" class:bad={!deckReady(c)}>
+                <span>{L('Deck', 'Deck')}</span>
+                <select class="select-in" value={app.build(c.buildId)?.id ?? ''} onchange={(e) => setBuild(c, (e.currentTarget as HTMLSelectElement).value)}>
+                  <option value="">{app.deck(h.deckId)?.name[app.lang] ?? L('sem deck', 'no deck')} ({L('padrão', 'default')})</option>
+                  {#each app.builds as bd (bd.id)}<option value={bd.id}>{bd.name} · {buildCount(bd)}/{DECK_SIZE}</option>{/each}
+                </select>
+                <em>{deckCount(c)} {L('cartas', 'cards')}{!deckReady(c) ? L(` · precisa de ${DECK_SIZE}`, ` · needs ${DECK_SIZE}`) : ''}</em>
+                <button class="sc-deckedit" onclick={() => { router.returnTo = '/batalha/solo'; router.go(c.buildId ? `/baralhos/${encodeURIComponent(c.buildId)}` : '/baralhos'); }} title={L('Montar e editar decks', 'Build and edit decks')}><Pencil size={12} /></button>
+              </div>
             </div>
           </div>
           <div class="roster">
@@ -1026,6 +1070,7 @@
             {@render opt(heroOffFront, (v) => (heroOffFront = v), L('Exigir a frente vazia', 'Require an empty front'), L('o golpe corpo a corpo só passa da frente inimiga se ela estiver vazia', 'the melee strike only goes past the enemy front when it is empty'), true)}
           {/if}
           {@render opt(limit, (v) => (limit = v), L('Modo B', 'Mode B'), L('no máximo 3 habilidades por turno', 'at most 3 abilities per turn'))}
+          {@render opt(shortLife, (v) => (shortLife = v), L('Partida curta (teste)', 'Short match (test)'), L('os dois heróis começam com 40% menos vida', 'both heroes start with 40% less life'))}
           {@render opt(cfg.timeLimit, (v) => (cfg.timeLimit = v), L('Limite de tempo', 'Time limit'), L('30 s parado mostra o contador; mais 30 s e você perde', '30 s idle shows the countdown; 30 s more and you lose'))}
           {@render opt(cfg.showLog, (v) => (cfg.showLog = v), L('Registro da batalha', 'Battle log'), L('botão flutuante com tudo o que aconteceu', 'floating button with everything that happened'))}
         </div>
@@ -1122,7 +1167,7 @@
       <div class="hbar mine" style="--c:{colorOf(myHero)}">
         <span class="hb-pic"><HeroPortrait hero={myChar} size={46} round /></span>
         <div class="who"><b class="display">{myHero.name}</b><small>{L(myHero.className[0], myHero.className[1])}</small></div>
-        <button class="btn sm" onclick={() => (step = 'heroes')}>{L('Voltar', 'Back')}</button>
+        <button class="btn sm" onclick={() => { if (fixed) fixed.onLeave(); else step = 'heroes'; }}>{L('Voltar', 'Back')}</button>
         <button class="btn sm primary" onclick={start}><Swords size={15} /> {L('Começar partida', 'Start match')}</button>
       </div>
     </div>
@@ -1154,10 +1199,17 @@
             <span class="cap">Mana</span>
             <span class="val man" id="res-{p}-mana"><Glyph id="crystal-cluster" size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
           </div>
-          <div class="stat" use:tip={L(`Nível e XP: o herói está no nível ${pl.level}. Todo herói ganha +1 XP no começo do próprio turno (por isso sobe de nível mesmo sem fazer nada), +1 por criatura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level and XP: the hero is level ${pl.level}. Every hero gets +1 XP at the start of its own turn (so it levels up even doing nothing), +1 per defeated creature, +1 the first time it hits the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
-            <span class="cap">{L('Nível', 'Level')} {pl.level}</span>
-            <span class="val xpv" id="xp-{p}">{#each Array(XP_PER_LEVEL) as _, i}<i class="pip" class:on={i < pl.xp}></i>{/each}<small>{pl.xp}/{XP_PER_LEVEL} XP</small></span>
-          </div>
+          {#if g!.noXp}
+            <div class="stat" use:tip={L(`Nível ${pl.level}: na Jornada o nível não muda durante a batalha; ele sobe entre as batalhas, com o XP das vitórias.`, `Level ${pl.level}: in the Journey the level does not change during the battle; it rises between battles, with the XP from victories.`)}>
+              <span class="cap">{L('Nível', 'Level')}</span>
+              <span class="val xpv" id="xp-{p}"><b>{pl.level}</b><small>{L('Jornada', 'Journey')}</small></span>
+            </div>
+          {:else}
+            <div class="stat" use:tip={L(`Nível e XP: o herói está no nível ${pl.level}. Todo herói ganha +1 XP no começo do próprio turno (por isso sobe de nível mesmo sem fazer nada), +1 por criatura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level and XP: the hero is level ${pl.level}. Every hero gets +1 XP at the start of its own turn (so it levels up even doing nothing), +1 per defeated creature, +1 the first time it hits the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
+              <span class="cap">{L('Nível', 'Level')} {pl.level}</span>
+              <span class="val xpv" id="xp-{p}">{#each Array(XP_PER_LEVEL) as _, i}<i class="pip" class:on={i < pl.xp}></i>{/each}<small>{pl.xp}/{XP_PER_LEVEL} XP</small></span>
+            </div>
+          {/if}
           <div class="stat" use:tip={L('Golpe: o ataque do herói com a arma. É de graça, 1 vez por turno, a qualquer momento do turno (clique no herói ou em “Golpear”). As cartas não gastam esse golpe.', 'Strike: the hero attacks with the weapon. Free, once per turn, any time during the turn (click the hero or “Strike”). Cards do not use it up.')}>
             <span class="cap">{L('Golpe', 'Strike')}</span>
             <span class="val stk" class:used={pl.struck && g!.active === p}><Swords size={14} /> <b>{strikeDmg(p)}</b><small>{pl.struck && g!.active === p ? L('usado', 'used') : L(VIA[strikeVia(g!, p)][0], VIA[strikeVia(g!, p)][1])}</small></span>
@@ -1235,7 +1287,7 @@
       {#snippet field(p: 0 | 1)}
         <div class="bfield">
           {#if g!.heroOff}{@render slot(p, -1, 0)}{/if}
-          <div class="rows" class:aoe={aoe.fields.has(p)} class:ally={p === me}>{#each rowsFor(p) as row}<div class="row" class:aoe={aoe.rows.has(`${p}-${row}`)}>{#each Array(COLS) as _, col}{@render slot(p, row, col)}{/each}</div>{/each}</div>
+          <div class="rows" data-p={p} class:aoe={aoe.fields.has(p)} class:ally={p === me}>{#each rowsFor(p) as row}<div class="row" style="--cols:{g!.players[p].board[row].length}" class:aoe={aoe.rows.has(`${p}-${row}`)}>{#each g!.players[p].board[row] as _, col}{@render slot(p, row, col)}{/each}</div>{/each}</div>
           {#if g!.heroOff}<span class="off-spacer"></span>{/if}
         </div>
       {/snippet}
@@ -1331,7 +1383,7 @@
         {#each P.hand as r, i (r.uid)}
           {@const why = cannotPlay(g, me, r.uid)}
           {@const isReact = g.defs[r.cardId]?.game.kind === 'reacao'}
-          <button class="hc" class:no={!!why && !isReact} class:can={myTurn && !why && !isReact} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid} class:held={dragUid === r.uid}
+          <button class="hc" class:no={!!why && !isReact} class:can={myTurn && !isReact && playableRanks(g, me, r.uid).length > 0} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid} class:held={dragUid === r.uid}
             in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })} animate:flip={{ duration: dragUid === r.uid ? 0 : 200, easing: cubicOut }}
             onpointerdown={(e) => handDown(e, r.uid)} onpointermove={handMove} onpointerup={handUp} onpointercancel={handUp}
             onclick={() => { if (!dragged) void clickCard(r.uid); }} onmouseenter={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onmouseleave={() => { hoverCard = null; }}
@@ -1346,6 +1398,23 @@
         {/each}
       </div>
       {@render bar(me, true)}
+
+      {#if rankPick && myTurn}
+        {@const card = app.cards[g.players[me].hand.find((c) => c.uid === rankPick!.uid)?.cardId ?? '']}
+        <div class="rankpick" in:scale={{ duration: 160, start: 0.92 }}>
+          <span class="rp-title">{card?.text[app.lang].name} · {L('qual versão jogar?', 'which version to play?')}</span>
+          <div class="rp-opts">
+            {#each rankPick.ranks as rk (rk)}
+              {@const info = rankInfo(rankPick.uid, rk)}
+              <button class="rp-opt" class:up={rk > 0} onclick={() => useCard(rankPick!.uid, rk)}>
+                <span class="rp-head"><b>{L('Nível', 'Level')} {info.level}</b><i>{info.cost.replace(/\{vigor\}/g, 'Vigor').replace(/\{mana\}/g, 'Mana')}</i></span>
+                <span class="rp-text">{info.text}</span>
+              </button>
+            {/each}
+          </div>
+          <button class="cancel-btn" onclick={() => cancel()}><X size={13} /> {L('Cancelar', 'Cancel')}</button>
+        </div>
+      {/if}
 
       {@render piles(foe, true)}
       {@render piles(me, false)}
@@ -1426,7 +1495,7 @@
             </div>
           {/if}
           <div class="rside">
-            <span class="rtitle">{pc ? `${F.hero.name} ${L('joga', 'plays')}` : L('Ataque inimigo', 'Enemy attack')}</span>
+            <span class="rtitle">{pc ? `${F.hero.name} ${L('joga', 'plays')}${g.pending?.rank && g.pending.ref ? ` · ${L('versão do nível', 'level')} ${rankOf(g.defs[g.pending.ref.cardId].game, g.pending.rank).level}` : ''}` : L('Ataque inimigo', 'Enemy attack')}</span>
             <h3 class="display">{pc ? pc.text[app.lang].name : atkU ? L(`${atkU.name[0]} ataca`, `${atkU.name[1]} attacks`) : L(`${F.hero.name} golpeia`, `${F.hero.name} strikes`)}</h3>
             {#if tgtU}<span class="rtarget">{L('Alvo', 'Target')}: <b>{L(tgtU.name[0], tgtU.name[1])}</b>{#if !pc} · {atkU ? atkU.atk + atkU.buff : strikeDmg(foe)} {L('de dano', 'damage')}{/if}</span>{/if}
             <p class="muted">{pc ? L('Você tem uma Reação que serve. Use-a agora ou aceite a carta.', 'You have a Reaction that fits. Use it now or accept the card.') : L('Você tem uma Reação que serve. Use-a agora ou aceite o ataque.', 'You have a Reaction that fits. Use it now or accept the attack.')}</p>
@@ -1458,8 +1527,10 @@
             <label class="gm-sel"><Gauge size={15} /> {L('Velocidade', 'Speed')}
               <select class="select-in" bind:value={cfg.pace}><option value="slow">{L('Lento', 'Slow')}</option><option value="normal">{L('Normal', 'Normal')}</option><option value="fast">{L('Rápido', 'Fast')}</option></select></label>
           </div>
-          <button class="gm-btn" onclick={() => { menuOpen = false; leave(); }}>{L('Sair para a seleção', 'Leave to selection')}</button>
-          <button class="gm-btn" onclick={() => { menuOpen = false; leave(); router.go('/'); }}>{L('Menu principal', 'Main menu')}</button>
+          {#if !fixed}
+            <button class="gm-btn" onclick={() => { menuOpen = false; leave(); }}>{L('Sair para a seleção', 'Leave to selection')}</button>
+            <button class="gm-btn" onclick={() => { menuOpen = false; leave(); router.go('/'); }}>{L('Menu principal', 'Main menu')}</button>
+          {/if}
           <button class="gm-btn danger" disabled={g.winner !== undefined} onclick={askConcede}>{L('Desistir (você perde)', 'Concede (you lose)')}</button>
           <small class="gm-sub">Esc · {L('continuar', 'resume')}</small>
         </div>
@@ -1629,9 +1700,13 @@
           <h2 class="display">{won ? L('Vitória!', 'Victory!') : L('Derrota', 'Defeat')}</h2>
           <p class="muted">{g.ended === 'timeout' ? L('O tempo esgotou.', 'Time ran out.') : g.ended === 'concede' ? L('Você desistiu da batalha.', 'You conceded the battle.') : won ? L(`${F.hero.name} caiu.`, `${F.hero.name} fell.`) : L(`${P.hero.name} caiu.`, `${P.hero.name} fell.`)} {L(`Turno ${g.turn}.`, `Turn ${g.turn}.`)}</p>
           <div class="lv">
-            <button class="btn primary big" onclick={start}><RotateCcw size={16} /> {L('Jogar de novo', 'Play again')}</button>
-            <button class="btn big" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>
-            <button class="btn big" onclick={() => { leave(); router.go('/'); }}><House size={16} /> {L('Tela inicial', 'Home screen')}</button>
+            {#if fixed}
+              <button class="btn primary big" onclick={() => fixed.onEnd(won, g?.ended !== undefined)}><Check size={16} /> {L('Continuar', 'Continue')}</button>
+            {:else}
+              <button class="btn primary big" onclick={start}><RotateCcw size={16} /> {L('Jogar de novo', 'Play again')}</button>
+              <button class="btn big" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>
+              <button class="btn big" onclick={() => { leave(); router.go('/'); }}><House size={16} /> {L('Tela inicial', 'Home screen')}</button>
+            {/if}
           </div>
         </div>
       </div>
@@ -1682,7 +1757,12 @@
   .sc-gear span { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; cursor: help; border: 1px solid rgb(255 255 255 / .12);
     background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #000), color-mix(in srgb, var(--c) 18%, #000)); }
   .sc-gear small { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
-  .sc-deck { font-size: 12px; color: var(--ok); margin-top: auto; padding-top: 6px; }
+  .sc-deck { font-size: 12px; color: var(--ok); margin-top: auto; padding-top: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sc-deck > span { font: 700 10px var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .sc-deck .select-in { max-width: 200px; }
+  .sc-deck em { font-style: normal; }
+  .sc-deckedit { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgb(255 255 255 / .2); background: rgb(10 8 7 / .7); color: #f0e6d6; cursor: pointer; }
+  .sc-deckedit:hover { background: var(--accent); color: #1a120b; border-color: var(--accent); }
   .sc-deck.bad { color: var(--danger); }
   .roster { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid rgb(255 255 255 / .07); }
   .vs-side.right .roster { justify-content: flex-end; }
@@ -1788,7 +1868,7 @@
   .bfield { display: flex; flex-direction: row; gap: 12px; align-items: stretch; justify-content: center; }
   .rows { display: flex; flex-direction: column; gap: 6px; }
   .off-spacer { width: calc(var(--row) * 1.35); flex: none; }
-  .row { display: grid; grid-template-columns: repeat(3, calc(var(--row) * 1.35)); gap: 10px; }
+  .row { display: grid; grid-template-columns: repeat(var(--cols, 3), calc(var(--row) * 1.35)); gap: 10px; }
   /* casa: uma área mais escura e um pouco transparente; destaca-se de leve em qualquer cenário (grama, neve, pedra…) */
   .slot { height: var(--row); border-radius: 10px; border: 0; background: none; color: var(--text); display: grid; place-items: center; cursor: pointer; font: inherit; position: relative; padding: 4px; overflow: hidden; }
   .slot::before { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: 10px; background: rgb(6 5 12 / .34); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1), inset 0 -10px 18px rgb(0 0 0 / .18); backdrop-filter: blur(1.5px); transition: background var(--t); }
@@ -1908,6 +1988,20 @@
   .dmgb, .rtag { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1; display: inline-flex; gap: 3px; align-items: center; font: 800 14px var(--ui); padding: 2px 9px; border-radius: 9px; background: #2a0f0b; color: #ffcf7a; border: 1.5px solid #c4473a; box-shadow: 0 3px 8px rgb(0 0 0 / .6); white-space: nowrap; }
   .rtag { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; background: #101a2e; color: #a9c8ff; border-color: #4f7fd0; }
   .hc.sel { z-index: 2; translate: 0 -18px; }
+  /* escolha da versão da carta (evoluções): painel acima da mão */
+  .rankpick { position: absolute; left: 50%; bottom: calc(var(--hand) + 86px); transform: translateX(-50%); z-index: 20; display: grid; gap: 10px; justify-items: center; padding: 14px 16px; border-radius: 16px; max-width: min(860px, 70vw);
+    background: linear-gradient(180deg, #2a221c, #14100d); border: 1px solid #c9a24a; box-shadow: 0 0 0 4px rgb(0 0 0 / .45), 0 22px 50px rgb(0 0 0 / .75), 0 0 30px rgb(240 196 90 / .18); }
+  .rp-title { font: 700 11px var(--ui); letter-spacing: .16em; text-transform: uppercase; color: #e9c877; text-align: center; }
+  .rp-opts { display: flex; gap: 10px; align-items: stretch; }
+  .rp-opt { flex: 1 1 0; min-width: 190px; max-width: 280px; display: grid; gap: 6px; align-content: start; padding: 10px 12px; border-radius: 12px; cursor: pointer; text-align: left; font: inherit; color: var(--text);
+    background: linear-gradient(180deg, rgb(255 255 255 / .07), rgb(0 0 0 / .3)); border: 1px solid rgb(255 255 255 / .16); transition: transform .12s, border-color .12s, box-shadow .12s; }
+  .rp-opt:hover { transform: translateY(-3px); border-color: #f0c45a; box-shadow: 0 0 18px rgb(240 196 90 / .35); }
+  .rp-opt.up { border-color: rgb(240 196 90 / .45); }
+  .rp-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .rp-head b { font: 700 15px var(--display, serif); color: #f6ead8; }
+  .rp-opt.up .rp-head b { color: #ffd98a; }
+  .rp-head i { font: 700 12px var(--ui); font-style: normal; color: #a9c8ff; white-space: nowrap; }
+  .rp-text { font-size: 12.5px; line-height: 1.35; color: var(--text-2); }
   /* arrastando: a carta segue o ponteiro, um pouco maior; as outras param de abrir espaço do jeito do mouse e deslizam para o lugar novo */
   .hand.dragging .hc { transform: none !important; }
   .hand.dragging .hc:not(.held) .hf { transform: none; }

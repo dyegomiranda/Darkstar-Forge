@@ -14,7 +14,7 @@
   import type { EditorState } from './editor.svelte';
   import { ATTRS, ATTR_NAMES, KIND_NAMES, type Attr } from '../../game/types';
   import { FREE, PER_COST } from '../../game/value';
-  import { effectsText } from '../../game/text';
+  import { gameText } from '../../game/text';
   import { protoWeapon } from '../../model/seed';
   import { SLOT_TAGS, gearText, slotTagOf } from '../../model/equipment';
   import type { CardGear } from '../../model/types';
@@ -224,8 +224,8 @@
         </label>
       </div>
       <div class="field"><span>{L('O que faz (efeitos)', 'What it does (effects)')}</span>
-        <p class="effects">{effectsText(gm.effects, ed.lang, protoWeapon(d.deckId), gm.react)}</p>
-        <button class="btn sm ghost" onclick={() => { for (const l of ['pt-BR', 'en-US'] as const) d.text[l].rules = effectsText(gm.effects, l, protoWeapon(d.deckId), gm.react); ed.touch(); }}>{L('Usar este texto nas regras da carta', 'Use this text as the card rules')}</button>
+        <p class="effects">{gameText(gm, ed.lang, protoWeapon(d.deckId))}</p>
+        <button class="btn sm ghost" onclick={() => { for (const l of ['pt-BR', 'en-US'] as const) d.text[l].rules = gameText(gm, l, protoWeapon(d.deckId)); ed.touch(); }}>{L('Usar este texto nas regras da carta', 'Use this text as the card rules')}</button>
         <span class="muted small">{L('A edição dos efeitos em blocos vem na próxima etapa.', 'Block-based effect editing comes next.')}</span>
       </div>
     </section>

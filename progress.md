@@ -1,8 +1,18 @@
 # Void Sun — progresso
 
-**Atualizado:** 03/10/2026 (versão 3.7: mão reordenável, halo nas cartas jogáveis, mover qualquer peça, Aflição acumulável, cenários)
+**Atualizado:** 03/10/2026 (versão 3.8: cartas que evoluem, Jornada, decks de batalha montados, campo ampliável)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.8 (03/10/2026)
+
+- [x] Evoluções: 52 cartas ganham versões mais fortes quando o herói chega ao nível 3, 4 ou 5 (mais dano, alvo → fileira → todos, efeitos a mais); o custo de cada versão sai da regra de custo; na hora de jogar dá para escolher a versão menor
+- [x] O texto da carta lista as evoluções ("▲ Nv 3 (2 Vigor): …")
+- [x] Campo ampliável: Território de Caça (Verde), Círculo de Invocação (Azul) e Ossuário (Preto) abrem uma coluna a mais (até 5)
+- [x] Jornada (modo solo com progressão): etapas sem fim, chefe a cada 5; o nível sobe entre as batalhas, com XP crescente; cada nível dá +1 Vigor, +1 Mana ou +3 Vida e libera cartas e evoluções; o progresso fica salvo por herói
+- [x] Decks de batalha: inventário de decks, montador com as cartas da biblioteca (40 cartas, até 4 cópias), escolha do deck na ficha do herói e na tela antes da batalha
+- [x] Opção de teste "Partida curta": heróis com 40% menos vida
+- [ ] Para decidir com o Dyego: posse de cartas e equipamentos (o que começa liberado e o que se ganha na Jornada), multijogador (servidor, contatos, chat, voz, espectador, torneios)
 
 ## Versão 3.7 (03/10/2026)
 

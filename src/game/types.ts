@@ -54,7 +54,9 @@ export type Effect =
   | { k: 'advance' }
   /** Reação: anula a carta do oponente que está sendo respondida. */
   | { k: 'counter' }
-  | { k: 'stance'; mods: StanceMods };
+  | { k: 'stance'; mods: StanceMods }
+  /** Abre N colunas a mais no seu campo (uma casa na frente e uma na retaguarda por coluna), até o limite. */
+  | { k: 'expand'; n: number };
 
 export interface StanceMods {
   /** Dano a mais nos golpes do herói. */
@@ -91,6 +93,20 @@ export interface CardGame {
   react?: 'ataque' | 'magia' | 'any';
   /** Quantas cópias no deck. */
   copies: number;
+  /**
+   * Evoluções: versões mais fortes da mesma carta, liberadas quando o herói chega ao nível de cada uma.
+   * Na hora de jogar, o jogador escolhe a versão (a básica continua valendo).
+   */
+  ranks?: CardRank[];
+}
+
+/** Uma evolução da carta: o nível que libera, o custo dela (no lugar do custo básico) e o que ela faz. */
+export interface CardRank { level: number; vigor?: number; mana?: number; effects: Effect[] }
+
+/** A versão `rank` da carta (0 = básica; 1… = evoluções, na ordem). */
+export function rankOf(g: CardGame, rank = 0): { level: number; vigor: number; mana: number; effects: Effect[] } {
+  const r = rank > 0 ? g.ranks?.[rank - 1] : undefined;
+  return r ? { level: r.level, vigor: r.vigor ?? 0, mana: r.mana ?? 0, effects: r.effects } : { level: g.level, vigor: g.vigor ?? 0, mana: g.mana ?? 0, effects: g.effects };
 }
 
 /** Arma do herói: dano do golpe básico, tipo, duas mãos e alcance (haste: golpeia corpo a corpo da retaguarda). */
@@ -215,6 +231,9 @@ export interface PlayerState {
   heroUnit?: Unit;
 }
 
+/** Herói que já entra na partida evoluído (modo de progressão): nível e o que ganhou nos níveis anteriores. */
+export interface StartBonus { level: number; vigor: number; mana: number; vida: number }
+
 /** O que o motor precisa saber de cada carta. */
 export interface CardDef { id: string; name: [string, string]; game: CardGame }
 
@@ -243,7 +262,9 @@ export interface GameState {
    * Jogada esperando a resposta do oponente (Reação ou aceitar): uma carta (`ref`), o golpe
    * básico do herói (`attack: 'strike'`) ou o ataque de uma criatura (`attack: 'unit'`, de `from`).
    */
-  pending?: { p: 0 | 1; ref?: CardRef; target?: Pos; slot?: Pos; attack?: 'strike' | 'unit'; from?: Pos };
+  pending?: { p: 0 | 1; ref?: CardRef; rank?: number; target?: Pos; slot?: Pos; attack?: 'strike' | 'unit'; from?: Pos };
+  /** Sem XP nem níveis durante a partida (modo de progressão: o nível vem de fora). */
+  noXp?: boolean;
   /** Acontecimentos recentes para a mesa animar (números de dano, ataques, começo de turno…). */
   fx: Fx[];
 }
@@ -262,7 +283,8 @@ export type Fx = { n: number } & (
   | { k: 'turn'; p: 0 | 1; turn: number }
   | { k: 'xp'; p: 0 | 1; amount: number; why: 'turn' | 'kill' | 'hit' }
   | { k: 'level'; p: 0 | 1 }
-  | { k: 'play'; p: 0 | 1; cardId: string }
+  | { k: 'play'; p: 0 | 1; cardId: string; rank?: number }
+  | { k: 'expand'; p: 0 | 1 }
   | { k: 'summon'; id: string }
   | { k: 'gain'; p: 0 | 1; res: 'vigor' | 'mana'; amount: number }
   | { k: 'react'; p: 0 | 1; cardId: string }
@@ -274,7 +296,8 @@ export interface Pos { p: 0 | 1; row: number; col: number }
 
 /** Uma jogada. */
 export type Action =
-  | { t: 'play'; uid: string; target?: Pos; slot?: Pos }
+  /** `rank`: qual versão da carta (0 ou ausente = básica; 1… = evoluções). */
+  | { t: 'play'; uid: string; rank?: number; target?: Pos; slot?: Pos }
   | { t: 'strike'; target: Pos }
   | { t: 'attack'; from: Pos; target: Pos }
   /** Move uma peça sua (`from`; sem ele, o herói) para um lugar livre do seu campo. */

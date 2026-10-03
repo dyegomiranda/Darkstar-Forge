@@ -22,6 +22,7 @@
   import { blankHero, BUILDS, buildStats, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, raceOf, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS, type Build } from '../../model/hero';
   import { SLOTS, equippedCards, gearText, heroBaseOf, meetsReq } from '../../model/equipment';
   import { buildHero } from '../../game/decks';
+  import { DECK_SIZE, buildCount } from '../../model/builds';
   import { ATTR_NAMES } from '../../game/types';
   import { CLASS_HP, LIFE_BASE, lifeOf } from '../../game/life';
   import { classIcon } from '../../render/icons/glyphs';
@@ -184,6 +185,8 @@
   const ancHp = $derived(raceOf(draft.raceId)?.hp ?? 8);
   const clsHp = $derived(CLASS_HP[draft.classColors[0] ?? 'red'] ?? 8);
   const deck = $derived(app.deck(draft.play?.deckId ?? ''));
+  /** Deck montado em uso por este herói (se houver). */
+  const activeBuild = $derived(app.build(draft.buildId));
   const deckCards = (deckId: string) => app.cardsOf(deckId).filter((c) => c.game).reduce((n, c) => n + (c.game?.copies ?? 1), 0);
   const tint = $derived(colorHex(deck?.colors[0] ?? draft.classColors[0] ?? 'red'));
   /** Cartas do deck que o herói ainda não consegue usar por falta de atributo. */
@@ -421,15 +424,34 @@
             <div class="fld"><span>{L('Deck de batalha', 'Battle deck')}</span>
               <div class="decks">
                 {#each gameDecks as dk (dk.id)}
-                  <button class="deck" class:on={b.deckId === dk.id} style="--k:{colorHex(dk.colors[0])}" onclick={() => (b.deckId = dk.id)}>
+                  <button class="deck" class:on={b.deckId === dk.id && !activeBuild} style="--k:{colorHex(dk.colors[0])}" onclick={() => { b.deckId = dk.id; delete draft.buildId; }}>
                     <span class="dic"><Glyph id={classIcon(dk.colors[0])} size={26} color={lighten(vivid(colorHex(dk.colors[0])), 0.45)} /></span>
                     <b>{dk.name[app.lang]}</b>
                     <small>{app.edition(dk.editionId)?.name} · {deckCards(dk.id)} {L('cartas', 'cards')}</small>
-                    {#if b.deckId === dk.id}<span class="rcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+                    {#if b.deckId === dk.id && !activeBuild}<span class="rcheck"><Check size={12} strokeWidth={3} /></span>{/if}
                   </button>
                 {/each}
                 {#if !gameDecks.length}<p class="muted">{L('Nenhum deck com cartas de jogo. Crie um no Construtor de Decks.', 'No deck with game cards. Create one in the Deck Builder.')}</p>{/if}
               </div>
+            </div>
+            <div class="fld"><span>{L('Seus decks montados (inventário de decks)', 'Your built decks (deck inventory)')}</span>
+              <div class="decks">
+                {#each app.builds as bd (bd.id)}
+                  {@const n = buildCount(bd)}
+                  <button class="deck" class:on={activeBuild?.id === bd.id} style="--k:{tint}" onclick={() => (draft.buildId = bd.id)}>
+                    <span class="dic"><Layers size={24} /></span>
+                    <b>{bd.name}</b>
+                    <small class:warn={n !== DECK_SIZE}>{n}/{DECK_SIZE} {L('cartas', 'cards')}{n !== DECK_SIZE ? L(' · incompleto', ' · incomplete') : ''}</small>
+                    {#if activeBuild?.id === bd.id}<span class="rcheck"><Check size={12} strokeWidth={3} /></span>{/if}
+                  </button>
+                {/each}
+                <button class="deck add" onclick={() => router.go(activeBuild ? `/baralhos/${encodeURIComponent(activeBuild.id)}` : '/baralhos')}>
+                  <span class="dic"><Plus size={24} /></span>
+                  <b>{L('Montar e editar decks', 'Build and edit decks')}</b>
+                  <small>{L(`${DECK_SIZE} cartas das habilidades que você tem`, `${DECK_SIZE} cards from the skills you own`)}</small>
+                </button>
+              </div>
+              <p class="hint sm">{activeBuild ? L(`Em uso: ${activeBuild.name}. A classe acima continua definindo a cor e o nome da classe do herói.`, `In use: ${activeBuild.name}. The class above still sets the hero's colour and class name.`) : L('Em uso: o deck padrão da classe.', 'In use: the class default deck.')}</p>
             </div>
             <div class="cols even">
               <div class="fld"><span>{L('Recursos no começo da batalha (3 pontos)', 'Resources at the start of the battle (3 points)')}</span>
@@ -644,6 +666,7 @@
   .decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .deck { position: relative; display: grid; grid-template-columns: 46px 1fr; grid-template-rows: auto auto; column-gap: 11px; align-items: center; text-align: left; padding: 11px 12px; cursor: pointer; color: var(--text-2); font: inherit; border: 2px solid #2c2647; background: #100e1a; transition: all var(--t); }
   .deck:hover { border-color: #6a5fa8; }
+  .deck.add { border-style: dashed; } .deck small.warn { color: #e9b96a; }
   .deck.on { border-color: var(--k); background: color-mix(in srgb, var(--k) 14%, #100e1a); box-shadow: 0 0 18px color-mix(in srgb, var(--k) 32%, transparent); }
   .dic { grid-row: 1 / 3; width: 46px; height: 46px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--k) 60%, #000), color-mix(in srgb, var(--k) 22%, #000)); }
   .deck b { font-size: 13.5px; color: var(--text); } .deck small { font-size: 11.5px; color: var(--muted); }

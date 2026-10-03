@@ -13,7 +13,7 @@ import { PROTO_GEAR_DECK, migrateGear, presetSlots, protoEquipment, SLOTS } from
 import { adoptStyles } from '../avatar/sets';
 import { HERO_BASES } from '../game/decks';
 import { upgradeHero } from '../model/hero';
-import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
+import { PROJECT_VERSION, type Build, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
 import { PRESET_AVATARS } from '../avatar/presets';
 import { importImage } from './media';
@@ -68,7 +68,7 @@ class ProjectState {
    * Só entram em cartas que ainda não têm imagem; roda uma vez.
    */
   async #addProtoArt(): Promise<void> {
-    const MARK = 'proto-art-2';
+    const MARK = 'proto-art-3';
     const p = this.project!;
     if (p.seeded?.includes(MARK)) return;
     const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -168,7 +168,7 @@ class ProjectState {
       for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id || c.preset === h.preset)) p.characters.push(h);
     }
     // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
-    const RULES = 'proto-rules-6';
+    const RULES = 'proto-rules-7';
     if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
       p.seeded = [...(p.seeded ?? []), RULES];
       changed = true;
@@ -441,6 +441,24 @@ class ProjectState {
       this.#deletedCards.add(id);
     }
     this.#schedule();
+  }
+
+  // ───────────── inventário de decks (decks de batalha montados) ─────────────
+  get builds(): Build[] { return this.project?.builds ?? []; }
+  build(id: string | undefined): Build | undefined { return id ? this.builds.find((b) => b.id === id) : undefined; }
+  /** Deck montado novo; `fromDeck` começa com as cartas (e cópias) de um deck da biblioteca. */
+  addBuild(name: string, fromDeck?: string): Build {
+    const cards: Record<string, number> = {};
+    if (fromDeck) for (const c of this.cardsOf(fromDeck)) if (c.game) cards[c.id] = c.game.copies;
+    const b: Build = { id: newId('build'), name, cards };
+    this.updateProject((p) => { p.builds = [...(p.builds ?? []), b]; });
+    return this.build(b.id)!;
+  }
+  removeBuild(id: string): void {
+    this.updateProject((p) => {
+      p.builds = (p.builds ?? []).filter((b) => b.id !== id);
+      for (const c of p.characters) if (c.buildId === id) delete c.buildId;
+    });
   }
 
   /** Alterações no projeto (decks, edições, idioma, personagens…). */

@@ -151,6 +151,27 @@ export interface Character {
   avatar?: import('../avatar/lpc').Avatar;
   /** Herói pronto do Protótipo (usa o retrato que vem com o app enquanto não houver outro). */
   preset?: string;
+  /** Deck montado em uso (inventário de decks). Sem ele, vale o deck padrão da classe (`play.deckId`). */
+  buildId?: string;
+}
+
+/** Deck de batalha montado pelo jogador: quantas cópias de cada carta (por id da carta). */
+export interface Build { id: string; name: string; cards: Record<string, number> }
+
+/** Progresso de um herói na Jornada (modo solo com progressão): o nível sobe entre as batalhas. */
+export interface Journey {
+  /** Etapa atual (1 = primeira batalha). */
+  stage: number;
+  /** A etapa mais alta já vencida. */
+  best: number;
+  level: number;
+  /** XP acumulado dentro do nível atual. */
+  xp: number;
+  /** O que o herói escolheu a cada nível ganho. */
+  vigor: number; mana: number; vida: number;
+  /** Níveis ganhos esperando a escolha. */
+  pending: number;
+  wins: number; losses: number;
 }
 
 export interface Project {
@@ -165,6 +186,10 @@ export interface Project {
   themes: { id: string; name: string; look: Look }[];
   /** Coleções de exemplo já adicionadas (não são readicionadas se o usuário apagar). */
   seeded?: string[];
+  /** Inventário de decks: os decks de batalha montados pelo jogador. */
+  builds?: Build[];
+  /** Jornada de cada herói (por id do herói). */
+  journeys?: Record<string, Journey>;
 }
 
 /** 2 = custo como lista (vários recursos por carta). */

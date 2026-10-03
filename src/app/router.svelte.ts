@@ -1,6 +1,6 @@
 /**
  * Rotas por hash: #/ (tela inicial), #/batalha (modos), #/batalha/solo, #/heroi[/<id>|/novo],
- * #/decks[/deck], #/carta/<id>, #/tema/deck/<deck>, #/tema/colecao/<deck>, #/verso, #/colecao, #/ajustes, #/sobre.
+ * #/batalha/jornada, #/baralhos[/<id>] (decks de batalha montados), #/decks[/deck], #/carta/<id>, #/tema/deck/<deck>, #/tema/colecao/<deck>, #/verso, #/colecao, #/ajustes, #/sobre.
  */
 export type Route =
   | { name: 'home' }
@@ -13,6 +13,8 @@ export type Route =
   | { name: 'back' }
   | { name: 'sheet'; id?: string }
   | { name: 'game' }
+  | { name: 'journey' }
+  | { name: 'builds'; id?: string }
   | { name: 'settings' };
 
 function parse(hash: string): Route {
@@ -22,6 +24,8 @@ function parse(hash: string): Route {
   if (a === 'verso') return { name: 'back' };
   if (a === 'colecao') return { name: 'collection' };
   if (a === 'ficha' || a === 'heroi') return { name: 'sheet', id: b ? decodeURIComponent(b) : undefined };
+  if (a === 'batalha' && b === 'jornada') return { name: 'journey' };
+  if (a === 'baralhos') return { name: 'builds', id: b ? decodeURIComponent(b) : undefined };
   if (a === 'mesa' || (a === 'batalha' && b === 'solo')) return { name: 'game' };
   if (a === 'batalha') return { name: 'modes' };
   if (a === 'ajustes') return { name: 'settings' };
@@ -61,8 +65,8 @@ class Router {
   /** A tela "acima" da atual (para o botão de voltar e para o B do controle). */
   parent(): string {
     const r = this.route;
-    if (r.name === 'game') return '/batalha';
-    if (r.name === 'editor' || r.name === 'theme' || r.name === 'back' || r.name === 'collection') return '/decks';
+    if (r.name === 'game' || r.name === 'journey') return '/batalha';
+    if (r.name === 'editor' || r.name === 'theme' || r.name === 'back' || r.name === 'collection' || r.name === 'builds') return '/decks';
     if (r.name === 'sheet' && r.id) return '/heroi';
     return '/';
   }

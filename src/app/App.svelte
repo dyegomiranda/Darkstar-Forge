@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { LibraryBig, PenTool, Check, CloudAlert, LoaderCircle, SquareStack, BookOpen } from '@lucide/svelte';
+  import { LibraryBig, PenTool, Check, CloudAlert, LoaderCircle, SquareStack, BookOpen, Layers } from '@lucide/svelte';
   import Game from '../ui/game/Game.svelte';
   import Back from '../ui/back/Back.svelte';
   import PdfDialog from '../ui/common/PdfDialog.svelte';
@@ -17,6 +17,8 @@
   import { chip } from '../audio/chip';
   import Library from '../ui/library/Library.svelte';
   import Collection from '../ui/library/Collection.svelte';
+  import Builds from '../ui/library/Builds.svelte';
+  import Journey from '../ui/game/Journey.svelte';
   import Editor from '../ui/editor/Editor.svelte';
   import ThemeEditor from '../ui/editor/ThemeEditor.svelte';
   import Heroes from '../ui/hero/Heroes.svelte';
@@ -105,12 +107,13 @@
 
   const route = $derived(router.route.name);
   /** Telas do construtor de decks: têm a barra com as abas Biblioteca / Coleção / Verso. */
-  const inDecks = $derived(route === 'library' || route === 'collection' || route === 'back' || route === 'editor' || route === 'theme');
+  const inDecks = $derived(route === 'library' || route === 'collection' || route === 'back' || route === 'editor' || route === 'theme' || route === 'builds');
   const deckTabs = $derived([
     { id: 'library', icon: LibraryBig, label: L('Biblioteca', 'Library'), go: () => router.library() },
     ...(lastCard && app.cards[lastCard] ? [{ id: 'editor', icon: PenTool, label: L('Editor', 'Editor'), go: () => router.editor(lastCard!) }] : []),
     { id: 'collection', icon: BookOpen, label: L('Coleção', 'Collection'), go: () => router.go('/colecao') },
     { id: 'back', icon: SquareStack, label: L('Verso', 'Card back'), go: () => router.go('/verso') },
+    { id: 'builds', icon: Layers, label: L('Decks de batalha', 'Battle decks'), go: () => router.go('/baralhos') },
   ]);
 </script>
 
@@ -131,6 +134,8 @@
     <About />
   {:else if route === 'game'}
     <Game />
+  {:else if route === 'journey'}
+    <Journey />
   {:else if router.route.name === 'sheet'}
     {#if router.route.id}{#key router.route.id}<HeroCreator id={router.route.id} />{/key}{:else}<Heroes />{/if}
   {:else if route === 'settings'}
@@ -157,6 +162,8 @@
         {#key router.route.scope + router.route.deck}<ThemeEditor scope={router.route.scope} deckId={router.route.deck} />{/key}
       {:else if router.route.name === 'collection'}
         <Collection />
+      {:else if router.route.name === 'builds'}
+        <Builds id={router.route.id} />
       {:else}
         <Back />
       {/if}
