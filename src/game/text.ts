@@ -2,7 +2,7 @@
  * Escreve o texto de regras de uma carta a partir dos efeitos (sempre no mesmo
  * padrão, em PT e EN). Assim o texto nunca diverge do que o jogo faz.
  */
-import type { Effect, HeroDef, Keyword, StanceMods, Target, Via } from './types';
+import type { CardGame, Effect, HeroDef, Keyword, StanceMods, Target, Via } from './types';
 
 /** Arma do herói dono do deck: deixa o texto dos golpes com o dano exato. */
 export type Weapon = HeroDef['weapon'];
@@ -91,6 +91,7 @@ function one(e: Effect, pt: boolean, w: Weapon | undefined, seen: Set<string>): 
     case 'counter': return pt ? 'Anule essa carta: ela não faz efeito e vai para o cemitério.' : 'Counter that card: it has no effect and goes to the graveyard.';
     case 'advance': return pt ? 'Leve o seu herói para a fileira da frente.' : 'Move your hero to the front row.';
     case 'stance': return stance(e.mods, pt);
+    case 'expand': return pt ? `Seu campo ganha ${e.n} coluna${e.n > 1 ? 's' : ''} (uma casa na frente e uma na retaguarda cada; máximo de 5 colunas).` : `Your field gains ${e.n} column${e.n > 1 ? 's' : ''} (one front and one back slot each; 5 columns at most).`;
   }
 }
 
@@ -107,3 +108,19 @@ export function effectsText(effects: Effect[], lang: Lang, weapon?: Weapon, reac
 
 /** Texto de lembrete das palavras-chave de uma invocação. */
 export function keywordName(k: Keyword, lang: Lang): string { return KEY[k][lang === 'pt-BR' ? 0 : 1]; }
+
+/** Custo de uma versão, escrito com os símbolos de recurso ("2 {vigor} 1 {mana}"; "grátis" se não custa nada). */
+export function costText(vigor: number, mana: number, lang: Lang): string {
+  const parts = [vigor ? `${vigor} {vigor}` : '', mana ? `${mana} {mana}` : ''].filter(Boolean);
+  return parts.join(' ') || (lang === 'pt-BR' ? 'grátis' : 'free');
+}
+
+/**
+ * Texto completo da carta: o efeito básico e, em linhas próprias, cada evolução
+ * ("▲ Nv 3 (2 {vigor}): …"), que o herói libera ao chegar àquele nível.
+ */
+export function gameText(g: CardGame, lang: Lang, weapon?: Weapon): string {
+  const base = effectsText(g.effects, lang, weapon, g.react);
+  const ups = (g.ranks ?? []).map((r) => `▲ ${lang === 'pt-BR' ? 'Nv' : 'Lv'} ${r.level} (${costText(r.vigor ?? 0, r.mana ?? 0, lang)}): ${effectsText(r.effects, lang, weapon)}`);
+  return [base, ...ups].join('\n');
+}

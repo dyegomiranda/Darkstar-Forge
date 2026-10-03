@@ -26,6 +26,9 @@ ARTS = [
     ('batalha-solo', 41, 1024, 1280,
      "vertical composition: a lone armored warrior seen from behind, cape flowing, sword lowered, standing on dark rocky ground and facing a towering shadowy horned monster with glowing violet eyes, "
      "under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
+    ('batalha-jornada', 44, 1024, 1280,
+     "vertical composition: a lone hooded hero with a sword on his back climbs an endless stone stairway that spirals up a dark mountain, each landing guarded by the silhouette of a different monster with glowing eyes, "
+     "torches along the steps, far above at the summit a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),
     ('batalha-multi', 42, 1024, 1280,
      "vertical composition: two rival heroes facing each other in a duel on a dark stone arena, on the left an armored knight with a sword and red cape, on the right a hooded mage with a glowing blue staff, "
      "both in profile, sparks between them, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),

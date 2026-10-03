@@ -24,6 +24,17 @@ describe('regra de custo', () => {
     const off = PROTO_DECKS.flatMap((d) => d.cards.filter((c) => (c.game.vigor ?? 0) + (c.game.mana ?? 0) !== ruleCost(c.game)).map((c) => `${c.name[0]}: custa ${(c.game.vigor ?? 0) + (c.game.mana ?? 0)}, a regra dá ${ruleCost(c.game)}`));
     expect(off).toEqual([]);
   });
+  it('cada evolução segue a mesma regra, exige nível maior e vale mais que a versão anterior', async () => {
+    const { gamePoints, rankGame } = await import('../src/game/value');
+    const bad: string[] = [];
+    for (const d of PROTO_DECKS) for (const c of d.cards) (c.game.ranks ?? []).forEach((r, i) => {
+      const g = rankGame(c.game, i + 1), prev = rankGame(c.game, i);
+      if ((r.vigor ?? 0) + (r.mana ?? 0) !== ruleCost(g)) bad.push(`${c.name[0]} Nv ${r.level}: custo fora da regra`);
+      if (r.level <= prev.level) bad.push(`${c.name[0]} Nv ${r.level}: nível não cresce`);
+      if (gamePoints({ ...g, level: 1 }) <= gamePoints({ ...prev, level: 1 })) bad.push(`${c.name[0]} Nv ${r.level}: não vale mais que a anterior`);
+    });
+    expect(bad).toEqual([]);
+  });
 });
 
 describe('curva de poder', () => {

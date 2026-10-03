@@ -1,7 +1,7 @@
-<!-- Modo batalha: solo (contra o bot) ou multijogador (em construção). -->
+<!-- Modo batalha: solo (contra o bot), Jornada (solo com progressão) ou multijogador (em construção). -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Swords, Users } from '@lucide/svelte';
+  import { Swords, Users, Mountain } from '@lucide/svelte';
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
   import { chip } from '../../audio/chip';
@@ -24,6 +24,15 @@
         <em>{L('Jogar', 'Play')} ▶</em>
       </span>
     </button>
+    <button class="mode" onclick={() => router.go('/batalha/jornada')}>
+      <span class="pic"><img src="ui/batalha-jornada.webp" alt="" draggable="false" /></span>
+      <span class="body">
+        <span class="ic"><Mountain size={20} /></span>
+        <b>{L('Jornada', 'Journey')}</b>
+        <small>{L('Uma sequência sem fim de oponentes cada vez mais fortes. O herói ganha XP a cada batalha, sobe de nível e libera cartas e evoluções.', 'An endless run of ever stronger opponents. The hero earns XP each battle, levels up and unlocks cards and evolutions.')}</small>
+        <em>{L('Jogar', 'Play')} ▶</em>
+      </span>
+    </button>
     <div class="mode off" aria-disabled="true">
       <span class="pic"><img src="ui/batalha-multi.webp" alt="" draggable="false" /></span>
       <span class="body">
@@ -40,7 +49,7 @@
   .modes { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .bg { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(7 6 12 / .55), rgb(7 6 12 / .88)), url('/ui/fundo.webp') center / cover; image-rendering: pixelated; }
   .wrap { position: relative; flex: 1; min-height: 0; display: flex; gap: clamp(18px, 3vw, 48px); align-items: center; justify-content: center; padding: 24px; overflow-y: auto; flex-wrap: wrap; }
-  .mode { position: relative; width: min(400px, 42vw); min-width: 260px; display: flex; flex-direction: column; padding: 0; text-align: left; cursor: pointer; color: var(--text); font: inherit;
+  .mode { position: relative; width: min(360px, 29vw); min-width: 260px; display: flex; flex-direction: column; padding: 0; text-align: left; cursor: pointer; color: var(--text); font: inherit;
     border: 3px solid #4a417a; background: #0d0b16; box-shadow: 0 0 0 3px #05040a, 0 6px 0 3px #05040a, 0 24px 60px rgb(0 0 0 / .6); transition: transform .18s cubic-bezier(.2, .7, .3, 1), border-color .15s, box-shadow .15s; }
   .mode:hover:not(.off), .mode:focus-visible { transform: translateY(-8px); border-color: var(--accent-2); box-shadow: 0 0 0 3px #05040a, 0 6px 0 3px #05040a, 0 0 40px rgb(240 190 110 / .35), 0 30px 70px rgb(0 0 0 / .7); outline: none; }
   .pic { display: block; aspect-ratio: 4 / 4.2; overflow: hidden; border-bottom: 3px solid #4a417a; }

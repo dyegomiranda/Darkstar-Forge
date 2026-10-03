@@ -17,15 +17,18 @@
  *   ganhar N recurso  2 × N − 1                     +N ATK    N × alcance
  *   invocar           0,85 × (ATK + DEF + palavras-chave: Guarda +1,5 · Rápido +1,5 · À distância +1 · Não ataca −1)
  *   perder N PV       −0,75 × N                     avançar   0,5        anular 6
+ *   abrir coluna      3 por coluna
  *   postura           +N no golpe 3 × N · golpe mágico 2 · golpe aflige 3 · golpe cura N 1,5 × N · Guarda 2
  *
  * Descontos: nível exigido L: −0,5 × (L − 1) · atributo exigido ≥ 3: −0,5 · Reação: −1 · Item: −2.
+ *
+ * Evoluções (versões da carta liberadas por nível): cada uma segue a mesma regra, com os efeitos e o nível dela.
  *
  * Toda carta com efeitos de jogo deve obedecer a esta regra (há um teste que confere a coleção
  * Protótipo). Mexer num peso aqui muda o custo de todas as cartas de uma vez: é assim que se
  * rebalanceia sem criar cartas "fora da curva".
  */
-import type { CardGame, Effect, StanceMods, Target, UnitDef } from './types';
+import { rankOf, type CardGame, type Effect, type StanceMods, type Target, type UnitDef } from './types';
 
 export interface ValueLine { label: string; points: number }
 
@@ -73,6 +76,7 @@ function one(e: Effect): ValueLine {
     case 'advance': return { label: 'Avançar', points: 0.5 };
     case 'counter': return { label: 'Anular', points: 6 };
     case 'stance': return { label: 'Postura', points: round(stanceValue(e.mods)) };
+    case 'expand': return { label: `Abrir ${e.n} coluna${e.n > 1 ? 's' : ''} no campo`, points: 3 * e.n };
   }
 }
 
@@ -94,3 +98,6 @@ export const gamePoints = (g: CardGame): number => Math.max(0, gameValue(g).redu
 /** Pontos que cabem no custo 0, e quantos pontos vale cada ponto de custo. */
 export const FREE = 1.5, PER_COST = 2;
 export const ruleCost = (g: CardGame): number => { const p = gamePoints(g); return p <= FREE ? 0 : Math.ceil((p - FREE) / PER_COST); };
+
+/** O jogo de uma versão da carta (0 = básica; 1… = evoluções), para aplicar a regra de custo a ela. */
+export const rankGame = (g: CardGame, rank: number): CardGame => ({ ...g, ...rankOf(g, rank), ranks: undefined });
