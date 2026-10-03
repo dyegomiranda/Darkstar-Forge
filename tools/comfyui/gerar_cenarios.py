@@ -11,17 +11,21 @@ API = 'http://127.0.0.1:8188'
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'public', 'cenarios')
 os.makedirs(OUT, exist_ok=True)
 PRE = "UMEMPART, modern pixel art, detailed 16-bit RPG game map, crisp square pixels, limited color palette, "
+# O campo de batalha (duas fileiras de três casas de cada lado) fica no MEIO da imagem, de cima a baixo:
+# a faixa central inteira precisa ser chão livre, sem portas, escadas, corredores ou paredes nela.
 COMP = (" Strict top-down bird's-eye view, orthographic, seen from directly above like a video game battle arena map. "
-        "The large central area is open flat ground with an even, calm texture and nothing on it. Scenery objects only along the outer edges and corners. "
+        "The whole middle of the image, a wide band from the top edge down to the bottom edge, is one continuous open flat floor with an even, calm texture and nothing on it: "
+        "no doors, no gates, no stairs, no corridors, no walls, no paths, no bridges, no water and no objects anywhere in the middle. "
+        "Scenery objects only along the far left and far right sides. "
         "Soft even lighting, slightly muted colors. No characters, no creatures, no people, no text, no letters, no UI, no border, no frame.")
 SCENES = [
     ('floresta', 11, "a forest clearing: lush green grass in the middle, dense trees, bushes, ferns and mossy rocks around the edges, a few fallen leaves and small flowers"),
-    ('campo', 12, "open grassy plains: short green and yellow grass in the middle, a dirt path, wooden fences, haystacks, wildflowers and a few boulders around the edges"),
+    ('campo', 12, "open grassy plains: short green and yellow grass in the middle, wooden fences, haystacks, wildflowers and a few boulders on the sides"),
     ('vulcao', 13, "a volcanic wasteland: dark ash and basalt ground in the middle, cracks with glowing orange lava, charred rocks and lava pools around the edges"),
-    ('masmorra', 14, "a stone dungeon hall: worn grey flagstone floor in the middle, stone walls, pillars, torches, chains and rubble around the edges"),
+    ('masmorra', 14, "a wide stone dungeon hall: worn grey flagstone floor filling the middle, stone walls, pillars, torches, chains and rubble only on the left and right sides"),
     ('neve', 15, "a frozen tundra: packed white and pale blue snow in the middle, snowy pine trees, ice crystals and frosted rocks around the edges"),
     ('deserto', 16, "a desert ruin: pale sand in the middle, broken sandstone columns, dry bushes, bones and cracked rock around the edges"),
-    ('pantano', 17, "a dark swamp: muddy dark green ground in the middle, murky water pools, dead trees, reeds and giant mushrooms around the edges"),
+    ('pantano', 17, "a dark swamp: firm muddy dark green ground filling the middle, murky water pools, dead trees, reeds and giant mushrooms on the sides"),
     ('cripta', 18, "an ancient crypt: dark cracked stone tiles with faint purple runes in the middle, tombstones, coffins, candles and skull piles around the edges"),
 ]
 
@@ -52,12 +56,14 @@ def post(path, data):
 def get(path): return json.loads(urllib.request.urlopen(API + path).read())
 
 nvar = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+only = sys.argv[2:]
 for sid, seed, prompt in SCENES:
+    if only and sid not in only: continue
     for v in range(1, nvar + 1):
         dst = os.path.join(OUT, f"{sid}.webp" if v == 1 else f"{sid}__v{v}.webp")
         if os.path.exists(dst): continue
         t0 = time.time()
-        pid = post('/prompt', {"prompt": wf(prompt, seed * 100 + v)})['prompt_id']
+        pid = post('/prompt', {"prompt": wf(prompt, seed * 100 + 50 + v)})['prompt_id']
         while True:
             time.sleep(2)
             h = get('/history/' + pid)

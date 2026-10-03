@@ -1,9 +1,11 @@
 /**
- * Coleção de teste: 4 heróis prontos e 4 decks de 40 cartas (contando cópias).
+ * Coleção do jogo: 7 heróis prontos e 7 decks de 40 cartas (contando cópias), um por cor de classe.
  * Cada carta é uma habilidade do herói. Custos em Vigor (físico) e Mana
  * (mágico); requisitos de nível e de atributo; efeitos que o motor entende.
  */
-import type { CardGame, CardKind, Effect, GearItem, HeroBase, HeroDef, UnitDef, Via } from './types';
+import type { Attr, CardGame, CardKind, Effect, GearItem, HeroBase, HeroDef, UnitDef, Via } from './types';
+import { ATTR_NAMES } from './types';
+import { gearOf } from './gear';
 
 export interface ProtoCard {
   name: [string, string];
@@ -14,7 +16,7 @@ export interface ProtoCard {
   game: CardGame;
 }
 
-export interface ProtoDeck { color: 'red' | 'blue' | 'green' | 'black'; hero: HeroDef; cards: ProtoCard[] }
+export interface ProtoDeck { color: 'red' | 'blue' | 'green' | 'black' | 'purple' | 'white' | 'silver'; hero: HeroDef; cards: ProtoCard[] }
 
 const c = (name: [string, string], cls: [string, string], icon: string, kind: CardKind, cost: { v?: number; m?: number }, level: number,
   effects: Effect[], copies: number, attr?: CardGame['attr'], rarity: ProtoCard['rarity'] = copies >= 3 ? 'common' : copies === 2 ? 'uncommon' : 'rare'): ProtoCard =>
@@ -28,27 +30,61 @@ const r = (name: [string, string], cls: [string, string], icon: string, cost: { 
 };
 
 const VIA_TXT: Record<Via, [string, string]> = { melee: ['corpo a corpo', 'melee'], ranged: ['à distância', 'ranged'], magic: ['mágico', 'magic'] };
-const g = (slot: GearItem['slot'], pt: string, en: string, mods: Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike'> = {}): GearItem => ({ slot, name: [pt, en], info: gearInfo(mods), ...mods });
+/** Uma peça do catálogo (src/game/gear.ts) como o herói a veste. */
+const g = (key: string): GearItem => {
+  const d = gearOf(key);
+  if (!d) throw new Error(`peça desconhecida: ${key}`);
+  const mods = modsOf(d);
+  return { slot: d.slot, name: d.name, info: gearInfo(mods), ...mods, icon: d.icon, cardId: gearCardId(key) };
+};
+/** Arma leve do catálogo vestida na mão secundária: soma o seu bônus ao golpe. */
+const off = (key: string): GearItem => {
+  const d = gearOf(key)!;
+  const mods = modsOf({ ...d, strike: (d.strike ?? 0) + (d.dual ?? 0) });
+  return { slot: 'offhand', name: d.name, info: gearInfo(mods), ...mods, icon: d.icon, cardId: gearCardId(key) };
+};
+/** Arma do catálogo. */
+const arm = (key: string): HeroBase['weapon'] => { const d = gearOf(key)!; return { name: d.name, ...d.weapon!, cardId: gearCardId(key) }; };
+/** Id da carta de equipamento de uma peça do catálogo. */
+export const gearCardId = (key: string) => `eq-${key}`;
 
-/** Texto do que uma peça dá (para mostrar na mesa e na ficha). */
-export function gearInfo(mods: Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike'>): [string, string] {
+type Mods = Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike' | 'vigor' | 'mana' | 'attrs'>;
+/** Só os números que a peça soma ao herói. */
+export function modsOf(it: Mods): Mods {
+  const out: Mods = {};
+  for (const k of ['armor', 'resist', 'hp', 'strike', 'vigor', 'mana'] as const) if (it[k]) out[k] = it[k];
+  if (it.attrs && Object.values(it.attrs).some(Boolean)) out.attrs = { ...it.attrs };
+  return out;
+}
+
+/** Texto do que uma peça dá (para mostrar na mesa e na ficha). Valores negativos aparecem como "−1 Mana". */
+export function gearInfo(mods: Mods): [string, string] {
   const parts: [string, string][] = [];
-  if (mods.armor) parts.push([`+${mods.armor} Armadura`, `+${mods.armor} Armor`]);
-  if (mods.resist) parts.push([`+${mods.resist} Resistência mágica`, `+${mods.resist} Magic resistance`]);
-  if (mods.hp) parts.push([`+${mods.hp} Vida`, `+${mods.hp} Life`]);
-  if (mods.strike) parts.push([`+${mods.strike} no golpe`, `+${mods.strike} strike`]);
+  const sg = (n: number) => (n > 0 ? `+${n}` : `−${-n}`);
+  if (mods.armor) parts.push([`${sg(mods.armor)} Armadura`, `${sg(mods.armor)} Armor`]);
+  if (mods.resist) parts.push([`${sg(mods.resist)} Resistência mágica`, `${sg(mods.resist)} Magic resistance`]);
+  if (mods.strike) parts.push([`${sg(mods.strike)} no golpe`, `${sg(mods.strike)} strike`]);
+  if (mods.hp) parts.push([`${sg(mods.hp)} Vida`, `${sg(mods.hp)} Life`]);
+  if (mods.vigor) parts.push([`${sg(mods.vigor)} Vigor`, `${sg(mods.vigor)} Vigor`]);
+  if (mods.mana) parts.push([`${sg(mods.mana)} Mana`, `${sg(mods.mana)} Mana`]);
+  for (const [a, n] of Object.entries(mods.attrs ?? {}) as [Attr, number][]) if (n) parts.push([`${sg(n)} ${ATTR_NAMES[a][0]}`, `${sg(n)} ${ATTR_NAMES[a][1]}`]);
   return [parts.map((x) => x[0]).join(', ') || '—', parts.map((x) => x[1]).join(', ') || '—'];
 }
 
-/** Soma o equipamento ao herói: vida, armadura, resistência e dano do golpe saem das peças vestidas. */
+/** Soma o equipamento ao herói: vida, armadura, resistência, dano do golpe, Vigor, Mana e atributos saem das peças vestidas. */
 export function buildHero(base: HeroBase): HeroDef {
-  const sum = (k: 'armor' | 'resist' | 'hp' | 'strike') => base.gear.reduce((n, it) => n + (it[k] ?? 0), 0);
+  const sum = (k: 'armor' | 'resist' | 'hp' | 'strike' | 'vigor' | 'mana') => base.gear.reduce((n, it) => n + (it[k] ?? 0), 0);
   const dmg = base.weapon.dmg + sum('strike');
-  const weaponItem: GearItem = { slot: 'weapon', name: base.weapon.name, info: [`Golpe ${base.weapon.dmg}, ${VIA_TXT[base.weapon.via][0]}`, `Strike ${base.weapon.dmg}, ${VIA_TXT[base.weapon.via][1]}`] };
+  const w = base.weapon;
+  const extra = [w.hands === 2 ? ['duas mãos', 'two-handed'] : null, w.reach ? ['alcance', 'reach'] : null].filter((x): x is string[] => !!x);
+  const weaponItem: GearItem = { slot: 'weapon', name: w.name, info: [[`Golpe ${w.dmg}, ${VIA_TXT[w.via][0]}`, ...extra.map((x) => x[0])].join(', '), [`Strike ${w.dmg}, ${VIA_TXT[w.via][1]}`, ...extra.map((x) => x[1])].join(', ')] };
+  const attrs = { ...base.attrs };
+  for (const it of base.gear) for (const [a, n] of Object.entries(it.attrs ?? {}) as [Attr, number][]) attrs[a] = (attrs[a] ?? 0) + n;
   return {
-    id: base.id, name: base.name, className: base.className, deckId: base.deckId, attrs: base.attrs,
-    maxHp: base.baseHp + sum('hp'), weapon: { ...base.weapon, dmg }, armor: sum('armor'), resist: sum('resist'),
-    gear: [weaponItem, ...base.gear.map((it) => ({ ...it, info: gearInfo(it) }))], vigor: base.vigor, mana: base.mana, row: base.row, col: base.col, icon: base.icon,
+    id: base.id, name: base.name, className: base.className, deckId: base.deckId, attrs,
+    maxHp: Math.max(1, base.baseHp + sum('hp')), weapon: { ...w, dmg }, armor: Math.max(0, sum('armor')), resist: Math.max(0, sum('resist')),
+    gear: [weaponItem, ...base.gear.map((it) => ({ ...it, info: gearInfo(it) }))],
+    vigor: Math.max(0, base.vigor + sum('vigor')), mana: Math.max(0, base.mana + sum('mana')), row: base.row, col: base.col, icon: base.icon,
   };
 }
 
@@ -67,15 +103,9 @@ const red: ProtoDeck = {
   color: 'red',
   hero: preset({
     id: 'brunhild', name: 'Brunhild', className: ['Bárbara', 'Barbarian'], deckId: 'proto-red',
-    attrs: { for: 4, des: 1, con: 3, int: 0, sab: 1, car: 0 }, baseHp: 23,
-    weapon: { name: ['Machado grande', 'Greataxe'], dmg: 4, via: 'melee' },
-    gear: [
-      g('head', 'Elmo com chifres', 'Horned helm', { armor: 1 }),
-      g('chest', 'Cota de malha', 'Chain mail', { armor: 1, hp: 2 }),
-      g('hands', 'Braçadeiras de ferro', 'Iron bracers', { hp: 2 }),
-      g('feet', 'Botas de guerra', 'War boots', { hp: 2 }),
-      g('trinket', 'Amuleto do urso', 'Bear amulet', { hp: 2 }),
-    ],
+    attrs: { for: 4, des: 1, con: 3, int: 0, sab: 1, car: 0 }, baseHp: 21,
+    weapon: arm('greataxe'),
+    gear: [g('hide'), g('leatherpants'), g('healthamulet')],
     vigor: 3, mana: 0, row: 0, col: 1, icon: 'horned-helm',
   }),
   cards: [
@@ -107,14 +137,8 @@ const blue: ProtoDeck = {
   hero: preset({
     id: 'kael', name: 'Kael', className: ['Mago de batalha', 'Battle mage'], deckId: 'proto-blue',
     attrs: { for: 2, des: 2, con: 1, int: 4, sab: 0, car: 0 }, baseHp: 38,
-    weapon: { name: ['Cajado de carvalho', 'Oak staff'], dmg: 4, via: 'magic' },
-    gear: [
-      g('head', 'Capuz do arcanista', "Arcanist's hood", { resist: 1 }),
-      g('chest', 'Manto do aprendiz', "Apprentice's robe", { armor: 1, hp: 3 }),
-      g('hands', 'Luvas rúnicas', 'Runic gloves', { hp: 2 }),
-      g('feet', 'Sandálias do viajante', "Traveler's sandals", { hp: 2 }),
-      g('trinket', 'Amuleto de safira', 'Sapphire amulet', { resist: 1 }),
-    ],
+    weapon: arm('staff'),
+    gear: [g('headband'), g('chainshirt'), g('runegloves'), g('leatherpants'), g('wardamulet')],
     vigor: 0, mana: 3, row: 1, col: 1, icon: 'pentacle',
   }),
   cards: [
@@ -147,14 +171,8 @@ const green: ProtoDeck = {
   hero: preset({
     id: 'lyra', name: 'Lyra', className: ['Patrulheira', 'Ranger'], deckId: 'proto-green',
     attrs: { for: 0, des: 4, con: 2, int: 0, sab: 3, car: 0 }, baseHp: 30,
-    weapon: { name: ['Arco longo', 'Longbow'], dmg: 4, via: 'ranged' },
-    gear: [
-      g('head', 'Capuz da patrulheira', "Ranger's hood", { hp: 2 }),
-      g('chest', 'Gibão de couro', 'Leather jerkin', { armor: 1, hp: 2 }),
-      g('hands', 'Luvas de arqueira', "Archer's gloves", { hp: 2 }),
-      g('feet', 'Botas silenciosas', 'Silent boots', { hp: 2 }),
-      g('trinket', 'Colar de presas', 'Fang necklace', { hp: 2 }),
-    ],
+    weapon: arm('longbow'),
+    gear: [g('hood'), g('studded'), g('thiefgloves'), g('leatherpants'), g('elvenboots'), g('healthamulet')],
     vigor: 2, mana: 1, row: 1, col: 1, icon: 'bowman',
   }),
   cards: [
@@ -186,14 +204,8 @@ const black: ProtoDeck = {
   hero: preset({
     id: 'morgana', name: 'Morgana', className: ['Bruxa da lâmina', 'Hexblade'], deckId: 'proto-black',
     attrs: { for: 0, des: 3, con: 2, int: 0, sab: 0, car: 4 }, baseHp: 31,
-    weapon: { name: ['Katana sombria', 'Shadow katana'], dmg: 4, via: 'melee' },
-    gear: [
-      g('head', 'Capuz das sombras', 'Shadow hood', { resist: 1 }),
-      g('chest', 'Couro reforçado', 'Studded leather', { armor: 1, hp: 2 }),
-      g('hands', 'Manoplas do pacto', 'Pact gauntlets', { hp: 2 }),
-      g('feet', 'Botas de couro negro', 'Black leather boots', { hp: 2 }),
-      g('trinket', 'Anel do patrono', "Patron's ring", { hp: 2 }),
-    ],
+    weapon: arm('katana'),
+    gear: [g('hood'), g('shadowcloak'), g('leatherpants'), g('travelboots'), g('wardamulet'), g('patronring')],
     vigor: 1, mana: 2, row: 0, col: 1, icon: 'daemon-skull',
   }),
   cards: [
@@ -218,5 +230,113 @@ const black: ProtoDeck = {
   ],
 };
 
-export const PROTO_DECKS: ProtoDeck[] = [red, blue, green, black];
+// ═════════ ROXO — Vex, assassina das sombras (Vigor; marca, envenena e ataca pelas costas) ═════════
+// Ladino e Assassino dos RPGs de mesa: ataque furtivo contra alvos distraídos, venenos,
+// ação ardilosa, evasão e esconder-se. O golpe furtivo cresce quando o alvo está Marcado ou Afligido.
+const LAD: [string, string] = ['Ladino', 'Rogue'];
+const ASS: [string, string] = ['Assassino', 'Assassin'];
+const purple: ProtoDeck = {
+  color: 'purple',
+  hero: preset({
+    id: 'vex', name: 'Vex', className: ['Assassina', 'Assassin'], deckId: 'proto-purple',
+    attrs: { for: 0, des: 4, con: 2, int: 2, sab: 1, car: 0 }, baseHp: 28,
+    weapon: arm('shortsword'),
+    gear: [off('dagger'), g('hood'), g('studded'), g('leatherpants'), g('travelboots')],
+    vigor: 2, mana: 1, row: 0, col: 1, icon: 'hooded-assassin',
+  }),
+  cards: [
+    c(['Ataque Furtivo', 'Sneak Attack'], ASS, 'backstab', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 2, sneak: 3 }], 4),
+    c(['Lâmina Envenenada', 'Poisoned Blade'], ASS, 'poison-bottle', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 1, then: 'afflict' }], 3),
+    c(['Adagas Arremessadas', 'Thrown Daggers'], LAD, 'thrown-daggers', 'ataque', { v: 1 }, 1, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'ranged' }], 3),
+    c(['Estudar a Vítima', 'Study the Mark'], ASS, 'hunter-eyes', 'tecnica', { v: 0 }, 1, [{ k: 'mark', tgt: 'enemy' }], 3),
+    c(['Ação Ardilosa', 'Cunning Action'], LAD, 'boot-kick', 'tecnica', { v: 1 }, 1, [{ k: 'advance' }, { k: 'draw', n: 1 }], 2),
+    c(['Golpe Baixo', 'Dirty Trick'], LAD, 'fist', 'tecnica', { v: 1 }, 1, [{ k: 'mark', tgt: 'enemy' }, { k: 'push', tgt: 'enemy' }], 2),
+    c(['Sumir nas Sombras', 'Vanish'], LAD, 'hooded-assassin', 'tecnica', { v: 2 }, 1, [{ k: 'ward', tgt: 'hero' }, { k: 'draw', n: 1 }], 2, ['des', 2]),
+    c(['Corte nos Tendões', 'Hamstring'], LAD, 'knife-thrust', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 2, then: 'push' }], 2),
+    c(['Envenenar a Taça', 'Poison the Cup'], ASS, 'pouring-chalice', 'tecnica', { v: 1, m: 1 }, 1, [{ k: 'afflict', tgt: 'enemy' }, { k: 'draw', n: 1 }], 2, ['int', 1]),
+    c(['Bomba de Fumaça', 'Smoke Bomb'], LAD, 'unstable-orb', 'tecnica', { v: 2 }, 2, [{ k: 'ward', tgt: 'allAllies' }], 2),
+    c(['Dança das Lâminas', 'Blade Flurry'], LAD, 'daggers', 'ataque', { v: 2 }, 2, [{ k: 'strike', bonus: 2, times: 2, sneak: 1 }], 2, ['des', 3]),
+    c(['Postura do Assassino', "Assassin's Stance"], ASS, 'cloak-dagger', 'postura', { v: 2 }, 2, [{ k: 'stance', mods: { strike: 2 } }], 2, ['des', 3]),
+    c(['Veneno de Serpe', 'Wyvern Venom'], ASS, 'poison-bottle', 'tecnica', { v: 1 }, 3, [{ k: 'afflict', tgt: 'enemyRow' }], 2, ['int', 2]),
+    c(['Gangue de Ladrões', 'Thieves Gang'], LAD, 'hooded-figure', 'invocacao', { v: 3, m: 1 }, 3, [{ k: 'summon', unit: unit('Ladrão', 'Thief', 2, 2, ['rapido'], 'hooded-figure'), n: 2 }], 2),
+    c(['Assassinar', 'Assassinate'], ASS, 'curvy-knife', 'ataque', { v: 2 }, 4, [{ k: 'strike', bonus: 4, sneak: 4 }], 2, ['des', 4]),
+    c(['Mil Cortes', 'Thousand Cuts'], ASS, 'sword-spin', 'ataque', { v: 2 }, 5, [{ k: 'strike', bonus: 2, times: 3, sneak: 1 }], 1, ['des', 4]),
+    POTION,
+    r(['Contragolpe Sombrio', 'Shadow Riposte'], LAD, 'two-shadows', { v: 1 }, 1, 'ataque', [{ k: 'ward', tgt: 'hero' }, { k: 'mark', tgt: 'enemyHero' }], 2),
+  ],
+};
+
+// ═════════ BEGE — Aldric, paladino da luz (Vigor e Mana; golpe divino, cura e proteção) ═════════
+// Clérigo e Paladino: golpe divino (dano sagrado a mais), curar ferimentos, escudo da fé,
+// imposição de mãos, juramento, arma espiritual e a palavra de cura que alcança todos.
+const PAL: [string, string] = ['Paladino', 'Paladin'];
+const CLE: [string, string] = ['Clérigo', 'Cleric'];
+const white: ProtoDeck = {
+  color: 'white',
+  hero: preset({
+    id: 'aldric', name: 'Aldric', className: ['Paladino', 'Paladin'], deckId: 'proto-white',
+    attrs: { for: 3, des: 0, con: 2, int: 0, sab: 2, car: 2 }, baseHp: 25,
+    weapon: arm('longsword'),
+    gear: [g('shield'), g('clericvest'), g('wardamulet')],
+    vigor: 2, mana: 2, row: 0, col: 1, icon: 'templar-shield',
+  }),
+  cards: [
+    c(['Golpe Divino', 'Divine Smite'], PAL, 'sunbeams', 'ataque', { v: 1, m: 1 }, 1, [{ k: 'strike', bonus: 2, smite: 2 }], 4),
+    c(['Curar Ferimentos', 'Cure Wounds'], CLE, 'heart-drop', 'magia', { m: 1 }, 1, [{ k: 'heal', n: 4, tgt: 'ally' }], 4),
+    c(['Chama Sagrada', 'Sacred Flame'], CLE, 'flame', 'magia', { m: 1 }, 1, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'magic' }, { k: 'mark', tgt: 'enemy' }], 4),
+    c(['Escudo da Fé', 'Shield of Faith'], CLE, 'cross-shield', 'magia', { m: 1 }, 1, [{ k: 'ward', tgt: 'ally' }], 2),
+    c(['Golpe de Escudo', 'Shield Bash'], PAL, 'shield-bash', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 2, then: 'push' }], 2),
+    c(['Oração', 'Prayer'], CLE, 'holy-symbol', 'tecnica', { v: 1 }, 1, [{ k: 'gain', res: 'mana', n: 2 }], 2),
+    c(['Bênção', 'Bless'], CLE, 'angel-wings', 'magia', { m: 1 }, 1, [{ k: 'buff', atk: 1, tgt: 'allAllies' }, { k: 'heal', n: 1, tgt: 'allAllies' }], 2),
+    c(['Imposição de Mãos', 'Lay on Hands'], PAL, 'magic-palm', 'tecnica', { v: 1, m: 1 }, 2, [{ k: 'heal', n: 6, tgt: 'ally' }], 2, ['car', 2]),
+    c(['Juramento de Devoção', 'Oath of Devotion'], PAL, 'templar-heart', 'postura', { m: 2 }, 2, [{ k: 'stance', mods: { strike: 1, strikeHeals: 1 } }], 2, ['car', 2]),
+    c(['Arma Espiritual', 'Spiritual Weapon'], CLE, 'winged-sword', 'invocacao', { m: 3 }, 2, [{ k: 'summon', unit: unit('Arma espiritual', 'Spiritual weapon', 3, 2, ['rapido', 'distancia'], 'winged-sword') }], 2, ['sab', 2]),
+    c(['Investida Sagrada', 'Holy Charge'], PAL, 'cross-flare', 'ataque', { v: 2 }, 2, [{ k: 'advance' }, { k: 'strike', bonus: 3, smite: 1 }], 2),
+    c(['Luz Radiante', 'Radiant Light'], CLE, 'sun', 'magia', { m: 2 }, 3, [{ k: 'dmg', n: 2, tgt: 'enemyRow', via: 'magic' }, { k: 'heal', n: 2, tgt: 'hero' }], 2, ['sab', 3]),
+    c(['Palavra de Cura em Massa', 'Mass Healing Word'], CLE, 'holy-grail', 'magia', { m: 2 }, 4, [{ k: 'heal', n: 3, tgt: 'allAllies' }, { k: 'draw', n: 1 }], 2, ['sab', 3]),
+    c(['Golpe Destruidor', 'Destructive Smite'], PAL, 'barbed-sun', 'ataque', { v: 1, m: 2 }, 5, [{ k: 'strike', bonus: 4, smite: 4 }], 1, ['for', 3]),
+    c(['Anjo Guardião', 'Guardian Angel'], CLE, 'angel-outfit', 'invocacao', { m: 3 }, 6, [{ k: 'summon', unit: unit('Anjo guardião', 'Guardian angel', 4, 7, ['guarda'], 'angel-outfit') }], 1, ['sab', 3]),
+    c(['Água Benta', 'Holy Water'], ['Consumível', 'Consumable'], 'holy-water', 'item', {}, 1, [{ k: 'dmg', n: 3, tgt: 'enemy', via: 'magic' }], 2),
+    POTION,
+    r(['Proteção Divina', 'Divine Protection'], CLE, 'healing-shield', { m: 1 }, 1, 'any', [{ k: 'ward', tgt: 'hero' }, { k: 'heal', n: 2, tgt: 'hero' }], 2),
+  ],
+};
+
+// ═════════ PRATA — Ren, monge errante (Vigor como ki, um pouco de Mana para as canções) ═════════
+// Monge e Bardo: rajada de golpes, golpe atordoante, passo do vento, defesa paciente, palma
+// trêmula; zombaria cruel, inspiração bárdica, canção de descanso, contra-canto.
+const MON: [string, string] = ['Monge', 'Monk'];
+const BRD: [string, string] = ['Bardo', 'Bard'];
+const silver: ProtoDeck = {
+  color: 'silver',
+  hero: preset({
+    id: 'ren', name: 'Ren', className: ['Monge', 'Monk'], deckId: 'proto-silver',
+    attrs: { for: 0, des: 3, con: 1, int: 0, sab: 3, car: 2 }, baseHp: 38,
+    weapon: arm('handwraps'),
+    gear: [g('monkgarb'), g('leatherpants'), g('elvenboots'), g('periapt')],
+    vigor: 1, mana: 2, row: 0, col: 1, icon: 'meditation',
+  }),
+  cards: [
+    c(['Rajada de Golpes', 'Flurry of Blows'], MON, 'mailed-fist', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 1, times: 3 }], 4),
+    c(['Golpe Atordoante', 'Stunning Strike'], MON, 'thor-fist', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 2, then: 'mark' }], 3),
+    c(['Punho de Ki', 'Ki Fist'], MON, 'fist', 'ataque', { v: 1 }, 1, [{ k: 'strike', bonus: 1, smite: 2 }], 3),
+    c(['Passo do Vento', 'Step of the Wind'], MON, 'lotus', 'tecnica', { v: 1 }, 1, [{ k: 'advance' }, { k: 'ward', tgt: 'hero' }], 3),
+    c(['Meditação', 'Meditation'], MON, 'meditation', 'tecnica', { m: 1 }, 1, [{ k: 'heal', n: 2, tgt: 'hero' }, { k: 'draw', n: 1 }], 3),
+    c(['Zombaria Cruel', 'Vicious Mockery'], BRD, 'cracked-mask', 'magia', { m: 1 }, 1, [{ k: 'dmg', n: 1, tgt: 'enemy', via: 'magic' }, { k: 'mark', tgt: 'enemy' }], 2),
+    c(['Inspiração Bárdica', 'Bardic Inspiration'], BRD, 'pan-flute', 'tecnica', { m: 1 }, 1, [{ k: 'draw', n: 1 }, { k: 'gain', res: 'vigor', n: 1 }], 2),
+    c(['Postura da Garça', 'Crane Stance'], MON, 'lotus-flower', 'postura', { v: 2 }, 2, [{ k: 'stance', mods: { strike: 1, guard: true } }], 2, ['sab', 2]),
+    c(['Canção de Descanso', 'Song of Rest'], BRD, 'harp', 'magia', { m: 1 }, 2, [{ k: 'heal', n: 2, tgt: 'allAllies' }], 2, ['car', 1]),
+    c(['Sussurros Dissonantes', 'Dissonant Whispers'], BRD, 'divided-spiral', 'magia', { m: 2 }, 2, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'magic' }, { k: 'mark', tgt: 'enemy' }, { k: 'push', tgt: 'enemy' }], 2),
+    c(['Mente Serena', 'Still Mind'], MON, 'lotus-flower', 'tecnica', { m: 2 }, 2, [{ k: 'draw', n: 2 }, { k: 'heal', n: 1, tgt: 'hero' }], 2),
+    c(['Chute Giratório', 'Spinning Kick'], MON, 'boot-kick', 'ataque', { v: 2 }, 3, [{ k: 'dmg', n: 2, tgt: 'enemyFront', via: 'melee' }, { k: 'ward', tgt: 'hero' }], 2, ['des', 3]),
+    c(['Padrão Hipnótico', 'Hypnotic Pattern'], BRD, 'spiral-bloom', 'magia', { m: 3 }, 4, [{ k: 'mark', tgt: 'allEnemies' }, { k: 'draw', n: 1 }], 2, ['car', 2]),
+    c(['Palma Trêmula', 'Quivering Palm'], MON, 'magic-palm', 'ataque', { v: 1, m: 2 }, 5, [{ k: 'strike', bonus: 3, smite: 6 }], 1, ['sab', 3]),
+    c(['Balada do Herói', 'Ballad of the Hero'], BRD, 'drum', 'magia', { m: 4 }, 5, [{ k: 'buff', atk: 2, tgt: 'allAllies' }, { k: 'heal', n: 2, tgt: 'allAllies' }, { k: 'draw', n: 1 }], 1, ['car', 2]),
+    POTION,
+    r(['Defesa Paciente', 'Patient Defense'], MON, 'meditation', { v: 1 }, 1, 'ataque', [{ k: 'ward', tgt: 'hero' }, { k: 'gain', res: 'vigor', n: 1 }], 2),
+    r(['Contra-canto', 'Countercharm'], BRD, 'harp', { m: 2 }, 1, 'magia', [{ k: 'counter' }], 2),
+  ],
+};
+
+export const PROTO_DECKS: ProtoDeck[] = [red, blue, green, black, purple, white, silver];
 export const HEROES = PROTO_DECKS.map((d) => d.hero);

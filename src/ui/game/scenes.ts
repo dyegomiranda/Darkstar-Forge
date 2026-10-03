@@ -14,14 +14,14 @@ export interface Scene {
 }
 
 export const SCENES: Scene[] = [
-  { id: 'floresta', name: ['Floresta', 'Forest'], img: 'cenarios/floresta.webp', floor: ['#6f9a4e', '#84ad5c', '#9bc070'] },
-  { id: 'campo', name: ['Campo aberto', 'Open plains'], img: 'cenarios/campo.webp', floor: ['#aebf48', '#c2d25a', '#d6e27a'] },
-  { id: 'vulcao', name: ['Vulcão', 'Volcano'], img: 'cenarios/vulcao.webp', floor: ['#4a4350', '#5c5463', '#716877'] },
-  { id: 'masmorra', name: ['Masmorra', 'Dungeon'], img: 'cenarios/masmorra.webp', floor: ['#8793a8', '#9ca7bb', '#b2bccd'] },
-  { id: 'neve', name: ['Tundra gelada', 'Frozen tundra'], img: 'cenarios/neve.webp', floor: ['#bfd4e6', '#d6e6f2', '#eef6fb'] },
-  { id: 'deserto', name: ['Ruínas do deserto', 'Desert ruins'], img: 'cenarios/deserto.webp', floor: ['#c4a674', '#d6ba88', '#e5cc9f'] },
-  { id: 'pantano', name: ['Pântano', 'Swamp'], img: 'cenarios/pantano.webp', floor: ['#5d7a48', '#70905a', '#86a66e'] },
-  { id: 'cripta', name: ['Cripta', 'Crypt'], img: 'cenarios/cripta.webp', floor: ['#465676', '#586a8c', '#6e82a6'] },
+  { id: 'floresta', name: ['Floresta', 'Forest'], img: 'cenarios/floresta.webp', floor: ['#4ba429', '#54b42d', '#5cc531'] },
+  { id: 'campo', name: ['Campo aberto', 'Open plains'], img: 'cenarios/campo.webp', floor: ['#cdce3e', '#cfd34f', '#d4d760'] },
+  { id: 'vulcao', name: ['Vulcão', 'Volcano'], img: 'cenarios/vulcao.webp', floor: ['#0d1e34', '#1e3a57', '#395a75'] },
+  { id: 'masmorra', name: ['Masmorra', 'Dungeon'], img: 'cenarios/masmorra.webp', floor: ['#44606b', '#6a828b', '#91a8ad'] },
+  { id: 'neve', name: ['Tundra gelada', 'Frozen tundra'], img: 'cenarios/neve.webp', floor: ['#b9edea', '#c9f1ef', '#d9f5f3'] },
+  { id: 'deserto', name: ['Ruínas do deserto', 'Desert ruins'], img: 'cenarios/deserto.webp', floor: ['#e0de85', '#e5e197', '#e9e8a7'] },
+  { id: 'pantano', name: ['Pântano', 'Swamp'], img: 'cenarios/pantano.webp', floor: ['#1d6336', '#29834d', '#33975b'] },
+  { id: 'cripta', name: ['Cripta', 'Crypt'], img: 'cenarios/cripta.webp', floor: ['#3b285a', '#5b3983', '#7a3f9e'] },
   { id: 'mesa', name: ['Mesa escura', 'Dark table'], floor: ['#2a2420', '#342d28', '#3f3731'] },
 ];
 

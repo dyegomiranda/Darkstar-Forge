@@ -4,7 +4,7 @@
 
 O jogo roda totalmente no seu computador, sem servidor. Ele traz:
 
-- **Modo batalha** contra o jogo, em cinco níveis de dificuldade;
+- **Modo batalha** contra o jogo, com 7 heróis prontos (um por cor de classe) e cinco níveis de dificuldade;
 - **Criação de personagem**, com boneco em pixel art;
 - **Construtor de decks**: um editor completo de cartas, decks, temas e coleções, com exportação em PNG e PDF para impressão (63 × 88 mm);
 - configurações de vídeo, som, jogo e controles (teclado e joystick).

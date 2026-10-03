@@ -12,6 +12,9 @@ describe('faixas de música', () => {
       expect(t.ev.flat().every((x) => !x || ['arp', 'pad', 'bass', 'gtr', 'kick', 'snare', 'hat', 'crash', 'tom', 'choir', 'bell', 'str', 'brass', 'taiko', 'roll'].includes(x.v))).toBe(true);
     }
   });
+  it('a batalha não tem partes em meio-tempo nem respiros (não pode parecer que a luta esfriou)', () => {
+    for (const def of TRACKS.filter((t) => t.mood === 'battle')) for (const p of Object.values(def.parts)) expect(['open', 'break']).not.toContain(p.feel);
+  });
   it('há mais de uma faixa por clima (para o botão de próxima)', () => {
     for (const mood of ['title', 'menu', 'battle'] as const) expect(TRACKS.filter((t) => t.mood === mood).length).toBeGreaterThan(1);
   });

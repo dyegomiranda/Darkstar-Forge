@@ -49,7 +49,8 @@
     if (avatar.body === 'female' && (id === 'beard' || id === 'mustache')) return false;
     return LPC.slots.find((s) => s.id === id)!.items.some((i) => i.bodies.includes(avatar.body));
   }
-  const has = (id: Cat) => (isSlot(id) ? !!avatar.parts[id] : id === 'sets' ? SETS.some((s) => wearing(avatar, s)) : false);
+  // (orelhas: sem peça escolhida, o boneco usa as humanas, que também contam como escolhidas)
+  const has = (id: Cat) => (id === 'ears' ? !avatar.head : isSlot(id) ? !!avatar.parts[id] : id === 'sets' ? SETS.some((s) => wearing(avatar, s)) : false);
   $effect(() => { if (!usable(cat)) cat = 'body'; });
 
   const clone = () => JSON.parse(JSON.stringify(avatar)) as Avatar;

@@ -9,7 +9,9 @@ import { applyScoring } from '../model/scoring';
 import { PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
-import { PROTO_GEAR_DECK, migrateGear, protoEquipment } from '../model/equipment';
+import { PROTO_GEAR_DECK, migrateGear, presetSlots, protoEquipment, SLOTS } from '../model/equipment';
+import { adoptStyles } from '../avatar/sets';
+import { HERO_BASES } from '../game/decks';
 import { upgradeHero } from '../model/hero';
 import { PROJECT_VERSION, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
@@ -66,7 +68,7 @@ class ProjectState {
    * Só entram em cartas que ainda não têm imagem; roda uma vez.
    */
   async #addProtoArt(): Promise<void> {
-    const MARK = 'proto-art-1';
+    const MARK = 'proto-art-2';
     const p = this.project!;
     if (p.seeded?.includes(MARK)) return;
     const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -114,6 +116,19 @@ class ProjectState {
       p.editions.push(col.edition);
       p.decks.push(...col.decks);
       for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+    }
+    // os decks Roxo, Bege e Prata (3.5) e os seus heróis chegam a quem já tinha o jogo
+    const DECKS7 = 'proto-decks-7';
+    if (!p.seeded?.includes(DECKS7) && p.editions.some((e) => e.id === PROTO_ID)) {
+      p.seeded = [...(p.seeded ?? []), DECKS7];
+      changed = true;
+      const col = protoCollection();
+      for (const d of col.decks) {
+        if (d.kind !== 'class' || p.decks.some((x) => x.id === d.id)) continue;
+        p.decks.push(d);
+        for (const c of col.cards) if (c.deckId === d.id) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+      }
+      for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id || c.preset === h.preset)) p.characters.push(h);
     }
     // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
     const RULES = 'proto-rules-5';
@@ -177,6 +192,43 @@ class ProjectState {
         }
       }
     }
+    // equipamentos refeitos (3.5): o catálogo novo substitui as peças antigas; cartas de equipamento
+    // sem bônus nenhum (a amostra antiga, com custo em ouro) saem; as fichas trocam as peças que sumiram
+    const GEAR2_MARK = 'gear-overhaul-1';
+    if (!p.seeded?.includes(GEAR2_MARK)) {
+      p.seeded = [...(p.seeded ?? []), GEAR2_MARK];
+      changed = true;
+      const edId = p.editions.some((e) => e.id === PROTO_ID) ? PROTO_ID : p.editions[0]?.id;
+      if (edId) {
+        const eq = protoEquipment(edId);
+        if (!p.decks.some((d) => d.id === PROTO_GEAR_DECK)) p.decks.push(eq.deck);
+        for (const c of eq.cards) {
+          const old = this.cards[c.id];
+          this.cards[c.id] = old ? { ...old, text: c.text, gear: c.gear, tags: c.tags, rarity: c.rarity, cost: [], art: { ...old.art, icon: c.art.icon } } : c;
+          this.#dirtyCards.add(c.id);
+        }
+        const kinds = new Map(p.decks.map((d) => [d.id, d.kind]));
+        const gone = new Set(Object.values(this.cards).filter((c) => c.id.startsWith('proto-eq-')
+          || (kinds.get(c.deckId) === 'equipment' && c.deckId !== PROTO_GEAR_DECK && !(c.gear && Object.keys(c.gear).length))).map((c) => c.id));
+        for (const ch of p.characters) for (const sl of SLOTS) {
+          const id = ch.slots[sl.id];
+          if (!id || !gone.has(id)) continue;
+          // peça antiga de um herói pronto: entra a peça nova do mesmo herói nesse espaço (se ele tiver)
+          const m = /^proto-eq-(.+)-[a-z]+$/.exec(id);
+          const repl = m ? presetSlots(m[1])[sl.id] : undefined;
+          if (repl && this.cards[repl]) ch.slots[sl.id] = repl; else delete ch.slots[sl.id];
+        }
+        for (const id of gone) { delete this.cards[id]; this.#dirtyCards.delete(id); this.#deletedCards.add(id); }
+        // heróis prontos: os espaços vazios ganham as peças novas do modelo; a vida base acompanha o modelo se não foi mexida
+        const OLD_HP: Record<string, number> = { brunhild: 23 };
+        for (const ch of p.characters) {
+          const b = ch.preset ? HERO_BASES.find((h) => h.id === ch.preset) : undefined;
+          if (!b) continue;
+          for (const [slot, id] of Object.entries(presetSlots(b.id)) as [keyof typeof ch.slots, string][]) if (!ch.slots[slot] && this.cards[id]) ch.slots[slot] = id;
+          if (ch.play && OLD_HP[b.id] === ch.play.baseHp) ch.play.baseHp = b.baseHp;
+        }
+      }
+    }
     // os heróis prontos ganham o boneco em pixel art (uma vez; quem já tem boneco fica como está)
     const AVATARS_MARK = 'proto-avatars-1';
     if (!p.seeded?.includes(AVATARS_MARK)) {
@@ -208,6 +260,13 @@ class ProjectState {
         const parts = c.avatar?.parts;
         if (parts?.arms?.id === 'arms_gloves') { parts.hands = parts.arms; delete parts.arms; }
       }
+    }
+    // peças de conjunto vestidas antes do feitio próprio (3.4) passam a ter o feitio do conjunto
+    const STYLE_MARK = 'set-style-1';
+    if (!p.seeded?.includes(STYLE_MARK)) {
+      p.seeded = [...(p.seeded ?? []), STYLE_MARK];
+      changed = true;
+      for (const c of p.characters) if (c.avatar) adoptStyles(c.avatar);
     }
     // o jogo passou a se chamar Void Sun: os nomes que ainda eram os de fábrica acompanham (o que o usuário renomeou fica)
     const NAME_MARK = 'rename-voidsun-1';

@@ -69,7 +69,9 @@ function one(e: Effect, pt: boolean, w: Weapon | undefined, seen: Set<string>): 
       const then = e.then === 'afflict' ? (pt ? ' O alvo fica Afligido' : ' The target becomes Afflicted') + r('afflict') + '.'
         : e.then === 'mark' ? (pt ? ' O alvo fica Marcado' : ' The target becomes Marked') + r('mark') + '.'
         : e.then === 'push' ? (pt ? ' Empurre o alvo para a outra fileira.' : ' Push the target to the other row.') : '';
-      return head + then;
+      const sneak = e.sneak ? (pt ? ` Ataque furtivo: +${e.sneak} se o alvo estiver Marcado ou Afligido.` : ` Sneak attack: +${e.sneak} if the target is Marked or Afflicted.`) : '';
+      const smite = e.smite ? (pt ? ` Depois, cause ${e.smite} de dano mágico ao alvo.` : ` Then deal ${e.smite} magic damage to the target.`) : '';
+      return head + sneak + smite + then;
     }
     case 'heal': return pt ? `${cap(T(e.tgt))} recupera ${e.n} PV.` : `${cap(T(e.tgt))} heals ${e.n} HP.`;
     case 'afflict': return (pt ? `Aflija ${T(e.tgt)}` : `Afflict ${T(e.tgt)}`) + r('afflict') + '.';

@@ -45,7 +45,7 @@ describe('motor', () => {
     const before = heroHp(s, 1);
     expect(apply(s, { t: 'strike', target: heroPos(s, 1) })).toBeNull();
     if (s.pending) apply(s, { t: 'pass' }); // Brunhild tem uma Reação na mão e aceita o golpe
-    expect(heroHp(s, 1)).toBe(before - 2); // katana 4 − armadura 2 de Brunhild
+    expect(heroHp(s, 1)).toBe(before - 3); // katana 5 − armadura 2 de Brunhild (gibão de peles)
     const free = emptySlots(s, 0).length;
     s.players[0].hand.unshift({ uid: 'x', cardId: 'black-4' }); // Erguer Esqueleto
     s.players[0].mana = 5;
