@@ -15,6 +15,13 @@ describe('faixas de música', () => {
   it('a batalha não tem partes em meio-tempo nem respiros (não pode parecer que a luta esfriou)', () => {
     for (const def of TRACKS.filter((t) => t.mood === 'battle')) for (const p of Object.values(def.parts)) expect(['open', 'break']).not.toContain(p.feel);
   });
+  it('nada soa acelerado demais: no máximo 165 batidas por minuto e bumbo no máximo em colcheias', () => {
+    for (const def of TRACKS) {
+      expect(def.bpm).toBeLessThanOrEqual(165);
+      const t = build(def);
+      for (let i = 0; i + 1 < t.steps; i += 2) expect((t.ev[i + 1] ?? []).filter((e) => e.v === 'kick' && !(t.ev[i] ?? []).some((x) => x.v === 'kick')).length + (t.ev[i] ?? []).filter((e) => e.v === 'kick').length).toBeLessThanOrEqual(2);
+    }
+  });
   it('há mais de uma faixa por clima (para o botão de próxima)', () => {
     for (const mood of ['title', 'menu', 'battle'] as const) expect(TRACKS.filter((t) => t.mood === mood).length).toBeGreaterThan(1);
   });

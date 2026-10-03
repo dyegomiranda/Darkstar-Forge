@@ -4,11 +4,12 @@
  * principal define o golpe. A mesa de jogo lê tudo daqui — não há outra lista.
  */
 import { newId } from './id';
-import type { Card, CardGear, Character, Deck, Lang, Slot } from './types';
+import type { Card, CardGear, Character, ColorId, Deck, Lang, Slot } from './types';
 import { ATTR_NAMES, GEAR_SLOTS, type Attr, type GearItem, type GearSlot, type HeroBase, type Via } from '../game/types';
 import { gearCardId, gearInfo, HERO_BASES, modsOf } from '../game/decks';
 import { GEAR, type GearDef } from '../game/gear';
-import { gameAttrs } from './hero';
+import { gameAttrs, raceOf } from './hero';
+import { lifeOf } from '../game/life';
 
 /** Espaços da ficha: nome, etiquetas de carta que cabem e o tipo de peça. */
 export const SLOTS: { id: Slot; pt: string; en: string; tags: string[]; gear: GearSlot; pos: [number, number] }[] = [
@@ -81,8 +82,13 @@ export function heroBaseOf(c: Character, cards: Record<string, Card>): HeroBase 
   // bônus que a própria arma dá além do golpe (vida, armadura, Mana…) entram como uma peça à parte
   const wm = mg ? modsOf(mg) : {};
   if (main && Object.keys(wm).length) gear.unshift({ slot: 'offhand', name: lang(main.card), info: gearInfo(wm), ...wm, icon: main.card.art.icon, cardId: main.card.id });
+  const attrs = gameAttrs(c);
+  const con = Number.isFinite(attrs.con) ? attrs.con : c.play?.attrs.con ?? 0;
+  const color = (c.classColors[0] ?? c.play?.deckId.replace('proto-', '') ?? 'red') as ColorId;
   return {
-    ...c.play!, id: c.id, name: c.name || '?', attrs: gameAttrs(c),
+    ...c.play!, id: c.id, name: c.name || '?', attrs,
+    // a vida não é digitada: sai da ancestralidade, da classe e da Constituição (o equipamento soma depois)
+    baseHp: lifeOf(raceOf(c.raceId)?.hp ?? 8, color, con),
     weapon: main && mg?.weapon ? { name: lang(main.card), dmg: mg.weapon.dmg, via: mg.weapon.via, ...(mg.weapon.hands ? { hands: mg.weapon.hands } : {}), ...(mg.weapon.reach ? { reach: true } : {}), cardId: main.card.id } : UNARMED,
     gear,
   };
@@ -152,7 +158,8 @@ export function migrateGear(c: Character, cards: Record<string, Card>, deckId: s
   if (!b) return [];
   const made: Card[] = [];
   const place = (slot: GearSlot, name: [string, string], gear: CardGear) => {
-    const s = SLOT_OF[slot];
+    let s = SLOT_OF[slot];
+    if (s === 'ring1' && c.slots.ring1) s = 'ring2';
     if (!s || c.slots[s]) return;
     // a peça do catálogo com o mesmo nome e no mesmo espaço
     const preset = Object.values(cards).find((card) => card.deckId === PROTO_GEAR_DECK && card.text['pt-BR'].name === name[0] && slotTagOf(card)?.tag === TAG_OF[slot]);

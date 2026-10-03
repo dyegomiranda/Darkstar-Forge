@@ -16,6 +16,19 @@ type Obj = Record<string, unknown>;
  * custo no formato antigo (o símbolo por recurso, em `icons.res`, vale para a
  * coleção inteira: mana é mana em qualquer deck).
  */
+/**
+ * O tema inteiro de `from` com o que é próprio de cada deck (cores das peças, tingimento, símbolos de
+ * custo e de classe) mantido de `to`. É o que "aplicar à coleção" faz com os outros decks.
+ */
+export function syncLook<T extends AnyLook>(to: T, from: T): T {
+  const out = structuredClone(from);
+  for (const p of ['pieces.*.colors', 'tint', 'icons.cost.glyph', 'icons.cost.color', 'icons.cost.image', 'icons.class.glyph', 'icons.class.color', 'icons.class.image']) {
+    clearPath(out, p);
+    copyPath(out, to, p);
+  }
+  return out;
+}
+
 export function isDeckSpecific(path: string): boolean {
   return /^pieces\.[^.]+\.colors$/.test(path) || path === 'tint' || /^icons\.(cost|class)\.(glyph|color|image)$/.test(path);
 }

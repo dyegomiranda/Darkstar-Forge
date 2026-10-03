@@ -53,9 +53,10 @@
   }
   // aviso da primeira vez (fica guardado neste computador que já foi visto)
   const SEEN = 'voidsun.aviso';
-  let notice = $state((() => { try { return localStorage.getItem(SEEN) !== '1'; } catch { return false; } })());
+  // (com a opção ligada nas configurações, aparece toda vez que o jogo abre — uma vez por sessão)
+  let notice = $state((() => { try { return localStorage.getItem(SEEN) !== '1' || (settings.v.welcome && !sessionStorage.getItem('voidsun.aviso.sessao')); } catch { return false; } })());
   function understood() {
-    try { localStorage.setItem(SEEN, '1'); } catch { /* sem armazenamento local */ }
+    try { localStorage.setItem(SEEN, '1'); sessionStorage.setItem('voidsun.aviso.sessao', '1'); } catch { /* sem armazenamento local */ }
     notice = false;
     first?.focus({ preventScroll: true });
   }

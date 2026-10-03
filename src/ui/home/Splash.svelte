@@ -36,7 +36,7 @@
     band.addColorStop(0, 'rgb(255 255 255 / 0)'); band.addColorStop(0.5, 'rgb(255 255 255 / .035)'); band.addColorStop(1, 'rgb(255 255 255 / 0)');
     /** Onde a figura ficou na tela, e a lâmina da katana dentro dela (de onde sobe a fumaça). */
     let fig: { x: number; y: number } | null = null;
-    const BLADE = { x0: 52, x1: 100, y: 66 }, SMOKE = ['#a274ff', '#6f48c0', '#43307a', '#231a3c'];
+    const BLADE = { x0: 31, y0: 16, x1: 40, y1: 78 }, SMOKE = ['#a274ff', '#6f48c0', '#43307a', '#231a3c'];
     let raf = 0, t0 = 0, exitAt = Infinity, exitLen = 520, over = false;
 
     /** A janela cabe um número inteiro de vezes na grade: cada ponto do desenho vira um quadrado exato. */
@@ -114,8 +114,10 @@
       if (!fig) return;
       for (let i = 0; i < 64; i++) {
         const life = 1.3 + hash(i, 1) * 1.5, clock = t + hash(i, 2) * life, age = (clock % life) / life, turn = Math.floor(clock / life);
-        const x = BLADE.x0 + hash(i, turn + 3) * (BLADE.x1 - BLADE.x0) + Math.sin((t + i) * 1.7) * age * 5 + age * 4;
-        const y = BLADE.y - age * (14 + hash(i, 4) * 16);
+        // um ponto ao longo da lâmina (da ponta ao punho), e a fumaça sobe dali
+        const k = hash(i, turn + 3);
+        const x = BLADE.x0 + k * (BLADE.x1 - BLADE.x0) + Math.sin((t + i) * 1.7) * age * 5 - age * 3;
+        const y = BLADE.y0 + k * (BLADE.y1 - BLADE.y0) - age * (14 + hash(i, 4) * 16);
         fb.globalAlpha = (age < 0.15 ? age / 0.15 : 1 - age) * 0.85;
         fb.fillStyle = SMOKE[Math.min(SMOKE.length - 1, Math.floor(age * SMOKE.length + hash(i, 5) * 1.2))];
         const size = age > 0.55 ? 3 : age > 0.2 ? 2 : 1;

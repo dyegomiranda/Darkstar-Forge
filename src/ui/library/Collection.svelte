@@ -88,7 +88,6 @@
 <style>
   .settings { height: 100%; overflow-y: auto; }
   .inner { max-width: 960px; margin: 0 auto; padding: 28px 28px 80px; display: flex; flex-direction: column; gap: 18px; }
-  h1 { font-size: 24px; margin-bottom: 4px; }
   .sec { padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
   .sec header { display: flex; align-items: center; gap: 10px; color: var(--accent); }
   .sec h2 { font-size: 16px; color: var(--text); }
@@ -105,10 +104,5 @@
   .emb { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex: none;
     background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #000), color-mix(in srgb, var(--c) 25%, #000)); }
   .ord { width: 24px; text-align: center; color: var(--muted); font-size: 12px; }
-  .usage { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
-  .bar { height: 6px; border-radius: 6px; background: var(--surface-3); margin-top: 8px; overflow: hidden; }
-  .bar div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-  .danger-zone { border-color: rgb(226 87 76 / .3); }
-  .danger-zone header { color: var(--danger); }
   @media (max-width: 760px) { .inner { padding: 18px 14px 80px; } .cols { grid-template-columns: 1fr; } .ord { display: none; } }
 </style>

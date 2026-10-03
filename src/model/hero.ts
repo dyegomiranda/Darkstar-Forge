@@ -68,7 +68,7 @@ export function setRace(c: Character, id: string): void {
     c.stats[s.id] = statBase({ raceId: id }, s.id) + spent;
   }
   c.raceId = id;
-  // a vida base acompanha a ancestralidade (anão e orc aguentam mais; elfo e goblin, menos)
+  // (a vida acompanha sozinha: sai da ancestralidade, da classe e da Constituição — veja src/game/life.ts)
   if (c.play) c.play.baseHp = Math.max(10, c.play.baseHp + hpOf(id) - before);
   for (const s of STATS) c.stats[s.id] = Math.min(STAT_MAX, c.stats[s.id]);
 }

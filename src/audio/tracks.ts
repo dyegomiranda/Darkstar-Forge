@@ -7,7 +7,7 @@
  * espaçadas), `pluck` (arpejo agudo saltitante).
  * Levadas de rock (batalha): `chug` (guitarra abafada em colcheias), `gallop` (galope),
  * `drive` (acordes cheios com a bateria sempre correndo), `riff` (frase de guitarra em
- * semicolcheias), `blast` (guitarra em tremolo e bumbo duplo). As antigas `open`
+ * semicolcheias), `blast` (guitarra abafada e bumbo em colcheias, a pressão máxima). As antigas `open`
  * (meio-tempo) e `break` (respiro) davam a impressão de a luta ter esfriado: não são
  * mais usadas na batalha.
  * Levadas épicas (tela inicial): `dark` (coro grave, sinos espaçados, tambor distante),
@@ -56,7 +56,7 @@ export const TRACKS: TrackDef[] = [
     parts: { A: { feel: 'gallop', chords: 'Em Em C D Em Em C B' }, B: { feel: 'chug', chords: 'C D Em Em C D B B' } },
   },
   {
-    id: 'folego', name: ['Último Fôlego', 'Last Breath'], mood: 'battle', bpm: 170, form: 'AABAB',
+    id: 'folego', name: ['Último Fôlego', 'Last Breath'], mood: 'battle', bpm: 158, form: 'AABAB',
     parts: { A: { feel: 'gallop', chords: 'Dm Dm Bb C Dm Dm Bb A' }, B: { feel: 'drive', chords: 'Gm Gm Dm Dm Bb Bb A A' } },
   },
   {
@@ -64,7 +64,7 @@ export const TRACKS: TrackDef[] = [
     parts: { A: { feel: 'drive', chords: 'Em G D A Em G D B' }, B: { feel: 'chug', chords: 'C C D D Em Em B B' }, C: { feel: 'riff', chords: 'Em D C B' } },
   },
   {
-    id: 'tormenta', name: ['Tormenta de Cinzas', 'Ash Storm'], mood: 'battle', bpm: 176, form: 'ABABCB',
+    id: 'tormenta', name: ['Tormenta de Cinzas', 'Ash Storm'], mood: 'battle', bpm: 158, form: 'ABABCB',
     parts: { A: { feel: 'blast', chords: 'F#m F#m D E F#m F#m D C#' }, B: { feel: 'gallop', chords: 'D E F#m F#m D E C# C#' }, C: { feel: 'riff', chords: 'Bm Bm D C#' } },
   },
   {
@@ -76,7 +76,7 @@ export const TRACKS: TrackDef[] = [
     parts: { A: { feel: 'chug', chords: 'Cm Cm Ab Bb Cm Cm Ab G' }, B: { feel: 'blast', chords: 'Fm Fm Cm Cm Ab Bb G G' }, C: { feel: 'drive', chords: 'Ab Bb Cm Cm' } },
   },
   {
-    id: 'presas', name: ['Presas da Noite', 'Fangs of the Night'], mood: 'battle', bpm: 168, form: 'ABBAC',
+    id: 'presas', name: ['Presas da Noite', 'Fangs of the Night'], mood: 'battle', bpm: 156, form: 'ABBAC',
     parts: { A: { feel: 'gallop', chords: 'Bm Bm G A Bm Bm G F#' }, B: { feel: 'riff', chords: 'G A Bm Bm G A F# F#' }, C: { feel: 'blast', chords: 'Bm A G F#' } },
   },
 ];
@@ -179,10 +179,11 @@ export function build(def: TrackDef): Track {
           break;
         }
         case 'blast': {
-          // guitarra em tremolo (todas as semicolcheias), bumbo duplo sem parar e caixa em todo tempo
-          for (let k = 0; k < 16; k++) put(b0 + k, 'gtr', low + 12 + (k >= 12 && last ? 7 : 0), 0.85);
-          for (let k = 0; k < 16; k++) put(b0 + k, 'kick', 0, 1);
-          for (const k of [0, 4, 8, 12]) { put(b0 + k, 'bass', low, 3.6); put(b0 + k, 'snare', 0, 1); put(b0 + k + 2, 'hat', 0, 1); }
+          // pressão máxima sem virar metralhadora: guitarra abafada em colcheias com acentos, bumbo em colcheias, caixa no 2 e no 4
+          for (let k = 0; k < 16; k += 2) put(b0 + k, 'gtr', low + 12 + (k >= 12 && last ? 7 : 0), k % 4 === 0 ? 1.6 : 1.1);
+          for (let k = 0; k < 16; k += 2) { put(b0 + k, 'kick', 0, 1); put(b0 + k, 'hat', 0, 1); }
+          for (const k of [0, 8]) put(b0 + k, 'bass', low, 7.6);
+          if (last) { put(b0 + 4, 'snare', 0, 1); fill(); } else for (const k of [4, 12]) put(b0 + k, 'snare', 0, 1);
           for (const n of [mid, fifth]) put(b0, 'pad', n, 16);
           if (bi % 2 === 0) put(b0, 'crash', 0, 6);
           break;

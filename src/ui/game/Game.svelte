@@ -36,7 +36,7 @@
   import { attackAnim as weaponAnim, type Anim } from '../../avatar/lpc';
   import { creatureOf, hasFigure, sheetOf } from '../../avatar/creatures';
   import SheetSprite from '../../avatar/SheetSprite.svelte';
-  import { SCENES, floorTile, randomScene, sceneOf, type Scene } from './scenes';
+  import { SCENES, randomScene, sceneOf, type Scene } from './scenes';
 
   // ───────────── preparação ─────────────
   const OPTS_KEY = 'darkstar.mesa';
@@ -79,7 +79,6 @@
    */
   const sceneStyle = $derived(scene.img ? `--scene:url("${new URL(scene.img, document.baseURI).href}")` : '');
   /** Piso de cada casa (varia de casa para casa). */
-  const floorOf = (p: number, row: number, col: number) => `url(${floorTile(scene, 1 + p * 100 + (row + 1) * 10 + col)})`;
   $effect(() => { try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, scene: scenePick })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
@@ -654,7 +653,7 @@
     const src = el.querySelectorAll('canvas'), dst = c.querySelectorAll('canvas');
     src.forEach((cv, i) => { const d = dst[i]; if (!d) return; d.width = cv.width; d.height = cv.height; d.getContext('2d')?.drawImage(cv, 0, 0); });
     const cs = getComputedStyle(el);
-    for (const v of ['--c', '--floor']) c.style.setProperty(v, cs.getPropertyValue(v));
+    c.style.setProperty('--c', cs.getPropertyValue('--c'));
     Object.assign(c.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '30' });
     document.body.appendChild(c);
     return c;
@@ -986,7 +985,7 @@
               {#each SCENES as sc (sc.id)}
                 <button class="scene-card" class:on={scenePick === sc.id} onclick={() => { scenePick = sc.id; sceneOpen = false; }}>
                   <span class="sc-img" style={sc.img ? `background-image:url(${sc.img})` : ''}>
-                    <i class="sc-floor" style="background-image:url({floorTile(sc, 7)})"></i>
+                    <i class="sc-floor"></i>
                     {#if scenePick === sc.id}<span class="sc-check"><Check size={15} /></span>{/if}
                   </span>
                   <b>{L(sc.name[0], sc.name[1])}</b>
@@ -1012,7 +1011,7 @@
         {#each [1, 0] as row}
           <div class="row">
             {#each [0, 1, 2] as col}
-              <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}; --floor:{floorOf(1, row, col)}">
+              <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}">
                 {#if botHero.row === row && botHero.col === col}
                   {#if botChar?.avatar}<span class="doll"><AvatarSprite avatar={botChar.avatar} dir="s" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span>{/if}
                   <span class="unit"><span class="u-nm">{botHero.name}</span></span>
@@ -1030,7 +1029,7 @@
           <div class="row">
             {#each [0, 1, 2] as col}
               {@const on = myPos.row === row && myPos.col === col}
-              <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}; --floor:{floorOf(0, row, col)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
+              <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
                 {#if on}
                   {#if myChar?.avatar}<span class="doll"><AvatarSprite avatar={myChar.avatar} dir="n" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={myChar} size={80} /></span>{/if}
                   <span class="unit"><span class="u-nm">{myHero.name}</span></span>
@@ -1131,7 +1130,7 @@
         {@const u = unitAt(g!, pos)}
         <button class="slot" class:off={row === -1} class:aoe={row === -1 && aoe.fields.has(p)} class:ally={p === me} class:target={isTarget(pos)} class:selected={(sel?.kind === 'unit' && same(sel.pos, pos)) || (sel?.kind === 'strike' && !!u?.isHero && p === me)}
           class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && hasFigure(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
-          data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}; --floor:{row === -1 ? 'none' : floorOf(p, row, col)}"
+          data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
           <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
           {#each u ? [u] : [] as x (x.id)}
@@ -1658,7 +1657,7 @@
   .scene-card b { font-size: 14px; padding: 0 4px; }
   .scene-card small { font-size: 11.5px; color: var(--muted); padding: 0 4px; margin-top: -4px; }
   .sc-img { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: 9px; overflow: hidden; background: radial-gradient(ellipse at 50% 50%, #241e1a, #100e0c) center / cover; image-rendering: pixelated; color: #fff; }
-  .sc-floor { position: absolute; left: 50%; top: 50%; width: 26%; aspect-ratio: 27 / 20; transform: translate(-50%, -50%); background: center / 100% 100% no-repeat; image-rendering: pixelated; opacity: .92; }
+  .sc-floor { position: absolute; left: 50%; top: 50%; width: 26%; aspect-ratio: 27 / 20; transform: translate(-50%, -50%); border-radius: 3px; background: rgb(6 5 12 / .4); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); }
   .sc-check { position: absolute; right: 6px; top: 6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #f0c45a; color: #1a120b; }
   .sc-img.mosaic { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
   .sc-img.mosaic i { width: 100%; height: 100%; background: center / cover; filter: brightness(.6); }
@@ -1713,15 +1712,16 @@
   .rows { display: flex; flex-direction: column; gap: 6px; }
   .off-spacer { width: calc(var(--row) * 1.35); flex: none; }
   .row { display: grid; grid-template-columns: repeat(3, calc(var(--row) * 1.35)); gap: 10px; }
-  /* casa: um retalho de piso em pixel art, no clima do cenário */
+  /* casa: uma área mais escura e um pouco transparente; destaca-se de leve em qualquer cenário (grama, neve, pedra…) */
   .slot { height: var(--row); border-radius: 10px; border: 0; background: none; color: var(--text); display: grid; place-items: center; cursor: pointer; font: inherit; position: relative; padding: 4px; overflow: hidden; }
-  .slot::before { content: ''; position: absolute; inset: 0; z-index: 0; background: var(--floor, none) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: .88; filter: drop-shadow(0 3px 0 rgb(0 0 0 / .35)); }
-  .slot:hover::before { opacity: 1; }
+  .slot::before { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: 10px; background: rgb(6 5 12 / .34); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1), inset 0 -10px 18px rgb(0 0 0 / .18); backdrop-filter: blur(1.5px); transition: background var(--t); }
+  .slot:hover::before { background: rgb(6 5 12 / .48); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .2), inset 0 -10px 18px rgb(0 0 0 / .2); }
+  :global(body.q-medium) .slot::before, :global(body.q-low) .slot::before { backdrop-filter: none; }
   .slot.off { width: calc(var(--row) * 1.35); height: auto; flex: none; border-radius: 14px; }
   .slot.off::before { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 30%, rgb(21 18 15 / .86)), rgb(14 12 10 / .9) 85%); opacity: 1; filter: none; border-radius: 14px; }
   /* ocupada: o piso escurece embaixo (para ler nome e números) e ganha um aro na cor do dono */
   .slot:has(.unit)::before { opacity: 1; border-radius: 10px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 22%, transparent) 0%, rgb(0 0 0 / .1) 38%, rgb(6 5 4 / .82) 100%), var(--floor, none) center / 100% 100% no-repeat; }
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 22%, transparent) 0%, rgb(0 0 0 / .14) 38%, rgb(6 5 4 / .82) 100%), rgb(6 5 12 / .34); }
   .slot:has(.unit) { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 65%, #000), 0 6px 16px rgb(0 0 0 / .55); }
   .slot.off:has(.unit)::before { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 34%, rgb(21 18 15 / .9)), rgb(12 10 9 / .94) 85%); }
   .slot.hero { box-shadow: 0 0 0 2px var(--c), 0 0 0 3px rgb(0 0 0 / .5), 0 0 18px color-mix(in srgb, var(--c) 40%, transparent), 0 6px 16px rgb(0 0 0 / .55); overflow: visible; z-index: 3; }

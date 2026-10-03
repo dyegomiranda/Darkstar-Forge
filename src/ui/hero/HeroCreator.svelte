@@ -19,10 +19,11 @@
   import { router } from '../../app/router.svelte';
   import { CLASS_COLORS, COLORS, colorHex } from '../../model/catalog';
   import type { Card, Character, ColorId, Slot } from '../../model/types';
-  import { blankHero, BUILDS, buildStats, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS, type Build } from '../../model/hero';
+  import { blankHero, BUILDS, buildStats, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, raceOf, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS, type Build } from '../../model/hero';
   import { SLOTS, equippedCards, gearText, heroBaseOf, meetsReq } from '../../model/equipment';
   import { buildHero } from '../../game/decks';
   import { ATTR_NAMES } from '../../game/types';
+  import { CLASS_HP, LIFE_BASE, lifeOf } from '../../game/life';
   import { classIcon } from '../../render/icons/glyphs';
   import { lighten } from '../../render/color';
   import { vivid } from '../../render/palette';
@@ -179,6 +180,9 @@
   const hero = $derived(draft.play ? buildHero(heroBaseOf(draft, app.cards)) : null);
   /** Atributos que valem para os requisitos das peças (com os bônus das peças vestidas: manoplas do ogro abrem o machado grande). */
   const reqAttrs = $derived(hero?.attrs ?? attrs);
+  /** As parcelas da vida (para mostrar a conta). */
+  const ancHp = $derived(raceOf(draft.raceId)?.hp ?? 8);
+  const clsHp = $derived(CLASS_HP[draft.classColors[0] ?? 'red'] ?? 8);
   const deck = $derived(app.deck(draft.play?.deckId ?? ''));
   const deckCards = (deckId: string) => app.cardsOf(deckId).filter((c) => c.game).reduce((n, c) => n + (c.game?.copies ?? 1), 0);
   const tint = $derived(colorHex(deck?.colors[0] ?? draft.classColors[0] ?? 'red'));
@@ -442,9 +446,9 @@
               <div class="stackv">
                 <label class="fld"><span>{L('Título da classe (aparece na batalha)', 'Class title (shown in battle)')}</span>
                   <input class="input" value={L(b.className[0], b.className[1])} oninput={(e) => { b.className[app.lang === 'pt-BR' ? 0 : 1] = (e.currentTarget as HTMLInputElement).value; }} /></label>
-                <label class="fld"><span>{L('Vida base (antes do equipamento)', 'Base life (before equipment)')}</span>
-                  <input class="input" type="number" min="10" max="60" value={b.baseHp} onchange={(e) => { b.baseHp = num(e, 10, 60); }} /></label>
-                <p class="hint sm">{L('A vida base acompanha a ancestralidade. Este campo é um ajuste de balanceamento para quem está criando o jogo.', 'Base life follows the ancestry. This field is a balance knob for whoever is designing the game.')}</p>
+                <div class="fld"><span>{L('Vida (antes do equipamento)', 'Life (before equipment)')}</span>
+                  <p class="lifecalc"><b>{lifeOf(ancHp, draft.classColors[0] ?? 'red', attrs.con)}</b> = {LIFE_BASE} + {ancHp} {L('da ancestralidade', 'from ancestry')} + {clsHp} {L('da classe', 'from class')} + 2 × {attrs.con} {L('de CON', 'from CON')}</p></div>
+                <p class="hint sm">{L('A vida não se digita: sai da ancestralidade, da classe e da Constituição, e o equipamento soma ou tira por cima.', 'Life is not typed in: it comes from ancestry, class and Constitution, and equipment adds or removes on top.')}</p>
               </div>
             </div>
           {/if}
@@ -554,6 +558,7 @@
   .name { height: 46px; padding: 0 14px; border: 2px solid #3a3260; background: #0b0913; color: var(--accent-2); font: 400 20px var(--pixel); letter-spacing: .04em; }
   .name:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .hint { margin: 0; font-size: 12.5px; color: var(--text-2); line-height: 1.5; } .hint.sm { font-size: 12px; color: var(--muted); }
+  .lifecalc { margin: 0; font-size: 13px; color: var(--text-2); } .lifecalc b { font: 400 18px var(--pixel); color: var(--accent-2); margin-right: 6px; }
 
   .classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
   .cls { position: relative; display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 9px; align-items: center; text-align: left; padding: 8px 9px; cursor: pointer; color: var(--text-2); font: inherit;

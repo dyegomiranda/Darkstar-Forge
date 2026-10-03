@@ -7,7 +7,8 @@
 -->
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { ArrowLeft, ChevronLeft, ChevronRight, Undo2, Redo2, RotateCcw, Check } from '@lucide/svelte';
+  import { ArrowLeft, ChevronLeft, ChevronRight, Undo2, Redo2, RotateCcw, Check, Bookmark, Trash2 } from '@lucide/svelte';
+  import { newId } from '../../model/id';
   import { app } from '../../store/project.svelte';
   import { router } from '../../app/router.svelte';
   import { ui } from '../../app/ui.svelte';
@@ -41,6 +42,29 @@
   const where = $derived(scope === 'deck'
     ? L(`nas ${count} cartas deste deck`, `to the ${count} cards of this deck`)
     : L(`em ${ed?.targets.length ?? 0} decks da coleção (${count} cartas)`, `to ${ed?.targets.length ?? 0} decks of the collection (${count} cards)`));
+
+  // ───── estilos salvos: o tema do deck guardado com um nome, para usar em qualquer deck ─────
+  let stylesOpen = $state(false);
+  let styleName = $state('');
+  const saved = $derived(app.project?.themes ?? []);
+  function saveStyle() {
+    if (!ed) return;
+    const name = styleName.trim() || L(`Estilo ${saved.length + 1}`, `Style ${saved.length + 1}`);
+    const look = JSON.parse(JSON.stringify(ed.deckLook));
+    app.updateProject((p) => { p.themes = [...(p.themes ?? []), { id: newId('theme'), name, look }]; });
+    styleName = '';
+    ui.toast(L(`Estilo “${name}” salvo`, `Style “${name}” saved`));
+  }
+  function useStyle(t: { name: string; look: unknown }) {
+    if (!ed) return;
+    ed.adoptLook(t.look as never);
+    stylesOpen = false;
+    ui.toast(L(`Estilo “${t.name}” aplicado na amostra — confira e clique em Aplicar`, `Style “${t.name}” loaded on the sample — check it and click Apply`), 'ok', 4200);
+  }
+  async function dropStyle(t: { id: string; name: string }) {
+    const r = await ui.confirm({ title: L('Apagar o estilo salvo?', 'Delete the saved style?'), text: L(`“${t.name}” sai da lista (os decks que já usam o estilo não mudam).`, `“${t.name}” leaves the list (decks already using it do not change).`), ok: L('Apagar', 'Delete'), danger: true });
+    if (r === 'ok') app.updateProject((p) => { p.themes = (p.themes ?? []).filter((x) => x.id !== t.id); });
+  }
 
   async function apply() {
     if (!ed) return;
@@ -95,11 +119,32 @@
       <button class="btn sm icon ghost" disabled={!ed.canUndo} title={L('Desfazer (Ctrl+Z)', 'Undo (Ctrl+Z)')} onclick={() => ed.undo()}><Undo2 size={17} /></button>
       <button class="btn sm icon ghost" disabled={!ed.canRedo} title={L('Refazer (Ctrl+Y)', 'Redo (Ctrl+Y)')} onclick={() => ed.redo()}><Redo2 size={17} /></button>
       <span class="sep"></span>
+      <div class="styles">
+        <button class="btn sm" class:on={stylesOpen} onclick={() => (stylesOpen = !stylesOpen)}><Bookmark size={15} /> {L('Estilos salvos', 'Saved styles')}{saved.length ? ` (${saved.length})` : ''}</button>
+        {#if stylesOpen}
+          <div class="spop">
+            <span class="section-title">{L('Salvar este estilo', 'Save this style')}</span>
+            <div class="srow">
+              <input class="input" placeholder={L('Nome do estilo', 'Style name')} bind:value={styleName} onkeydown={(e) => { if (e.key === 'Enter') saveStyle(); }} />
+              <button class="btn sm primary" onclick={saveStyle}>{L('Salvar', 'Save')}</button>
+            </div>
+            <span class="section-title">{L('Usar um estilo salvo', 'Use a saved style')}</span>
+            {#each saved as t (t.id)}
+              <div class="srow item">
+                <button class="btn sm ghost grow" onclick={() => useStyle(t)}>{t.name}</button>
+                <button class="btn sm icon ghost" title={L('Apagar', 'Delete')} onclick={() => dropStyle(t)}><Trash2 size={14} /></button>
+              </div>
+            {:else}
+              <p class="muted small">{L('Nenhum ainda. Monte o visual e salve aqui para usar em outros decks.', 'None yet. Build the look and save it here to use on other decks.')}</p>
+            {/each}
+          </div>
+        {/if}
+      </div>
       {#if ed.dirty}
         <span class="dirty">{L('Não aplicado', 'Not applied')}</span>
         <button class="btn sm" onclick={() => ed.discard()}><RotateCcw size={15} /> {L('Descartar', 'Discard')}</button>
       {/if}
-      <button class="btn sm primary" disabled={!ed.dirty} onclick={apply}><Check size={15} />
+      <button class="btn sm primary" disabled={!ed.dirty && scope !== 'collection'} onclick={apply}><Check size={15} />
         {scope === 'deck' ? L(`Aplicar ao deck (${count} cartas)`, `Apply to deck (${count} cards)`) : L(`Aplicar à coleção (${count} cartas)`, `Apply to collection (${count} cards)`)}</button>
     </header>
 
@@ -124,7 +169,7 @@
                   <label class="toggle"><input type="checkbox" checked={ed.kinds.includes(k.id)} onchange={() => ed.toggleKind(k.id)} /> {L(k.pt, k.en)} <small>({kindCount(k.id)})</small></label>
                 {/each}
               </div>
-              <p class="muted small">{L('Só o que você mexer vai para os outros decks; cada deck mantém as suas cores.', 'Only what you change goes to the other decks; each deck keeps its colors.')}</p>
+              <p class="muted small">{L('O tema inteiro vai para os decks marcados; cada deck mantém as suas cores e os seus símbolos.', 'The whole theme goes to the checked decks; each deck keeps its colors and symbols.')}</p>
               <span class="section-title">{L('Como cada deck fica', 'How each deck will look')}</span>
               <div class="samples">
                 {#each samples as x (x.deck.id)}<LookPreview card={x.card} look={ed.previewLook(x.deck)} label={x.deck.name[app.lang]} />{/each}
@@ -138,6 +183,14 @@
 {/if}
 
 <style>
+  .styles { position: relative; }
+  /* a barra de cima fica por cima da carta de amostra (a lista de estilos abre por cima dela) */
+  header.bar { position: relative; z-index: 120; }
+  .styles .btn.on { border-color: var(--accent); }
+  .spop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: 300px; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--bg-2, #15121f); border: 1px solid var(--line-2, #2c2647); border-radius: 10px; box-shadow: 0 14px 34px rgb(0 0 0 / .55); }
+  .srow { display: flex; gap: 6px; align-items: center; }
+  .srow .input { flex: 1; min-width: 0; }
+  .srow .grow { flex: 1; justify-content: flex-start; }
   .missing { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--muted); }
   .editor { display: grid; grid-template-rows: auto 1fr; height: 100%; }
   .bar { display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: var(--bg-2); flex-wrap: wrap; }

@@ -6,7 +6,7 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
+import { editionDecks, OLD_EDITION_ID, PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { normalizeCard } from '../model/cost';
 import { PROTO_GEAR_DECK, migrateGear, presetSlots, protoEquipment, SLOTS } from '../model/equipment';
@@ -116,6 +116,43 @@ class ProjectState {
       p.editions.push(col.edition);
       p.decks.push(...col.decks);
       for (const c of col.cards) { this.cards[c.id] = c; this.#dirtyCards.add(c.id); }
+    }
+    // heróis prontos com os 10 espaços de equipamento (3.6): os vazios recebem as peças do modelo; o que o jogador vestiu fica
+    const FULL = 'preset-gear-2';
+    if (!p.seeded?.includes(FULL)) {
+      p.seeded = [...(p.seeded ?? []), FULL];
+      changed = true;
+      const eq = protoEquipment(p.editions.some((e) => e.id === PROTO_ID) ? PROTO_ID : p.editions[0]?.id ?? PROTO_ID);
+      // as cartas do catálogo acompanham os números novos (a arte e a aparência de cada uma ficam)
+      if (p.decks.some((d) => d.id === PROTO_GEAR_DECK)) for (const c of eq.cards) {
+        const old = this.cards[c.id];
+        this.cards[c.id] = old ? { ...old, text: c.text, gear: c.gear, tags: c.tags, rarity: c.rarity, cost: [], n: c.n } : c;
+        this.#dirtyCards.add(c.id);
+      }
+      for (const ch of p.characters) {
+        if (!ch.preset) continue;
+        const two = this.cards[ch.slots.mainHand ?? '']?.gear?.weapon?.hands === 2;
+        for (const [slot, id] of Object.entries(presetSlots(ch.preset)) as [keyof typeof ch.slots, string][]) {
+          if (ch.slots[slot] || !this.cards[id] || (two && slot === 'offHand')) continue;
+          ch.slots[slot] = id;
+        }
+      }
+    }
+    // a antiga 1ª Edição (amostra de cartas sem jogo) sai, a pedido — só fica se algum herói jogar com um deck dela
+    const DROP = 'drop-ed1-1';
+    if (!p.seeded?.includes(DROP)) {
+      p.seeded = [...(p.seeded ?? []), DROP];
+      changed = true;
+      if (p.editions.some((e) => e.id === OLD_EDITION_ID)) {
+        const ids = new Set(p.decks.filter((d) => d.editionId === OLD_EDITION_ID).map((d) => d.id));
+        const cards = Object.values(this.cards).filter((c) => ids.has(c.deckId));
+        const used = p.characters.some((ch) => ids.has(ch.play?.deckId ?? ''));
+        if (!used) {
+          p.editions = p.editions.filter((e) => e.id !== OLD_EDITION_ID);
+          p.decks = p.decks.filter((d) => !ids.has(d.id));
+          for (const c of cards) { delete this.cards[c.id]; this.#dirtyCards.delete(c.id); this.#deletedCards.add(c.id); }
+        }
+      }
     }
     // os decks Roxo, Bege e Prata (3.5) e os seus heróis chegam a quem já tinha o jogo
     const DECKS7 = 'proto-decks-7';
@@ -292,6 +329,36 @@ class ProjectState {
   decksOf(editionId = this.editionId): Deck[] { return this.decks.filter((d) => d.editionId === editionId); }
   /** Edição pelo id; sem id, a coleção aberta. */
   edition(id?: string) { const eds = this.project?.editions; return eds?.find((e) => e.id === (id ?? this.editionId)) ?? eds?.[0]; }
+
+  /** Coleção nova, vazia, com os 9 decks de sempre (uma cor de classe cada, Recursos e Equipamentos). Devolve o id. */
+  addEdition(name: string): string {
+    const id = newId('ed');
+    const code = name.trim().slice(0, 8) || 'NOVA';
+    this.updateProject((p) => {
+      p.editions.push({ id, name: name.trim() || 'Nova coleção', code });
+      p.decks.push(...editionDecks(id, `${id}-`));
+    });
+    this.editionId = id;
+    return id;
+  }
+  /** Heróis que jogam com decks desta coleção (ela não pode sair enquanto eles a usam). */
+  heroesUsing(editionId: string): string[] {
+    const ids = new Set(this.decksOf(editionId).map((d) => d.id));
+    return (this.project?.characters ?? []).filter((c) => ids.has(c.play?.deckId ?? '')).map((c) => c.name || '?');
+  }
+  /** Apaga a coleção com os seus decks e cartas. Não apaga a última nem uma que algum herói usa. */
+  removeEdition(editionId: string): boolean {
+    const p = this.project;
+    if (!p || p.editions.length < 2 || this.heroesUsing(editionId).length) return false;
+    const ids = new Set(p.decks.filter((d) => d.editionId === editionId).map((d) => d.id));
+    this.deleteCards(Object.values(this.cards).filter((c) => ids.has(c.deckId)).map((c) => c.id));
+    this.updateProject((pr) => {
+      pr.editions = pr.editions.filter((e) => e.id !== editionId);
+      pr.decks = pr.decks.filter((d) => !ids.has(d.id));
+    });
+    if (this.editionId === editionId) this.editionId = p.editions[0]?.id ?? '';
+    return true;
+  }
 
   /**
    * Cartas agrupadas por deck, já em ordem. Montado uma vez e refeito só quando

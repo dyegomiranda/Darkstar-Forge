@@ -202,6 +202,29 @@
     return () => clearTimeout(t);
   });
 
+  // ───── coleções: criar e apagar ─────
+  let newEd = $state<string | null>(null);
+  const focusMe = (el: HTMLInputElement) => { setTimeout(() => el.focus(), 30); };
+  function createEdition() {
+    const id = app.addEdition(newEd ?? '');
+    newEd = null;
+    openEdition(id);
+    ui.toast(L('Coleção criada, com os 9 decks vazios', 'Collection created, with the 9 decks empty'));
+  }
+  async function dropEdition() {
+    const ed = app.edition();
+    if (!ed) return;
+    const using = app.heroesUsing(ed.id);
+    if (using.length) { ui.toast(L(`Não dá para apagar: ${using.join(', ')} jogam com decks desta coleção. Troque o deck deles antes.`, `Cannot delete: ${using.join(', ')} play with decks of this collection. Change their deck first.`), 'error', 6000); return; }
+    const r = await ui.confirm({
+      title: L(`Apagar a coleção “${ed.name}”?`, `Delete the collection “${ed.name}”?`),
+      text: L(`Os ${app.decksOf(ed.id).length} decks e as ${editionCount} cartas dela saem para sempre. Faça um backup antes (Configurações → Dados) se quiser guardar algo.`, `Its ${app.decksOf(ed.id).length} decks and ${editionCount} cards are gone for good. Make a backup first (Settings → Data) if you want to keep anything.`),
+      ok: L('Apagar coleção', 'Delete collection'), danger: true,
+    });
+    if (r !== 'ok') return;
+    if (app.removeEdition(ed.id)) { router.library(); ui.toast(L('Coleção apagada', 'Collection deleted')); }
+  }
+
   const selCards = $derived([...selected].map((id) => app.cards[id]).filter(Boolean));
   const exportSet = $derived(selCards.length ? selCards : filtered);
 
@@ -210,13 +233,19 @@
 <div class="lib">
   <aside class="decks">
     <div class="side-head">
-      {#if (app.project?.editions.length ?? 0) > 1}
-        <span class="section-title">{L('Coleção', 'Collection')}</span>
-        <select class="select edsel" value={app.editionId} onchange={(e) => openEdition((e.currentTarget as HTMLSelectElement).value)}>
-          {#each app.project?.editions ?? [] as ed (ed.id)}<option value={ed.id}>{ed.name}</option>{/each}
-        </select>
-      {:else}
-        <span class="section-title">{app.edition()?.name ?? 'Edição'}</span>
+      <span class="section-title">{L('Coleção', 'Collection')}</span>
+      <select class="select edsel" value={app.editionId} onchange={(e) => openEdition((e.currentTarget as HTMLSelectElement).value)}>
+        {#each app.project?.editions ?? [] as ed (ed.id)}<option value={ed.id}>{ed.name}</option>{/each}
+      </select>
+      <div class="edtools">
+        <button class="btn sm ghost" onclick={() => (newEd = newEd === null ? '' : null)}><Plus size={14} /> {L('Nova', 'New')}</button>
+        <button class="btn sm ghost" disabled={(app.project?.editions.length ?? 0) < 2} onclick={dropEdition} title={L('Apagar esta coleção', 'Delete this collection')}><Trash2 size={14} /> {L('Apagar', 'Delete')}</button>
+      </div>
+      {#if newEd !== null}
+        <div class="edtools">
+          <input class="input" use:focusMe placeholder={L('Nome da coleção', 'Collection name')} bind:value={newEd} onkeydown={(e) => { if (e.key === 'Enter') createEdition(); if (e.key === 'Escape') newEd = null; }} />
+          <button class="btn sm primary" onclick={createEdition}>{L('Criar', 'Create')}</button>
+        </div>
       {/if}
     </div>
     <button class="deck" class:on={!deck} onclick={() => { selected = new Set(); router.library(); }}>
@@ -339,6 +368,7 @@
   .decks { border-right: 1px solid var(--line); background: var(--bg-2); padding: 18px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
   .side-head { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 7px; }
   .edsel { width: 100%; font-weight: 600; }
+  .edtools { display: flex; gap: 6px; } .edtools .input { flex: 1; min-width: 0; }
   .deck { display: flex; align-items: center; gap: 11px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: none; color: var(--text-2);
     text-align: left; cursor: pointer; transition: background var(--t); font: inherit; }
   .deck:hover { background: var(--surface-2); color: var(--text); }
