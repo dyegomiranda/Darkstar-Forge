@@ -73,7 +73,7 @@ export function pfCollection(): { edition: Edition; decks: Deck[]; cards: Card[]
   return {
     edition: { id: PF_ID, name: 'Classes — Pathfinder', code: 'CLS' },
     decks: editionDecks(PF_ID, PF_PREFIX),
-    cards: toCards(pfCards as SeedCard[], PF_PREFIX, 'auto'),
+    cards: toCards((pfCards as SeedCard[]).filter((c) => c.deck !== 'equipment'), PF_PREFIX, 'auto'),
   };
 }
 
@@ -127,7 +127,8 @@ export function seedProject(): { project: Project; cards: Card[] } {
   const pf = pfCollection();
   const proto = protoCollection();
   const decks = [...editionDecks(EDITION_ID), ...pf.decks, ...proto.decks];
-  const cards = [...toCards(seedCards as SeedCard[], '', 'manual'), ...pf.cards, ...proto.cards];
+  // (a amostra antiga de equipamentos, sem bônus de jogo, ficou de fora: o jogo usa o catálogo de src/game/gear.ts)
+  const cards = [...toCards((seedCards as SeedCard[]).filter((c) => c.deck !== 'equipment'), '', 'manual'), ...pf.cards, ...proto.cards];
   const project: Project = {
     version: PROJECT_VERSION,
     name: 'Void Sun',
@@ -136,7 +137,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-5', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7'],
   };
   return { project, cards };
 }

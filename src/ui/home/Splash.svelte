@@ -36,7 +36,7 @@
     band.addColorStop(0, 'rgb(255 255 255 / 0)'); band.addColorStop(0.5, 'rgb(255 255 255 / .035)'); band.addColorStop(1, 'rgb(255 255 255 / 0)');
     /** Onde a figura ficou na tela, e a lâmina da katana dentro dela (de onde sobe a fumaça). */
     let fig: { x: number; y: number } | null = null;
-    const BLADE = { x0: 46, x1: 110, y: 63 }, SMOKE = ['#a274ff', '#6f48c0', '#43307a', '#231a3c'];
+    const BLADE = { x0: 52, x1: 100, y: 66 }, SMOKE = ['#a274ff', '#6f48c0', '#43307a', '#231a3c'];
     let raf = 0, t0 = 0, exitAt = Infinity, exitLen = 520, over = false;
 
     /** A janela cabe um número inteiro de vezes na grade: cada ponto do desenho vira um quadrado exato. */

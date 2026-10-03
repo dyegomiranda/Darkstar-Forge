@@ -1,8 +1,22 @@
 # Void Sun — progresso
 
-**Atualizado:** 02/10/2026 (versão 3.4: conjuntos com feitio próprio, luvas inteiras, paletas em ordem, logotipo novo)
+**Atualizado:** 02/10/2026 (versão 3.5: equipamentos refeitos, decks Roxo, Bege e Prata, cenários, música e dificuldade)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.5 (02/10/2026)
+
+- [x] Equipamentos refeitos a partir das tabelas dos RPGs de mesa: 62 peças (armas simples, marciais, à distância e focos; armaduras leves, médias e pesadas; escudos; vestes; joias), cada uma com perfil próprio
+- [x] Equipar não custa nada; peças fortes pedem atributo mínimo ou cobram (armadura pesada tira Mana e Vigor, anéis amaldiçoados tiram Vida); armas de duas mãos, de haste (golpeiam da retaguarda) e leves (somam na mão secundária)
+- [x] As cartas de equipamento sem bônus (a amostra antiga com custo em ouro) saíram; as fichas trocam as peças que sumiram
+- [x] Decks novos com heróis: Roxo (Vex, assassina: ataque furtivo, venenos), Bege (Aldric, paladino: golpe divino, curas, proteção) e Prata (Ren, monge: rajada de golpes, ki, canções); 40 cartas cada, custos pela regra do jogo, artes em pixel art
+- [x] Equilíbrio entre os 7 heróis conferido em simulação (bot contra bot)
+- [x] Dificuldade: o Normal erra mais e às vezes encerra o turno cedo (vence o Difícil em 19% das partidas, antes 40%)
+- [x] Música de batalha sem as partes em meio-tempo (pareciam esfriar a luta) e 4 faixas novas
+- [x] Cenários de batalha refeitos com chão livre na faixa do meio; piso das casas na cor de cada cenário
+- [x] Criatura derrotada continua à vista até o golpe chegar; mirando, a carta ampliada abre de lado
+- [x] Orelhas humanas contam como escolhidas; peças de conjunto antigas recuperam o feitio (veios daédricos em qualquer cor)
+- [x] Logotipo: cabelo curto e barba média
 
 ## Versão 3.4.2 (02/10/2026)
 

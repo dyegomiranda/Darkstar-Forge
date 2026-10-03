@@ -5,8 +5,9 @@
  */
 import { newId } from './id';
 import type { Card, CardGear, Character, Deck, Lang, Slot } from './types';
-import { GEAR_SLOTS, type GearItem, type GearSlot, type HeroBase, type Via } from '../game/types';
-import { gearInfo, HERO_BASES } from '../game/decks';
+import { ATTR_NAMES, GEAR_SLOTS, type Attr, type GearItem, type GearSlot, type HeroBase, type Via } from '../game/types';
+import { gearCardId, gearInfo, HERO_BASES, modsOf } from '../game/decks';
+import { GEAR, type GearDef } from '../game/gear';
 import { gameAttrs } from './hero';
 
 /** Espaços da ficha: nome, etiquetas de carta que cabem e o tipo de peça. */
@@ -40,11 +41,20 @@ export const UNARMED: HeroBase['weapon'] = { name: ['Desarmado', 'Unarmed'], dmg
 export function gearText(g: CardGear | undefined, lang: Lang): string {
   const i = lang === 'pt-BR' ? 0 : 1;
   const parts: string[] = [];
-  if (g?.weapon) parts.push(i ? `Strike ${g.weapon.dmg}, ${VIA_TXT[g.weapon.via][1]}` : `Golpe ${g.weapon.dmg}, ${VIA_TXT[g.weapon.via][0]}`);
-  const extra = gearInfo(g ?? {})[i];
+  if (g?.weapon) {
+    parts.push(i ? `Strike ${g.weapon.dmg}, ${VIA_TXT[g.weapon.via][1]}` : `Golpe ${g.weapon.dmg}, ${VIA_TXT[g.weapon.via][0]}`);
+    if (g.weapon.hands === 2) parts.push(i ? 'two-handed' : 'duas mãos');
+    if (g.weapon.reach) parts.push(i ? 'reach (strikes from the back row)' : 'alcance (golpeia da retaguarda)');
+  }
+  const extra = gearInfo(modsOf(g ?? {}))[i];
   if (extra !== '—') parts.push(extra);
+  if (g?.dual) parts.push(i ? `in the off hand: +${g.dual} strike` : `na mão secundária: +${g.dual} no golpe`);
+  if (g?.req) parts.push(i ? `requires ${ATTR_NAMES[g.req[0]][1]} ${g.req[1]}` : `requer ${ATTR_NAMES[g.req[0]][0]} ${g.req[1]}`);
   return parts.join(' · ') || (i ? 'No bonus.' : 'Sem bônus.');
 }
+
+/** O herói tem o atributo que a peça pede? (`attrs` = atributos de jogo da ficha) */
+export const meetsReq = (g: CardGear | undefined, attrs: Record<Attr, number>) => !g?.req || (attrs[g.req[0]] ?? 0) >= g.req[1];
 
 /** Cartas vestidas, na ordem dos espaços. */
 export function equippedCards(c: Character, cards: Record<string, Card>): { slot: (typeof SLOTS)[number]; card: Card }[] {
@@ -59,63 +69,62 @@ export function heroBaseOf(c: Character, cards: Record<string, Card>): HeroBase 
   const eq = equippedCards(c, cards);
   const lang = (card: Card): [string, string] => [card.text['pt-BR'].name, card.text['en-US']?.name || card.text['pt-BR'].name];
   const main = eq.find((e) => e.slot.id === 'mainHand' && e.card.gear?.weapon);
-  const gear: GearItem[] = eq.filter((e) => e !== main).map(({ slot, card }) => {
+  const mg = main?.card.gear;
+  // arma de duas mãos: o que estiver na mão secundária não vale
+  const twoHanded = mg?.weapon?.hands === 2;
+  const gear: GearItem[] = eq.filter((e) => e !== main && !(twoHanded && e.slot.id === 'offHand')).map(({ slot, card }) => {
     const g = card.gear ?? {};
-    const mods = { ...(g.armor ? { armor: g.armor } : {}), ...(g.resist ? { resist: g.resist } : {}), ...(g.hp ? { hp: g.hp } : {}), ...(g.strike ? { strike: g.strike } : {}) };
+    // arma leve na mão secundária: soma o seu bônus ao golpe
+    const mods = modsOf({ ...g, strike: (g.strike ?? 0) + (slot.id === 'offHand' && g.weapon ? g.dual ?? 0 : 0) });
     return { slot: slot.gear, name: lang(card), info: gearInfo(mods), ...mods, icon: card.art.icon ?? slotTagOf(card)?.icon, cardId: card.id };
   });
-  const mg = main?.card.gear;
-  // bônus que a própria arma dá além do golpe (vida, armadura…) entram como uma peça à parte
-  if (main && mg && (mg.armor || mg.resist || mg.hp || mg.strike)) {
-    const mods = { ...(mg.armor ? { armor: mg.armor } : {}), ...(mg.resist ? { resist: mg.resist } : {}), ...(mg.hp ? { hp: mg.hp } : {}), ...(mg.strike ? { strike: mg.strike } : {}) };
-    gear.unshift({ slot: 'offhand', name: lang(main.card), info: gearInfo(mods), ...mods, icon: main.card.art.icon, cardId: main.card.id });
-  }
+  // bônus que a própria arma dá além do golpe (vida, armadura, Mana…) entram como uma peça à parte
+  const wm = mg ? modsOf(mg) : {};
+  if (main && Object.keys(wm).length) gear.unshift({ slot: 'offhand', name: lang(main.card), info: gearInfo(wm), ...wm, icon: main.card.art.icon, cardId: main.card.id });
   return {
     ...c.play!, id: c.id, name: c.name || '?', attrs: gameAttrs(c),
-    weapon: main && mg?.weapon ? { name: lang(main.card), dmg: mg.weapon.dmg, via: mg.weapon.via } : UNARMED,
+    weapon: main && mg?.weapon ? { name: lang(main.card), dmg: mg.weapon.dmg, via: mg.weapon.via, ...(mg.weapon.hands ? { hands: mg.weapon.hands } : {}), ...(mg.weapon.reach ? { reach: true } : {}), cardId: main.card.id } : UNARMED,
     gear,
   };
 }
 
-// ───────────── cartas de equipamento do Protótipo (as dos 4 heróis prontos) ─────────────
+// ───────────── as cartas de equipamento do jogo (o catálogo de src/game/gear.ts) ─────────────
 
 export const PROTO_GEAR_DECK = 'proto-equipment';
 const TAG_OF: Partial<Record<GearSlot, string>> = { weapon: 'weapon', offhand: 'offhand', head: 'head', chest: 'chest', hands: 'hands', legs: 'legs', feet: 'feet', trinket: 'amulet', ring: 'ring' };
 const SLOT_OF: Partial<Record<GearSlot, Slot>> = { weapon: 'mainHand', offhand: 'offHand', head: 'head', chest: 'chest', hands: 'hands', legs: 'legs', feet: 'feet', trinket: 'amulet', ring: 'ring1' };
 const WEAPON_ICON: Record<Via, string> = { melee: 'broadsword', ranged: 'bow-arrow', magic: 'wizard-staff' };
-const ICONS: Record<string, string> = {
-  'Machado grande': 'battle-axe', 'Elmo com chifres': 'horned-helm', 'Capuz do arcanista': 'pointy-hat', 'Capuz da patrulheira': 'hood', 'Capuz das sombras': 'hood',
-  'Anel do patrono': 'skull-ring',
-};
 
 /** Uma carta de equipamento pronta para a coleção. */
-export function gearCard(id: string, n: number, deckId: string, slot: GearSlot, name: [string, string], gear: CardGear, icon?: string): Card {
+export function gearCard(id: string, n: number, deckId: string, slot: GearSlot, name: [string, string], gear: CardGear, icon?: string, more: { rarity?: Card['rarity']; flavor?: [string, string]; dual?: boolean } = {}): Card {
   const tag = TAG_OF[slot] ?? 'amulet';
   const t = SLOT_TAGS.find((x) => x.tag === tag)!;
   const now = Date.now();
   return {
     id, deckId, n,
     text: {
-      'pt-BR': { name: name[0], type: 'Equipamento', subtype: t.pt, rules: gearText(gear, 'pt-BR'), flavor: '' },
-      'en-US': { name: name[1], type: 'Equipment', subtype: t.en, rules: gearText(gear, 'en-US'), flavor: '' },
+      'pt-BR': { name: name[0], type: 'Equipamento', subtype: t.pt, rules: gearText(gear, 'pt-BR'), flavor: more.flavor?.[0] ?? '' },
+      'en-US': { name: name[1], type: 'Equipment', subtype: t.en, rules: gearText(gear, 'en-US'), flavor: more.flavor?.[1] ?? '' },
     },
-    colors: ['gear'], cost: [], stats: null, rarity: 'common', mechanics: [], tags: [tag], costMode: 'manual', rarityMode: 'manual',
-    art: { zoom: 1, x: 0, y: 0, mirror: false, icon: icon ?? ICONS[name[0]] ?? (gear.weapon ? WEAPON_ICON[gear.weapon.via] : t.icon) },
+    colors: ['gear'], cost: [], stats: null, rarity: more.rarity ?? 'common', mechanics: [], tags: more.dual ? [tag, 'offhand'] : [tag], costMode: 'manual', rarityMode: 'manual',
+    art: { zoom: 1, x: 0, y: 0, mirror: false, icon: icon ?? (gear.weapon ? WEAPON_ICON[gear.weapon.via] : t.icon) },
     gear, createdAt: now, updatedAt: now,
   };
 }
 
-const modsOf = (it: Pick<GearItem, 'armor' | 'resist' | 'hp' | 'strike'>): CardGear => ({ ...(it.armor ? { armor: it.armor } : {}), ...(it.resist ? { resist: it.resist } : {}), ...(it.hp ? { hp: it.hp } : {}), ...(it.strike ? { strike: it.strike } : {}) });
-const protoId = (hero: string, slot: GearSlot) => `proto-eq-${hero}-${slot}`;
+/** O que uma peça do catálogo põe na carta. */
+export function cardGearOf(d: GearDef): CardGear {
+  const out: CardGear = { ...modsOf(d) };
+  if (d.weapon) out.weapon = { ...d.weapon };
+  if (d.dual) out.dual = d.dual;
+  if (d.req) out.req = [...d.req];
+  return out;
+}
 
-/** Deck de Equipamentos do Protótipo: a arma e as 5 peças de cada herói pronto. */
+/** Deck de Equipamentos do jogo: todas as peças do catálogo. */
 export function protoEquipment(editionId: string): { deck: Deck; cards: Card[] } {
   const deck: Deck = { id: PROTO_GEAR_DECK, editionId, name: { 'pt-BR': 'Equipamentos', 'en-US': 'Equipment' }, kind: 'equipment', colors: ['gear'], look: { style: 'neutro', pieces: { class: { style: 'neutro', hidden: true } } }, order: 8 };
-  let n = 0;
-  const cards = HERO_BASES.flatMap((b) => [
-    gearCard(protoId(b.id, 'weapon'), ++n, deck.id, 'weapon', b.weapon.name, { weapon: { dmg: b.weapon.dmg, via: b.weapon.via } }),
-    ...b.gear.map((it) => gearCard(protoId(b.id, it.slot), ++n, deck.id, it.slot, it.name, modsOf(it))),
-  ]);
+  const cards = GEAR.map((d, i) => gearCard(gearCardId(d.key), i + 1, deck.id, d.slot, d.name, cardGearOf(d), d.icon, { rarity: d.rarity, flavor: d.flavor, dual: !!d.dual }));
   return { deck, cards };
 }
 
@@ -123,8 +132,13 @@ export function protoEquipment(editionId: string): { deck: Deck; cards: Card[] }
 export function presetSlots(heroId: string): Character['slots'] {
   const b = HERO_BASES.find((x) => x.id === heroId);
   if (!b) return {};
-  const out: Character['slots'] = { mainHand: protoId(b.id, 'weapon') };
-  for (const it of b.gear) { const s = SLOT_OF[it.slot]; if (s) out[s] = protoId(b.id, it.slot); }
+  const out: Character['slots'] = {};
+  if (b.weapon.cardId) out.mainHand = b.weapon.cardId;
+  for (const it of b.gear) {
+    let s = SLOT_OF[it.slot];
+    if (s === 'ring1' && out.ring1) s = 'ring2';
+    if (s && it.cardId) out[s] = it.cardId;
+  }
   return out;
 }
 
@@ -137,11 +151,11 @@ export function migrateGear(c: Character, cards: Record<string, Card>, deckId: s
   const b = c.play;
   if (!b) return [];
   const made: Card[] = [];
-  const same = (card: Card | undefined, name: string, gear: CardGear) => !!card && card.text['pt-BR'].name === name && JSON.stringify(card.gear ?? {}) === JSON.stringify(gear);
   const place = (slot: GearSlot, name: [string, string], gear: CardGear) => {
     const s = SLOT_OF[slot];
     if (!s || c.slots[s]) return;
-    const preset = HERO_BASES.map((h) => cards[protoId(h.id, slot)]).find((card) => same(card, name[0], gear));
+    // a peça do catálogo com o mesmo nome e no mesmo espaço
+    const preset = Object.values(cards).find((card) => card.deckId === PROTO_GEAR_DECK && card.text['pt-BR'].name === name[0] && slotTagOf(card)?.tag === TAG_OF[slot]);
     if (preset) { c.slots[s] = preset.id; return; }
     const card = gearCard(newId('card'), nextN(), deckId, slot, name, gear);
     made.push(card);

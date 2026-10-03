@@ -30,9 +30,11 @@
   const isGear = $derived(app.deck(d.deckId)?.kind === 'equipment' || !!d.gear);
   const gearTag = $derived(slotTagOf(d)?.tag ?? '');
   const VIAS: { id: Via; pt: string; en: string }[] = [{ id: 'melee', pt: 'Corpo a corpo', en: 'Melee' }, { id: 'ranged', pt: 'À distância', en: 'Ranged' }, { id: 'magic', pt: 'Mágico', en: 'Magic' }];
-  const GEAR_MODS: { id: 'hp' | 'armor' | 'resist' | 'strike'; pt: string; en: string; max: number }[] = [
-    { id: 'hp', pt: 'Vida', en: 'Life', max: 6 }, { id: 'armor', pt: 'Armadura', en: 'Armor', max: 3 },
-    { id: 'resist', pt: 'Resist. mágica', en: 'Magic resist', max: 3 }, { id: 'strike', pt: 'Bônus no golpe', en: 'Strike bonus', max: 2 },
+  // (valores negativos são o preço das peças fortes: −1 Mana numa armadura pesada, −3 Vida num anel amaldiçoado)
+  const GEAR_MODS: { id: 'hp' | 'armor' | 'resist' | 'strike' | 'vigor' | 'mana'; pt: string; en: string; min: number; max: number }[] = [
+    { id: 'hp', pt: 'Vida', en: 'Life', min: -6, max: 6 }, { id: 'armor', pt: 'Armadura', en: 'Armor', min: -2, max: 5 },
+    { id: 'resist', pt: 'Resist. mágica', en: 'Magic resist', min: -2, max: 3 }, { id: 'strike', pt: 'Bônus no golpe', en: 'Strike bonus', min: -2, max: 3 },
+    { id: 'vigor', pt: 'Vigor', en: 'Vigor', min: -2, max: 2 }, { id: 'mana', pt: 'Mana', en: 'Mana', min: -2, max: 3 },
   ];
   function setGear(fn: (g: CardGear) => void) { const g: CardGear = { ...(d.gear ?? {}) }; fn(g); d.gear = g; ed.touch(); }
   /** Troca o espaço: uma carta cabe num só. Deixar de ser arma tira o golpe; virar arma ganha um golpe padrão. */
@@ -41,7 +43,7 @@
     d.tags = [...d.tags.filter((t) => !all.includes(t)), tag];
     setGear((g) => { if (tag === 'weapon') g.weapon ??= { dmg: 3, via: 'melee' }; else delete g.weapon; });
   }
-  const gnum = (e: Event, max: number) => Math.max(0, Math.min(max, Math.round(+(e.currentTarget as HTMLInputElement).value || 0)));
+  const gnum = (e: Event, max: number, min = 0) => Math.max(min, Math.min(max, Math.round(+(e.currentTarget as HTMLInputElement).value || 0)));
   function gearRules() { for (const l of ['pt-BR', 'en-US'] as const) d.text[l].rules = gearText(d.gear, l); ed.touch(); }
   let tagInput = $state('');
 
@@ -163,12 +165,36 @@
               {#each VIAS as v}<option value={v.id}>{L(v.pt, v.en)}</option>{/each}
             </select></label>
         </div>
+        <div class="gslots">
+          <button class="chip" class:on={w.hands === 2} onclick={() => setGear((g) => { const nw = { ...w }; if (nw.hands === 2) delete nw.hands; else nw.hands = 2; g.weapon = nw; })}>{L('Duas mãos', 'Two-handed')}</button>
+          <button class="chip" class:on={!!w.reach} onclick={() => setGear((g) => { const nw = { ...w }; if (nw.reach) delete nw.reach; else nw.reach = true; g.weapon = nw; })}>{L('Alcance (golpeia da retaguarda)', 'Reach (strikes from the back row)')}</button>
+        </div>
       {/if}
       <div class="grid4">
         {#each GEAR_MODS as m}
           <label class="field"><span>{L(m.pt, m.en)}</span>
-            <input class="input" type="number" min="0" max={m.max} value={d.gear?.[m.id] ?? 0} oninput={(e) => setGear((g) => { const v = gnum(e, m.max); if (v) g[m.id] = v; else delete g[m.id]; })} /></label>
+            <input class="input" type="number" min={m.min} max={m.max} value={d.gear?.[m.id] ?? 0} oninput={(e) => setGear((g) => { const v = gnum(e, m.max, m.min); if (v) g[m.id] = v; else delete g[m.id]; })} /></label>
         {/each}
+      </div>
+      <div class="field"><span>{L('Atributos a mais (liberam cartas que pedem atributo)', 'Extra attributes (unlock cards that ask for one)')}</span>
+        <div class="grid6">
+          {#each ATTRS as a}
+            <label class="field"><span>{L(ATTR_NAMES[a][0], ATTR_NAMES[a][1])}</span>
+              <input class="input" type="number" min="-2" max="2" value={d.gear?.attrs?.[a] ?? 0} oninput={(e) => setGear((g) => { const v = gnum(e, 2, -2); const at = { ...(g.attrs ?? {}) }; if (v) at[a] = v; else delete at[a]; if (Object.keys(at).length) g.attrs = at; else delete g.attrs; })} /></label>
+          {/each}
+        </div>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>{L('Requisito para vestir', 'Requirement to wear')}</span>
+          <select class="select" value={d.gear?.req?.[0] ?? ''} onchange={(e) => setGear((g) => { const a = (e.currentTarget as HTMLSelectElement).value as Attr | ''; if (a) g.req = [a, g.req?.[1] ?? 2]; else delete g.req; })}>
+            <option value="">{L('Nenhum', 'None')}</option>
+            {#each ATTRS as a}<option value={a}>{L(ATTR_NAMES[a][0], ATTR_NAMES[a][1])}</option>{/each}
+          </select></label>
+        {#if d.gear?.req}
+          {@const rq = d.gear.req}
+          <label class="field"><span>{L('Valor mínimo', 'Minimum value')}</span>
+            <input class="input" type="number" min="1" max="6" value={rq[1]} oninput={(e) => setGear((g) => { g.req = [rq[0], Math.max(1, gnum(e, 6))]; })} /></label>
+        {/if}
       </div>
       <div class="field"><span>{L('Resumo', 'Summary')}</span>
         <p class="effects">{gearText(d.gear, ed.lang)}</p>
@@ -387,4 +413,5 @@
   .verdict.dear { border-color: rgb(226 87 76 / .55); background: rgb(226 87 76 / .12); } .verdict.dear b { color: #ff9c8c; }
   .gslots { display: flex; flex-wrap: wrap; gap: 6px; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .grid6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 </style>

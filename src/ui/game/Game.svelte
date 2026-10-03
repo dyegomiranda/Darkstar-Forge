@@ -434,7 +434,7 @@
   /** Partida em curso: o Esc abre o menu da partida (e não o menu de pausa geral). */
   const inMatch = $derived(step === 'play' && !!g);
   $effect(() => { shell.ownMenu = inMatch; });
-  onDestroy(() => { shell.ownMenu = false; });
+  onDestroy(() => { shell.ownMenu = false; for (const c of ghosts.values()) c.remove(); ghosts.clear(); });
 
   // ───────────── mira: seta da origem até o alvo e destaque da área atingida ─────────────
   let hoverPos = $state<Pos | null>(null);
@@ -628,6 +628,8 @@
     // onde cada criatura estava antes da tela mudar (as derrotadas somem)
     const before = new Map<string, DOMRect>();
     for (const e of list) for (const id of idsOf(e)) { const el = elOf(id); if (el) before.set(id, el.getBoundingClientRect()); }
+    // quem vai morrer continua à vista (uma cópia parada no lugar) até o golpe chegar e a derrota aparecer
+    for (const e of list) if (e.k === 'death') { const el = elOf(e.id), r = before.get(e.id); if (el && r && !ghosts.has(e.id)) ghosts.set(e.id, ghostOf(el, r)); }
     await tick();
     const rectOf = (id: string) => elOf(id)?.getBoundingClientRect() ?? before.get(id);
     let t = 0, k = foeAct ? pc.k : 1;
@@ -640,7 +642,28 @@
     }
     fxUntil = Date.now() + t + 400;
     fxPlaying++;
-    try { await sleep(t + 300); } finally { fxPlaying--; }
+    try { await sleep(t + 300); } finally { fxPlaying--; for (const id of list.filter((e) => e.k === 'death').map((e) => (e as { id: string }).id)) vanish(id); }
+  }
+
+  /** Cópias das criaturas derrotadas, enquanto a animação não chega na derrota. */
+  const ghosts = new Map<string, HTMLElement>();
+  function ghostOf(el: HTMLElement, r: DOMRect): HTMLElement {
+    const c = el.cloneNode(true) as HTMLElement;
+    c.removeAttribute('data-uid');
+    // (o desenho dos bonecos fica em canvas, que a cópia não traz: copia o quadro atual)
+    const src = el.querySelectorAll('canvas'), dst = c.querySelectorAll('canvas');
+    src.forEach((cv, i) => { const d = dst[i]; if (!d) return; d.width = cv.width; d.height = cv.height; d.getContext('2d')?.drawImage(cv, 0, 0); });
+    const cs = getComputedStyle(el);
+    for (const v of ['--c', '--floor']) c.style.setProperty(v, cs.getPropertyValue(v));
+    Object.assign(c.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '30' });
+    document.body.appendChild(c);
+    return c;
+  }
+  function vanish(id: string) {
+    const c = ghosts.get(id);
+    if (!c) return;
+    ghosts.delete(id);
+    c.animate([{ opacity: 1, transform: 'scale(1)', filter: 'brightness(1)' }, { opacity: 0, transform: 'scale(.86)', filter: 'brightness(2.2) saturate(0)' }], { duration: 520, easing: 'ease-in' }).onfinish = () => c.remove();
   }
 
   function showCard(cardId: string, label: string, cls = '', ms = 2600) {
@@ -707,7 +730,7 @@
         if (e.s === 'push') elOf(e.id)?.animate([{ boxShadow: '0 0 0 3px #7fb0ff, 0 0 26px #7fb0ff' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 900 });
         break;
       }
-      case 'death': { chip.sfx('death'); float(before.get(e.id) ?? rectOf(e.id), L('Derrotado', 'Defeated'), 'death', undefined, true); const hp = sideOfHero(e.id); if (hp !== null) animate(hp, 'hurt'); break; }
+      case 'death': { vanish(e.id); chip.sfx('death'); float(before.get(e.id) ?? rectOf(e.id), L('Derrotado', 'Defeated'), 'death', undefined, true); const hp = sideOfHero(e.id); if (hp !== null) animate(hp, 'hurt'); break; }
       case 'summon': { chip.sfx('summon'); const el = elOf(e.id); el?.animate([{ boxShadow: '0 0 0 3px #f0c45a, 0 0 30px #f0c45a' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 800 }); break; }
       case 'xp': {
         const why = { turn: L('novo turno', 'new turn'), kill: L('criatura derrotada', 'creature defeated'), hit: L('feriu o herói', 'hit the hero') }[e.why];
@@ -779,6 +802,15 @@
     const fits = up ? r.top > zh + 12 : innerHeight - r.bottom > zh + 12;
     let x = Math.min(Math.max(12, r.left + r.width / 2 - ZW / 2), innerWidth - ZW - 12);
     let y = up ? r.bottom : r.top;
+    if (sel) {
+      // mirando (seta na tela): a carta abre de lado, longe do alvo, para não cobrir onde se quer clicar
+      const gap = 64, right = innerWidth - r.right > r.left;
+      x = right ? Math.min(innerWidth - ZW - 12, r.right + gap) : Math.max(12, r.left - gap - ZW);
+      const mid = r.top + r.height / 2;
+      y = Math.max(12, Math.min(innerHeight - zh - 12, mid - zh / 2));
+      zoom = { id, x, y, up: false };
+      return;
+    }
     if (!fits) {
       x = r.right + ZW + 16 < innerWidth ? r.right + 12 : Math.max(12, r.left - ZW - 12);
       y = up ? Math.min(innerHeight - 12, Math.max(zh + 12, r.bottom)) : Math.max(12, Math.min(innerHeight - zh - 12, r.top));

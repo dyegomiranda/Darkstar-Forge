@@ -6,12 +6,15 @@
  * Levadas calmas (seleção): `arp` (arpejo em colcheias), `pad` (acordes longos e notas
  * espaçadas), `pluck` (arpejo agudo saltitante).
  * Levadas de rock (batalha): `chug` (guitarra abafada em colcheias), `gallop` (galope),
- * `open` (acordes soltos, bateria em meio-tempo), `break` (respiro).
+ * `drive` (acordes cheios com a bateria sempre correndo), `riff` (frase de guitarra em
+ * semicolcheias), `blast` (guitarra em tremolo e bumbo duplo). As antigas `open`
+ * (meio-tempo) e `break` (respiro) davam a impressão de a luta ter esfriado: não são
+ * mais usadas na batalha.
  * Levadas épicas (tela inicial): `dark` (coro grave, sinos espaçados, tambor distante),
  * `epic` (coro, metais, cordas em ostinato e tambores de guerra) e `rise` (tremolo e rufo que crescem).
  */
 export type Mood = 'title' | 'menu' | 'battle';
-export type Feel = 'arp' | 'pad' | 'pluck' | 'chug' | 'gallop' | 'open' | 'break' | 'dark' | 'epic' | 'rise';
+export type Feel = 'arp' | 'pad' | 'pluck' | 'chug' | 'gallop' | 'drive' | 'riff' | 'blast' | 'open' | 'break' | 'dark' | 'epic' | 'rise';
 export interface Part { chords: string; feel: Feel }
 export interface TrackDef { id: string; name: [string, string]; mood: Mood; bpm: number; parts: Record<string, Part>; form: string }
 
@@ -46,7 +49,7 @@ export const TRACKS: TrackDef[] = [
   },
   {
     id: 'aco', name: ['Aço e Fúria', 'Steel and Fury'], mood: 'battle', bpm: 150, form: 'AABCAB',
-    parts: { A: { feel: 'chug', chords: 'Am Am F G Am Am F E' }, B: { feel: 'open', chords: 'F F G G Am Am E E' }, C: { feel: 'break', chords: 'Am G F E' } },
+    parts: { A: { feel: 'chug', chords: 'Am Am F G Am Am F E' }, B: { feel: 'drive', chords: 'F F G G Am Am E E' }, C: { feel: 'riff', chords: 'Am G F E' } },
   },
   {
     id: 'lamina', name: ['Lâmina Sombria', 'Shadow Blade'], mood: 'battle', bpm: 160, form: 'ABAAB',
@@ -54,11 +57,27 @@ export const TRACKS: TrackDef[] = [
   },
   {
     id: 'folego', name: ['Último Fôlego', 'Last Breath'], mood: 'battle', bpm: 170, form: 'AABAB',
-    parts: { A: { feel: 'gallop', chords: 'Dm Dm Bb C Dm Dm Bb A' }, B: { feel: 'open', chords: 'Gm Gm Dm Dm Bb Bb A A' } },
+    parts: { A: { feel: 'gallop', chords: 'Dm Dm Bb C Dm Dm Bb A' }, B: { feel: 'drive', chords: 'Gm Gm Dm Dm Bb Bb A A' } },
   },
   {
-    id: 'marcha', name: ['Marcha de Ferro', 'Iron March'], mood: 'battle', bpm: 132, form: 'ABCAB',
-    parts: { A: { feel: 'open', chords: 'Em G D A Em G D B' }, B: { feel: 'chug', chords: 'C C D D Em Em B B' }, C: { feel: 'break', chords: 'Em D C B' } },
+    id: 'marcha', name: ['Marcha de Ferro', 'Iron March'], mood: 'battle', bpm: 138, form: 'ABCAB',
+    parts: { A: { feel: 'drive', chords: 'Em G D A Em G D B' }, B: { feel: 'chug', chords: 'C C D D Em Em B B' }, C: { feel: 'riff', chords: 'Em D C B' } },
+  },
+  {
+    id: 'tormenta', name: ['Tormenta de Cinzas', 'Ash Storm'], mood: 'battle', bpm: 176, form: 'ABABCB',
+    parts: { A: { feel: 'blast', chords: 'F#m F#m D E F#m F#m D C#' }, B: { feel: 'gallop', chords: 'D E F#m F#m D E C# C#' }, C: { feel: 'riff', chords: 'Bm Bm D C#' } },
+  },
+  {
+    id: 'duelo', name: ['Duelo ao Crepúsculo', 'Duel at Dusk'], mood: 'battle', bpm: 156, form: 'AABABC',
+    parts: { A: { feel: 'riff', chords: 'Gm Gm Eb F Gm Gm Eb D' }, B: { feel: 'drive', chords: 'Cm Cm Gm Gm Eb F D D' }, C: { feel: 'chug', chords: 'Gm F Eb D' } },
+  },
+  {
+    id: 'cerco', name: ['Cerco Infernal', 'Infernal Siege'], mood: 'battle', bpm: 146, form: 'ABACB',
+    parts: { A: { feel: 'chug', chords: 'Cm Cm Ab Bb Cm Cm Ab G' }, B: { feel: 'blast', chords: 'Fm Fm Cm Cm Ab Bb G G' }, C: { feel: 'drive', chords: 'Ab Bb Cm Cm' } },
+  },
+  {
+    id: 'presas', name: ['Presas da Noite', 'Fangs of the Night'], mood: 'battle', bpm: 168, form: 'ABBAC',
+    parts: { A: { feel: 'gallop', chords: 'Bm Bm G A Bm Bm G F#' }, B: { feel: 'riff', chords: 'G A Bm Bm G A F# F#' }, C: { feel: 'blast', chords: 'Bm A G F#' } },
   },
 ];
 
@@ -138,6 +157,34 @@ export function build(def: TrackDef): Track {
           for (const k of [0, 4, 8, 12]) { put(b0 + k, 'bass', low, 3.6); put(b0 + k, 'hat', 0, 1); put(b0 + k + 2, 'hat', 0, 1); }
           if (last) { put(b0 + 4, 'snare', 0, 1); fill(); } else for (const k of [4, 12]) put(b0 + k, 'snare', 0, 1);
           if (bi === 0) put(b0, 'crash', 0, 6);
+          break;
+        }
+        case 'drive': {
+          // acordes cheios e longos, mas a bateria não para: chimbal em colcheias, caixa no 2 e no 4, bumbo puxando
+          put(b0, 'gtr', low + 12, 7); put(b0 + 7, 'gtr', low + 12, 1); put(b0 + 8, 'gtr', low + 12, 6); put(b0 + 14, 'gtr', low + 19, 2);
+          for (let k = 0; k < 16; k += 2) { put(b0 + k, 'bass', low + (k === 14 ? 7 : 0), 1.8); put(b0 + k, 'hat', 0, 1); }
+          for (const k of [0, 3, 6, 8, 10]) put(b0 + k, 'kick', 0, 1);
+          if (last) { put(b0 + 4, 'snare', 0, 1); fill(); } else for (const k of [4, 12]) put(b0 + k, 'snare', 0, 1);
+          if (bi % 2 === 0) put(b0, 'crash', 0, 6);
+          break;
+        }
+        case 'riff': {
+          // frase de guitarra em semicolcheias (tônica, quinta, oitava, terça), baixo dobrando, bateria cheia
+          const ph = [0, 0, 12, 0, 7, 0, 12, c.third + 12, 0, 0, 12, 0, 7, 10, 12, 7];
+          ph.forEach((d, k) => put(b0 + k, 'gtr', low + 12 + d, k % 4 === 0 ? 1.4 : 0.9));
+          for (let k = 0; k < 16; k += 2) { put(b0 + k, 'bass', low + (k % 8 === 4 ? 7 : 0), 1.8); put(b0 + k, 'hat', 0, 1); }
+          for (const k of [0, 2, 8, 10, 11]) put(b0 + k, 'kick', 0, 1);
+          if (last) { put(b0 + 4, 'snare', 0, 1); fill(); } else for (const k of [4, 12]) put(b0 + k, 'snare', 0, 1);
+          if (bi === 0) put(b0, 'crash', 0, 6);
+          break;
+        }
+        case 'blast': {
+          // guitarra em tremolo (todas as semicolcheias), bumbo duplo sem parar e caixa em todo tempo
+          for (let k = 0; k < 16; k++) put(b0 + k, 'gtr', low + 12 + (k >= 12 && last ? 7 : 0), 0.85);
+          for (let k = 0; k < 16; k++) put(b0 + k, 'kick', 0, 1);
+          for (const k of [0, 4, 8, 12]) { put(b0 + k, 'bass', low, 3.6); put(b0 + k, 'snare', 0, 1); put(b0 + k + 2, 'hat', 0, 1); }
+          for (const n of [mid, fifth]) put(b0, 'pad', n, 16);
+          if (bi % 2 === 0) put(b0, 'crash', 0, 6);
           break;
         }
         case 'open': {

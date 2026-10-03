@@ -56,7 +56,8 @@ function one(e: Effect): ValueLine {
     case 'dmg': return { label: `Dano ${e.n} (${TGT_PT[e.tgt]})`, points: round(e.n * SCOPE[e.tgt] * (e.via === 'melee' ? 0.9 : e.via === 'magic' ? 1.1 : 1)) };
     case 'strike': {
       const extra = e.then === 'afflict' ? 1.5 : e.then === 'mark' ? 1.5 : e.then === 'push' ? 1 : 0;
-      return { label: `Golpe ${e.bonus}${(e.times ?? 1) > 1 ? ` ×${e.times}` : ''}${e.then ? ' + efeito' : ''}`, points: round((e.bonus + extra) * (e.times ?? 1)) };
+      // furtivo vale metade (depende de o alvo estar Marcado/Afligido); o dano mágico extra vale um pouco mais que o normal
+      return { label: `Golpe ${e.bonus}${(e.times ?? 1) > 1 ? ` ×${e.times}` : ''}${e.then ? ' + efeito' : ''}${e.sneak ? ` + furtivo ${e.sneak}` : ''}${e.smite ? ` + ${e.smite} mágico` : ''}`, points: round((e.bonus + extra + (e.sneak ?? 0) * 0.5 + (e.smite ?? 0) * 1.1) * (e.times ?? 1)) };
     }
     case 'heal': return { label: `Cura ${e.n} (${TGT_PT[e.tgt]})`, points: round(e.n * 0.75 * SCOPE[e.tgt]) };
     case 'afflict': return { label: `Aflição (${TGT_PT[e.tgt]})`, points: round(2 * SCOPE[e.tgt]) };

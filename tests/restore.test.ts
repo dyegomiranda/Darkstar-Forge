@@ -23,7 +23,7 @@ describe('restaurar backup antigo', () => {
     expect(app.deck('d')!.look.style).toBe('neutro');
     expect(app.deck('d')!.look.pieces?.header?.style).toBe('neutro');
     const hero = app.project!.characters[0];
-    expect(Object.keys(hero.slots)).toHaveLength(6);
+    expect(Object.keys(hero.slots)).toHaveLength(1 + HERO_BASES[0].gear.length); // a arma e cada peça
     expect(heroBaseOf(hero, app.cards).weapon.dmg).toBe(HERO_BASES[0].weapon.dmg);
     // as cartas agrupadas por deck acompanham o que foi restaurado
     expect(app.cardsOf('d').map((c) => c.id)).toEqual(['c']);

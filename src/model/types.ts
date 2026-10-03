@@ -39,7 +39,14 @@ export interface CardGear {
   resist?: number;
   hp?: number;
   strike?: number;
-  weapon?: { dmg: number; via: import('../game/types').Via };
+  vigor?: number;
+  mana?: number;
+  attrs?: Partial<Record<import('../game/types').Attr, number>>;
+  /** Arma leve: também cabe na mão secundária, e lá soma isto ao golpe. */
+  dual?: number;
+  /** Atributo mínimo para usar a peça. */
+  req?: [import('../game/types').Attr, number];
+  weapon?: { dmg: number; via: import('../game/types').Via; hands?: 2; reach?: boolean };
 }
 
 export interface Card {

@@ -113,7 +113,9 @@ export function reachable(s: GameState, attacker: 0 | 1, via: Via, from?: Pos, u
   let list = figures(s, foe);
   if (unitsOnly) list = list.filter((f) => !f.u.isHero);
   if (via !== 'melee') return list.map((f) => f.pos);
-  if (from && from.row === 1) return [];
+  // arma de haste: o herói golpeia corpo a corpo também da retaguarda
+  const reach = !!from && !!unitAt(s, from)?.isHero && !!s.players[attacker].hero.weapon.reach;
+  if (from && from.row === 1 && !reach) return [];
   // herói fora do campo: golpeia qualquer fileira (a menos que a regra da frente vazia esteja ligada); Guarda continua valendo
   const free = from?.row === -1 && !s.heroOffFront;
   const front = figures(s, foe).filter((f) => f.pos.row === 0);
@@ -331,21 +333,24 @@ function resolveTargets(s: GameState, p: 0 | 1, tgt: Target, chosen?: Pos): Pos[
  * Golpe do herói num alvo. O golpe básico (1 por turno, de graça) usa o dano da arma; as cartas de
  * golpe têm dano próprio e NÃO gastam o golpe do turno. Posturas e bônus valem para os dois.
  */
-function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: 'afflict' | 'mark' | 'push', basic = false): void {
+function heroStrike(s: GameState, p: 0 | 1, target: Pos, bonus: number, then?: 'afflict' | 'mark' | 'push', basic = false, extra: { sneak?: number; smite?: number } = {}): void {
   const pl = s.players[p];
   const hero = unitAt(s, heroPos(s, p))!;
   const t = unitAt(s, target);
   if (!t) return;
   const m = pl.stance?.mods ?? {};
   // golpe básico: o dano da arma. Carta de golpe: o dano dela (não soma a arma nem gasta o golpe do turno).
-  const n = (basic ? pl.hero.weapon.dmg : 0) + bonus + (m.strike ?? 0) + hero.buff;
-  log(s, `${pl.hero.name} golpeia ${nm(t)} (${n}).`);
+  // ataque furtivo: o alvo distraído (Marcado ou Afligido) leva mais
+  const sneak = extra.sneak && (t.marked || t.afflicted) ? extra.sneak : 0;
+  const n = (basic ? pl.hero.weapon.dmg : 0) + bonus + (m.strike ?? 0) + hero.buff + sneak;
+  log(s, `${pl.hero.name} golpeia ${nm(t)} (${n})${sneak ? ' — ataque furtivo' : ''}.`);
   fx(s, { k: 'attack', from: hero.id, to: t.id, via: strikeVia(s, p) });
   damage(s, target, n, p, strikeVia(s, p));
   if (s.winner !== undefined) return;
   if (m.strikeHeals) heal(s, heroPos(s, p), m.strikeHeals);
-  const still = unitAt(s, target) === t;
-  if (!still) return;
+  if (unitAt(s, target) !== t) return;
+  // golpe divino / de ki: mais dano mágico no mesmo alvo
+  if (extra.smite) { damage(s, target, extra.smite, p, 'magic'); if (s.winner !== undefined || unitAt(s, target) !== t) return; }
   if (m.strikeAfflicts || then === 'afflict') { t.afflicted = true; fx(s, { k: 'status', id: t.id, s: 'afflict' }); }
   if (then === 'mark') { t.marked = true; fx(s, { k: 'status', id: t.id, s: 'mark' }); }
   if (then === 'push' && shift(s, target)) fx(s, { k: 'status', id: t.id, s: 'push' });
@@ -364,7 +369,7 @@ function applyEffect(s: GameState, p: 0 | 1, e: Effect, chosen?: Pos, src?: stri
           if (!opts.length) break;
           target = opts.sort((a, b) => { const ua = unitAt(s, a)!, ub = unitAt(s, b)!; return (ua.def - ua.dmg) - (ub.def - ub.dmg); })[0];
         }
-        heroStrike(s, p, target, e.bonus, e.then);
+        heroStrike(s, p, target, e.bonus, e.then, false, { sneak: e.sneak, smite: e.smite });
         if (s.winner !== undefined) return;
       }
       break;

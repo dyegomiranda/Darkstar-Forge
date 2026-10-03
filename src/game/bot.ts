@@ -4,10 +4,11 @@
  * quando nenhuma jogada melhora a posição.
  *
  * A dificuldade muda o quanto ele enxerga e o quanto erra:
- *  - Muito fácil: joga quase ao acaso, para cedo e raramente reage.
- *  - Fácil: vê só o resultado imediato, com bastante erro de avaliação.
- *  - Normal: vê o resultado imediato, com pouco erro.
- *  - Difícil: vê também a melhor jogada seguinte (era o único nível até a 2.9).
+ *  - Muito fácil: joga quase ao acaso, para cedo e quase nunca reage.
+ *  - Fácil: erra muito, encerra o turno cedo com frequência e reage pouco.
+ *  - Normal: vê só o resultado imediato, erra de vez em quando, às vezes encerra o turno antes da hora
+ *    e nem sempre reage (até a 3.4 o Normal era quase perfeito na jogada imediata, e ficava difícil).
+ *  - Difícil: vê também a melhor jogada seguinte, quase sem erro.
  *  - Muito difícil: planeja o turno inteiro e começa com vantagem (vida e uma carta a mais).
  */
 import { apply, figures, heroHp, legalActions, other, reactions } from './engine';
@@ -17,8 +18,8 @@ export type Difficulty = 'veryEasy' | 'easy' | 'normal' | 'hard' | 'veryHard';
 export const DIFFICULTIES: { id: Difficulty; name: [string, string]; info: [string, string] }[] = [
   { id: 'veryEasy', name: ['Muito fácil', 'Very easy'], info: ['joga quase ao acaso e para cedo', 'plays almost at random and stops early'] },
   { id: 'easy', name: ['Fácil', 'Easy'], info: ['erra bastante e reage pouco', 'makes many mistakes and seldom reacts'] },
-  { id: 'normal', name: ['Normal', 'Normal'], info: ['joga bem, sem pensar à frente', 'plays well, without thinking ahead'] },
-  { id: 'hard', name: ['Difícil', 'Hard'], info: ['planeja a jogada seguinte', 'plans the next play'] },
+  { id: 'normal', name: ['Normal', 'Normal'], info: ['joga direito, mas erra às vezes e não pensa à frente', 'plays fairly, but slips at times and does not think ahead'] },
+  { id: 'hard', name: ['Difícil', 'Hard'], info: ['quase não erra e planeja a jogada seguinte', 'rarely slips and plans the next play'] },
   { id: 'veryHard', name: ['Muito difícil', 'Very hard'], info: ['planeja o turno inteiro e começa com vantagem', 'plans the whole turn and starts ahead'] },
 ];
 /** Vantagem do bot no nível Muito difícil (dita ao jogador na tela de seleção): vida a mais e cartas a mais na mão inicial. */
@@ -30,10 +31,10 @@ export const EDGE: Partial<Record<Difficulty, { hp: number; cards: number }>> = 
  */
 interface Skill { noise: number; lazy: number; react: number; ahead: boolean; plan: boolean }
 const SKILL: Record<Difficulty, Skill> = {
-  veryEasy: { noise: 6, lazy: 0.28, react: 0.2, ahead: false, plan: false },
-  easy: { noise: 3, lazy: 0.1, react: 0.5, ahead: false, plan: false },
-  normal: { noise: 1, lazy: 0, react: 0.85, ahead: false, plan: false },
-  hard: { noise: 0, lazy: 0, react: 1, ahead: true, plan: false },
+  veryEasy: { noise: 8, lazy: 0.35, react: 0.1, ahead: false, plan: false },
+  easy: { noise: 5, lazy: 0.2, react: 0.3, ahead: false, plan: false },
+  normal: { noise: 3, lazy: 0.08, react: 0.55, ahead: false, plan: false },
+  hard: { noise: 0.5, lazy: 0, react: 0.95, ahead: true, plan: false },
   veryHard: { noise: 0, lazy: 0, react: 1, ahead: true, plan: true },
 };
 

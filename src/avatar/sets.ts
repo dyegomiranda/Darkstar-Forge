@@ -52,6 +52,28 @@ export const SETS: GearSet[] = [
       legs: { id: 'legs_skirts_plain', color: 'royal' }, feet: { id: 'feet_shoes_basic', color: 'void' }, cape: { id: 'cape_trim', color: 'royal' }, crest: null, visor: null, face: null, neck: { id: 'neck_amulet_star' } } },
 ];
 
+/**
+ * Peças vestidas antes de os conjuntos terem feitio próprio: a peça que é igual (modelo e cor)
+ * à de um conjunto com feitio ganha esse feitio. Devolve se mudou algo.
+ */
+export function adoptStyles(av: Avatar): boolean {
+  let changed = false;
+  for (const [slot, part] of Object.entries(av.parts) as [SlotId, Part][]) {
+    if (!part || part.style) continue;
+    const same = SETS.map((s) => s.parts[slot]).find((p) => p?.style && p.id === part.id && p.color === part.color);
+    if (same) { part.style = same.style; changed = true; }
+  }
+  // e a peça do mesmo modelo de um conjunto que o herói já veste em outras partes (só a cor foi trocada)
+  const worn = new Map<string, number>();
+  for (const p of Object.values(av.parts)) if (p?.style) worn.set(p.style, (worn.get(p.style) ?? 0) + 1);
+  for (const [slot, part] of Object.entries(av.parts) as [SlotId, Part][]) {
+    if (!part || part.style) continue;
+    const set = SETS.find((s) => { const p = s.parts[slot]; return p?.style && p.id === part.id && (worn.get(p.style) ?? 0) >= 2; });
+    if (set) { part.style = set.parts[slot]!.style; changed = true; }
+  }
+  return changed;
+}
+
 /** Veste o conjunto: troca só as peças que ele define e que existem para o corpo do herói. */
 export function wearSet(av: Avatar, set: GearSet): Avatar {
   const a = JSON.parse(JSON.stringify(av)) as Avatar;

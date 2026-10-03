@@ -20,8 +20,9 @@
   import { CLASS_COLORS, COLORS, colorHex } from '../../model/catalog';
   import type { Card, Character, ColorId, Slot } from '../../model/types';
   import { blankHero, BUILDS, buildStats, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS, type Build } from '../../model/hero';
-  import { SLOTS, equippedCards, gearText, heroBaseOf } from '../../model/equipment';
+  import { SLOTS, equippedCards, gearText, heroBaseOf, meetsReq } from '../../model/equipment';
   import { buildHero } from '../../game/decks';
+  import { ATTR_NAMES } from '../../game/types';
   import { classIcon } from '../../render/icons/glyphs';
   import { lighten } from '../../render/color';
   import { vivid } from '../../render/palette';
@@ -153,18 +154,31 @@
   let peek = $state<string | null>(null);
   $effect(() => { if (!picking) peek = null; });
   const equipment = $derived(Object.values(app.cards).filter((c) => app.deck(c.deckId)?.kind === 'equipment'));
-  /** Cartas que cabem no espaço: primeiro as que dão algo no jogo, depois as demais. */
-  const slotOptions = (slot: Slot) => equipment.filter((c) => c.tags.some((t) => SLOTS.find((s) => s.id === slot)!.tags.includes(t)))
-    .sort((a, b) => Number(!!b.gear && Object.keys(b.gear).length > 0) - Number(!!a.gear && Object.keys(a.gear).length > 0));
+  /** Cartas que cabem no espaço (só as que fazem algo no jogo): primeiro as que o herói pode usar. */
+  const slotOptions = (slot: Slot) => equipment.filter((c) => c.gear && Object.keys(c.gear).length && c.tags.some((t) => SLOTS.find((s) => s.id === slot)!.tags.includes(t)))
+    .sort((a, b) => Number(meetsReq(b.gear, reqAttrs)) - Number(meetsReq(a.gear, reqAttrs)) || a.n - b.n);
   const worn = $derived(equippedCards(draft, app.cards));
+  /** A arma da mão principal usa as duas mãos (a secundária fica vazia). */
+  const twoHanded = $derived(app.cards[draft.slots.mainHand ?? '']?.gear?.weapon?.hands === 2);
+  /** Por que não dá para vestir a carta (atributo que falta ou mão ocupada), ou vazio se dá. */
+  function blocked(slot: Slot, c: Card): string {
+    if (!meetsReq(c.gear, reqAttrs)) { const [a, n] = c.gear!.req!; return L(`Requer ${ATTR_NAMES[a][0]} ${n}`, `Requires ${ATTR_NAMES[a][1]} ${n}`); }
+    if (slot === 'offHand' && twoHanded) return L('A arma usa as duas mãos', 'The weapon is two-handed');
+    return '';
+  }
   function equip(slot: Slot, card: Card | null) {
+    if (card && blocked(slot, card)) return;
     if (card) draft.slots[slot] = card.id; else delete draft.slots[slot];
+    // arma de duas mãos: a mão secundária fica livre
+    if (card && slot === 'mainHand' && card.gear?.weapon?.hands === 2) delete draft.slots.offHand;
     picking = null;
   }
   const cardName = (c: Card) => c.text[app.lang]?.name || c.text['pt-BR'].name;
 
   // ───── números de jogo ─────
   const hero = $derived(draft.play ? buildHero(heroBaseOf(draft, app.cards)) : null);
+  /** Atributos que valem para os requisitos das peças (com os bônus das peças vestidas: manoplas do ogro abrem o machado grande). */
+  const reqAttrs = $derived(hero?.attrs ?? attrs);
   const deck = $derived(app.deck(draft.play?.deckId ?? ''));
   const deckCards = (deckId: string) => app.cardsOf(deckId).filter((c) => c.game).reduce((n, c) => n + (c.game?.copies ?? 1), 0);
   const tint = $derived(colorHex(deck?.colors[0] ?? draft.classColors[0] ?? 'red'));
@@ -377,7 +391,7 @@
                 <div class="scol">{#each ['mainHand', 'offHand', 'amulet', 'ring1', 'ring2'] as const as sid}{@render slotBtn(sid)}{/each}</div>
               </div>
               <div class="gearlist">
-                <p class="hint">{L('Clique num espaço para escolher a carta de equipamento. A arma da mão principal define o golpe do herói; as outras peças somam vida, armadura e resistência.', 'Click a slot to choose the equipment card. The main-hand weapon sets the hero’s strike; the other pieces add life, armor and resistance.')}</p>
+                <p class="hint">{L('Clique num espaço para escolher a carta de equipamento. A arma da mão principal define o golpe do herói; as outras peças somam Armadura, Resistência, Vida, Vigor, Mana ou atributos. Peças fortes pedem um atributo mínimo ou cobram algo em troca.', 'Click a slot to choose the equipment card. The main-hand weapon sets the hero’s strike; the other pieces add Armor, Resistance, Life, Vigor, Mana or attributes. Strong pieces ask for a minimum attribute or take something in return.')}</p>
                 {#each SLOTS as sl (sl.id)}
                   {@const card = draft.slots[sl.id] ? app.cards[draft.slots[sl.id]!] : undefined}
                   <div class="grow1" class:empty={!card}>
@@ -386,6 +400,8 @@
                       <b>{cardName(card)}</b><span>{gearText(card.gear, app.lang)}</span>
                       <button class="px-icon" onclick={() => (picking = sl.id)} title={L('Trocar', 'Swap')} aria-label={L('Trocar', 'Swap')}><Pencil size={13} /></button>
                       <button class="px-icon" onclick={() => equip(sl.id, null)} title={L('Tirar', 'Unequip')} aria-label={L('Tirar', 'Unequip')}><X size={13} /></button>
+                    {:else if sl.id === 'offHand' && twoHanded}
+                      <span class="muted">{L('livre: a arma usa as duas mãos', 'free: the weapon is two-handed')}</span>
                     {:else}
                       <span class="muted">{sl.id === 'mainHand' ? L('sem arma — golpe 1, corpo a corpo', 'no weapon — strike 1, melee') : L('vazio', 'empty')}</span>
                       <button class="px-btn sm" onclick={() => (picking = sl.id)}><Plus size={13} /> {L('Equipar', 'Equip')}</button>
@@ -459,9 +475,11 @@
               </button>
             {/if}
             {#each opts as c (c.id)}
-              <button class="opt" class:on={draft.slots[picking] === c.id} class:peek={shown?.id === c.id} onclick={() => equip(picking!, c)} onmouseenter={() => (peek = c.id)} onfocus={() => (peek = c.id)}>
+              {@const why = blocked(picking!, c)}
+              <button class="opt" class:on={draft.slots[picking] === c.id} class:peek={shown?.id === c.id} class:locked={!!why} onclick={() => equip(picking!, c)} onmouseenter={() => (peek = c.id)} onfocus={() => (peek = c.id)}>
                 <span class="ocard"><CardImage card={c} /></span>
                 <b>{cardName(c)}</b>
+                {#if why}<span class="why">{why}</span>{/if}
                 {#if draft.slots[picking] === c.id}<span class="worn"><Check size={11} strokeWidth={3} /> {L('equipado', 'equipped')}</span>{/if}
               </button>
             {/each}
@@ -471,7 +489,9 @@
               {#key shown.id}<span class="big" in:fade={{ duration: 120 }}><CardImage card={shown} eager /></span>{/key}
               <b>{cardName(shown)}</b>
               <p>{gearText(shown.gear, app.lang)}</p>
-              <button class="px-btn gold" onclick={() => equip(picking!, shown)}>{draft.slots[picking] === shown.id ? L('Já equipado', 'Already equipped') : L('Equipar', 'Equip')}</button>
+              {#if shown.text[app.lang]?.flavor}<p class="flv">{shown.text[app.lang].flavor}</p>{/if}
+              {#if blocked(picking!, shown)}<p class="whybig">{blocked(picking!, shown)}</p>
+              {:else}<button class="px-btn gold" onclick={() => equip(picking!, shown)}>{draft.slots[picking] === shown.id ? L('Já equipado', 'Already equipped') : L('Equipar', 'Equip')}</button>{/if}
             </aside>
           {/if}
         </div>
@@ -649,6 +669,10 @@
   .ocard { display: block; width: 100%; aspect-ratio: 750 / 1050; filter: drop-shadow(0 8px 14px rgb(0 0 0 / .6)); }
   .ocard.empty { display: grid; place-items: center; border: 2px dashed #4a417a; color: var(--muted); filter: none; }
   .opt b { font-size: 12px; color: var(--text); text-align: center; line-height: 1.25; }
+  .opt.locked .ocard { filter: grayscale(.85) brightness(.55); }
+  .why { font: 600 10.5px var(--ui); color: #ff9c7a; text-align: center; }
+  .flv { font-style: italic; color: var(--muted); }
+  .whybig { color: #ff9c7a; font-weight: 600; }
   .worn { position: absolute; top: 0; left: 0; display: inline-flex; gap: 3px; align-items: center; padding: 2px 6px; background: var(--accent); color: #1a1308; font: 700 10px var(--ui); z-index: 2; }
   .view { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px; border-left: 2px solid #2c2647; background: #0b0913; overflow-y: auto; min-height: 0; }
   .big { display: block; width: 100%; aspect-ratio: 750 / 1050; filter: drop-shadow(0 16px 30px rgb(0 0 0 / .75)); }

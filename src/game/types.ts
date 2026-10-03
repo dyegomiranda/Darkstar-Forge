@@ -37,7 +37,9 @@ export type Target =
 export type Effect =
   | { k: 'dmg'; n: number; tgt: Target; via: Via }
   /** Golpe com a arma do herói (usa o alcance e o tipo dela): causa `bonus` de dano; não gasta o golpe básico do turno. `then` aplica algo no alvo. */
-  | { k: 'strike'; bonus: number; times?: number; then?: 'afflict' | 'mark' | 'push' }
+  | { k: 'strike'; bonus: number; times?: number; then?: 'afflict' | 'mark' | 'push';
+      /** Ataque furtivo: dano a mais se o alvo já estiver Marcado ou Afligido. */ sneak?: number;
+      /** Golpe divino ou de ki: depois do golpe, mais este dano mágico no mesmo alvo. */ smite?: number }
   | { k: 'heal'; n: number; tgt: Target }
   | { k: 'afflict'; tgt: Target }
   | { k: 'mark'; tgt: Target }
@@ -91,6 +93,9 @@ export interface CardGame {
   copies: number;
 }
 
+/** Arma do herói: dano do golpe básico, tipo, duas mãos e alcance (haste: golpeia corpo a corpo da retaguarda). */
+export interface HeroWeapon { name: [string, string]; dmg: number; via: Via; hands?: 2; reach?: boolean; /** Carta de equipamento de onde a arma veio. */ cardId?: string }
+
 /** Herói pronto (no futuro, vem da ficha). */
 export interface HeroDef {
   id: string;
@@ -100,7 +105,7 @@ export interface HeroDef {
   deckId: string;
   attrs: Record<Attr, number>;
   maxHp: number;
-  weapon: { name: [string, string]; dmg: number; via: Via };
+  weapon: HeroWeapon;
   /** Armadura: reduz o dano físico (corpo a corpo e à distância) de cada golpe, mínimo 1. Magia atravessa. */
   armor: number;
   /** Resistência mágica: reduz o dano mágico de cada golpe, mínimo 1. */
@@ -129,6 +134,11 @@ export interface GearItem {
   resist?: number;
   hp?: number;
   strike?: number;
+  /** Vigor e Mana a mais (ou a menos) no começo da partida. */
+  vigor?: number;
+  mana?: number;
+  /** Atributos a mais (liberam cartas que pedem atributo). */
+  attrs?: Partial<Record<Attr, number>>;
   /** Símbolo da carta de equipamento (para a mesa). */
   icon?: string;
   /** Carta de equipamento de onde a peça veio. */
@@ -143,7 +153,7 @@ export interface HeroBase {
   deckId: string;
   attrs: Record<Attr, number>;
   baseHp: number;
-  weapon: { name: [string, string]; dmg: number; via: Via };
+  weapon: HeroWeapon;
   gear: GearItem[];
   vigor: number;
   mana: number;

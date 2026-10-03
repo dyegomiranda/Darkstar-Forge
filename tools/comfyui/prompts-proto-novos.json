@@ -1,0 +1,257 @@
+[
+{
+"id": "sneak-attack",
+"seed": 301,
+"prompt": "a slender female assassin in a black hood and purple scarf stabs a dagger into the back of an unaware armored guard from the shadows, a thin purple glint on the blade, moonlit castle corridor."
+},
+{
+"id": "poisoned-blade",
+"seed": 302,
+"prompt": "a hooded female assassin drips green poison from a vial onto a curved dagger blade, the poison smokes and sizzles, dark tavern back room lit by one candle."
+},
+{
+"id": "thrown-daggers",
+"seed": 303,
+"prompt": "a female rogue in a purple cloak throws three silver daggers in a fan that fly toward a bandit, motion streaks behind the blades, rooftops of a city at night."
+},
+{
+"id": "study-the-mark",
+"seed": 304,
+"prompt": "a hooded assassin crouches on a gargoyle and watches a noble in the street below through narrowed glowing violet eyes, a faint purple target mark over the noble, rainy gothic city at night."
+},
+{
+"id": "cunning-action",
+"seed": 305,
+"prompt": "a nimble female rogue rolls under a swinging sword and springs forward in one fluid movement, cape flowing, torch-lit dungeon hall."
+},
+{
+"id": "dirty-trick",
+"seed": 306,
+"prompt": "a rogue throws a handful of sand into the eyes of a burly mercenary who staggers back blinded, alley at dusk."
+},
+{
+"id": "vanish",
+"seed": 307,
+"prompt": "a hooded assassin dissolves into swirling black smoke and purple shadows while a guard swings at empty air, dark manor hallway."
+},
+{
+"id": "hamstring",
+"seed": 1008,
+"prompt": "a rogue slides low and slashes the back of a giant ogre's leg with a short sword, the ogre falls to one knee, muddy forest road."
+},
+{
+"id": "poison-the-cup",
+"seed": 309,
+"prompt": "a gloved hand pours a few drops of glowing purple poison into a golden goblet of wine at a noble's banquet table, candles and feast in the background."
+},
+{
+"id": "smoke-bomb",
+"seed": 310,
+"prompt": "a female rogue smashes a smoke bomb on the stone floor, a thick wall of grey and purple smoke hides her allies from archers, castle courtyard."
+},
+{
+"id": "blade-flurry",
+"seed": 311,
+"prompt": "a female assassin spins with a short sword and a dagger, two crossing purple arcs of light cut through two skeletons at once, crypt lit by candles."
+},
+{
+"id": "assassin-s-stance",
+"seed": 312,
+"prompt": "a hooded assassin crouched low in a predatory stance with a dagger held backhand, eyes glowing violet under the hood, shadows curling around her feet, dark rooftop under a full moon."
+},
+{
+"id": "wyvern-venom",
+"seed": 313,
+"prompt": "a rogue hurls a glass flask of bubbling green wyvern venom that bursts into a toxic green cloud over a group of orc warriors, swamp ruins."
+},
+{
+"id": "thieves-gang",
+"seed": 314,
+"prompt": "two masked thieves in dark leather leap down from a rooftop with knives drawn, a purple-cloaked leader points at the target, narrow medieval street at night."
+},
+{
+"id": "assassinate",
+"seed": 315,
+"prompt": "a female assassin appears behind a tyrant king on his throne and drives a long curved dagger into his back, purple shadows explode outward, dark throne room."
+},
+{
+"id": "thousand-cuts",
+"seed": 316,
+"prompt": "a blur of a female assassin moving so fast she leaves many purple afterimages as she slashes a demon knight from every side at once, ruined cathedral."
+},
+{
+"id": "shadow-riposte",
+"seed": 317,
+"prompt": "a hooded rogue sidesteps a spear thrust and slips behind the attacker in a swirl of shadow, marking him with a glowing purple sigil, stone bridge in the rain."
+},
+{
+"id": "divine-smite",
+"seed": 318,
+"prompt": "a male paladin in golden plate armor brings down a longsword that blazes with holy golden light onto a skeleton warrior, bright radiant sparks, ruined chapel."
+},
+{
+"id": "cure-wounds",
+"seed": 319,
+"prompt": "a kind male cleric presses a glowing hand of golden light onto a wounded soldier's chest, the wound closes with warm sparkles, field hospital tent."
+},
+{
+"id": "sacred-flame",
+"seed": 320,
+"prompt": "a column of pale golden holy fire falls from the sky onto a ghoul, the ghoul burns and screams, graveyard at night."
+},
+{
+"id": "shield-of-faith",
+"seed": 321,
+"prompt": "a shimmering golden dome of holy light shields a young knight from a rain of arrows, the arrows break against the light, castle wall battlements."
+},
+{
+"id": "shield-bash",
+"seed": 322,
+"prompt": "a paladin slams a white and gold shield into an orc's face, the orc flies backward, broken teeth and dust, castle gate."
+},
+{
+"id": "prayer",
+"seed": 323,
+"prompt": "a paladin kneels in prayer before a glowing altar, hands clasped on the hilt of a sword planted in the ground, rays of light through a stained-glass window."
+},
+{
+"id": "bless",
+"seed": 324,
+"prompt": "a cleric raises a holy symbol and soft golden feathers of light rain down on three adventurers who glow with a gentle aura, sunlit forest clearing."
+},
+{
+"id": "lay-on-hands",
+"seed": 325,
+"prompt": "a paladin in golden armor kneels and lays both glowing hands on a fallen warrior, golden light flows into the body, battlefield at sunset."
+},
+{
+"id": "oath-of-devotion",
+"seed": 1026,
+"prompt": "a paladin raises a longsword skyward and swears an oath, a halo of golden runes circles him and his armor glows, mountain peak at dawn."
+},
+{
+"id": "spiritual-weapon",
+"seed": 327,
+"prompt": "a floating spectral warhammer made of golden light strikes a goblin on its own while a cleric directs it with an outstretched hand, dark cave."
+},
+{
+"id": "holy-charge",
+"seed": 1028,
+"prompt": "a paladin in golden plate charges forward with sword raised and a trail of holy light behind him, smashing into a line of undead, misty moor."
+},
+{
+"id": "radiant-light",
+"seed": 329,
+"prompt": "a cleric lifts a blazing holy symbol and a burst of radiant golden light sweeps across a row of zombies who recoil and smoke, crypt hall."
+},
+{
+"id": "mass-healing-word",
+"seed": 330,
+"prompt": "a cleric speaks a single glowing word and ribbons of golden light reach several wounded allies at once, healing them, ruined temple courtyard."
+},
+{
+"id": "destructive-smite",
+"seed": 331,
+"prompt": "a paladin leaps and drives a sword wreathed in a huge explosion of white-gold holy fire into a horned demon, shockwave cracks the ground, hellish cavern."
+},
+{
+"id": "guardian-angel",
+"seed": 332,
+"prompt": "a tall armored angel with large white feathered wings and a flaming sword descends from a beam of light to guard a small knight, stormy sky over a battlefield."
+},
+{
+"id": "holy-water",
+"seed": 333,
+"prompt": "a hand throws a glass flask of glowing holy water that shatters on a vampire, bright steam and sparks burst from his skin, gothic castle hall."
+},
+{
+"id": "divine-protection",
+"seed": 334,
+"prompt": "a golden barrier of light flashes around a paladin just as a giant's club strikes him, the club stops in mid-air, rocky mountain pass."
+},
+{
+"id": "flurry-of-blows",
+"seed": 335,
+"prompt": "a bald male monk in grey robes strikes a bandit with a rapid flurry of punches, many motion-blur fists around him, wooden temple courtyard."
+},
+{
+"id": "stunning-strike",
+"seed": 336,
+"prompt": "a monk drives two stiff fingers into the neck of a large orc, a ring of silver energy bursts from the point of impact and the orc freezes, bamboo forest."
+},
+{
+"id": "ki-fist",
+"seed": 337,
+"prompt": "a monk punches with a fist glowing with silver-blue ki energy that blasts through a skeleton's shield, mountain monastery at dawn."
+},
+{
+"id": "step-of-the-wind",
+"seed": 338,
+"prompt": "a monk leaps across rooftops in a single gust of wind, robes fluttering, a trail of silver wind behind him, misty mountain village."
+},
+{
+"id": "meditation",
+"seed": 1039,
+"prompt": "a monk sits cross-legged in meditation on a floating rock, a calm silver aura and drifting lotus petals around him, waterfall in the background."
+},
+{
+"id": "vicious-mockery",
+"seed": 340,
+"prompt": "a grinning male bard in a feathered hat points and sings an insult, ghostly purple musical notes hit a furious troll who clutches its head, tavern."
+},
+{
+"id": "bardic-inspiration",
+"seed": 341,
+"prompt": "a bard plays a bright lute and glowing golden musical notes swirl around a tired warrior who stands up with new strength, campfire at night."
+},
+{
+"id": "crane-stance",
+"seed": 1042,
+"prompt": "a bald male monk in grey robes balances on one leg in a crane stance on top of a tall wooden pole, both arms spread wide, no wings, calm silver aura, lake at sunrise."
+},
+{
+"id": "song-of-rest",
+"seed": 343,
+"prompt": "a bard plays a soft song on a harp beside a campfire while weary adventurers rest and their wounds glow and close, starry night in the woods."
+},
+{
+"id": "dissonant-whispers",
+"seed": 344,
+"prompt": "a bard whispers a cursed melody and ghostly dark purple sound waves twist into the ears of a knight who runs away in terror, misty ruins."
+},
+{
+"id": "still-mind",
+"seed": 345,
+"prompt": "a monk sits in perfect stillness with eyes closed while a storm of falling leaves and arrows freezes in the air around him, autumn temple garden."
+},
+{
+"id": "spinning-kick",
+"seed": 346,
+"prompt": "a monk performs a spinning kick in mid-air that knocks back two goblins at once, a silver arc of wind follows his foot, dusty training ground."
+},
+{
+"id": "hypnotic-pattern",
+"seed": 1047,
+"prompt": "a bard weaves a swirling pattern of colorful hypnotic lights in the air and several bandits stare dazed and frozen, dark forest road."
+},
+{
+"id": "quivering-palm",
+"seed": 348,
+"prompt": "a monk touches an enormous armored giant with an open palm, silver ki ripples spread across the giant's armor and cracks appear everywhere, ancient stone arena."
+},
+{
+"id": "ballad-of-the-hero",
+"seed": 349,
+"prompt": "a bard stands on a rock and sings an epic ballad while golden light and banners of sound fill a whole army with courage, battlefield at dawn."
+},
+{
+"id": "patient-defense",
+"seed": 350,
+"prompt": "a calm monk deflects a sword blow with his forearm, a silver shield of ki around him, rain-soaked temple steps."
+},
+{
+"id": "countercharm",
+"seed": 351,
+"prompt": "a bard plays a clear note on a silver flute that shatters a purple spell beam into harmless sparks before it reaches his allies, ruined wizard tower."
+}
+]
