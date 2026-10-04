@@ -4,6 +4,10 @@
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`.
 
+## Versão 3.9.5 (04/10/2026)
+
+- [x] Vila: o balão de múltipla escolha tem a mesma aparência dos balões comuns (sem moldura amarela)
+
 ## Versão 3.9.4 (04/10/2026)
 
 - [x] Deck em pilhas: a carta da frente pode ser arrastada pela carta inteira e não leva mais a placa de nome por cima (a placa só aparece nas cartas empilhadas)

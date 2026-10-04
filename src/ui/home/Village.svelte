@@ -270,7 +270,7 @@
   .balloon { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; z-index: 5000; width: max-content; max-width: 230px; padding: 7px 11px; border-radius: 10px; font: 500 12.5px/1.35 var(--ui); color: #fff; text-align: left;
     background: rgb(0 0 0 / .78); border: 1px solid rgb(255 255 255 / .16); box-shadow: 0 6px 14px rgb(0 0 0 / .5); animation: pop .16s ease-out; }
   .balloon::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -6px; border: 6px solid transparent; border-top-color: rgb(0 0 0 / .78); }
-  .balloon.ask { max-width: 300px; padding: 10px 13px; font-size: 13.5px; border-color: rgb(255 220 130 / .55); box-shadow: 0 0 0 2px rgb(0 0 0 / .4), 0 0 22px rgb(255 205 90 / .28), 0 8px 18px rgb(0 0 0 / .6); pointer-events: auto; }
+  .balloon.ask { max-width: 300px; padding: 10px 13px; font-size: 13.5px; pointer-events: auto; }
   .balloon.me { background: rgb(0 0 0 / .78); }
   .opts { display: grid; gap: 5px; margin-top: 8px; }
   .opts button { display: flex; gap: 7px; align-items: baseline; text-align: left; padding: 5px 9px; border-radius: 7px; border: 1px solid rgb(255 255 255 / .22); background: rgb(255 255 255 / .07); color: #fff; font: 500 12.5px var(--ui); cursor: pointer; }
