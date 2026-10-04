@@ -8,6 +8,8 @@
 import { applyScoring } from '../model/scoring';
 import { editionDecks, OLD_EDITION_ID, PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
+import { syncLook } from '../model/lookPaths';
+import { MAX_COPIES, ownedCopies } from '../model/builds';
 import { normalizeCard } from '../model/cost';
 import { PROTO_GEAR_DECK, migrateGear, presetSlots, protoEquipment, SLOTS } from '../model/equipment';
 import { adoptStyles } from '../avatar/sets';
@@ -68,7 +70,7 @@ class ProjectState {
    * Só entram em cartas que ainda não têm imagem; roda uma vez.
    */
   async #addProtoArt(): Promise<void> {
-    const MARK = 'proto-art-3';
+    const MARK = 'proto-art-4';
     const p = this.project!;
     if (p.seeded?.includes(MARK)) return;
     const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -167,21 +169,43 @@ class ProjectState {
       }
       for (const h of presetHeroes()) if (!p.characters.some((c) => c.id === h.id || c.preset === h.preset)) p.characters.push(h);
     }
-    // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas); arte e aparência ficam
-    const RULES = 'proto-rules-7';
+    // cartas do Protótipo acompanham as regras atuais (custos, efeitos, cópias, cartas novas, deck de Itens e decks dos chefes);
+    // a carta antiga é achada pelo nome (em inglês) no mesmo deck: arte e aparência ficam
+    const RULES = 'proto-rules-8';
     if (!p.seeded?.includes(RULES) && p.editions.some((e) => e.id === PROTO_ID)) {
       p.seeded = [...(p.seeded ?? []), RULES];
       changed = true;
-      const mine = Object.values(this.cards).filter((c) => c.deckId.startsWith('proto-'));
-      for (const fresh of protoCollection().cards) {
-        const old = mine.find((c) => c.deckId === fresh.deckId && c.n === fresh.n);
-        if (!old) {
-          if (p.decks.some((d) => d.id === fresh.deckId)) { this.cards[fresh.id] = fresh; this.#dirtyCards.add(fresh.id); }
+      const col = protoCollection();
+      for (const d of col.decks) if ((d.kind === 'resources' || d.kind === 'monster') && !p.decks.some((x) => x.id === d.id)) p.decks.push(d);
+      const mine = Object.values(this.cards).filter((c) => c.deckId.startsWith('proto-') && this.deckKindOf(p, c.deckId) !== 'equipment');
+      const keep = new Set<string>(), moved = new Map<string, string>();
+      for (const fresh of col.cards) {
+        if (this.deckKindOf(p, fresh.deckId) === 'equipment' || !p.decks.some((d) => d.id === fresh.deckId)) continue;
+        const name = fresh.text['en-US'].name;
+        const old = mine.find((c) => c.deckId === fresh.deckId && c.text['en-US'].name === name && !keep.has(c.id));
+        if (old) {
+          keep.add(old.id);
+          this.cards[old.id] = { ...old, n: fresh.n, text: fresh.text, cost: fresh.cost, stats: fresh.stats, rarity: fresh.rarity, tags: fresh.tags, game: fresh.game, art: { ...old.art, icon: fresh.art.icon } };
+          this.#dirtyCards.add(old.id);
           continue;
         }
-        const next: Card = { ...old, text: fresh.text, cost: fresh.cost, stats: fresh.stats, rarity: fresh.rarity, tags: fresh.tags, game: fresh.game, art: { ...old.art, icon: fresh.art.icon } };
-        this.cards[old.id] = next;
-        this.#dirtyCards.add(old.id);
+        // carta nova: se uma de mesmo nome já existia noutro deck (as poções saíram dos decks de classe), herda a arte dela
+        const twin = mine.find((c) => c.text['en-US'].name === name && c.art.mediaId);
+        const card = twin ? { ...fresh, art: { ...twin.art, icon: fresh.art.icon } } : fresh;
+        this.cards[card.id] = card;
+        this.#dirtyCards.add(card.id);
+        keep.add(card.id);
+        for (const c of mine) if (c.text['en-US'].name === name) moved.set(c.id, card.id);
+      }
+      // o que sobrou nos decks de classe (os itens que saíram deles) sai; os decks montados passam a apontar para a carta nova
+      const ITEM_NAMES = new Set(col.cards.filter((c) => c.game?.kind === 'item').map((c) => c.text['en-US'].name));
+      const gone = mine.filter((c) => !keep.has(c.id) && c.game?.kind === 'item' && ITEM_NAMES.has(c.text['en-US'].name));
+      for (const c of gone) { delete this.cards[c.id]; this.#dirtyCards.delete(c.id); this.#deletedCards.add(c.id); }
+      for (const b of p.builds ?? []) for (const [cid, n] of Object.entries(b.cards)) {
+        if (this.cards[cid]) continue;
+        delete b.cards[cid];
+        const to = moved.get(cid);
+        if (to) b.cards[to] = Math.min(4, (b.cards[to] ?? 0) + n);
       }
     }
     // os estilos Ornado, Ornado Régio e Ornado Marfim saíram: o que os usava passa para o Neutro (uma vez)
@@ -323,6 +347,7 @@ class ProjectState {
 
   // ───────────── leitura ─────────────
 
+  deckKindOf(p: Project, deckId: string): Deck['kind'] | undefined { return p.decks.find((d) => d.id === deckId)?.kind; }
   deck(id: string): Deck | undefined { return this.project?.decks.find((d) => d.id === id); }
   get decks(): Deck[] { return [...(this.project?.decks ?? [])].sort((a, b) => a.order - b.order); }
   /** Decks da coleção aberta (ou da informada). */
@@ -336,7 +361,11 @@ class ProjectState {
     const code = name.trim().slice(0, 8) || 'NOVA';
     this.updateProject((p) => {
       p.editions.push({ id, name: name.trim() || 'Nova coleção', code });
-      p.decks.push(...editionDecks(id, `${id}-`));
+      const decks = editionDecks(id, `${id}-`);
+      // modelo padrão do usuário: os decks novos já nascem com ele (cada um com as suas cores e símbolos)
+      const tpl = p.themes?.find((t) => t.id === p.defaultThemeId);
+      if (tpl) for (const d of decks) if (d.kind === 'class') d.look = syncLook(d.look as never, $state.snapshot(tpl.look) as never) as typeof d.look;
+      p.decks.push(...decks);
     });
     this.editionId = id;
     return id;
@@ -447,12 +476,18 @@ class ProjectState {
   get builds(): Build[] { return this.project?.builds ?? []; }
   build(id: string | undefined): Build | undefined { return id ? this.builds.find((b) => b.id === id) : undefined; }
   /** Deck montado novo; `fromDeck` começa com as cartas (e cópias) de um deck da biblioteca. */
-  addBuild(name: string, fromDeck?: string): Build {
+  addBuild(name: string, colors: ColorId[], fromDeck?: string): Build {
     const cards: Record<string, number> = {};
-    if (fromDeck) for (const c of this.cardsOf(fromDeck)) if (c.game) cards[c.id] = c.game.copies;
-    const b: Build = { id: newId('build'), name, cards };
+    if (fromDeck) for (const c of this.cardsOf(fromDeck)) if (c.game && c.game.copies > 0) cards[c.id] = c.game.copies;
+    const b: Build = { id: newId('build'), name, cards, colors };
     this.updateProject((p) => { p.builds = [...(p.builds ?? []), b]; });
     return this.build(b.id)!;
+  }
+  /** Cópias que o jogador tem de uma carta (veja model/builds.ts). */
+  ownedOf(card: Card | undefined): number { return ownedCopies(card, card ? this.deck(card.deckId) : undefined, this.project?.owned); }
+  /** O jogador ganha 1 cópia da carta (até 4). */
+  grant(cardId: string): void {
+    this.updateProject((p) => { const o = (p.owned ??= {}); o[cardId] = Math.min(MAX_COPIES, (o[cardId] ?? 0) + 1); });
   }
   removeBuild(id: string): void {
     this.updateProject((p) => {

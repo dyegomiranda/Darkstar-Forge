@@ -22,7 +22,7 @@
   import { blankHero, BUILDS, buildStats, canLower, canRaise, defaultPlay, gameAttrs, pointsLeft, raceMod, raceOf, RACES, setRace, STAT_MAX, STAT_POINTS, statBase, statMod, STATS, type Build } from '../../model/hero';
   import { SLOTS, equippedCards, gearText, heroBaseOf, meetsReq } from '../../model/equipment';
   import { buildHero } from '../../game/decks';
-  import { DECK_SIZE, buildCount } from '../../model/builds';
+  import { DECK_SIZE, buildCount, buildFits } from '../../model/builds';
   import { ATTR_NAMES } from '../../game/types';
   import { CLASS_HP, LIFE_BASE, lifeOf } from '../../game/life';
   import { classIcon } from '../../render/icons/glyphs';
@@ -39,11 +39,11 @@
 
   let { id }: { id: string } = $props();
 
-  const gameDecks = $derived(app.decks.filter((d) => app.cardsOf(d.id).some((c) => c.game)));
+  const gameDecks = $derived(app.decks.filter((d) => d.kind === 'class' && app.cardsOf(d.id).some((c) => c.game)));
   const fresh = id === 'novo';
   const found = fresh ? undefined : app.project?.characters.find((c) => c.id === id);
   const missing = !fresh && !found;
-  let draft = $state<Character>(fresh || !found ? blankHero('red', app.decks.filter((d) => app.cardsOf(d.id).some((c) => c.game))) : structuredClone($state.snapshot(found) as Character));
+  let draft = $state<Character>(fresh || !found ? blankHero('red', app.decks.filter((d) => d.kind === 'class' && app.cardsOf(d.id).some((c) => c.game))) : structuredClone($state.snapshot(found) as Character));
   let baseline = $state(fresh ? '' : JSON.stringify(draft));
   const dirty = $derived(JSON.stringify(draft) !== baseline);
 
@@ -186,7 +186,7 @@
   const clsHp = $derived(CLASS_HP[draft.classColors[0] ?? 'red'] ?? 8);
   const deck = $derived(app.deck(draft.play?.deckId ?? ''));
   /** Deck montado em uso por este herói (se houver). */
-  const activeBuild = $derived(app.build(draft.buildId));
+  const activeBuild = $derived((() => { const b = app.build(draft.buildId); return b && buildFits(b, draft.classColors) ? b : undefined; })());
   const deckCards = (deckId: string) => app.cardsOf(deckId).filter((c) => c.game).reduce((n, c) => n + (c.game?.copies ?? 1), 0);
   const tint = $derived(colorHex(deck?.colors[0] ?? draft.classColors[0] ?? 'red'));
   /** Cartas do deck que o herói ainda não consegue usar por falta de atributo. */
@@ -436,7 +436,7 @@
             </div>
             <div class="fld"><span>{L('Seus decks montados (inventário de decks)', 'Your built decks (deck inventory)')}</span>
               <div class="decks">
-                {#each app.builds as bd (bd.id)}
+                {#each app.builds.filter((x) => buildFits(x, draft.classColors)) as bd (bd.id)}
                   {@const n = buildCount(bd)}
                   <button class="deck" class:on={activeBuild?.id === bd.id} style="--k:{tint}" onclick={() => (draft.buildId = bd.id)}>
                     <span class="dic"><Layers size={24} /></span>

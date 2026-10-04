@@ -102,7 +102,30 @@ const preset = (base: HeroBase): HeroDef => {
   return buildHero(base);
 };
 
-const POTION: ProtoCard = c(['Poção de Cura', 'Healing Potion'], ['Consumível', 'Consumable'], 'health-potion', 'item', {}, 1, [{ k: 'heal', n: 4, tgt: 'ally' }], 2);
+/**
+ * Carta com o custo calculado pela regra (value.ts). `pay`: 'v' = Vigor, 'm' = Mana, 'vm' = 1 de Vigor e o resto em Mana.
+ * `copies` 0 = carta de recompensa: não vem no deck inicial; o jogador ganha cópias dela jogando.
+ */
+const n = (name: [string, string], cls: [string, string], icon: string, kind: CardKind, pay: 'v' | 'm' | 'vm', level: number, effects: Effect[], copies: number, attr?: CardGame['attr']): ProtoCard => {
+  const card = c(name, cls, icon, kind, {}, level, effects, copies, attr, copies >= 2 || copies === 0 && level <= 2 ? 'uncommon' : level >= 5 ? 'unique' : 'rare');
+  const total = ruleCost(card.game);
+  const vigor = pay === 'v' ? total : pay === 'm' ? 0 : Math.min(1, total);
+  card.game.vigor = pay === 'm' ? undefined : vigor;
+  card.game.mana = pay === 'v' ? undefined : total - vigor;
+  return card;
+};
+
+// ═════════ ITENS — consumíveis que servem a qualquer classe (o jogador os põe no deck se quiser) ═════════
+// Hoje não custam nada na batalha. (Se o jogo ganhar ouro, o custo dos itens entra aqui.)
+const ITM: [string, string] = ['Consumível', 'Consumable'];
+export const PROTO_ITEMS: ProtoCard[] = [
+  c(['Poção de Cura', 'Healing Potion'], ITM, 'health-potion', 'item', {}, 1, [{ k: 'heal', n: 4, tgt: 'ally' }], 0, undefined, 'common'),
+  c(['Poção de Mana', 'Mana Potion'], ITM, 'magic-potion', 'item', {}, 1, [{ k: 'gain', res: 'mana', n: 2 }], 0, undefined, 'common'),
+  c(['Poção de Vigor', 'Vigor Potion'], ITM, 'health-potion', 'item', {}, 1, [{ k: 'gain', res: 'vigor', n: 2 }], 0, undefined, 'common'),
+  c(['Água Benta', 'Holy Water'], ITM, 'holy-water', 'item', {}, 1, [{ k: 'dmg', n: 3, tgt: 'enemy', via: 'magic' }], 0, undefined, 'common'),
+  c(['Pergaminho de Proteção', 'Scroll of Protection'], ITM, 'magic-shield', 'item', {}, 1, [{ k: 'ward', tgt: 'ally' }], 0, undefined, 'common'),
+  c(['Frasco de Veneno', 'Vial of Poison'], ITM, 'poison-bottle', 'item', {}, 1, [{ k: 'afflict', tgt: 'enemy' }], 0, undefined, 'common'),
+];
 
 const unit = (pt: string, en: string, atk: number, def: number, keys: UnitDef['keys'], icon: string): UnitDef => ({ name: [pt, en], atk, def, keys, icon });
 
@@ -144,8 +167,15 @@ const red: ProtoDeck = {
     c(['Sede de Sangue', 'Bloodthirst'], BAR, 'bleeding-heart', 'postura', { v: 2 }, 3, [{ k: 'stance', mods: { strike: 1, strikeHeals: 2 } }], 2, ['con', 3]),
     c(['Ira Implacável', 'Relentless Fury'], BAR, 'crossed-axes', 'ataque', { v: 3 }, 5, [{ k: 'strike', bonus: 5, times: 2 }], 2, ['for', 4]),
     c(['Fúria Ancestral', 'Ancestral Rage'], BAR, 'warlord-helmet', 'postura', { v: 3 }, 5, [{ k: 'stance', mods: { strike: 2, guard: true } }], 1),
-    POTION,
     r(['Aparar', 'Parry'], GUE, 'round-shield', { v: 1 }, 1, 'ataque', [{ k: 'ward', tgt: 'hero' }, { k: 'dmg', n: 2, tgt: 'enemyHero', via: 'melee' }], 2),
+    n(['Golpe Amplo', 'Wide Swing'], BAR, 'sword-spin', 'ataque', 'v', 1, [{ k: 'dmg', n: 2, tgt: 'enemyFront', via: 'melee' }], 1),
+    n(['Intimidar', 'Intimidate'], GUE, 'shouting', 'tecnica', 'v', 1, [{ k: 'mark', tgt: 'enemy' }, { k: 'push', tgt: 'enemy' }], 1),
+    // recompensas (o jogador ganha cópias na Jornada)
+    n(['Cabeçada', 'Headbutt'], BAR, 'horned-helm', 'ataque', 'v', 1, [{ k: 'strike', bonus: 2, then: 'mark' }], 0),
+    n(['Grito Intimidador', 'Intimidating Shout'], BAR, 'shouting', 'tecnica', 'v', 2, [{ k: 'mark', tgt: 'enemyRow' }], 0),
+    n(['Redemoinho de Aço', 'Steel Whirlwind'], BAR, 'crossed-axes', 'ataque', 'v', 3, [{ k: 'dmg', n: 3, tgt: 'allEnemies', via: 'melee' }], 0, ['for', 3]),
+    n(['Pele de Ferro', 'Iron Skin'], GUE, 'heart-armor', 'tecnica', 'v', 4, [{ k: 'ward', tgt: 'hero' }, { k: 'heal', n: 4, tgt: 'hero' }], 0, ['con', 2]),
+    n(['Executar', 'Execute'], BAR, 'battle-axe', 'ataque', 'v', 5, [{ k: 'strike', bonus: 9 }], 0, ['for', 4]),
   ],
 };
 
@@ -176,10 +206,15 @@ const blue: ProtoDeck = {
     c(['Relâmpago em Cadeia', 'Chain Lightning'], MAG, 'bolt-spell-cast', 'magia', { m: 3 }, 2, [{ k: 'dmg', n: 2, tgt: 'allEnemies', via: 'magic' }], 2, ['int', 3]),
     c(['Elemental de Fogo', 'Fire Elemental'], MAG, 'fire-silhouette', 'invocacao', { m: 3 }, 2, [{ k: 'summon', unit: unit('Elemental de fogo', 'Fire elemental', 4, 3, ['rapido'], 'fire-silhouette') }], 2, ['int', 4]),
     c(['Meteoro', 'Meteor'], MAG, 'burning-meteor', 'magia', { m: 6 }, 5, [{ k: 'dmg', n: 4, tgt: 'allEnemies', via: 'magic' }], 1, ['int', 4]),
-    c(['Poção de Mana', 'Mana Potion'], ['Consumível', 'Consumable'], 'magic-potion', 'item', {}, 1, [{ k: 'gain', res: 'mana', n: 2 }], 2),
-    POTION,
     r(['Contramágica', 'Counterspell'], MAG, 'spell-book', { m: 2 }, 1, 'magia', [{ k: 'counter' }], 2),
     c(['Círculo de Invocação', 'Summoning Circle'], MAG, 'magic-portal', 'tecnica', { m: 1 }, 1, [{ k: 'expand', n: 1 }], 1, ['int', 2]),
+    n(['Mãos Flamejantes', 'Burning Hands'], MAG, 'fire-spell-cast', 'magia', 'm', 1, [{ k: 'dmg', n: 1, tgt: 'enemyFront', via: 'magic' }], 2),
+    n(['Armadura Arcana', 'Mage Armor'], MAG, 'magic-shield', 'magia', 'm', 1, [{ k: 'ward', tgt: 'hero' }, { k: 'draw', n: 1 }], 2),
+    n(['Raio de Fogo', 'Fire Bolt'], MAG, 'comet-spark', 'magia', 'm', 1, [{ k: 'dmg', n: 4, tgt: 'enemy', via: 'magic' }], 0),
+    n(['Nevasca', 'Ice Storm'], MAG, 'ice-spell-cast', 'magia', 'm', 2, [{ k: 'dmg', n: 2, tgt: 'enemyRow', via: 'magic' }, { k: 'push', tgt: 'enemyRow' }], 0, ['int', 2]),
+    n(['Imagem Espelhada', 'Mirror Image'], MAG, 'concentration-orb', 'magia', 'm', 3, [{ k: 'ward', tgt: 'allAllies' }, { k: 'draw', n: 1 }], 0),
+    n(['Golem Arcano', 'Arcane Golem'], MAG, 'rock-golem', 'invocacao', 'm', 4, [{ k: 'summon', unit: unit('Golem arcano', 'Arcane golem', 4, 6, ['guarda'], 'rock-golem') }], 0, ['int', 3]),
+    n(['Desintegrar', 'Disintegrate'], MAG, 'bolt-spell-cast', 'magia', 'm', 5, [{ k: 'dmg', n: 12, tgt: 'enemy', via: 'magic' }], 0, ['int', 4]),
   ],
 };
 
@@ -211,9 +246,14 @@ const green: ProtoDeck = {
     c(['Urso Companheiro', 'Bear Companion'], PAT, 'bear-head', 'invocacao', { v: 1, m: 2 }, 3, [{ k: 'summon', unit: unit('Urso', 'Bear', 3, 6, ['guarda'], 'bear-head') }], 2, ['sab', 3]),
     c(['Chamado da Matilha', 'Call of the Pack'], PAT, 'wolf-howl', 'invocacao', { m: 2 }, 4, [{ k: 'summon', unit: unit('Lobo', 'Wolf', 2, 2, [], 'wolf-head'), n: 2 }], 2, ['sab', 3]),
     c(['Tempestade de Espinhos', 'Thorn Storm'], DRU, 'heavy-thorny-triskelion', 'magia', { m: 4 }, 5, [{ k: 'dmg', n: 3, tgt: 'allEnemies', via: 'magic' }], 1, ['sab', 3]),
-    POTION,
     r(['Esquiva', 'Dodge'], PAT, 'backstab', { v: 1 }, 1, 'any', [{ k: 'ward', tgt: 'hero' }, { k: 'draw', n: 1 }], 2),
     c(['Território de Caça', 'Hunting Grounds'], PAT, 'circle-forest', 'tecnica', { v: 1 }, 1, [{ k: 'expand', n: 1 }], 2, ['sab', 2]),
+    n(['Erva Curativa', 'Healing Herb'], DRU, 'oak-leaf', 'magia', 'm', 1, [{ k: 'heal', n: 3, tgt: 'ally' }], 2),
+    n(['Falcão Caçador', 'Hunting Hawk'], PAT, 'hunter-eyes', 'invocacao', 'vm', 1, [{ k: 'summon', unit: unit('Falcão', 'Hawk', 2, 1, ['rapido', 'distancia'], 'hunter-eyes') }], 0),
+    n(['Tiro Perfurante', 'Piercing Shot'], PAT, 'broadhead-arrow', 'ataque', 'v', 2, [{ k: 'strike', bonus: 4, then: 'mark' }], 0, ['des', 3]),
+    n(['Raízes Vivas', 'Living Roots'], DRU, 'thorny-vine', 'magia', 'm', 3, [{ k: 'afflict', tgt: 'enemyRow' }], 0, ['sab', 2]),
+    n(['Espírito da Floresta', 'Forest Spirit'], DRU, 'oak-leaf', 'invocacao', 'm', 4, [{ k: 'summon', unit: unit('Espírito da floresta', 'Forest spirit', 3, 6, ['guarda'], 'oak-leaf') }], 0, ['sab', 3]),
+    n(['Estouro da Manada', 'Stampede'], PAT, 'direwolf', 'tecnica', 'v', 5, [{ k: 'buff', atk: 2, tgt: 'allAllies' }, { k: 'draw', n: 3 }], 0),
   ],
 };
 
@@ -246,9 +286,14 @@ const black: ProtoDeck = {
     c(['Praga', 'Plague'], NEC, 'death-skull', 'magia', { m: 3 }, 2, [{ k: 'afflict', tgt: 'allEnemies' }], 2, ['car', 2]),
     c(['Legião de Ossos', 'Bone Legion'], NEC, 'crossed-bones', 'invocacao', { m: 4 }, 4, [{ k: 'summon', unit: unit('Esqueleto', 'Skeleton', 2, 2, ['guarda'], 'death-skull'), n: 2 }], 2),
     c(['Ceifar Almas', 'Reap Souls'], BRU, 'grim-reaper', 'magia', { m: 5 }, 4, [{ k: 'dmg', n: 3, tgt: 'allEnemies', via: 'magic' }, { k: 'heal', n: 3, tgt: 'hero' }], 1, ['car', 4]),
-    POTION,
     r(['Represália Sombria', 'Shadow Reprisal'], BRU, 'magic-palm', { m: 1 }, 1, 'ataque', [{ k: 'afflict', tgt: 'enemyHero' }, { k: 'dmg', n: 1, tgt: 'enemyHero', via: 'magic' }], 2),
     c(['Ossuário', 'Ossuary'], NEC, 'tombstone', 'tecnica', { m: 1 }, 1, [{ k: 'expand', n: 1 }], 1, ['car', 2]),
+    n(['Drenar Vida', 'Life Drain'], NEC, 'bleeding-heart', 'magia', 'm', 1, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'magic' }, { k: 'heal', n: 2, tgt: 'hero' }], 2),
+    n(['Toque Gélido', 'Chill Touch'], NEC, 'shadow-grasp', 'magia', 'm', 1, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'magic' }, { k: 'afflict', tgt: 'enemy' }], 0),
+    n(['Erguer Zumbi', 'Raise Zombie'], NEC, 'raise-zombie', 'invocacao', 'm', 2, [{ k: 'summon', unit: unit('Zumbi', 'Zombie', 3, 4, [], 'death-skull') }], 0),
+    n(['Marca da Morte', 'Death Mark'], BRU, 'cursed-star', 'magia', 'm', 3, [{ k: 'mark', tgt: 'allEnemies' }, { k: 'dmg', n: 1, tgt: 'allEnemies', via: 'magic' }], 0, ['car', 2]),
+    n(['Forma Espectral', 'Wraith Form'], BRU, 'two-shadows', 'tecnica', 'm', 4, [{ k: 'ward', tgt: 'hero' }, { k: 'draw', n: 2 }], 0),
+    n(['Dedo da Morte', 'Finger of Death'], NEC, 'grim-reaper', 'magia', 'm', 5, [{ k: 'dmg', n: 10, tgt: 'enemy', via: 'magic' }, { k: 'heal', n: 4, tgt: 'hero' }], 0, ['car', 4]),
   ],
 };
 
@@ -283,8 +328,13 @@ const purple: ProtoDeck = {
     c(['Gangue de Ladrões', 'Thieves Gang'], LAD, 'hooded-figure', 'invocacao', { v: 3, m: 1 }, 3, [{ k: 'summon', unit: unit('Ladrão', 'Thief', 2, 2, ['rapido'], 'hooded-figure'), n: 2 }], 2),
     c(['Assassinar', 'Assassinate'], ASS, 'curvy-knife', 'ataque', { v: 2 }, 4, [{ k: 'strike', bonus: 4, sneak: 4 }], 2, ['des', 4]),
     c(['Mil Cortes', 'Thousand Cuts'], ASS, 'sword-spin', 'ataque', { v: 2 }, 5, [{ k: 'strike', bonus: 2, times: 3, sneak: 1 }], 1, ['des', 4]),
-    POTION,
     r(['Contragolpe Sombrio', 'Shadow Riposte'], LAD, 'two-shadows', { v: 1 }, 1, 'ataque', [{ k: 'ward', tgt: 'hero' }, { k: 'mark', tgt: 'enemyHero' }], 2),
+    n(['Estocada Rápida', 'Quick Stab'], LAD, 'knife-thrust', 'ataque', 'v', 1, [{ k: 'strike', bonus: 3 }], 2),
+    n(['Garrote', 'Garrote'], ASS, 'backstab', 'ataque', 'v', 1, [{ k: 'strike', bonus: 2, then: 'mark' }], 0),
+    n(['Dardo Envenenado', 'Poison Dart'], ASS, 'thrown-daggers', 'ataque', 'v', 2, [{ k: 'dmg', n: 2, tgt: 'enemy', via: 'ranged' }, { k: 'afflict', tgt: 'enemy' }], 0),
+    n(['Emboscada', 'Ambush'], ASS, 'hooded-assassin', 'ataque', 'v', 3, [{ k: 'strike', bonus: 3, sneak: 6 }], 0, ['des', 3]),
+    n(['Nuvem Tóxica', 'Toxic Cloud'], ASS, 'unstable-orb', 'tecnica', 'vm', 4, [{ k: 'afflict', tgt: 'allEnemies' }], 0, ['int', 2]),
+    n(['Golpe de Misericórdia', 'Coup de Grace'], ASS, 'curvy-knife', 'ataque', 'v', 5, [{ k: 'strike', bonus: 6, sneak: 6 }], 0, ['des', 4]),
   ],
 };
 
@@ -318,9 +368,14 @@ const white: ProtoDeck = {
     c(['Palavra de Cura em Massa', 'Mass Healing Word'], CLE, 'holy-grail', 'magia', { m: 2 }, 4, [{ k: 'heal', n: 3, tgt: 'allAllies' }, { k: 'draw', n: 1 }], 2, ['sab', 3]),
     c(['Golpe Destruidor', 'Destructive Smite'], PAL, 'barbed-sun', 'ataque', { v: 1, m: 2 }, 5, [{ k: 'strike', bonus: 4, smite: 4 }], 1, ['for', 3]),
     c(['Anjo Guardião', 'Guardian Angel'], CLE, 'angel-outfit', 'invocacao', { m: 3 }, 6, [{ k: 'summon', unit: unit('Anjo guardião', 'Guardian angel', 4, 7, ['guarda'], 'angel-outfit') }], 1, ['sab', 3]),
-    c(['Água Benta', 'Holy Water'], ['Consumível', 'Consumable'], 'holy-water', 'item', {}, 1, [{ k: 'dmg', n: 3, tgt: 'enemy', via: 'magic' }], 2),
-    POTION,
     r(['Proteção Divina', 'Divine Protection'], CLE, 'healing-shield', { m: 1 }, 1, 'any', [{ k: 'ward', tgt: 'hero' }, { k: 'heal', n: 2, tgt: 'hero' }], 2),
+    n(['Punição', 'Rebuke'], CLE, 'sunbeams', 'magia', 'm', 1, [{ k: 'dmg', n: 3, tgt: 'enemy', via: 'magic' }], 2),
+    n(['Golpe Justo', 'Righteous Strike'], PAL, 'winged-sword', 'ataque', 'v', 1, [{ k: 'strike', bonus: 3 }], 2),
+    n(['Martelo Espiritual', 'Spirit Hammer'], CLE, 'hammer-drop', 'magia', 'm', 1, [{ k: 'dmg', n: 4, tgt: 'enemy', via: 'magic' }], 0),
+    n(['Aura de Proteção', 'Aura of Protection'], PAL, 'cross-shield', 'magia', 'm', 2, [{ k: 'ward', tgt: 'allAllies' }], 0, ['car', 2]),
+    n(['Golpe Ofuscante', 'Blinding Smite'], PAL, 'cross-flare', 'ataque', 'vm', 3, [{ k: 'strike', bonus: 3, smite: 3, then: 'mark' }], 0),
+    n(['Coluna de Chamas', 'Flame Strike'], CLE, 'flame', 'magia', 'm', 4, [{ k: 'dmg', n: 4, tgt: 'enemyRow', via: 'magic' }], 0, ['sab', 2]),
+    n(['Ressurgir', 'Revivify'], CLE, 'holy-grail', 'magia', 'm', 5, [{ k: 'heal', n: 12, tgt: 'ally' }, { k: 'ward', tgt: 'ally' }], 0, ['sab', 2]),
   ],
 };
 
@@ -354,11 +409,45 @@ const silver: ProtoDeck = {
     c(['Padrão Hipnótico', 'Hypnotic Pattern'], BRD, 'spiral-bloom', 'magia', { m: 3 }, 4, [{ k: 'mark', tgt: 'allEnemies' }, { k: 'draw', n: 1 }], 2, ['car', 2]),
     c(['Palma Trêmula', 'Quivering Palm'], MON, 'magic-palm', 'ataque', { v: 1, m: 2 }, 5, [{ k: 'strike', bonus: 3, smite: 6 }], 1, ['sab', 3]),
     c(['Balada do Herói', 'Ballad of the Hero'], BRD, 'drum', 'magia', { m: 4 }, 5, [{ k: 'buff', atk: 2, tgt: 'allAllies' }, { k: 'heal', n: 2, tgt: 'allAllies' }, { k: 'draw', n: 1 }], 1, ['car', 2]),
-    POTION,
     r(['Defesa Paciente', 'Patient Defense'], MON, 'meditation', { v: 1 }, 1, 'ataque', [{ k: 'ward', tgt: 'hero' }, { k: 'gain', res: 'vigor', n: 1 }], 2),
     r(['Contra-canto', 'Countercharm'], BRD, 'harp', { m: 2 }, 1, 'magia', [{ k: 'counter' }], 2),
+    n(['Chute Voador', 'Flying Kick'], MON, 'boot-kick', 'ataque', 'v', 1, [{ k: 'advance' }, { k: 'strike', bonus: 3 }], 2),
+    n(['Palma Aberta', 'Open Palm'], MON, 'magic-palm', 'ataque', 'v', 1, [{ k: 'strike', bonus: 2, then: 'push' }], 0),
+    n(['Canção de Coragem', 'Song of Courage'], BRD, 'drum', 'magia', 'm', 2, [{ k: 'buff', atk: 1, tgt: 'allAllies' }, { k: 'draw', n: 1 }], 0),
+    n(['Chuva de Golpes', 'Rain of Blows'], MON, 'mailed-fist', 'ataque', 'v', 5, [{ k: 'strike', bonus: 2, times: 4 }], 0, ['des', 3]),
+    n(['Grito Estilhaçante', 'Shatter'], BRD, 'divided-spiral', 'magia', 'm', 4, [{ k: 'dmg', n: 2, tgt: 'enemyRow', via: 'magic' }, { k: 'mark', tgt: 'enemyRow' }], 0, ['car', 2]),
+    n(['Punho do Vazio', 'Void Fist'], MON, 'thor-fist', 'ataque', 'vm', 3, [{ k: 'strike', bonus: 3, smite: 2, then: 'mark' }], 0, ['sab', 3]),
   ],
 };
+
+// ═════════ MONSTROS — chefes da Jornada (o jogador ganha cópias das cartas deles ao vencê-los) ═════════
+export interface ProtoMonster { id: string; hero: HeroDef; cards: ProtoCard[] }
+const DRA: [string, string] = ['Dragão', 'Dragon'];
+const dragon: ProtoMonster = {
+  id: 'dragon',
+  hero: {
+    id: 'dragon', name: 'Dragão Ancião', className: ['Chefe', 'Boss'], deckId: 'proto-monster-dragon',
+    attrs: { for: 5, des: 3, con: 5, int: 4, sab: 3, car: 4 }, maxHp: 58,
+    weapon: { name: ['Garras', 'Claws'], dmg: 5, via: 'melee' }, armor: 1, resist: 1,
+    gear: [{ slot: 'weapon', name: ['Garras', 'Claws'], info: ['Golpe 5, corpo a corpo', 'Strike 5, melee'] }, { slot: 'chest', name: ['Escamas', 'Scales'], info: ['+1 Armadura, +1 Resistência mágica', '+1 Armor, +1 Magic resistance'], armor: 1, resist: 1 }],
+    vigor: 2, mana: 1, row: 0, col: 1, icon: 'dragon-shield',
+  },
+  cards: [
+    n(['Garra Dilacerante', 'Rending Claw'], DRA, 'triple-claws', 'ataque', 'v', 1, [{ k: 'strike', bonus: 3, then: 'afflict' }], 4),
+    n(['Mordida', 'Bite'], DRA, 'dragon-shield', 'ataque', 'v', 1, [{ k: 'strike', bonus: 4 }], 4),
+    n(['Golpe de Cauda', 'Tail Sweep'], DRA, 'claw-slashes', 'ataque', 'v', 1, [{ k: 'dmg', n: 2, tgt: 'enemyFront', via: 'melee' }], 4),
+    n(['Escamas de Ferro', 'Iron Scales'], DRA, 'heart-armor', 'tecnica', 'v', 1, [{ k: 'ward', tgt: 'hero' }, { k: 'heal', n: 3, tgt: 'hero' }], 4),
+    n(['Tesouro do Dragão', 'Dragon Hoard'], DRA, 'open-book', 'tecnica', 'm', 1, [{ k: 'draw', n: 2 }], 3),
+    n(['Sopro de Fogo', 'Fire Breath'], DRA, 'fire-breath', 'magia', 'm', 2, [{ k: 'dmg', n: 3, tgt: 'enemyRow', via: 'magic' }], 4),
+    n(['Rugido Aterrador', 'Terrifying Roar'], DRA, 'shouting', 'tecnica', 'v', 2, [{ k: 'mark', tgt: 'allEnemies' }], 3),
+    n(['Filhote de Dragão', 'Dragon Whelp'], DRA, 'dragon-shield', 'invocacao', 'vm', 2, [{ k: 'summon', unit: unit('Filhote de dragão', 'Dragon whelp', 3, 3, ['rapido'], 'dragon-shield') }], 4),
+    n(['Voo Rasante', 'Dive'], DRA, 'boot-stomp', 'ataque', 'v', 3, [{ k: 'strike', bonus: 6, then: 'push' }], 3),
+    n(['Fúria Dracônica', 'Draconic Fury'], DRA, 'burning-embers', 'postura', 'v', 3, [{ k: 'stance', mods: { strike: 2 } }], 2),
+    n(['Inferno', 'Inferno'], DRA, 'fireball', 'magia', 'm', 4, [{ k: 'dmg', n: 4, tgt: 'allEnemies', via: 'magic' }], 3),
+    n(['Cataclismo', 'Cataclysm'], DRA, 'burning-meteor', 'magia', 'm', 6, [{ k: 'dmg', n: 6, tgt: 'allEnemies', via: 'magic' }], 2),
+  ],
+};
+export const PROTO_MONSTERS: ProtoMonster[] = [dragon];
 
 // ═════════ EVOLUÇÕES ═════════
 // Cartas que crescem com o herói: ao chegar ao nível indicado, a carta ganha uma versão mais forte

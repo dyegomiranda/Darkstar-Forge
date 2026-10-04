@@ -1,0 +1,247 @@
+[
+{
+"id": "wide-swing",
+"seed": 500,
+"prompt": "a barbarian man swings a greataxe in a wide horizontal arc that hits two goblin soldiers standing side by side at once, a broad red crescent trail, muddy battlefield."
+},
+{
+"id": "intimidate",
+"seed": 501,
+"prompt": "a huge scarred warrior woman glares and points her sword at a frightened bandit who stumbles backward dropping his shield, red menacing aura, torch-lit fortress gate."
+},
+{
+"id": "burning-hands",
+"seed": 502,
+"prompt": "a wizard in blue robes spreads both hands and a fan of orange flames bursts from his fingers over a row of charging skeletons, stone bridge at night."
+},
+{
+"id": "mage-armor",
+"seed": 503,
+"prompt": "a young sorceress surrounded by a translucent shimmering blue energy armor that outlines her body, floating arcane runes, an open spellbook hovering in front of her, wizard study."
+},
+{
+"id": "healing-herb",
+"seed": 504,
+"prompt": "a druid woman presses glowing green herbs onto the wounded leg of a wolf companion, soft green healing light and floating leaves, forest stream."
+},
+{
+"id": "life-drain",
+"seed": 505,
+"prompt": "a pale necromancer extends a hand and a stream of red life energy flows from a gasping soldier into the necromancer's palm, misty graveyard at night."
+},
+{
+"id": "quick-stab",
+"seed": 506,
+"prompt": "a hooded rogue lunges forward and stabs a dagger quickly into a guard's side, a short purple speed trail behind the blade, narrow alley at night."
+},
+{
+"id": "rebuke",
+"seed": 507,
+"prompt": "a cleric in white and gold robes raises a holy symbol and a beam of golden light strikes down a horned imp, cathedral interior with stained glass."
+},
+{
+"id": "righteous-strike",
+"seed": 508,
+"prompt": "a paladin in shining armor slashes a longsword glowing white across an undead knight, sparks of light, castle courtyard at dawn."
+},
+{
+"id": "flying-kick",
+"seed": 509,
+"prompt": "a monk in grey robes leaps through the air and lands a flying kick on a bandit's chest, wind trail behind him, bamboo forest."
+},
+{
+"id": "headbutt",
+"seed": 510,
+"prompt": "a horned-helmet barbarian headbutts an orc in the face, stars and a shockwave at the impact, tavern brawl."
+},
+{
+"id": "intimidating-shout",
+"seed": 511,
+"prompt": "a towering barbarian roars at a whole row of terrified soldiers who cower behind their shields, red sound waves, snowy pass."
+},
+{
+"id": "steel-whirlwind",
+"seed": 512,
+"prompt": "a berserker spins like a whirlwind with two axes, a circular red slash hits enemies all around him, arena sand flying."
+},
+{
+"id": "iron-skin",
+"seed": 513,
+"prompt": "a veteran warrior flexes as his skin turns to dark iron, arrows shatter against his chest, glowing orange rivets, battlefield."
+},
+{
+"id": "execute",
+"seed": 514,
+"prompt": "a giant executioner brings a massive greataxe down in a final blow on a kneeling ogre, blinding red impact flash, storm clouds."
+},
+{
+"id": "fire-bolt",
+"seed": 515,
+"prompt": "a wizard hurls a blazing orange bolt of fire from his staff that strikes a troll in the chest with an explosion of embers, mountain path at night."
+},
+{
+"id": "ice-storm",
+"seed": 516,
+"prompt": "a sorceress calls down a storm of ice shards and freezing wind that batters a row of soldiers and blows them backward, frozen battlefield."
+},
+{
+"id": "mirror-image",
+"seed": 517,
+"prompt": "a wizard stands in the middle of four translucent blue mirror copies of himself, confused enemies around, arcane hall."
+},
+{
+"id": "arcane-golem",
+"seed": 518,
+"prompt": "a tall stone and crystal golem with glowing cyan runes stands guard in front of a small wizard, arcane workshop."
+},
+{
+"id": "disintegrate",
+"seed": 519,
+"prompt": "a master wizard fires a thin blinding green ray from his finger that turns an armored giant into drifting ash, ruined temple."
+},
+{
+"id": "hunting-hawk",
+"seed": 520,
+"prompt": "a ranger woman releases a hawk from her gloved arm, the hawk dives with talons out toward a fleeing bandit, open hills at sunrise."
+},
+{
+"id": "piercing-shot",
+"seed": 521,
+"prompt": "an archer's glowing arrow pierces straight through a knight's shield and armor, a bright green trail behind the arrow, forest edge."
+},
+{
+"id": "living-roots",
+"seed": 522,
+"prompt": "thick living roots burst from the ground and coil around the legs of a row of bandits, green poison thorns, dark forest."
+},
+{
+"id": "forest-spirit",
+"seed": 523,
+"prompt": "a huge gentle forest spirit made of bark, moss and antlers stands protectively in front of a small druid, glowing green eyes, ancient grove."
+},
+{
+"id": "stampede",
+"seed": 524,
+"prompt": "a ranger rides at the front of a stampede of wolves, bears and stags charging through dust toward the viewer's left, golden plains."
+},
+{
+"id": "chill-touch",
+"seed": 525,
+"prompt": "a ghostly skeletal hand of blue-white frost reaches out from a warlock's palm and grips a soldier's chest, frost spreading on the armor, crypt."
+},
+{
+"id": "raise-zombie",
+"seed": 526,
+"prompt": "a necromancer raises a rotting armored zombie from an open grave with green magic, the zombie climbing out, foggy cemetery."
+},
+{
+"id": "death-mark",
+"seed": 527,
+"prompt": "a warlock raises a black skull sigil in the sky that casts a purple mark on the foreheads of a group of frightened soldiers below, blood moon."
+},
+{
+"id": "wraith-form",
+"seed": 528,
+"prompt": "a warlock turns into a translucent black wraith of smoke as a sword passes harmlessly through her body, purple eyes, haunted hall."
+},
+{
+"id": "finger-of-death",
+"seed": 529,
+"prompt": "a lich points a bony finger and a black and green beam of death strikes a paladin who withers, the lich glowing with stolen life, dark throne room."
+},
+{
+"id": "garrote",
+"seed": 530,
+"prompt": "a hooded assassin strangles a guard from behind with a thin wire, the guard grasping at his neck, moonlit rampart."
+},
+{
+"id": "poison-dart",
+"seed": 531,
+"prompt": "an assassin blows a small green-tipped dart from a blowpipe that hits a nobleman's neck, green drip, lantern-lit garden at night."
+},
+{
+"id": "ambush",
+"seed": 532,
+"prompt": "an assassin drops from the ceiling beams with two daggers onto an unaware captain below, purple cloak spread like wings, warehouse."
+},
+{
+"id": "toxic-cloud",
+"seed": 533,
+"prompt": "an assassin throws a glass vial that bursts into a wide cloud of green toxic gas around a group of coughing soldiers, sewer tunnel."
+},
+{
+"id": "coup-de-grace",
+"seed": 534,
+"prompt": "an assassin drives a curved dagger down for a finishing blow on a fallen armored knight, a single purple flash, rainy rooftop."
+},
+{
+"id": "spirit-hammer",
+"seed": 535,
+"prompt": "a glowing golden spectral war hammer floats in the air and smashes down on a skeleton warrior, a cleric gesturing behind it, chapel ruins."
+},
+{
+"id": "aura-of-protection",
+"seed": 536,
+"prompt": "a paladin plants his sword in the ground and a dome of golden light spreads over him and his companions, arrows bouncing off the dome, battlefield at dusk."
+},
+{
+"id": "blinding-smite",
+"seed": 537,
+"prompt": "a paladin strikes a demon with a sword that explodes in blinding white light, the demon shielding its eyes, dark cavern."
+},
+{
+"id": "flame-strike",
+"seed": 538,
+"prompt": "a column of holy fire descends from the sky onto a row of undead soldiers, a cleric with raised arms in the foreground, night battlefield."
+},
+{
+"id": "revivify",
+"seed": 539,
+"prompt": "a cleric kneels over a fallen knight as a great beam of warm golden light descends and the knight opens his eyes, angel feathers falling, temple."
+},
+{
+"id": "open-palm",
+"seed": 540,
+"prompt": "a monk strikes a bandit with an open palm and the bandit is launched backward through the air, a ring of wind at the impact, temple courtyard."
+},
+{
+"id": "song-of-courage",
+"seed": 541,
+"prompt": "a bard plays a lute on a rock while warriors around him raise their weapons and cheer, golden musical notes floating, camp at dawn."
+},
+{
+"id": "rain-of-blows",
+"seed": 542,
+"prompt": "a monk throws a blur of many fists at once at an armored ogre, dozens of afterimage fists, sparks on the armor, mountain temple."
+},
+{
+"id": "shatter",
+"seed": 543,
+"prompt": "a bard screams a visible sonic wave that shatters the shields and cracks the ground under a row of soldiers, glass-like shards flying, castle hall."
+},
+{
+"id": "void-fist",
+"seed": 544,
+"prompt": "a monk punches a demon with a fist wrapped in black and violet void energy, a dark implosion at the impact, starry night on a cliff."
+},
+{
+"id": "vigor-potion",
+"seed": 545,
+"prompt": "a glowing orange potion of vigor in a square glass bottle with a cork, small lightning sparks inside, on a wooden alchemist table with herbs and candles."
+},
+{
+"id": "scroll-of-protection",
+"seed": 546,
+"prompt": "an open parchment scroll with glowing blue protective runes floating above it and a small translucent shield of light, wizard desk with candles."
+},
+{
+"id": "vial-of-poison",
+"seed": 547,
+"prompt": "a small dark glass vial of bubbling green poison with a skull label, green fumes rising, on a rogue's table with daggers and lockpicks."
+},
+{
+"id": "mana-potion",
+"seed": 548,
+"prompt": "a glowing blue mana potion in a round glass flask with a cork, swirling stars inside, on a wizard's table with books and crystals."
+}
+]

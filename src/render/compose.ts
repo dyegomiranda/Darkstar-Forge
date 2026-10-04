@@ -279,7 +279,13 @@ export function composeEx(inp: ComposeInput): { svg: string; info: ComposeInfo }
   const costIcons = iconStyleFor(look.icons?.cost);
   const used: ComposeInfo = { ink: {}, fill: {}, icon: {} };
   // {mana}, {vigor}… no texto viram o símbolo do recurso
-  const iconFn: IconFn = (id, x, y, s) => (isResource(id) ? drawGlyph(defs, resourceIcon(id)!, costIcons, x, y, s, { color: RESOURCE_COLORS[id] }) : '');
+  // (o mesmo símbolo escolhido para o custo: o próprio do recurso; o do formato antigo vale para o 1º recurso do custo)
+  const iconFn: IconFn = (id, x, y, s) => {
+    if (!isResource(id)) return '';
+    const own = look.icons?.res?.[id], first = inp.cost?.[0]?.resource === id;
+    const pick: IconChoice | undefined = own || first ? { ...(first ? look.icons?.cost : undefined), ...own } : undefined;
+    return symbol(defs, pick, pick?.glyph ?? resourceIcon(id)!, iconStyleFor(pick), x, y, s, pick?.color ?? RESOURCE_COLORS[id]);
+  };
   const knownIcon = isResource;
 
   // 1) Altura da caixa de regras: mede o texto com as margens internas do estilo escolhido.

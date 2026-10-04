@@ -6,43 +6,185 @@
  *  - A cada nível ganho, o jogador escolhe +1 Vigor, +1 Mana ou +3 Vida (como na batalha comum).
  *  - O deck acompanha o nível: só entram as cartas que o herói já pode usar; ao subir de nível,
  *    as cartas de nível maior (e as evoluções das cartas) vão sendo liberadas.
- *  - Não há fim: as etapas seguem, com oponentes cada vez mais fortes e um chefe a cada 5 etapas.
+ *  - Cada jornada tem um MAPA gerado na hora (nunca igual): caminhos que se dividem e se cruzam,
+ *    com batalhas, campos de treino (escolher 1 de 3 cartas) e, no fim, um chefe. Vencido o chefe,
+ *    vem um mapa novo, com oponentes mais fortes. Não há fim.
  *  - Perder não tira nada: o herói fica na mesma etapa e ganha um pouco de XP pela tentativa
  *    (desistir não dá XP).
  */
 import type { Difficulty } from './bot';
 import type { CardDef, HeroDef, StartBonus } from './types';
 
+export type NodeKind = 'battle' | 'training' | 'boss';
+export interface MapNode {
+  id: number;
+  /** Camada (0 = começo; a última é a do chefe) e faixa (de cima para baixo). */
+  layer: number; lane: number;
+  /** Posição no mapa, de 0 a 1. */
+  x: number; y: number;
+  kind: NodeKind;
+  /** Região do mapa (id do cenário da batalha: floresta, vulcao, cripta…). */
+  biome: string;
+  /** Batalha: id do herói oponente. Chefe: id do monstro. */
+  foe?: string;
+  /** Nós para onde este leva. */
+  next: number[];
+}
+export interface JourneyMap {
+  seed: number; nodes: MapNode[];
+  /** Último nó concluído (null = ainda no começo). */
+  at: number | null; cleared: number[];
+  /** Centros das regiões do mapa (cada uma com o seu bioma): o terreno e os oponentes de cada área saem daqui. */
+  regions?: { x: number; y: number; biome: string }[];
+}
+
 export interface JourneyState {
+  /** Batalhas vencidas + 1 (só para o registro). */
   stage: number; best: number; level: number; xp: number;
   vigor: number; mana: number; vida: number; pending: number;
   wins: number; losses: number;
+  /** Mapas já concluídos (chefes vencidos): cada um deixa os oponentes mais fortes. */
+  tier?: number;
+  map?: JourneyMap;
 }
 
-export const JOURNEY_MAX_LEVEL = 30, DECK_SIZE = 40, BOSS_EVERY = 5;
+export const JOURNEY_MAX_LEVEL = 30, DECK_SIZE = 40, MAX_COPIES = 4;
+/** Camadas de um mapa antes do chefe e faixas (linhas) em cada camada. */
+export const LAYERS = 7, LANES = 5;
 
-export const newJourney = (): JourneyState => ({ stage: 1, best: 0, level: 1, xp: 0, vigor: 0, mana: 0, vida: 0, pending: 0, wins: 0, losses: 0 });
+export const newJourney = (): JourneyState => ({ stage: 1, best: 0, level: 1, xp: 0, vigor: 0, mana: 0, vida: 0, pending: 0, wins: 0, losses: 0, tier: 0 });
 
 /** XP para passar do nível `level` ao seguinte: 40, 115, 210, 320, 445… (cada nível pede mais). */
 export const xpToNext = (level: number): number => Math.round((40 * Math.pow(level, 1.5)) / 5) * 5;
 
-export const isBoss = (stage: number): boolean => stage % BOSS_EVERY === 0;
+/** Dificuldade de um ponto do mapa: cresce a cada camada e a cada mapa concluído. */
+export const depthOf = (tier: number, layer: number): number => tier * (LAYERS + 1) + layer + 1;
 
-/** XP de uma vitória na etapa (cresce a cada etapa; o chefe dá metade a mais). Derrota: um quarto. */
-export function xpReward(stage: number, won: boolean): number {
-  const win = Math.round((20 + 10 * stage) * (isBoss(stage) ? 1.5 : 1));
+/** XP de uma vitória (cresce com a profundidade; o chefe dá o dobro). Derrota: um quarto. */
+export function xpReward(depth: number, won: boolean, boss = false): number {
+  const win = Math.round((20 + 8 * depth) * (boss ? 2 : 1));
   return won ? win : Math.round(win / 4);
 }
 
-/** Resultado de uma batalha: soma o XP, sobe os níveis que couberem e avança a etapa na vitória. Devolve quantos níveis subiu. */
-export function applyResult(j: JourneyState, won: boolean, forfeit = false): { xp: number; levels: number } {
-  // desistir (ou perder por tempo) não dá XP: senão dava para juntar XP só desistindo
-  const xp = forfeit && !won ? 0 : xpReward(j.stage, won);
+/** Soma XP e sobe os níveis que couberem. Devolve quantos níveis subiu. */
+export function addXp(j: JourneyState, xp: number): number {
   let levels = 0;
   j.xp += xp;
   while (j.level < JOURNEY_MAX_LEVEL && j.xp >= xpToNext(j.level)) { j.xp -= xpToNext(j.level); j.level++; j.pending++; levels++; }
   if (j.level >= JOURNEY_MAX_LEVEL) j.xp = 0;
-  if (won) { j.wins++; j.best = Math.max(j.best, j.stage); j.stage++; } else j.losses++;
+  return levels;
+}
+
+// ───────────── o mapa ─────────────
+
+/** Sorteio com semente (o mesmo mapa sempre que a semente for a mesma). */
+export function rng(seed: number): () => number {
+  let t = seed >>> 0;
+  return () => { t += 0x6d2b79f5; let r = Math.imul(t ^ (t >>> 15), t | 1); r ^= r + Math.imul(r ^ (r >>> 7), r | 61); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
+}
+
+/**
+ * Gera um mapa: vários caminhos saem da esquerda e andam uma camada por vez, subindo ou descendo
+ * uma faixa (ou seguindo reto); onde dois caminhos pisam no mesmo ponto, eles se juntam — é isso
+ * que cria as bifurcações e os cruzamentos. Todos terminam no chefe.
+ * `foes`: os oponentes possíveis (herói e a região dele). `boss`: o chefe do mapa.
+ */
+export function generateMap(seed: number, foes: { id: string; biome: string }[], boss: { id: string; biome: string }): JourneyMap {
+  const rand = rng(seed);
+  const key = (l: number, n: number) => l * LANES + n;
+  const edges = new Map<number, Set<number>>();
+  const used = new Set<number>();
+  const starts = [...Array(LANES).keys()].sort(() => rand() - 0.5);
+  const PATHS = 6;
+  for (let p = 0; p < PATHS; p++) {
+    // os primeiros caminhos saem de faixas diferentes; os outros, de qualquer uma
+    let lane = p < 3 ? starts[p] : Math.floor(rand() * LANES);
+    used.add(key(0, lane));
+    for (let l = 0; l < LAYERS - 1; l++) {
+      const step = rand() < 0.34 ? -1 : rand() < 0.5 ? 0 : 1;
+      const to = Math.max(0, Math.min(LANES - 1, lane + step));
+      const a = key(l, lane), b = key(l + 1, to);
+      (edges.get(a) ?? edges.set(a, new Set()).get(a)!).add(b);
+      used.add(b);
+      lane = to;
+    }
+  }
+  const order = [...used].sort((a, b) => a - b);
+  const idOf = new Map(order.map((k, i) => [k, i]));
+  // oponentes embaralhados, em rodízio, para não repetir o mesmo herói em sequência
+  const bag: { id: string; biome: string }[] = [];
+  const nextFoe = () => { if (!bag.length) bag.push(...[...foes].sort(() => rand() - 0.5)); return bag.pop()!; };
+  const nodes: MapNode[] = order.map((k, id) => {
+    const layer = Math.floor(k / LANES), lane = k % LANES;
+    return {
+      id, layer, lane, kind: 'battle', biome: '',
+      x: (layer + 1 + (rand() - 0.5) * 0.36) / (LAYERS + 1.75),
+      y: (lane + 0.5 + (rand() - 0.5) * 0.5) / LANES,
+      next: [...(edges.get(k) ?? [])].map((t) => idOf.get(t)!).sort((a, b) => a - b),
+    };
+  });
+  const parents = (n: MapNode) => nodes.filter((p) => p.next.includes(n.id));
+  // campos de treino: nunca na 1ª camada, nunca dois seguidos no mesmo caminho; o mapa tem pelo menos 3
+  const canTrain = (n: MapNode) => n.layer > 0 && n.kind === 'battle' && !parents(n).some((p) => p.kind === 'training') && !n.next.some((c) => nodes[c].kind === 'training');
+  for (const n of nodes) if (canTrain(n) && rand() < (n.layer === LAYERS - 1 ? 0.45 : 0.2)) n.kind = 'training';
+  for (let guard = 0; nodes.filter((n) => n.kind === 'training').length < 3 && guard < 60; guard++) {
+    const n = nodes[Math.floor(rand() * nodes.length)];
+    if (canTrain(n)) n.kind = 'training';
+  }
+  // regiões: cada bioma dos oponentes ocupa uma área do mapa (os centros ficam bem espalhados); a do chefe fica no fim
+  const biomes = [...new Set(foes.map((f) => f.biome))].sort(() => rand() - 0.5);
+  const regions: { x: number; y: number; biome: string }[] = [{ x: 0.97, y: 0.5, biome: boss.biome }];
+  const want = Math.max(5, Math.min(7, biomes.length));
+  for (let i = 0; i < want && biomes.length; i++) {
+    // melhor de vários sorteios: o ponto mais longe dos centros que já existem
+    let best = { x: 0, y: 0 }, far = -1;
+    for (let t = 0; t < 14; t++) {
+      const c = { x: 0.06 + rand() * 0.76, y: 0.08 + rand() * 0.84 };
+      const d = Math.min(...regions.map((r) => Math.hypot(r.x - c.x, (r.y - c.y) * 0.6)));
+      if (d > far) { far = d; best = c; }
+    }
+    regions.push({ ...best, biome: biomes[i % biomes.length] });
+  }
+  const regionOf = (n: { x: number; y: number }) => regions.reduce((a, b) => (Math.hypot(b.x - n.x, (b.y - n.y) * 0.6) < Math.hypot(a.x - n.x, (a.y - n.y) * 0.6) ? b : a)).biome;
+  for (const n of nodes) {
+    n.biome = regionOf(n);
+    if (n.kind !== 'battle') continue;
+    // o oponente é um herói daquela região (em rodízio, se houver mais de um); na região do chefe, qualquer um
+    const local = foes.filter((f) => f.biome === n.biome);
+    n.foe = local.length ? local[Math.floor(rand() * local.length)].id : nextFoe().id;
+  }
+  const bossNode: MapNode = { id: nodes.length, layer: LAYERS, lane: Math.floor(LANES / 2), kind: 'boss', biome: boss.biome, foe: boss.id, x: (LAYERS + 1.05) / (LAYERS + 1.75), y: 0.5, next: [] };
+  for (const n of nodes) if (n.layer === LAYERS - 1) n.next = [bossNode.id];
+  nodes.push(bossNode);
+  return { seed, nodes, at: null, cleared: [], regions };
+}
+
+/** Os pontos que o jogador pode escolher agora. */
+export function available(m: JourneyMap): MapNode[] {
+  if (m.at === null) return m.nodes.filter((n) => n.layer === 0);
+  return m.nodes[m.at].next.map((id) => m.nodes[id]);
+}
+
+/** Conclui um ponto do mapa (batalha vencida, treino feito). */
+export function clearNode(j: JourneyState, id: number): void {
+  if (!j.map) return;
+  j.map.at = id;
+  j.map.cleared.push(id);
+}
+
+/**
+ * Resultado de uma batalha num ponto do mapa: XP (nenhum se desistiu), níveis e, na vitória, o ponto
+ * fica concluído. Vencer o chefe encerra o mapa: o próximo é sorteado de novo, mais difícil.
+ */
+export function applyResult(j: JourneyState, node: MapNode, won: boolean, forfeit = false): { xp: number; levels: number } {
+  const boss = node.kind === 'boss';
+  const xp = forfeit && !won ? 0 : xpReward(depthOf(j.tier ?? 0, node.layer), won, boss);
+  const levels = addXp(j, xp);
+  if (won) {
+    j.wins++; j.stage++; j.best = Math.max(j.best, j.stage - 1);
+    clearNode(j, node.id);
+    if (boss) { j.tier = (j.tier ?? 0) + 1; j.map = undefined; }
+  } else j.losses++;
   return { xp, levels };
 }
 
@@ -56,15 +198,15 @@ export function choose(j: JourneyState, what: 'vigor' | 'mana' | 'vida'): void {
 /** Como o herói do jogador entra na batalha. */
 export const playerStart = (j: JourneyState): StartBonus => ({ level: j.level, vigor: j.vigor, mana: j.mana, vida: j.vida });
 
-/** Nível do oponente da etapa: sobe 1 a cada 2 etapas (o chefe vem 1 acima). */
-export const foeLevel = (stage: number): number => Math.min(JOURNEY_MAX_LEVEL, 1 + Math.floor((stage - 1) / 2) + (isBoss(stage) ? 1 : 0));
+/** Nível do oponente: sobe 1 a cada 2 pontos de profundidade (o chefe vem 1 acima). */
+export const foeLevel = (depth: number, boss = false): number => Math.min(JOURNEY_MAX_LEVEL, 1 + Math.floor((depth - 1) / 2) + (boss ? 1 : 0));
 
 /**
- * Como o oponente entra: no nível da etapa, com os bônus de nível distribuídos pelo perfil dele
- * (2 no recurso principal, 1 no outro, 1 em Vida, e repete); o chefe tem vida a mais.
+ * Como o oponente entra: no nível da profundidade, com os bônus de nível distribuídos pelo perfil dele
+ * (2 no recurso principal, 1 no outro, 1 em Vida, e repete); o chefe ganha vida a mais a cada mapa.
  */
-export function foeStart(hero: HeroDef, stage: number): StartBonus {
-  const level = foeLevel(stage);
+export function foeStart(hero: HeroDef, depth: number, boss = false): StartBonus {
+  const level = foeLevel(depth, boss);
   const main = hero.vigor >= hero.mana ? 'vigor' : 'mana', side = main === 'vigor' ? 'mana' : 'vigor';
   const out: StartBonus = { level, vigor: 0, mana: 0, vida: 0 };
   for (let i = 0; i < level - 1; i++) {
@@ -73,26 +215,34 @@ export function foeStart(hero: HeroDef, stage: number): StartBonus {
     else if (k === 2 && hero[side] > 0) out[side]++;
     else out[main]++;
   }
-  if (isBoss(stage)) out.vida += 6 + stage;
+  if (boss) out.vida += Math.floor(depth / 2);
   return out;
 }
 
-/** O bot joga melhor conforme as etapas avançam. */
-export const foeDifficulty = (stage: number): Difficulty => (stage <= 2 ? 'easy' : stage <= 6 ? 'normal' : 'hard');
+/** O bot joga melhor conforme a profundidade. */
+export const foeDifficulty = (depth: number): Difficulty => (depth <= 3 ? 'easy' : depth <= 10 ? 'normal' : 'hard');
 
 /**
  * O deck na Jornada: só as cartas que o herói já pode usar no nível dele. Se faltarem cartas
- * para as 40, entram cópias a mais das cartas liberadas (das que têm menos cópias primeiro).
+ * para as 40, entram cópias a mais das cartas liberadas (das que têm menos cópias primeiro),
+ * sem passar de 4 cópias (nem do que o jogador tem: `cap`). Reações e itens não se multiplicam.
  */
-export function journeyDeck(cards: CardDef[], level: number): CardDef[] {
-  const ok = cards.filter((c) => c.game.level <= level).map((c) => ({ ...c, game: { ...c.game } }));
-  if (!ok.length) return [];
+export function journeyDeck(cards: CardDef[], level: number, cap: (c: CardDef) => number = () => MAX_COPIES): CardDef[] {
+  const ok = cards.filter((c) => c.game.level <= level && c.game.copies > 0).map((c) => ({ ...c, game: { ...c.game } }));
   let total = ok.reduce((n, c) => n + c.game.copies, 0);
-  // as Reações e os itens não se multiplicam: quem completa o deck são as habilidades comuns
-  const pool = ok.filter((c) => c.game.kind !== 'reacao' && c.game.kind !== 'item');
-  const fill = pool.length ? pool : ok;
+  // cartas demais (o deck inicial mais as recompensas ganhas): saem cópias das cartas mais repetidas, as de nível mais baixo primeiro
+  while (total > DECK_SIZE) {
+    const most = ok.reduce((a, b) => (b.game.copies > a.game.copies || (b.game.copies === a.game.copies && b.game.level < a.game.level) ? b : a));
+    if (most.game.copies <= 1) break;
+    most.game.copies--;
+    total--;
+  }
+  const room = (c: CardDef) => c.game.copies < Math.min(MAX_COPIES, cap(c));
+  const pick = (pool: CardDef[]) => pool.filter(room).reduce<CardDef | null>((a, b) => (!a || b.game.copies < a.game.copies ? b : a), null);
+  const common = ok.filter((c) => c.game.kind !== 'reacao' && c.game.kind !== 'item');
   while (total < DECK_SIZE) {
-    const least = fill.reduce((a, b) => (b.game.copies < a.game.copies ? b : a));
+    const least = pick(common) ?? pick(ok);
+    if (!least) break;
     least.game.copies++;
     total++;
   }
@@ -105,4 +255,15 @@ export function unlocksAt(cards: CardDef[], level: number): { cards: CardDef[]; 
     cards: cards.filter((c) => c.game.level === level),
     ranks: cards.filter((c) => c.game.level < level && c.game.ranks?.some((r) => r.level === level)),
   };
+}
+
+/**
+ * Cartas oferecidas como recompensa (até 3): só as que o jogador ainda não tem em 4 cópias; de preferência
+ * as do nível do herói; faltando, as de nível mais próximo (primeiro abaixo, depois acima).
+ * `have`: quantas cópias o jogador tem de cada carta.
+ */
+export function rewardChoices<T extends { id: string; level: number }>(pool: T[], level: number, have: (id: string) => number, rand: () => number, n = 3): T[] {
+  const open = pool.filter((c) => have(c.id) < MAX_COPIES);
+  const dist = (c: T) => (c.level === level ? 0 : c.level < level ? level - c.level : (c.level - level) + 0.5);
+  return open.map((c) => ({ c, k: dist(c) + rand() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, n).map((x) => x.c);
 }

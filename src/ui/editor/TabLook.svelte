@@ -9,7 +9,10 @@
   (vinda do estilo ou escolhida), lida do próprio desenho.
 -->
 <script lang="ts">
-  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2, Link2, Unlink2, Paintbrush } from '@lucide/svelte';
+  import { ChevronDown, RotateCcw, Eye, EyeOff, Info, Undo2, Plus, X, ImagePlus, Trash2, Link2, Unlink2, Paintbrush, Star, BookmarkPlus } from '@lucide/svelte';
+  import { newId } from '../../model/id';
+  import { syncLook } from '../../model/lookPaths';
+  import LookPreview from './LookPreview.svelte';
   import { ensureAll, importImage, mediaUrl } from '../../store/media';
   import { ui } from '../../app/ui.svelte';
   import { app } from '../../store/project.svelte';
@@ -39,6 +42,34 @@
   let openSym = $state<string | null>(null);
   const look = $derived(ed.look);
   const theme = $derived(ed.scope !== 'card');
+
+  // ───── meus modelos: o visual inteiro guardado com um nome, ao lado dos estilos do jogo ─────
+  const templates = $derived(app.project?.themes ?? []);
+  const defaultTpl = $derived(app.project?.defaultThemeId);
+  let tplName = $state('');
+  let naming = $state(false);
+  /** O modelo com as cores e os símbolos deste deck (é assim que ele fica aqui). */
+  const tplLook = (l: Look): Look => syncLook($state.snapshot(ed.deckLook) as never, $state.snapshot(l) as never) as Look;
+  function saveTemplate() {
+    const name = tplName.trim() || L(`Modelo ${templates.length + 1}`, `Template ${templates.length + 1}`);
+    const lk = JSON.parse(JSON.stringify(ed.deckLook));
+    app.updateProject((p) => { p.themes = [...(p.themes ?? []), { id: newId('theme'), name, look: lk }]; });
+    tplName = ''; naming = false;
+    ui.toast(L(`Modelo “${name}” salvo na galeria`, `Template “${name}” saved to the gallery`));
+  }
+  function useTemplate(t: { name: string; look: Look }) {
+    ed.adoptLook($state.snapshot(t.look) as Look);
+    ui.toast(L(`Modelo “${t.name}” na amostra — confira e clique em Aplicar`, `Template “${t.name}” on the sample — check it and click Apply`), 'ok', 4200);
+  }
+  function toggleDefault(t: { id: string; name: string }) {
+    const on = defaultTpl !== t.id;
+    app.updateProject((p) => { if (on) p.defaultThemeId = t.id; else delete p.defaultThemeId; });
+    ui.toast(on ? L(`“${t.name}” agora é o padrão: os decks de coleções novas já nascem com ele`, `“${t.name}” is now the default: decks of new collections start with it`) : L('Sem modelo padrão: decks novos nascem com o estilo Neutro', 'No default template: new decks start with the Neutral style'), 'ok', 4200);
+  }
+  async function dropTemplate(t: { id: string; name: string }) {
+    const r = await ui.confirm({ title: L('Apagar o modelo?', 'Delete the template?'), text: L(`“${t.name}” sai da galeria (os decks que já usam o visual não mudam).`, `“${t.name}” leaves the gallery (decks already using the look do not change).`), ok: L('Apagar', 'Delete'), danger: true });
+    if (r === 'ok') app.updateProject((p) => { p.themes = (p.themes ?? []).filter((x) => x.id !== t.id); if (p.defaultThemeId === t.id) delete p.defaultThemeId; });
+  }
   /** Cores que a carta usa de fato (depois do modo de cor). */
   const colors = $derived(cardColors(ed.draft.colors.map(colorHex), look));
   const FONTS = [...new Set(CARD_FONTS.map((f) => f.family))];
@@ -219,6 +250,36 @@
       {/each}
     </div>
   </section>
+
+  {#if theme}
+    <section class="stack s">
+      <span class="section-title">{L('Meus modelos', 'My templates')}</span>
+      <div class="styles">
+        {#each templates as t (t.id)}
+          <div class="st tpl" class:def={defaultTpl === t.id}>
+            <button class="tpl-pick" onclick={() => useTemplate(t)} title={L('Usar este modelo neste deck', 'Use this template on this deck')}>
+              <LookPreview card={ed.draft} look={tplLook(t.look)} label={t.name} />
+            </button>
+            <div class="tpl-acts">
+              <button class:on={defaultTpl === t.id} onclick={() => toggleDefault(t)} title={defaultTpl === t.id ? L('Modelo padrão dos decks novos (clique para tirar)', 'Default template for new decks (click to unset)') : L('Tornar padrão: decks novos nascem com este modelo', 'Make default: new decks start with this template')}><Star size={13} fill={defaultTpl === t.id ? 'currentColor' : 'none'} /></button>
+              <button onclick={() => dropTemplate(t)} title={L('Apagar o modelo', 'Delete the template')}><Trash2 size={13} /></button>
+            </div>
+          </div>
+        {/each}
+        {#if naming}
+          <div class="st tpl-new">
+            <!-- svelte-ignore a11y_autofocus -->
+            <input class="input" autofocus placeholder={L('Nome do modelo', 'Template name')} bind:value={tplName} onkeydown={(e) => { if (e.key === 'Enter') saveTemplate(); else if (e.key === 'Escape') naming = false; }} />
+            <button class="btn sm primary" onclick={saveTemplate}>{L('Salvar', 'Save')}</button>
+            <button class="btn sm ghost" onclick={() => (naming = false)}>{L('Cancelar', 'Cancel')}</button>
+          </div>
+        {:else}
+          <button class="st tpl-add" onclick={() => (naming = true)}><BookmarkPlus size={22} /><span>{L('Salvar o visual atual como modelo', 'Save the current look as a template')}</span></button>
+        {/if}
+      </div>
+      <p class="muted small">{L('O modelo guarda o visual inteiro (estilo, peças, fontes e ajustes). Ao usar noutro deck, as cores e os símbolos do deck ficam. A estrela marca o modelo padrão dos decks novos.', 'A template keeps the whole look (style, pieces, fonts and tweaks). On another deck, the deck keeps its colours and symbols. The star marks the default template for new decks.')}</p>
+    </section>
+  {/if}
 
   <section class="stack s">
     <span class="section-title">{L('Cores da carta', 'Card colors')}</span>
@@ -526,6 +587,17 @@
   .st { display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 6px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); cursor: pointer; font: 500 12px var(--ui); }
   .st:hover { border-color: var(--line-2); color: var(--text); }
   .st.on { border-color: var(--accent); color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .st.tpl { position: relative; cursor: default; padding: 6px 6px 4px; }
+  .st.tpl.def { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .tpl-pick { width: 100%; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; }
+  .tpl-pick :global(figcaption) { font-size: 12px; color: var(--text-2); }
+  .tpl-acts { display: flex; gap: 4px; justify-content: center; }
+  .tpl-acts button { display: grid; place-items: center; width: 24px; height: 22px; border-radius: 6px; border: 0; background: none; color: var(--muted); cursor: pointer; }
+  .tpl-acts button:hover { background: var(--surface-3); color: var(--text); }
+  .tpl-acts button.on { color: var(--accent-2); }
+  .st.tpl-add { justify-content: center; border-style: dashed; min-height: 120px; text-align: center; line-height: 1.25; }
+  .st.tpl-new { justify-content: center; cursor: default; gap: 6px; }
+  .st.tpl-new .input { width: 100%; font-size: 12px; }
   .mini { width: 100%; aspect-ratio: 750 / 1050; border-radius: 6px; overflow: hidden; }
   .mini :global(svg) { width: 100%; height: 100%; display: block; }
   .fill { width: 100%; height: 100%; }
