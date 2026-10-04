@@ -13,7 +13,7 @@ const { pathToFileURL } = require('node:url');
 const DEV_URL = process.env.FORGE_DEV_URL; // ex.: http://localhost:5173 (desenvolvimento)
 const DIST = path.join(__dirname, '..', 'dist');
 
-// O jogo mudou de nome (era Darkstar Forge), mas os dados continuam na mesma pasta:
+// Os dados do jogador ficam sempre na mesma pasta do perfil (o nome dela é antigo e não muda, para ninguém perder o que criou):
 // heróis, decks e artes de quem já usava o programa não se perdem.
 app.setName('Void Sun');
 // (VOIDSUN_DATA aponta para outra pasta: usado nos testes, para não tocar nos dados de verdade)

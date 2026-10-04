@@ -13,7 +13,7 @@ Funciona com os dois jeitos de instalar modelos no ComfyUI:
   - modelo de arquivo único em models/checkpoints (SDXL, SD 1.5, Flux "checkpoint").
 
 Cada imagem é salva como <id>.png (ex.: artes-pf/pf-red_001.png), o nome que a
-Biblioteca → "Importar artes" do Darkstar Forge entende. Veja docs/artes.md.
+Biblioteca → "Importar artes" do Void Sun entende. Veja docs/artes.md.
 
 Só usa a biblioteca padrão do Python (nada para instalar).
 """
@@ -174,7 +174,7 @@ def gerar(servidor, wf, tempo_max):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Gera as artes das cartas do Darkstar Forge no ComfyUI.")
+    p = argparse.ArgumentParser(description="Gera as artes das cartas do Void Sun no ComfyUI.")
     p.add_argument("--servidor", default="http://127.0.0.1:8188", help="endereço do ComfyUI (padrão: %(default)s)")
     p.add_argument("--listar", action="store_true", help="só mostra os modelos encontrados")
     p.add_argument("--modelo", help="arquivo do modelo: Flux (diffusion_models/unet) ou checkpoint; padrão: detecta sozinho")
@@ -281,7 +281,7 @@ def main():
                 f.write(png)
             print(f" ok ({time.time() - t0:.0f} s)")
     print(f"\nPronto. Imagens em: {os.path.abspath(a.saida)}")
-    print("No Darkstar Forge: Biblioteca → coleção \"Classes — Pathfinder\" → Importar artes → selecione todas as imagens.")
+    print("No Void Sun: Biblioteca → coleção \"Classes — Pathfinder\" → Importar artes → selecione todas as imagens.")
 
 
 if __name__ == "__main__":

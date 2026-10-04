@@ -182,7 +182,7 @@
   /** Cartas de recompensa das classes do herói (as que não vêm no deck inicial). */
   const classRewards = $derived(hero ? app.decks.filter((d) => d.kind === 'class' && hero.classColors.includes(d.colors[0])).flatMap((d) => app.cardsOf(d.id).filter((c) => c.game)) : []);
   function offer(pool: Card[], title: string, sub: string, seed: number, nodeId?: number) {
-    const picks = rewardChoices(pool.map((c) => ({ id: c.id, level: c.game!.level })), j.level, (id) => app.ownedOf(app.cards[id]), rng(seed));
+    const picks = rewardChoices(pool.map((c) => ({ id: c.id, level: c.game!.level })), j.level, (id) => app.earnedOf(app.cards[id]), rng(seed));
     if (!picks.length) {
       // o jogador já tem tudo: o treino vira XP
       let levels = 0;
@@ -194,16 +194,33 @@
     }
     reward = { title, sub, cards: picks.map((x) => app.cards[x.id]).filter(Boolean), node: nodeId };
   }
+  /** Acampamento em curso: primeiro o descanso (animação), depois o treino — escolher 1 carta, ou o aviso de que não há mais o que aprender. */
+  let camp = $state<{ node: number; cards: Card[]; xp: number; stage: 'rest' | 'learn' } | null>(null);
   function train(n: MapNode) {
     if (!map || j.pending) return;
-    offer(classRewards, L('Acampamento', 'Camp'), L('Escolha uma habilidade nova para o seu inventário. Ela entra no seu deck da Jornada e pode ser usada nos decks montados.', 'Choose a new skill for your inventory. It joins your Journey deck and can be used in built decks.'), map.seed + n.id * 31, n.id);
+    const picks = rewardChoices(classRewards.map((c) => ({ id: c.id, level: c.game!.level })), j.level, (id) => app.earnedOf(app.cards[id]), rng(map.seed + n.id * 31));
+    camp = { node: n.id, cards: picks.map((x) => app.cards[x.id]).filter(Boolean), xp: 30 + 5 * j.level, stage: 'rest' };
+    chip.sfx('heal');
+    const c = camp;
+    setTimeout(() => { if (camp === c) { camp = { ...c, stage: 'learn' }; chip.sfx(c.cards.length ? 'levelup' : 'select'); } }, 2600);
+  }
+  /** Fim do acampamento: a vida volta, o ponto fica concluído e entra a carta escolhida (ou, sem carta para aprender, um pouco de XP). */
+  function leaveCamp(c?: Card) {
+    if (!camp) return;
+    const { node: nodeId, xp } = camp;
+    if (c) app.grant(c.id);
+    let levels = 0;
+    save((s) => { clearNode(s, nodeId); s.hurt = 0; if (!c) levels = addXp(s, xp); });
+    if (c) ui.toast(L(`“${c.text[app.lang].name}” entrou no inventário (${app.earnedOf(c)}/${MAX_COPIES})`, `“${c.text[app.lang].name}” joined the inventory (${app.earnedOf(c)}/${MAX_COPIES})`), 'ok', 4200);
+    if (levels) chip.sfx('levelup');
+    camp = null; pick = null;
   }
   function take(c: Card) {
     if (!reward) return;
     app.grant(c.id);
     const nodeId = reward.node;
     if (nodeId !== undefined) save((s) => { clearNode(s, nodeId); s.hurt = 0; });
-    ui.toast(L(`“${c.text[app.lang].name}” entrou no inventário (${app.ownedOf(c)}/${MAX_COPIES})`, `“${c.text[app.lang].name}” joined the inventory (${app.ownedOf(c)}/${MAX_COPIES})`), 'ok', 4200);
+    ui.toast(L(`“${c.text[app.lang].name}” entrou no inventário (${app.earnedOf(c)}/${MAX_COPIES})`, `“${c.text[app.lang].name}” joined the inventory (${app.earnedOf(c)}/${MAX_COPIES})`), 'ok', 4200);
     chip.sfx('levelup');
     reward = null; pick = null;
   }
@@ -383,6 +400,42 @@
     </div>
   {/if}
 
+  {#if camp && hero}
+    <div class="modal" transition:fade={{ duration: 200 }}>
+      <div class="campbox" class:learn={camp.stage === 'learn'} in:scale={{ duration: 300, start: 0.88 }}>
+        <div class="night">
+          <i class="moon"></i>
+          {#each Array(14) as _, i}<i class="star" style="left:{(i * 37) % 100}%;top:{(i * 53) % 60}%;animation-delay:-{i * 0.37}s"></i>{/each}
+          <div class="sleeper"><HeroPortrait hero={hero} size={78} round />{#if camp.stage === 'rest'}<span class="zz"><b>z</b><b>z</b><b>Z</b></span>{/if}</div>
+          <div class="fire"><i class="glow"></i><i class="fl a"></i><i class="fl b"></i><i class="fl c"></i>{#each Array(7) as _, i}<i class="spark" style="--x:{(i * 29) % 50 - 25}px;animation-delay:-{i * 0.31}s"></i>{/each}<i class="logs"></i></div>
+          <i class="tent"></i>
+        </div>
+        {#if camp.stage === 'rest'}
+          <small>{L('Acampamento', 'Camp')}</small>
+          <h2 class="display">{L(`${hero.name} descansa junto ao fogo…`, `${hero.name} rests by the fire…`)}</h2>
+          <div class="healbar"><Heart size={15} /><i><b></b></i><span>{L('a vida volta toda', 'life fully restored')}</span></div>
+        {:else if camp.cards.length}
+          <small in:fade>{L('Descansado e treinado', 'Rested and trained')}</small>
+          <h2 class="display" in:fade>{L('Uma técnica nova para aprender', 'A new technique to learn')}</h2>
+          <p class="muted" in:fade>{L('Escolha uma. Ela entra no seu inventário e no seu deck da Jornada.', 'Choose one. It joins your inventory and your Journey deck.')}</p>
+          <div class="rw-cards">
+            {#each camp.cards as c, i (c.id)}
+              <button class="rw deal" style="animation-delay:{i * 0.14}s" onclick={() => leaveCamp(c)}>
+                <CardImage card={c} eager />
+                <span>{L(`Você tem ${app.earnedOf(c)} de ${MAX_COPIES}`, `You own ${app.earnedOf(c)} of ${MAX_COPIES}`)}</span>
+              </button>
+            {/each}
+          </div>
+        {:else}
+          <small in:fade>{L('Descansado', 'Rested')}</small>
+          <h2 class="display" in:fade>{L('Não há mais nada para aprender', 'There is nothing left to learn')}</h2>
+          <p class="muted" in:fade>{L(`${hero.name} já aprendeu todas as técnicas da sua classe. O treino da noite rende ${camp.xp} XP.`, `${hero.name} has already learned every technique of the class. The night's training gives ${camp.xp} XP.`)}</p>
+          <button class="btn primary big" onclick={() => leaveCamp()}><Check size={16} /> {L('Seguir viagem', 'Travel on')}</button>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
   {#if reward}
     <div class="modal" transition:fade={{ duration: 160 }}>
       <div class="rewardbox" in:scale={{ duration: 260, start: 0.9 }}>
@@ -393,7 +446,7 @@
           {#each reward.cards as c (c.id)}
             <button class="rw" onclick={() => take(c)}>
               <CardImage card={c} eager />
-              <span>{L(`Você tem ${app.ownedOf(c)} de ${MAX_COPIES}`, `You own ${app.ownedOf(c)} of ${MAX_COPIES}`)}</span>
+              <span>{L(`Você tem ${app.earnedOf(c)} de ${MAX_COPIES}`, `You own ${app.earnedOf(c)} of ${MAX_COPIES}`)}</span>
             </button>
           {/each}
         </div>
@@ -516,6 +569,40 @@
   .rewardbox > small { font: 700 11px var(--ui); letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
   .rewardbox h2 { font-size: 30px; color: #f6ead8; }
   .rewardbox p { max-width: 620px; margin: 0 0 8px; }
+  /* acampamento: céu de noite, fogueira e o herói dormindo; depois, as cartas do treino */
+  .campbox { display: grid; justify-items: center; gap: 8px; padding: 0 30px 26px; border-radius: 20px; width: min(980px, 92vw); text-align: center; overflow: hidden;
+    background: linear-gradient(180deg, #17122a, #14100d 70%); border: 1px solid #c9a24a; box-shadow: 0 0 0 4px rgb(0 0 0 / .5), 0 30px 70px rgb(0 0 0 / .8), 0 0 60px rgb(255 150 60 / .16); }
+  .campbox > small { font: 700 11px var(--ui); letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
+  .campbox h2 { font-size: 28px; color: #f6ead8; } .campbox p { max-width: 620px; margin: 0 0 6px; }
+  .night { position: relative; width: calc(100% + 60px); height: 190px; margin-bottom: 10px; background: linear-gradient(180deg, #0b0a1e 0%, #1b1436 60%, #2a1a1c 100%); overflow: hidden; transition: height .5s cubic-bezier(.2, .8, .3, 1); }
+  .campbox.learn .night { height: 120px; }
+  .moon { position: absolute; right: 12%; top: 18px; width: 34px; height: 34px; border-radius: 50%; background: #f3ead6; box-shadow: 0 0 26px rgb(243 234 214 / .6), inset -9px -4px 0 #cfc3a6; }
+  .star { position: absolute; width: 3px; height: 3px; background: #fff; animation: twinkle 2.4s ease-in-out infinite; }
+  @keyframes twinkle { 50% { opacity: .15; } }
+  .tent { position: absolute; left: 14%; bottom: 0; width: 0; height: 0; border-left: 62px solid transparent; border-right: 62px solid transparent; border-bottom: 84px solid #3a2f52; filter: drop-shadow(0 0 0 #000); }
+  .tent::after { content: ''; position: absolute; left: -14px; top: 34px; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 50px solid #120d1c; }
+  .sleeper { position: absolute; left: calc(14% + 120px); bottom: 8px; filter: brightness(.85) drop-shadow(0 0 12px rgb(255 150 60 / .5)); }
+  .zz { position: absolute; left: 70%; top: -30px; display: flex; gap: 3px; align-items: flex-end; color: #cbd6ff; font: 800 16px var(--display); }
+  .zz b { animation: zz 2s ease-in-out infinite; } .zz b:nth-child(2) { animation-delay: .3s; font-size: 20px; } .zz b:nth-child(3) { animation-delay: .6s; font-size: 26px; }
+  @keyframes zz { 0% { transform: translateY(8px); opacity: 0; } 40% { opacity: 1; } 100% { transform: translateY(-16px); opacity: 0; } }
+  .fire { position: absolute; left: 56%; bottom: 10px; width: 70px; height: 96px; }
+  .fire .glow { position: absolute; left: 50%; bottom: -10px; width: 260px; height: 110px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgb(255 150 60 / .42), transparent 65%); animation: fglow 1.1s ease-in-out infinite; }
+  @keyframes fglow { 50% { opacity: .6; transform: translateX(-50%) scale(1.08); } }
+  .fl { position: absolute; left: 50%; bottom: 12px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; transform-origin: 50% 100%; animation: flame .5s ease-in-out infinite alternate; }
+  .fl.a { width: 46px; height: 70px; margin-left: -23px; background: #e2531c; }
+  .fl.b { width: 32px; height: 52px; margin-left: -16px; background: #ff9a2a; animation-duration: .38s; }
+  .fl.c { width: 16px; height: 30px; margin-left: -8px; background: #ffe7a6; animation-duration: .29s; }
+  @keyframes flame { from { transform: scale(1, 1) skewX(-4deg); } to { transform: scale(.9, 1.14) skewX(5deg); } }
+  .logs { position: absolute; left: 50%; bottom: 4px; width: 62px; height: 12px; margin-left: -31px; border-radius: 6px; background: #4a3220; box-shadow: 0 -4px 0 -1px #6b4a2e; }
+  .spark { position: absolute; left: 50%; bottom: 40px; width: 3px; height: 3px; background: #ffd36a; animation: spark 1.9s linear infinite; }
+  @keyframes spark { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(var(--x), -110px); opacity: 0; } }
+  .healbar { display: flex; gap: 10px; align-items: center; color: #e8a59a; font: 600 13px var(--ui); margin: 6px 0 4px; }
+  .healbar i { width: 260px; height: 12px; border-radius: 7px; background: rgb(255 255 255 / .08); overflow: hidden; }
+  .healbar i b { display: block; height: 100%; width: 100%; border-radius: 7px; background: linear-gradient(90deg, #a02c20, #ef6a55); transform-origin: 0 50%; animation: healfill 2.3s cubic-bezier(.3, .1, .2, 1) both; }
+  @keyframes healfill { from { transform: scaleX(.18); } to { transform: scaleX(1); } }
+  .rw.deal { animation: deal .5s cubic-bezier(.2, .8, .3, 1) both; }
+  @keyframes deal { from { transform: translateY(60px) rotate(-6deg) scale(.8); opacity: 0; } }
+  .campbox .btn.big { height: 46px; padding: 0 26px; font-size: 15px; }
   .rw-cards { display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; }
   .rw { display: grid; gap: 8px; justify-items: center; width: clamp(180px, 17vw, 260px); padding: 0; border: 0; background: none; cursor: pointer; color: var(--text-2); font: 600 12px var(--ui); transition: transform .16s cubic-bezier(.2, .8, .3, 1), filter .16s; filter: drop-shadow(0 14px 22px rgb(0 0 0 / .7)); }
   .rw:hover { transform: translateY(-10px) scale(1.06); filter: drop-shadow(0 0 22px rgb(240 196 90 / .6)) drop-shadow(0 20px 26px rgb(0 0 0 / .8)); color: #ffe7a6; }

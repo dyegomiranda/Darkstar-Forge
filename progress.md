@@ -1,8 +1,16 @@
 # Void Sun — progresso
 
-**Atualizado:** 04/10/2026 (versão 3.9.2: pilhas do montador corrigidas, símbolos de Vigor e Mana, ferramentas do modo desenvolvedor, vila de teste da Campanha)
+**Atualizado:** 04/10/2026 (versão 3.9.3: instaladores com todas as artes, acampamento animado, vila de teste com falas e modos de andar; repositório Void-Sun)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
-**Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+**Código antigo:** preservado no git na etiqueta `legado-v1`.
+
+## Versão 3.9.3 (04/10/2026)
+
+- [x] O instalador leva as artes das cartas dos decks Vermelho, Azul, Verde e Preto (antes só existiam no computador do autor)
+- [x] Acampamento: janela animada (noite, fogueira, o herói dormindo, a vida voltando) e depois as 3 cartas — ou o aviso de que não há mais o que aprender (o treino vira XP); as recompensas contam as cópias ganhas de verdade, mesmo no modo desenvolvedor
+- [x] Zoom das cartas na biblioteca menor
+- [x] Vila de teste: escolha do modo de andar (WASD ou apontar e clicar), balões de fala, perguntas com respostas no balão, moradores que passeiam, halo amarelo no que dá para interagir, botão esquerdo golpeia/interage, botão direito defende
+- [x] Repositório renomeado para Void-Sun; README e fluxo de instaladores atualizados
 
 ## Versão 3.9.2 (04/10/2026)
 

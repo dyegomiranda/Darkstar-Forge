@@ -57,7 +57,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: darkstar-forge-${{ matrix.platform }}
+          name: void-sun-${{ matrix.platform }}
           path: release/*.AppImage
           if-no-files-found: ignore
 
@@ -65,7 +65,7 @@ jobs:
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: darkstar-forge-windows
+          name: void-sun-windows
           path: release/*.exe
           if-no-files-found: ignore
 
@@ -73,7 +73,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
-          name: darkstar-forge-linux-deb
+          name: void-sun-linux-deb
           path: release/*.deb
           if-no-files-found: ignore
 
@@ -81,14 +81,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "Darkstar Forge ${{ github.ref_name }}"
+          name: "Void Sun ${{ github.ref_name }}"
           body: |
-            ## Darkstar Forge — Download Executables
+            ## Void Sun — instaladores
 
-            **Windows:** Download `.exe` (NSIS Installer) and run to install.
-            **Linux:** Download `.AppImage` (make executable) or `.deb` package.
+            **Windows:** baixe o `.exe` e dê dois cliques para instalar.
+            **Linux:** baixe o `.AppImage` (marque como executável) ou o pacote `.deb`.
 
-            All your custom artwork, card designs, icons, and symbols remain saved in your local application profile!
+            O jogo já vem com os 7 heróis prontos, os decks de classe, os itens, as artes das cartas e o modo Jornada.
+            O que você criar (heróis, decks, cartas) fica salvo no seu computador.
           files: |
             release/*.AppImage
             release/*.deb
