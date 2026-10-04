@@ -8,7 +8,7 @@ vi.mock('../src/store/db', () => ({
 }));
 
 const { app } = await import('../src/store/project.svelte');
-const { EditorState } = await import('../src/ui/editor/editor.svelte');
+const { EditorState } = await import('../src/ui/editor/editorState.svelte');
 
 describe('caminhos da aparência', () => {
   it('apaga um caminho e limpa grupos vazios', () => {

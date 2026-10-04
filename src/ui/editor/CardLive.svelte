@@ -7,7 +7,7 @@
   import { cardInput, lookMediaIds, mergeLook } from '../../render/card';
   import { CARD_W } from '../../render/layout';
   import { ensureCardMedia } from '../common/cardCtx';
-  import type { EditorState } from './editor.svelte';
+  import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 

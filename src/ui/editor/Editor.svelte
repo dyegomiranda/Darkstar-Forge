@@ -7,7 +7,7 @@
   import { L } from '../../app/i18n.svelte';
   import { COLORS } from '../../model/catalog';
   import { exportPng } from '../../export/exporters.svelte';
-  import { EditorState } from './editor.svelte';
+  import { EditorState } from './editorState.svelte';
   import CardLive from './CardLive.svelte';
   import TabText from './TabText.svelte';
   import TabGame from './TabGame.svelte';

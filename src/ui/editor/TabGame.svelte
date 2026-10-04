@@ -11,7 +11,7 @@
   import { lighten } from '../../render/color';
   import { vivid } from '../../render/palette';
   import Glyph from '../common/Glyph.svelte';
-  import type { EditorState } from './editor.svelte';
+  import type { EditorState } from './editorState.svelte';
   import { ATTRS, ATTR_NAMES, KIND_NAMES, type Attr } from '../../game/types';
   import { FREE, PER_COST } from '../../game/value';
   import { gameText } from '../../game/text';

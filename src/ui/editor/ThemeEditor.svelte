@@ -13,7 +13,7 @@
   import { ui } from '../../app/ui.svelte';
   import { L } from '../../app/i18n.svelte';
   import type { DeckKind } from '../../model/types';
-  import { EditorState, type LookScope } from './editor.svelte';
+  import { EditorState, type LookScope } from './editorState.svelte';
   import CardLive from './CardLive.svelte';
   import TabLook from './TabLook.svelte';
   import LookPreview from './LookPreview.svelte';
