@@ -105,6 +105,7 @@
     }, 0);
   }
 
+  $effect(() => { app.devAll = settings.v.dev; });
   const route = $derived(router.route.name);
   /** Telas do construtor de decks: têm a barra com as abas Biblioteca / Coleção / Verso. */
   const inDecks = $derived(route === 'library' || route === 'collection' || route === 'back' || route === 'editor' || route === 'theme' || route === 'builds');
