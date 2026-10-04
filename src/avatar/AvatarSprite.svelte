@@ -6,8 +6,8 @@
 <script lang="ts">
   import { compose, DIRS, FX_COLORS, LPC, type Anim, type Avatar, type Dir, type Sheet } from './lpc';
 
-  let { avatar, anim = 'idle', dir = 's', scale = 2, loop = true, shadow = true, onend }: {
-    avatar: Avatar; anim?: Anim; dir?: Dir; scale?: number; loop?: boolean; shadow?: boolean; onend?: () => void;
+  let { avatar, anim = 'idle', dir = 's', scale = 2, loop = true, shadow = true, speed = 1, onend }: {
+    avatar: Avatar; anim?: Anim; dir?: Dir; scale?: number; loop?: boolean; shadow?: boolean; /** Multiplica a velocidade da animação (1 = normal). */ speed?: number; onend?: () => void;
   } = $props();
 
   const FPS: Record<Anim, number> = { idle: 1.6, walk: 10, slash: 13, thrust: 13, shoot: 14, spellcast: 11, hurt: 9 };
@@ -124,7 +124,7 @@
         frame = 0;
       } else frame++;
       draw(s, frame);
-    }, 1000 / FPS[a]);
+    }, 1000 / (FPS[a] * speed));
     // o efeito mágico tem o seu próprio ritmo (mexe mesmo com o boneco parado)
     const glow = s.fx || s.glow ? setInterval(() => draw(s, Math.min(frame, s.frames - 1)), 75) : undefined;
     return () => { clearInterval(timer); clearInterval(glow); };
