@@ -224,7 +224,7 @@
       {/each}
       {#if hero?.avatar}
         <span class="fig me" style="left:{pos.x}px;top:{pos.y}px;z-index:{Math.round(pos.y)}">
-          <span class="lift" style="transform:translateY({-jump}px)"><AvatarSprite avatar={hero.avatar} {anim} {dir} scale={1} loop={anim === 'idle' || anim === 'walk'} shadow={false} onend={() => { if (!defending) { attacking = false; anim = 'idle'; } }} /></span>
+          <span class="lift" style="transform:translateY({-jump}px)"><AvatarSprite avatar={hero.avatar} {anim} {dir} scale={1} loop={anim === 'idle' || anim === 'walk'} speed={anim === 'idle' || anim === 'walk' ? 1 : 1.35} shadow={false} onend={() => { if (!defending) { attacking = false; anim = 'idle'; } }} /></span>
           <i class="shadow" style="transform:translateX(-50%) scale({1 - jump / 60})"></i>
           {#if defending}<i class="guard {dir}"></i>{/if}
           {#if mine}<span class="balloon me">{mine}</span>{/if}
@@ -263,9 +263,10 @@
   .fig { position: absolute; transform: translate(-50%, -86%); line-height: 0; pointer-events: none; display: grid; justify-items: center; }
   .fig small { position: absolute; top: 100%; margin-top: -6px; font: 600 10px/1 var(--ui); color: #fff; padding: 2px 5px; border-radius: 5px; background: rgb(0 0 0 / .55); white-space: nowrap; }
   .lift { display: block; }
-  .fig.npc { pointer-events: auto; cursor: pointer; transition: filter .12s; }
+  .fig.npc { pointer-events: auto; cursor: pointer; }
   /* dá para interagir: um halo amarelo em volta (só o contorno, sem cobrir a figura) */
-  .fig.npc.hot { filter: drop-shadow(0 0 2px #ffe7a6) drop-shadow(0 0 7px rgb(255 205 90 / .9)); }
+  /* (o halo vai só no boneco: o balão de fala e o nome não brilham) */
+  .fig.npc.hot > :global(:first-child) { filter: drop-shadow(0 0 2px #ffe7a6) drop-shadow(0 0 7px rgb(255 205 90 / .9)); }
   .balloon { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; z-index: 5000; width: max-content; max-width: 230px; padding: 7px 11px; border-radius: 10px; font: 500 12.5px/1.35 var(--ui); color: #fff; text-align: left;
     background: rgb(0 0 0 / .78); border: 1px solid rgb(255 255 255 / .16); box-shadow: 0 6px 14px rgb(0 0 0 / .5); animation: pop .16s ease-out; }
   .balloon::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -6px; border: 6px solid transparent; border-top-color: rgb(0 0 0 / .78); }

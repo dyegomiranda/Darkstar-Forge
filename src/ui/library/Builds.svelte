@@ -450,7 +450,7 @@
 
   /* pilhas: colunas de cartas sobrepostas (só a faixa do nome de cada uma aparece; a última, inteira) */
   .piles { --pw: clamp(120px, 11.5vw, 178px); --strip: 26px; flex: 1; min-height: 0; overflow: auto; display: flex; gap: 14px; align-items: flex-start; padding: 18px; }
-  .pile { flex: none; width: var(--pw); min-height: calc(var(--pw) * 1.4); display: flex; flex-direction: column; border-radius: 10px; padding-bottom: calc(var(--pw) * 1.4); }
+  .pile { flex: none; width: var(--pw); min-height: calc(var(--pw) * 1.4); display: flex; flex-direction: column; border-radius: 10px; }
   .pile.ghostcol { border: 2px dashed transparent; align-items: center; justify-content: center; padding: 0; }
   .piles.dragging .pile.ghostcol { border-color: var(--line-2); }
   .newcol { display: none; font-size: 11px; color: var(--muted); text-align: center; padding: 10px; }
@@ -466,7 +466,9 @@
   .pt b { font: 600 11.5px var(--ui); color: #f3ead6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* de cada pilha só a última carta aparece inteira (logo abaixo da placa dela); as outras são só a placa com o nome */
   .pile .pc:not(:last-of-type) > :global(*:first-child) { display: none; }
-  .pile .pc:last-of-type > :global(*:first-child) { top: var(--strip); }
+  /* a carta da frente não leva placa (ela já mostra o próprio nome) e pode ser pega pela carta inteira */
+  .pile .pc:last-of-type { height: calc(var(--pw) * 1.4); }
+  .pile .pc:last-of-type .pt { display: none; }
   .pc.held .pt { opacity: .3; }
   .pn { position: absolute; right: 4px; top: 3px; z-index: 7; padding: 0 7px; border-radius: 8px; font: 800 12px/19px var(--ui); color: #fff; background: rgb(10 8 14 / .86); border: 1px solid rgb(255 255 255 / .25); pointer-events: none; }
   .pc.held > :global(*:first-child) { opacity: .22; }
