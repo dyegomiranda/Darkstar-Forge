@@ -188,6 +188,8 @@ export interface Project {
   seeded?: string[];
   /** Inventário de decks: os decks de batalha montados pelo jogador. */
   builds?: Build[];
+  /** Semente do mapa atual da Jornada: o mesmo para todos os heróis; muda quando um chefe é vencido. */
+  journeySeed?: number;
   /** Jornada de cada herói (por id do herói). */
   journeys?: Record<string, Journey>;
   /**

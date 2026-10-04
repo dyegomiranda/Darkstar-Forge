@@ -202,7 +202,7 @@
         {@const n = buildCount(b)}
         {@const art = coverOf(b)}
         {@const cs = buildColors(b, app.cards, app.decks)}
-        <button class="box" class:on={open?.id === b.id} style="--k:{colorHex(cs[0] ?? 'red')}" onclick={() => go(b.id)}>
+        <button class="box" class:on={open?.id === b.id} style="--k:{colorHex(cs[0] ?? 'red')}" onclick={() => go(b.id)} title={b.name}>
           <span class="box-art" style={art ? `background-image:url("${art}")` : ''}>{#if !art}<Glyph id={classIcon(cs[0] ?? 'red')} size={34} color="#f3ead6" />{/if}</span>
           <span class="box-pips">{#each cs as c}<i style="background:{colorHex(c)}"><Glyph id={classIcon(c)} size={11} color="#fff" /></i>{/each}</span>
           <span class="box-name"><b>{b.name}</b><small class:bad={n !== DECK_SIZE}>{n}/{DECK_SIZE}</small></span>
@@ -230,7 +230,7 @@
         <div class="sep"><i></i><span><Skull size={12} /> {L('Decks de monstros', 'Monster decks')}</span><i></i></div>
         {#each monsters as d (d.id)}
           {@const cs = app.cardsOf(d.id).filter((c) => c.game)}
-          <button class="box mon" class:on={monster?.id === d.id} onclick={() => go(d.id)}>
+          <button class="box mon" class:on={monster?.id === d.id} onclick={() => go(d.id)} title={d.name[app.lang]}>
             <span class="box-art" style="background-image:url('heroes/{d.id.replace('proto-monster-', '')}.webp')"></span>
             <span class="box-name"><b>{d.name[app.lang].replace(/^.*— /, '')}</b><small>{cs.filter((c) => app.ownedOf(c) > 0).length}/{cs.length} {L('cartas', 'cards')}</small></span>
           </button>

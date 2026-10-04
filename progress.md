@@ -1,8 +1,19 @@
 # Void Sun — progresso
 
-**Atualizado:** 04/10/2026 (versão 3.9: mapa da Jornada, chefe Dragão, posse de cartas, deck de Itens, montador de decks novo, modelos de estilo)
+**Atualizado:** 04/10/2026 (versão 3.9.1: mapa único da Jornada com mini-chefes e inimigos comuns, modo desenvolvedor, morte permanente de teste)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.9.1 (04/10/2026)
+
+- [x] Jornada: o mapa é o mesmo para qualquer herói e só é sorteado de novo quando um chefe é vencido
+- [x] Cada bioma tem um só herói (o mini-chefe da região); os outros pontos são inimigos comuns do bioma (goblin, orc, esqueleto, homem-lagarto, homem-javali, lobisomem, constructo, diabrete), com o deck do mini-chefe e o boneco mais fraco
+- [x] Biomas com transição gradual (sem linha de divisa)
+- [x] Morte permanente (teste, desligada por padrão): perder zera o progresso do herói
+- [x] Modo desenvolvedor (Ajustes → Jogo): todas as cartas com 4 cópias, decks de monstros completos, qualquer ponto do mapa jogável, +1 nível e sortear outro mapa
+- [x] Ficha do herói: os decks montados mostram a arte da caixa; nome completo do deck ao passar o mouse
+- [x] Lista de decks da biblioteca: grupos Itens, Equipamentos e Decks de monstros; contagem certa dos itens
+- [x] Logotipo: aura rubra saindo do corpo, mais forte nas costas
 
 ## Versão 3.9 (04/10/2026)
 

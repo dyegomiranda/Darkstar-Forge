@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROTO_DECKS } from '../src/game/decks';
-import { addXp, applyResult, available, choose, foeLevel, foeStart, generateMap, journeyDeck, newJourney, rewardChoices, rng, unlocksAt, xpReward, xpToNext, DECK_SIZE, LAYERS } from '../src/game/journey';
+import { addXp, applyResult, available, choose, foeLevel, foeStart, generateMap, journeyDeck, minionOf, newJourney, rewardChoices, rng, unlocksAt, xpReward, xpToNext, DECK_SIZE, LAYERS } from '../src/game/journey';
 import type { CardDef } from '../src/game/types';
 
 const defs = (i: number): CardDef[] => PROTO_DECKS[i].cards.map((c, k) => ({ id: `${PROTO_DECKS[i].color}-${k}`, name: c.name, game: c.game }));
@@ -23,14 +23,18 @@ describe('Jornada', () => {
       const boss = m.nodes[m.nodes.length - 1];
       expect(boss.kind).toBe('boss');
       expect(available(m).length).toBeGreaterThanOrEqual(2);
-      expect(available(m).every((n) => n.layer === 0 && n.kind === 'battle')).toBe(true);
+      expect(available(m).every((n) => n.layer === 0 && n.kind !== 'training' && n.kind !== 'boss')).toBe(true);
       // de qualquer ponto, andando só para frente, chega-se ao chefe
       for (const n of m.nodes) { let at = n; while (at.kind !== 'boss') { expect(at.next.length, `semente ${seed}, nó ${at.id}`).toBeGreaterThan(0); expect(m.nodes[at.next[0]].layer).toBe(at.layer + 1); at = m.nodes[at.next[0]]; } }
       const trains = m.nodes.filter((n) => n.kind === 'training');
       expect(trains.length).toBeGreaterThanOrEqual(3);
       // nunca dois treinos seguidos
       for (const t of trains) expect(t.next.some((c) => m.nodes[c].kind === 'training')).toBe(false);
-      expect(m.nodes.filter((n) => n.kind === 'battle').every((n) => n.foe && n.biome)).toBe(true);
+      expect(m.nodes.every((n) => !!n.biome)).toBe(true);
+      // um mini-chefe por bioma, no máximo: nenhum herói se repete
+      const elites = m.nodes.filter((n) => n.kind === 'elite').map((n) => n.foe);
+      expect(new Set(elites).size).toBe(elites.length);
+      expect(elites.length).toBeGreaterThanOrEqual(3);
       expect(m.nodes.every((n) => n.x > 0 && n.x < 1 && n.y > 0 && n.y < 1)).toBe(true);
     }
     expect(shapes.size).toBeGreaterThan(35);
@@ -91,6 +95,10 @@ describe('Jornada', () => {
     expect(foeLevel(9)).toBeGreaterThan(foeLevel(3));
     const h = PROTO_DECKS[0].hero;
     expect(foeStart(h, 8, true).vida).toBeGreaterThan(foeStart(h, 8).vida);
+    const mn = minionOf(h, 'm', 'Orc');
+    expect(mn.maxHp).toBeLessThan(h.maxHp * 0.7);
+    expect(mn.attrs.for).toBe(h.attrs.for - 1);
+    expect(xpReward(4, true, false, true)).toBeGreaterThan(xpReward(4, true));
     const s = foeStart(h, 9);
     expect(s.vigor + s.mana + s.vida / 3).toBe(s.level - 1);
   });

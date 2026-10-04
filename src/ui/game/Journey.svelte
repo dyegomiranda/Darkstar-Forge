@@ -25,7 +25,10 @@
   import { PROTO_MONSTERS } from '../../game/decks';
   import { monsterDeckId } from '../../model/seed';
   import { MAX_COPIES } from '../../model/builds';
-  import { addXp, applyResult, available, choose, clearNode, depthOf, foeDifficulty, foeLevel, foeStart, generateMap, journeyDeck, newJourney, playerStart, rewardChoices, rng, unlocksAt, xpReward, xpToNext, JOURNEY_MAX_LEVEL, type JourneyState, type MapNode } from '../../game/journey';
+  import { addXp, applyResult, available, choose, clearNode, depthOf, foeDifficulty, foeLevel, foeStart, generateMap, journeyDeck, minionOf, newJourney, playerStart, rewardChoices, rng, unlocksAt, xpReward, xpToNext, JOURNEY_MAX_LEVEL, type JourneyState, type MapNode } from '../../game/journey';
+  import { settings } from '../../app/settings.svelte';
+  import type { Avatar } from '../../avatar/lpc';
+  import type { HeroDef } from '../../game/types';
   import type { CardDef } from '../../game/types';
   import type { Card, Character, ColorId } from '../../model/types';
   import { biomeOf, paintMap, trail } from './mapArt';
@@ -57,13 +60,48 @@
   };
   const bossCards = $derived(app.cardsOf(monsterDeckId(monster.id)).filter((c) => c.game));
 
-  // ───── o mapa: gerado quando a jornada do herói ainda não tem um ─────
-  const foes = $derived(chars.filter((c) => c.id !== hero?.id).map((c) => ({ id: c.id, biome: BIOME_OF[c.classColors[0]] ?? 'campo' })));
-  $effect(() => {
-    if (!hero || j.map || !foes.length) return;
-    const list = $state.snapshot(foes) as { id: string; biome: string }[];
-    save((s) => { s.map = generateMap(Math.floor(Math.random() * 2 ** 31), list, { id: monster.id, biome: 'vulcao' }); });
+  // ───── o mapa: o MESMO para qualquer herói; só muda quando um chefe é vencido (aí é sorteado de novo) ─────
+  /** O herói de cada bioma (o mini-chefe da região): de preferência o herói pronto daquela classe. */
+  const foes = $derived.by(() => {
+    const out: { id: string; biome: string }[] = [];
+    for (const [color, biome] of Object.entries(BIOME_OF)) {
+      const c = chars.find((x) => x.classColors[0] === color && x.preset) ?? chars.find((x) => x.classColors[0] === color);
+      if (c) out.push({ id: c.id, biome });
+    }
+    return out;
   });
+  const newSeed = () => Math.floor(Math.random() * 2 ** 31);
+  $effect(() => {
+    if (!hero || foes.length < 2 || !app.project) return;
+    const seed = app.project.journeySeed;
+    if (seed === undefined) { app.updateProject((p) => { p.journeySeed = newSeed(); }); return; }
+    if (j.map?.seed === seed) return;
+    const list = $state.snapshot(foes) as { id: string; biome: string }[];
+    save((s) => { s.map = generateMap(seed, list, { id: monster.id, biome: 'vulcao' }); });
+  });
+  const dev = $derived(settings.v.dev);
+
+  // ───── inimigos comuns de cada região: usam o deck do herói dela, mas são mais fracos ─────
+  const MINIONS: Record<string, { name: [string, string]; avatar: Avatar }> = {
+    floresta: { name: ['Goblin da mata', 'Forest goblin'], avatar: { body: 'male', skin: 'bright_green', eyes: 'yellow', head: 'goblin', parts: { weapon: { id: 'weapon_sword_arming', color: 'iron' }, legs: { id: 'legs_pants', color: 'black' } } } },
+    deserto: { name: ['Orc saqueador', 'Orc raider'], avatar: { body: 'muscular', skin: 'green', eyes: 'red', head: 'orc', parts: { weapon: { id: 'weapon_sword_arming', color: 'iron' }, legs: { id: 'legs_pants', color: 'black' } } } },
+    masmorra: { name: ['Constructo', 'Flesh golem'], avatar: { body: 'muscular', skin: 'zombie_green', eyes: 'yellow', head: 'frankenstein', parts: { legs: { id: 'legs_pants', color: 'black' } } } },
+    cripta: { name: ['Esqueleto', 'Skeleton'], avatar: { body: 'male', skin: 'bone', eyes: 'red', frame: 'skeleton', head: 'skeleton', parts: { shield: { id: 'shield_round', color: 'silver' }, weapon: { id: 'weapon_sword_arming', color: 'iron' } } } },
+    pantano: { name: ['Homem-lagarto', 'Lizardfolk'], avatar: { body: 'male', skin: 'green', eyes: 'yellow', head: 'lizard', parts: { tail: { id: 'tail_lizard' }, legs: { id: 'legs_pants', color: 'black' } } } },
+    campo: { name: ['Homem-javali', 'Boarman'], avatar: { body: 'muscular', skin: 'fur_brown', eyes: 'red', head: 'boarman', parts: { weapon: { id: 'weapon_sword_arming', color: 'iron' }, legs: { id: 'legs_pants', color: 'black' } } } },
+    neve: { name: ['Lobisomem', 'Werewolf'], avatar: { body: 'muscular', skin: 'fur_grey', eyes: 'yellow', head: 'wolf', parts: { legs: { id: 'legs_pants', color: 'black' } } } },
+    vulcao: { name: ['Diabrete', 'Imp'], avatar: { body: 'male', skin: 'demon', eyes: 'yellow', parts: { horns: { id: 'head_horns_backwards' }, wings: { id: 'wings_lizard_bat' }, tail: { id: 'tail_lizard' }, legs: { id: 'legs_pants', color: 'black' } } } },
+  };
+  /** O inimigo comum de um bioma: a ficha de mentira e o herói (mais fraco) dele. */
+  function minion(biome: string): { char: Character; hero: HeroDef } | null {
+    const m = MINIONS[biome] ?? MINIONS.campo;
+    const lord = chars.find((c) => c.id === foes.find((f) => f.biome === biome)?.id);
+    const base = lord ? heroDef(lord) : monster.hero;
+    const hd = minionOf(base, `minion-${biome}`, L(m.name[0], m.name[1]));
+    hd.className = [L('Inimigo comum', 'Common enemy'), 'Common enemy'];
+    const play = lord?.play ? { ...lord.play, id: hd.id, name: hd.name } : { ...monster.hero, baseHp: hd.maxHp, deckId: monsterDeckId(monster.id) };
+    return { char: { id: hd.id, name: hd.name, raceId: '', classColors: lord?.classColors ?? ['red'], level: 1, hp: hd.maxHp, stats: {} as Character['stats'], slots: {}, notes: '', avatar: m.avatar, play }, hero: hd };
+  }
   const map = $derived(j.map);
   const tier = $derived(j.tier ?? 0);
   const open = $derived(map ? available(map).map((n) => n.id) : []);
@@ -75,8 +113,8 @@
   let pick = $state<number | null>(null);
   const node = $derived<MapNode | undefined>(map && pick !== null ? map.nodes[pick] : undefined);
   $effect(() => { void hero?.id; void map?.seed; pick = null; });
-  const charOf = (n: MapNode): Character | undefined => (n.kind === 'boss' ? bossChar : chars.find((c) => c.id === n.foe));
-  const defOf = (n: MapNode) => (n.kind === 'boss' ? monster.hero : (() => { const c = charOf(n); return c ? heroDef(c) : null; })());
+  const charOf = (n: MapNode): Character | undefined => (n.kind === 'boss' ? bossChar : n.kind === 'elite' ? chars.find((c) => c.id === n.foe) : n.kind === 'battle' ? minion(n.biome)?.char : undefined);
+  const defOf = (n: MapNode) => (n.kind === 'boss' ? monster.hero : n.kind === 'battle' ? minion(n.biome)?.hero ?? null : (() => { const c = charOf(n); return c ? heroDef(c) : null; })());
   const depth = (n: MapNode) => depthOf(tier, n.layer);
 
   // ───── deck e liberações ─────
@@ -106,10 +144,17 @@
     battle = {
       myId: hero.id, botId: foe.id, start: [playerStart(j), foeStart(fd, d, boss)], difficulty: foeDifficulty(d), scene: n.biome,
       label: boss ? L('Chefe', 'Boss') : L(biomeOf(n.biome).name[0], biomeOf(n.biome).name[1]),
-      guest: boss ? { char: bossChar, hero: monster.hero } : undefined,
+      guest: boss ? { char: bossChar, hero: monster.hero } : n.kind === 'battle' ? { char: foe, hero: fd } : undefined,
       onEnd: (won, forfeit) => {
         let r = { xp: 0, levels: 0 };
         save((s) => { r = applyResult(s, n, won, forfeit); });
+        // chefe vencido: o mapa de todos é sorteado de novo
+        if (won && boss) app.updateProject((p) => { p.journeySeed = newSeed(); });
+        // morte permanente (teste): perder zera o progresso do herói
+        if (!won && settings.v.permadeath) {
+          save((s) => { for (const k of Object.keys(s)) delete (s as unknown as Record<string, unknown>)[k]; Object.assign(s, newJourney()); });
+          ui.toast(L(`Morte permanente: ${hero.name} perdeu todo o progresso e recomeça do nível 1.`, `Permadeath: ${hero.name} lost all progress and starts again at level 1.`), 'error', 6000);
+        }
         result = { won, ...r, text: won ? (boss ? L(`${foe.name} foi derrotado!`, `${foe.name} was defeated!`) : L(`Vitória sobre ${foe.name}`, `Victory over ${foe.name}`)) : L(`Derrota para ${foe.name}`, `Defeated by ${foe.name}`) };
         battle = null; pick = null;
         chip.sfx(r.levels ? 'levelup' : won ? 'victory' : 'defeat');
@@ -229,18 +274,18 @@
             <span class="sp-where"><MapPin size={12} /> {L(art.name[0], art.name[1])}</span>
             {#if node.kind === 'training'}
               <div class="sp-head"><span class="sp-ic"><GraduationCap size={26} /></span><span><b class="display">{L('Campo de treino', 'Training camp')}</b><small>{L('Escolha 1 de 3 habilidades novas da sua classe.', 'Choose 1 of 3 new skills of your class.')}</small></span></div>
-              {#if st === 'open'}<button class="btn primary" disabled={!!j.pending} onclick={() => train(node)}><GraduationCap size={16} /> {L('Treinar', 'Train')}</button>{/if}
+              {#if st === 'open' || dev}<button class="btn primary" disabled={!!j.pending} onclick={() => train(node)}><GraduationCap size={16} /> {L('Treinar', 'Train')}</button>{/if}
             {:else}
               {@const fc = charOf(node)}
               {@const fd = defOf(node)}
               {#if fc && fd}
                 {@const fb = foeStart(fd, depth(node), node.kind === 'boss')}
                 <div class="sp-head" style="--k:{heroColor(fc)}"><HeroPortrait hero={fc} size={62} round />
-                  <span><b class="display">{fc.name}</b><small>{L(fd.className[0], fd.className[1])} · {L('nível', 'level')} {foeLevel(depth(node), node.kind === 'boss')}</small>
+                  <span><b class="display">{fc.name}</b><small>{node.kind === 'elite' ? L('Mini-chefe · ', 'Mini-boss · ') : ''}{L(fd.className[0], fd.className[1])} · {L('nível', 'level')} {foeLevel(depth(node), node.kind === 'boss')}</small>
                     <small><Heart size={11} /> {fd.maxHp + fb.vida} · Vigor {fd.vigor + fb.vigor} · Mana {fd.mana + fb.mana}</small>
-                    <small>{L(DIFFICULTIES.find((d) => d.id === foeDifficulty(depth(node)))!.name[0], DIFFICULTIES.find((d) => d.id === foeDifficulty(depth(node)))!.name[1])} · <em><Sparkles size={11} /> +{xpReward(depth(node), true, node.kind === 'boss')} XP</em></small></span></div>
+                    <small>{L(DIFFICULTIES.find((d) => d.id === foeDifficulty(depth(node)))!.name[0], DIFFICULTIES.find((d) => d.id === foeDifficulty(depth(node)))!.name[1])} · <em><Sparkles size={11} /> +{xpReward(depth(node), true, node.kind === 'boss', node.kind === 'elite')} XP</em></small></span></div>
                 {#if node.kind === 'boss'}<p class="muted sm">{L('Vencer o chefe encerra este mapa e deixa você escolher uma das cartas dele.', 'Beating the boss ends this map and lets you choose one of its cards.')}</p>{/if}
-                {#if st === 'open'}<button class="btn primary" disabled={!!j.pending} onclick={() => fight(node)}><Swords size={16} /> {j.pending ? L('Escolha o bônus do nível', 'Choose the level bonus') : L('Batalhar', 'Fight')}</button>{/if}
+                {#if st === 'open' || dev}<button class="btn primary" disabled={!!j.pending} onclick={() => fight(node)}><Swords size={16} /> {j.pending ? L('Escolha o bônus do nível', 'Choose the level bonus') : L('Batalhar', 'Fight')}</button>{/if}
               {/if}
             {/if}
             {#if st === 'done'}<span class="sp-note"><Check size={13} /> {L('Já concluído', 'Already cleared')}</span>
@@ -259,6 +304,14 @@
             </div>
           {/each}
           <small class="rec">{L(`${j.wins} vitória${j.wins === 1 ? '' : 's'} · ${j.losses} derrota${j.losses === 1 ? '' : 's'} · ${tier} chefe${tier === 1 ? '' : 's'} vencido${tier === 1 ? '' : 's'}`, `${j.wins} win${j.wins === 1 ? '' : 's'} · ${j.losses} loss${j.losses === 1 ? '' : 'es'} · ${tier} boss${tier === 1 ? '' : 'es'} beaten`)}</small>
+          <label class="perma" title={L('Só para teste: se o herói perder uma batalha, perde todo o progresso da Jornada e recomeça do nível 1. Desligado, ele pode tentar de novo do mesmo ponto.', 'Test only: if the hero loses a battle, all Journey progress is lost and it restarts at level 1. Off, it can retry from the same spot.')}>
+            <input type="checkbox" checked={settings.v.permadeath} onchange={(e) => { settings.v.permadeath = (e.currentTarget as HTMLInputElement).checked; settings.save(); }} /> <Skull size={13} /> {L('Morte permanente (teste)', 'Permadeath (test)')}</label>
+          {#if dev}
+            <div class="devrow"><span>DEV</span>
+              <button class="btn sm ghost" onclick={() => save((s) => { addXp(s, xpToNext(s.level) - s.xp); })}>{L('+1 nível', '+1 level')}</button>
+              <button class="btn sm ghost" onclick={() => app.updateProject((p) => { p.journeySeed = newSeed(); })}>{L('Sortear outro mapa', 'Roll another map')}</button>
+            </div>
+          {/if}
           <button class="btn sm ghost" onclick={reset}><RotateCcw size={13} /> {L('Recomeçar a Jornada', 'Restart the Journey')}</button>
         </div>
       </aside>
@@ -287,12 +340,12 @@
                 {@const st = stateOf(n)}
                 {@const fc = n.kind === 'training' ? undefined : charOf(n)}
                 <button class="node {n.kind} {st}" class:sel={pick === n.id} class:here={map.at === n.id} style="left:{n.x * 100}%;top:{n.y * 100}%;--k:{fc ? heroColor(fc) : '#e3b566'}"
-                  onclick={() => { pick = n.id; chip.sfx('select'); }} ondblclick={() => { if (st !== 'open') return; if (n.kind === 'training') train(n); else fight(n); }}
-                  title={n.kind === 'training' ? L('Campo de treino', 'Training camp') : `${fc?.name ?? ''} · ${L(biomeOf(n.biome).name[0], biomeOf(n.biome).name[1])}`}>
+                  onclick={() => { pick = n.id; chip.sfx('select'); }} ondblclick={() => { if (st !== 'open' && !dev) return; if (n.kind === 'training') train(n); else fight(n); }}
+                  title={n.kind === 'training' ? L('Campo de treino', 'Training camp') : `${fc?.name ?? ''}${n.kind === 'elite' ? L(' (mini-chefe)', ' (mini-boss)') : ''} · ${L(biomeOf(n.biome).name[0], biomeOf(n.biome).name[1])}`}>
                   <span class="disc">
-                    {#if n.kind === 'training'}<Tent size={22} />{:else if fc}<HeroPortrait hero={fc} size={n.kind === 'boss' ? 84 : 46} round />{/if}
+                    {#if n.kind === 'training'}<Tent size={22} />{:else if fc}<HeroPortrait hero={fc} size={n.kind === 'boss' ? 84 : n.kind === 'elite' ? 58 : 40} round />{/if}
                   </span>
-                  {#if n.kind === 'boss'}<span class="crown"><Crown size={18} /></span>{/if}
+                  {#if n.kind === 'boss'}<span class="crown"><Crown size={18} /></span>{:else if n.kind === 'elite'}<span class="crown sm"><Crown size={13} /></span>{/if}
                   {#if st === 'done'}<span class="tick"><Check size={12} strokeWidth={3.5} /></span>{/if}
                   {#if map.at === n.id}<span class="me"><HeroPortrait hero={hero} size={26} round /></span>{/if}
                 </button>
@@ -302,7 +355,7 @@
             </div>
           {/key}
         {:else}
-          <p class="muted">{L('É preciso ter pelo menos dois heróis com deck para haver oponentes no mapa.', 'At least two heroes with decks are needed to have opponents on the map.')}</p>
+          <p class="muted">{L('É preciso ter heróis de pelo menos duas classes com deck para haver oponentes no mapa.', 'Heroes of at least two classes with decks are needed to have opponents on the map.')}</p>
         {/if}
       </section>
     </div>
@@ -387,6 +440,9 @@
   .ul-c { font-size: 11.5px; padding: 1px 7px; border-radius: 99px; background: var(--surface-3); color: var(--text-2); }
   .ul-c.up { color: #ffd98a; }
   .rec { color: var(--muted); font-size: 11.5px; }
+  .perma { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-2); cursor: pointer; }
+  .devrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 8px; border-radius: 10px; border: 1px dashed #b0483c; }
+  .devrow span { font: 800 10px var(--ui); letter-spacing: .14em; color: #ff9a8a; }
 
   /* ───── o mapa ───── */
   .mapbox { min-width: 0; min-height: 0; display: grid; place-items: center; }
@@ -406,6 +462,9 @@
     box-shadow: 0 0 0 2px #14100d, 0 0 0 4px var(--k), 0 0 0 5.5px #14100d, 0 6px 14px rgb(0 0 0 / .7); }
   .node.training .disc { width: 44px; height: 44px; border-radius: 12px; background: radial-gradient(circle at 35% 30%, #6b5a2a, #2a2210); }
   .node.boss .disc { width: 88px; height: 88px; box-shadow: 0 0 0 3px #14100d, 0 0 0 6px #d0483a, 0 0 0 8px #14100d, 0 0 34px rgb(255 90 50 / .7), 0 10px 22px rgb(0 0 0 / .8); }
+  .node.battle .disc { width: 42px; height: 42px; }
+  .node.elite .disc { width: 60px; height: 60px; box-shadow: 0 0 0 2px #14100d, 0 0 0 5px var(--k), 0 0 0 7px #14100d, 0 0 18px color-mix(in srgb, var(--k) 70%, transparent), 0 8px 16px rgb(0 0 0 / .75); }
+  .crown.sm { top: -12px; }
   .node.far { filter: saturate(.55) brightness(.72); }
   .node.done { filter: saturate(.35) brightness(.6); }
   .node.open .disc { animation: nodePulse 1.5s ease-in-out infinite; }

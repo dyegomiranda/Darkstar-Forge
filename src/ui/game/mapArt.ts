@@ -1,7 +1,7 @@
 /**
  * Desenho do mapa da Jornada, gerado na hora a partir da semente do mapa (nunca dois iguais).
  * Cada ponto do mapa "puxa" a sua região: o terreno em volta dele ganha as cores e os enfeites
- * do bioma (floresta, deserto, neve, vulcão…). As fronteiras entre regiões são tortas (ruído),
+ * do bioma (floresta, deserto, neve, vulcão…). Um bioma passa ao outro aos poucos (as divisas são tortas e misturadas),
  * e tudo é pintado numa grade baixa, ampliada sem suavizar — pixel art.
  */
 import { rng, type JourneyMap } from '../../game/journey';
@@ -81,14 +81,24 @@ export function paintMap(cv: HTMLCanvasElement, map: JourneyMap): void {
   const spots = map.nodes.map((n) => ({ x: n.x * W, y: n.y * H }));
   const region = new Uint8Array(W * H);
   const ids = [...new Set(pts.map((p) => p.id))];
-  // 1) a que região cada ponto pertence: o nó mais perto, com a distância entortada pelo ruído
+  // 1) a que região cada ponto pertence: o centro mais perto, com a distância entortada pelo ruído. Perto da divisa,
+  //    os pontos das duas regiões se misturam (mais de uma, depois mais da outra): a passagem de um bioma ao outro é gradual
+  const BLEND = 30;
+  const hash = (x: number, y: number) => { let n = (x * 374761393 + y * 668265263 + map.seed * 69069) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const wx = x + (nz(x / 30, y / 30) - 0.5) * 34, wy = y + (nz2(x / 30, y / 30) - 0.5) * 34;
-    let best = 0, bd = Infinity;
-    for (let i = 0; i < pts.length; i++) { const d = (pts[i].x - wx) ** 2 + ((pts[i].y - wy) * 1.07) ** 2; if (d < bd) { bd = d; best = i; } }
-    region[y * W + x] = ids.indexOf(pts[best].id);
+    let best = 0, bd = Infinity, second = 0, sd = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const d = Math.hypot(pts[i].x - wx, (pts[i].y - wy) * 1.07);
+      if (d < bd) { second = best; sd = bd; best = i; bd = d; } else if (d < sd) { second = i; sd = d; }
+    }
+    // chance de o ponto ser da 2ª região: 50% em cima da divisa, caindo a 0 a BLEND pontos dela (em manchas, não ponto a ponto)
+    const near = Math.max(0, 1 - (sd - bd) / BLEND);
+    const mix = 0.5 * near * near;
+    const pick = mix > 0 && (hash(x >> 1, y >> 1) * 0.6 + nz2(x / 5, y / 5) * 0.4) < mix ? second : best;
+    region[y * W + x] = ids.indexOf(pts[pick].id);
   }
-  // 2) o chão: tons escolhidos pelo ruído (manchas), detalhes próprios de alguns biomas e a borda entre regiões mais escura
+  // 2) o chão: tons escolhidos pelo ruído (manchas) e detalhes próprios de alguns biomas
   const tones = ids.map((id) => biomeOf(id).tones.map(hex)), details = ids.map((id) => hex(biomeOf(id).detail));
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const r = region[y * W + x], id = ids[r];
@@ -100,12 +110,10 @@ export function paintMap(cv: HTMLCanvasElement, map: JourneyMap): void {
     else if (id === 'masmorra' && (x % 9 === 0 || y % 9 === 0)) c = tones[r][0]; // lajes
     else if (id === 'cripta' && ridge < 0.014) c = details[r]; // fendas arcanas
     else if (id === 'neve' && v > 0.93) c = details[r];
-    const edge = (x + 1 < W && region[y * W + x + 1] !== r) || (y + 1 < H && region[(y + 1) * W + x] !== r);
-    const k = edge ? 0.55 : 1;
     // escurece nas bordas da tela (moldura)
     const vg = Math.min(1, 1.12 - Math.max(Math.abs(x / W - 0.5) * 1.5, Math.abs(y / H - 0.5) * 1.7) ** 2.4);
     const o = (y * W + x) * 4;
-    img.data[o] = c[0] * k * vg; img.data[o + 1] = c[1] * k * vg; img.data[o + 2] = c[2] * k * vg; img.data[o + 3] = 255;
+    img.data[o] = c[0] * vg; img.data[o + 1] = c[1] * vg; img.data[o + 2] = c[2] * vg; img.data[o + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
   // 3) enfeites de cada região (longe dos pontos do mapa, para não ficarem por baixo deles), de cima para baixo
