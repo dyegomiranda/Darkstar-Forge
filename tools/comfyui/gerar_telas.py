@@ -42,6 +42,14 @@ ARTS = [
      "Glowing red eyes with a cruel evil glare under angry brows, a full black beard of medium length, the mouth closed in a thin cold line. "
      "Two large dark demon bat wings spread behind his back. Black samurai armor with layered shoulder guards, dark red cords and a dark red sash, black armored skirt plates, black boots. "
      "Simple readable shapes, the whole figure from the katana tip and wing tips to the feet inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
+    # chefe da Jornada: figura grande para o campo de batalha (fundo preto liso, que é recortado depois) e o retrato dele
+    ('chefe-dragao', 61, 1024, 1024,
+     "one single huge ancient red dragon boss monster sprite on a plain pure black background, seen from the front facing the viewer, standing on four legs, "
+     "wings spread wide, long horns, glowing yellow eyes, open jaws with fire glowing in the throat, dark red scales with black spikes and a pale belly, long tail curled to the side. "
+     "The whole dragon inside the frame, centered, with empty black space around it. Flat black background, nothing else."),
+    ('retrato-dragao', 62, 1024, 1280,
+     "vertical close-up portrait of the head and neck of an ancient red dragon, glowing yellow eyes, long horns, smoke and embers rising from its jaws, "
+     "dark volcanic cave with lava glow behind."),
     ('campanha', 43, 1024, 1280,
      "vertical composition: a winding road through a dark fantasy world map landscape seen from a high cliff, distant ruined castle, dead forest, mountains and a glowing violet rift on the horizon, "
      "a small party of three travelers with a lantern walking the road, under a black sun in total eclipse with a thin white-gold corona in a deep indigo starry sky."),

@@ -4,10 +4,10 @@
  * tools/pf-cards.py com custo e raridade pela tabela de pontuação).
  */
 import pfCards from '../data/pf-cards.json';
-import { HERO_BASES, PROTO_DECKS } from '../game/decks';
+import { HERO_BASES, PROTO_DECKS, PROTO_ITEMS, PROTO_MONSTERS, type ProtoCard } from '../game/decks';
 import { PRESET_AVATARS } from '../avatar/presets';
 import { gameText } from '../game/text';
-import { ATTR_NAMES, KIND_NAMES } from '../game/types';
+import { ATTR_NAMES, KIND_NAMES, type HeroWeapon } from '../game/types';
 import type { Look } from '../render/compose';
 import { CLASS_COLORS, COLORS } from './catalog';
 import { normalizeCost } from './cost';
@@ -94,30 +94,42 @@ export function presetHeroes(): Character[] {
   }));
 }
 
-/** Coleção "Protótipo": 4 decks de 40 cartas com efeitos que a Mesa de teste entende. */
+/** Deck dos itens (consumíveis de qualquer classe) e decks dos chefes. */
+export const ITEMS_DECK = 'proto-items';
+export const monsterDeckId = (id: string) => `proto-monster-${id}`;
+
+/** Coleção "Protótipo": os decks de classe (40 cartas cada, mais as cartas de recompensa), os Itens, os chefes e os equipamentos. */
 export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Card[] } {
   const now = Date.now();
-  const decks: Deck[] = PROTO_DECKS.map((d, i): Deck => ({
-    id: `proto-${d.color}`, editionId: PROTO_ID, name: deckName(d.color), kind: 'class', colors: [d.color], look: defaultLook(), order: i,
-  }));
-  const cards: Card[] = PROTO_DECKS.flatMap((d) => d.cards.map((pc, i): Card => {
+  const plain: Look = { style: 'neutro', pieces: { class: { style: 'neutro', hidden: true } } };
+  const decks: Deck[] = [
+    ...PROTO_DECKS.map((d, i): Deck => ({ id: `proto-${d.color}`, editionId: PROTO_ID, name: deckName(d.color), kind: 'class', colors: [d.color], look: defaultLook(), order: i })),
+    { id: ITEMS_DECK, editionId: PROTO_ID, name: { 'pt-BR': 'Itens', 'en-US': 'Items' }, kind: 'resources', colors: ['orange'], look: structuredClone(plain), order: 7 },
+    ...PROTO_MONSTERS.map((m, i): Deck => ({ id: monsterDeckId(m.id), editionId: PROTO_ID, name: { 'pt-BR': `Chefe — ${m.hero.name}`, 'en-US': `Boss — ${m.hero.name}` }, kind: 'monster', colors: ['red'], look: structuredClone(plain), order: 9 + i })),
+  ];
+  const mk = (deckId: string, color: ColorId, weapon: HeroWeapon | undefined, pc: ProtoCard, i: number): Card => {
     const g = pc.game;
     const req = (lang: 0 | 1) => [`Nv ${g.level}`, ...(g.attr ? [`${ATTR_NAMES[g.attr[0]][lang]} ${g.attr[1]}`] : [])].join(' · ');
     const summon = g.effects.find((e) => e.k === 'summon');
     const cost = [...(g.vigor ? [{ resource: 'vigor' as const, amount: g.vigor, show: 'number' as const }] : []),
       ...(g.mana ? [{ resource: 'mana' as const, amount: g.mana, show: 'number' as const }] : [])];
     return {
-      id: newId('card'), deckId: `proto-${d.color}`, n: i + 1,
+      id: newId('card'), deckId, n: i + 1,
       text: {
-        'pt-BR': { name: pc.name[0], type: KIND_NAMES[g.kind][0], subtype: `${pc.cls[0]} · ${req(0)}`, rules: gameText(g, 'pt-BR', d.hero.weapon), flavor: '' },
-        'en-US': { name: pc.name[1], type: KIND_NAMES[g.kind][1], subtype: `${pc.cls[1]} · ${req(1).replace('Nv', 'Lv')}`, rules: gameText(g, 'en-US', d.hero.weapon), flavor: '' },
+        'pt-BR': { name: pc.name[0], type: KIND_NAMES[g.kind][0], subtype: `${pc.cls[0]} · ${req(0)}`, rules: gameText(g, 'pt-BR', weapon), flavor: '' },
+        'en-US': { name: pc.name[1], type: KIND_NAMES[g.kind][1], subtype: `${pc.cls[1]} · ${req(1).replace('Nv', 'Lv')}`, rules: gameText(g, 'en-US', weapon), flavor: '' },
       },
-      colors: [d.color], cost,
+      colors: [color], cost,
       stats: summon && summon.k === 'summon' ? { atk: summon.unit.atk, def: summon.unit.def } : null,
       rarity: pc.rarity, mechanics: [], tags: [g.kind], costMode: 'manual', rarityMode: 'manual',
       art: { zoom: 1, x: 0, y: 0, mirror: false, icon: pc.icon }, game: structuredClone(g), createdAt: now, updatedAt: now,
     };
-  }));
+  };
+  const cards: Card[] = [
+    ...PROTO_DECKS.flatMap((d) => d.cards.map((pc, i) => mk(`proto-${d.color}`, d.color, d.hero.weapon, pc, i))),
+    ...PROTO_ITEMS.map((pc, i) => mk(ITEMS_DECK, 'orange', undefined, pc, i)),
+    ...PROTO_MONSTERS.flatMap((m) => m.cards.map((pc, i) => mk(monsterDeckId(m.id), 'red', m.hero.weapon, pc, i))),
+  ];
   // as cartas de equipamento dos heróis prontos (arma + 5 peças de cada um)
   const eq = protoEquipment(PROTO_ID);
   return { edition: { id: PROTO_ID, name: 'Protótipo', code: 'PROTO', deckSize: 40 }, decks: [...decks, eq.deck], cards: [...cards, ...eq.cards] };
@@ -137,7 +149,7 @@ export function seedProject(): { project: Project; cards: Card[] } {
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-7', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
+    seeded: [PF_ID, PROTO_ID, 'proto-rules-8', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
   };
   return { project, cards };
 }

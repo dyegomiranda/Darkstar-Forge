@@ -78,7 +78,8 @@ export interface Card {
   updatedAt: number;
 }
 
-export type DeckKind = 'class' | 'resources' | 'equipment';
+/** 'resources' = itens (consumíveis, de qualquer classe); 'monster' = cartas de um chefe (o jogador ganha cópias ao vencê-lo). */
+export type DeckKind = 'class' | 'resources' | 'equipment' | 'monster';
 
 export interface Deck {
   id: string;
@@ -151,28 +152,25 @@ export interface Character {
   avatar?: import('../avatar/lpc').Avatar;
   /** Herói pronto do Protótipo (usa o retrato que vem com o app enquanto não houver outro). */
   preset?: string;
+  /** Figura pronta (imagem) no lugar do boneco de peças: os chefes da Jornada. */
+  sprite?: string;
   /** Deck montado em uso (inventário de decks). Sem ele, vale o deck padrão da classe (`play.deckId`). */
   buildId?: string;
 }
 
 /** Deck de batalha montado pelo jogador: quantas cópias de cada carta (por id da carta). */
-export interface Build { id: string; name: string; cards: Record<string, number> }
-
-/** Progresso de um herói na Jornada (modo solo com progressão): o nível sobe entre as batalhas. */
-export interface Journey {
-  /** Etapa atual (1 = primeira batalha). */
-  stage: number;
-  /** A etapa mais alta já vencida. */
-  best: number;
-  level: number;
-  /** XP acumulado dentro do nível atual. */
-  xp: number;
-  /** O que o herói escolheu a cada nível ganho. */
-  vigor: number; mana: number; vida: number;
-  /** Níveis ganhos esperando a escolha. */
-  pending: number;
-  wins: number; losses: number;
+export interface Build {
+  id: string; name: string; cards: Record<string, number>;
+  /** Classes do deck (1 ou 2): ele só leva cartas dessas classes (mais itens e cartas de chefes) e só serve a heróis dessas classes. */
+  colors?: ColorId[];
+  /** Carta cuja arte ilustra a caixa do deck. */
+  cover?: string;
+  /** Colunas da visão em pilhas (ids das cartas, na ordem em que o jogador arrumou). */
+  piles?: string[][];
 }
+
+/** Progresso de um herói na Jornada (modo solo com progressão): veja game/journey.ts. */
+export type Journey = import('../game/journey').JourneyState;
 
 export interface Project {
   /** Versão do formato (migrações). */
@@ -184,12 +182,19 @@ export interface Project {
   characters: Character[];
   /** Temas salvos pelo usuário. */
   themes: { id: string; name: string; look: Look }[];
+  /** Modelo (de `themes`) com que os decks de coleções novas nascem. */
+  defaultThemeId?: string;
   /** Coleções de exemplo já adicionadas (não são readicionadas se o usuário apagar). */
   seeded?: string[];
   /** Inventário de decks: os decks de batalha montados pelo jogador. */
   builds?: Build[];
   /** Jornada de cada herói (por id do herói). */
   journeys?: Record<string, Journey>;
+  /**
+   * Cópias que o jogador ganhou das cartas que não vêm liberadas (recompensas de classe e cartas de chefes), por id da carta.
+   * As cartas dos decks iniciais e os itens já valem 4 cópias (veja model/builds.ts).
+   */
+  owned?: Record<string, number>;
 }
 
 /** 2 = custo como lista (vários recursos por carta). */

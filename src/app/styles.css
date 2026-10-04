@@ -183,8 +183,8 @@ input[type='checkbox']:disabled { opacity: .45; cursor: default; }
   background: repeating-linear-gradient(-45deg, #f2c14e 0 8px, #e0a92f 8px 16px); border: 2px solid #1c1403; box-shadow: 2px 2px 0 rgb(0 0 0 / .6); transform: rotate(-4deg); }
 
 /* carta que cresce no lugar (use:zoomable) */
-.zoomable { transition: transform .18s ease-out; will-change: transform; }
-.zoomable:hover, :focus-visible > .zoomable, .zoomable:focus-visible { transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--k, 1.04)); z-index: 8; position: relative; transition-delay: .12s; }
+.zoomable { transition: transform .13s cubic-bezier(.2, .8, .3, 1); }
+.zoomable:hover, :focus-visible > .zoomable, .zoomable:focus-visible { transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--k, 1.04)); z-index: 8; position: relative; }
 
 /* navegando pelo teclado ou pelo controle: o foco fica bem visível */
 body.kbd-nav :focus { outline: 3px solid var(--accent-2); outline-offset: 3px; box-shadow: 0 0 0 6px rgb(240 190 110 / .22); }

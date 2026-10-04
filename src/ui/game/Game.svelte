@@ -31,9 +31,9 @@
   import { composeBack } from '../../render/back';
   import { rasterize } from '../../render/raster';
   import { backInput } from '../back/backCtx';
-  import { characterOf, deckCards, deckCount, deckReady, heroDef, playable, type FixedMatch } from './heroes';
+  import { activeBuild, characterOf, deckCards, deckCount, deckReady, guests, heroDef, journeyCards, playable, type FixedMatch } from './heroes';
   import { journeyDeck } from '../../game/journey';
-  import { DECK_SIZE, buildCount } from '../../model/builds';
+  import { DECK_SIZE, buildCount, buildFits } from '../../model/builds';
   import AvatarSprite from '../../avatar/AvatarSprite.svelte';
   import { chip } from '../../audio/chip';
   import MusicPlayer from '../../audio/MusicPlayer.svelte';
@@ -57,9 +57,11 @@
   let botId = $state(fixed ? fixed.botId : typeof saved.bot === 'string' ? saved.bot : '');
   onMount(() => { if (fixed) toPlace(); });
   const myChar = $derived<Character | undefined>(chars.find((c) => c.id === myId) ?? chars[0]);
-  const botChar = $derived<Character | undefined>(chars.find((c) => c.id === botId) ?? chars[1] ?? chars[0]);
+  const botChar = $derived<Character | undefined>(fixed?.guest?.char ?? chars.find((c) => c.id === botId) ?? chars[1] ?? chars[0]);
   const myHero = $derived(myChar ? heroDef(myChar) : null);
-  const botHero = $derived(botChar ? heroDef(botChar) : null);
+  const botHero = $derived(fixed?.guest?.hero ?? (botChar ? heroDef(botChar) : null));
+  // svelte-ignore state_referenced_locally
+  if (fixed?.guest) { guests.set(fixed.guest.hero.id, fixed.guest.char); onDestroy(() => guests.delete(fixed!.guest!.hero.id)); }
   let myPos = $state<{ row: 0 | 1; col: 0 | 1 | 2 }>({ row: 0, col: 1 });
   let limit = $state(saved.limit === true);
   let heroOff = $state(saved.heroOff === true);
@@ -94,7 +96,7 @@
   $effect(() => { if (fixed) return; try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, shortLife, scene: scenePick })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
-  const ready = $derived(!!myChar && !!botChar && deckReady(myChar) && deckReady(botChar));
+  const ready = $derived(!!myChar && !!botChar && deckReady(myChar) && (!!fixed?.guest || deckReady(botChar)));
   /** Troca o deck em uso do herói: '' = o padrão da classe; senão, um deck montado. */
   function setBuild(c: Character, id: string) { app.updateProject(() => { if (id) c.buildId = id; else delete c.buildId; }); }
 
@@ -129,7 +131,7 @@
   function editHero(id: string) { router.returnTo = '/batalha/solo'; router.go(`/heroi/${encodeURIComponent(id)}`); }
 
   /** Sorteia (ou fixa) o cenário da partida; fica o mesmo no posicionamento e no jogo. */
-  function pickScene() { scene = scenePick === 'random' ? randomScene() : sceneOf(scenePick); }
+  function pickScene() { scene = fixed?.scene ? sceneOf(fixed.scene) : scenePick === 'random' ? randomScene() : sceneOf(scenePick); }
 
   function toPlace() {
     if (!myHero) return;
@@ -141,13 +143,13 @@
 
   function start() {
     if (!myChar || !botChar || !myHero || !botHero) return;
-    const mine = sideFromApp({ ...myHero, row: myPos.row, col: myPos.col }, deckCards(myChar));
+    const mine = sideFromApp({ ...myHero, row: myPos.row, col: myPos.col }, fixed ? journeyCards(myChar) : deckCards(myChar));
     // a dificuldade vale para a partida inteira; no Muito difícil o bot começa com vantagem (vida e carta a mais)
     level = fixed?.difficulty ?? cfg.difficulty;
     const edge = EDGE[level];
     const bot = { ...sideFromApp(edge ? { ...botHero, maxHp: botHero.maxHp + edge.hp } : botHero, deckCards(botChar)), extraCards: edge?.cards ?? 0 };
     // Jornada: cada deck fica só com as cartas do nível do seu herói
-    if (fixed) { mine.cards = journeyDeck(mine.cards, fixed.start[0].level); bot.cards = journeyDeck(bot.cards, fixed.start[1].level); }
+    if (fixed) { mine.cards = journeyDeck(mine.cards, fixed.start[0].level, (c) => app.ownedOf(app.cards[c.id])); bot.cards = journeyDeck(bot.cards, fixed.start[1].level); }
     const iStart = starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5);
     // "jogar de novo" com cenário sorteado: sorteia outro
     if (step === 'play' && scenePick === 'random') pickScene();
@@ -616,6 +618,11 @@
   let caption = $state('');
   let fxEl = $state<HTMLDivElement>();
   let lastFx = 0, fxKey = 0, fxUntil = 0, lastLine = '';
+  /**
+   * Dano já aplicado no jogo que a animação ainda não mostrou, por figura (cura conta negativo). O número
+   * de vida na tela só muda quando o golpe chega — senão a vida cairia antes de o ataque aparecer.
+   */
+  let lag = $state<Record<string, number>>({});
   /** Animações em andamento (a escolha de nível espera elas terminarem). */
   let fxPlaying = $state(0);
   const VIA: Record<Via | 'none', [string, string]> = { melee: ['corpo a corpo', 'melee'], ranged: ['à distância', 'ranged'], magic: ['mágico', 'magic'], none: ['', ''] };
@@ -698,6 +705,7 @@
     for (const e of list) for (const id of idsOf(e)) { const el = elOf(id); if (el) before.set(id, el.getBoundingClientRect()); }
     // quem vai morrer continua à vista (uma cópia parada no lugar) até o golpe chegar e a derrota aparecer
     for (const e of list) if (e.k === 'death') { const el = elOf(e.id), r = before.get(e.id); if (el && r && !ghosts.has(e.id)) ghosts.set(e.id, ghostOf(el, r)); }
+    for (const e of list) { if (e.k === 'dmg') lag[e.id] = (lag[e.id] ?? 0) + e.amount; else if (e.k === 'heal') lag[e.id] = (lag[e.id] ?? 0) - e.amount; }
     await tick();
     const rectOf = (id: string) => elOf(id)?.getBoundingClientRect() ?? before.get(id);
     let t = 0, k = foeAct ? pc.k : 1;
@@ -710,7 +718,7 @@
     }
     fxUntil = Date.now() + t + 400;
     fxPlaying++;
-    try { await sleep(t + 300); } finally { fxPlaying--; for (const id of list.filter((e) => e.k === 'death').map((e) => (e as { id: string }).id)) vanish(id); }
+    try { await sleep(t + 300); } finally { fxPlaying--; for (const e of list) if (e.k === 'dmg' || e.k === 'heal') delete lag[e.id]; for (const id of list.filter((e) => e.k === 'death').map((e) => (e as { id: string }).id)) vanish(id); }
   }
 
   /** Cópias das criaturas derrotadas, enquanto a animação não chega na derrota. */
@@ -776,6 +784,7 @@
         break;
       }
       case 'dmg': {
+        if (lag[e.id]) lag[e.id] -= e.amount;
         const sub = [e.armor ? (e.via === 'magic' ? L(`resistência absorveu ${e.armor}`, `resistance absorbed ${e.armor}`) : L(`armadura absorveu ${e.armor}`, `armor absorbed ${e.armor}`)) : '', e.marked ? L('+1 Marcado', '+1 Marked') : '', e.armor ? '' : L(VIA[e.via][0], VIA[e.via][1])].filter(Boolean).join(' · ');
         chip.sfx('hit');
         float(rectOf(e.id) ?? before.get(e.id), `−${e.amount}`, 'dmg', sub, true);
@@ -785,7 +794,7 @@
         break;
       }
       case 'blocked': chip.sfx('block'); float(rectOf(e.id), L('Bloqueado', 'Blocked'), 'ward', L('a Proteção anulou o dano', 'the ward prevented it')); hitFlash(elOf(e.id), 'rgb(90 150 255 / .4)'); break;
-      case 'heal': chip.sfx('heal'); float(rectOf(e.id), `+${e.amount}`, 'heal', L('cura', 'heal'), true); hitFlash(elOf(e.id), 'rgb(60 190 110 / .35)'); break;
+      case 'heal': if (lag[e.id]) lag[e.id] += e.amount; chip.sfx('heal'); float(rectOf(e.id), `+${e.amount}`, 'heal', L('cura', 'heal'), true); hitFlash(elOf(e.id), 'rgb(60 190 110 / .35)'); break;
       case 'status': {
         const m = {
           afflict: [L('Afligido', 'Afflicted'), L('−1 PV por turno', '−1 HP per turn'), 'curse'],
@@ -936,7 +945,8 @@
 
   // ───────────── apresentação ─────────────
   const heroOf = (p: 0 | 1) => (g ? unitAt(g, heroPos(g, p)) : null);
-  const life = (u: Unit) => u.def - u.dmg;
+  /** Vida mostrada: a do jogo, mas o dano (e a cura) que a animação ainda não mostrou fica para a hora dela. */
+  const life = (u: Unit) => u.def - u.dmg + (lag[u.id] ?? 0);
   const cardOf = (r: CardRef) => app.cards[r.cardId];
   /** Fileiras de cima para baixo: o oponente mostra a retaguarda em cima; você, a frente em cima. */
   const rowsFor = (p: 0 | 1) => (p === me ? [0, 1] : [1, 0]);
@@ -1026,12 +1036,12 @@
               </div>
               <div class="sc-deck" class:bad={!deckReady(c)}>
                 <span>{L('Deck', 'Deck')}</span>
-                <select class="select-in" value={app.build(c.buildId)?.id ?? ''} onchange={(e) => setBuild(c, (e.currentTarget as HTMLSelectElement).value)}>
+                <select class="select-in" value={activeBuild(c)?.id ?? ''} onchange={(e) => setBuild(c, (e.currentTarget as HTMLSelectElement).value)}>
                   <option value="">{app.deck(h.deckId)?.name[app.lang] ?? L('sem deck', 'no deck')} ({L('padrão', 'default')})</option>
-                  {#each app.builds as bd (bd.id)}<option value={bd.id}>{bd.name} · {buildCount(bd)}/{DECK_SIZE}</option>{/each}
+                  {#each app.builds.filter((x) => buildFits(x, c.classColors)) as bd (bd.id)}<option value={bd.id}>{bd.name} · {buildCount(bd)}/{DECK_SIZE}</option>{/each}
                 </select>
                 <em>{deckCount(c)} {L('cartas', 'cards')}{!deckReady(c) ? L(` · precisa de ${DECK_SIZE}`, ` · needs ${DECK_SIZE}`) : ''}</em>
-                <button class="sc-deckedit" onclick={() => { router.returnTo = '/batalha/solo'; router.go(c.buildId ? `/baralhos/${encodeURIComponent(c.buildId)}` : '/baralhos'); }} title={L('Montar e editar decks', 'Build and edit decks')}><Pencil size={12} /></button>
+                <button class="sc-deckedit" onclick={() => { router.returnTo = '/batalha/solo'; router.go(activeBuild(c) ? `/baralhos/${encodeURIComponent(c.buildId!)}` : '/baralhos'); }} title={L('Montar e editar decks', 'Build and edit decks')}><Pencil size={12} /></button>
               </div>
             </div>
           </div>
@@ -1135,7 +1145,7 @@
             {#each [0, 1, 2] as col}
               <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}">
                 {#if botHero.row === row && botHero.col === col}
-                  {#if botChar?.avatar}<span class="doll"><AvatarSprite avatar={botChar.avatar} dir="s" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span>{/if}
+                  {#if botChar?.sprite}<span class="doll bossfig"><img src={botChar.sprite} alt="" draggable="false" /></span>{:else if botChar?.avatar}<span class="doll"><AvatarSprite avatar={botChar.avatar} dir="s" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span>{/if}
                   <span class="unit"><span class="u-nm">{botHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </span>
@@ -1238,7 +1248,10 @@
       <!-- ───── o herói (miniatura com o retrato) ───── -->
       {#snippet heroBody(u: Unit, p: 0 | 1)}
         {@const av = avatarOf(p)}
-        {#if av}
+        {@const boss = characterOf(g!.players[p].hero.id)?.sprite}
+        {#if boss}
+          <span class="doll bossfig" class:sick={u.afflicted} class:hit={heroAnim[p] === 'hurt'}><img src={boss} alt="" draggable="false" /></span>
+        {:else if av}
           <span class="doll" class:tall={g!.heroOff} class:sick={u.afflicted}><AvatarSprite avatar={av} anim={heroAnim[p]} dir={p === me ? 'n' : 's'} scale={g!.heroOff ? 3 : 2} loop={heroAnim[p] === 'idle'} onend={() => animEnd(p)} /></span>
         {:else}
           <span class="mini"><HeroPortrait hero={characterOf(g!.players[p].hero.id)} size={120} /></span>
@@ -1383,7 +1396,7 @@
         {#each P.hand as r, i (r.uid)}
           {@const why = cannotPlay(g, me, r.uid)}
           {@const isReact = g.defs[r.cardId]?.game.kind === 'reacao'}
-          <button class="hc" class:no={!!why && !isReact} class:can={myTurn && !isReact && playableRanks(g, me, r.uid).length > 0} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid} class:held={dragUid === r.uid}
+          <button class="hc" class:no={!!why && !isReact} class:can={myTurn && !isReact && playableRanks(g, me, r.uid).length > 0} class:react={isReact} class:sel={sel?.kind === 'card' && sel.uid === r.uid} class:held={dragUid === r.uid} data-card={r.cardId}
             in:receive|global={fly(r.uid, { from: `#deck-${me}`, delay: i * 90 })} out:send={fly(r.uid, { to: `#grave-${me}` })} animate:flip={{ duration: dragUid === r.uid ? 0 : 200, easing: cubicOut }}
             onpointerdown={(e) => handDown(e, r.uid)} onpointermove={handMove} onpointerup={handUp} onpointercancel={handUp}
             onclick={() => { if (!dragged) void clickCard(r.uid); }} onmouseenter={(e) => { hoverCard = r.uid; fan(e, 350, 3.6); }} onmouseleave={() => { hoverCard = null; }}
@@ -1885,6 +1898,10 @@
   /* o boneco fica de pé sobre a casa (passa da borda de cima) */
   .doll { position: absolute; left: 50%; bottom: 30%; transform: translateX(-50%); line-height: 0; z-index: 0; filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)); }
   .doll.tall { bottom: 26%; }
+  /* chefe: figura grande (imagem pronta), respirando devagar */
+  .doll.bossfig { bottom: 22%; }
+  .doll.bossfig img { display: block; width: calc(var(--row) * 3.1); height: auto; image-rendering: pixelated; transform-origin: 50% 100%; animation: bossBreath 3.2s ease-in-out infinite; }
+  @keyframes bossBreath { 50% { transform: scale(1.03, .975); } }
   /* afligido: aura roxa pulsando no boneco */
   .doll.sick { animation: sick 1.6s ease-in-out infinite; }
   @keyframes sick { 0%, 100% { filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)) drop-shadow(0 0 3px #b06bff); } 50% { filter: drop-shadow(0 3px 3px rgb(0 0 0 / .6)) drop-shadow(0 0 11px #b06bff) hue-rotate(-12deg); } }

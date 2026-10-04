@@ -1,8 +1,23 @@
 # Void Sun — progresso
 
-**Atualizado:** 03/10/2026 (versão 3.8: cartas que evoluem, Jornada, decks de batalha montados, campo ampliável)
+**Atualizado:** 04/10/2026 (versão 3.9: mapa da Jornada, chefe Dragão, posse de cartas, deck de Itens, montador de decks novo, modelos de estilo)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.9 (04/10/2026)
+
+- [x] Jornada com mapa gerado na hora (nunca igual): regiões com bioma próprio (floresta, deserto, neve, planícies, pântano, ruínas, terras mortas, vulcão), caminhos que se dividem e se cruzam, batalhas contra os heróis de cada região (no cenário dela), campos de treino e um chefe no fim
+- [x] Campo de treino: escolher 1 de 3 cartas novas das classes do herói (de preferência do nível dele; nunca uma que já tenha 4 cópias)
+- [x] Chefe Dragão Ancião: figura grande no campo, deck próprio (12 cartas); vencê-lo dá 1 de 3 cartas dele e abre o deck de monstros no inventário; depois vem um mapa novo, mais difícil
+- [x] Posse de cartas: as dos decks iniciais e os itens valem 4 cópias; cartas de recompensa (30 novas, 5 por classe) e de chefes se ganham 1 cópia por vez, até 4
+- [x] Deck de Itens (Poção de Cura, de Mana, de Vigor, Água Benta, Pergaminho de Proteção, Frasco de Veneno): saíram dos decks de classe, servem a qualquer classe e não custam nada
+- [x] 10 cartas iniciais novas de nível 1 (o deck da Jornada no nível 1 fecha 40 cartas sem passar de 4 cópias)
+- [x] Decks montados têm classe (1 ou 2) e só servem a heróis dessas classes; arte da caixa à escolha; visão em pilhas que se arruma arrastando; prévia da carta ao passar o mouse na lista
+- [x] Modelos de estilo na galeria ("Meus modelos"): salvar o visual atual, usar em qualquer deck e marcar um como padrão dos decks novos
+- [x] Texto das cartas usa os símbolos de Vigor e Mana escolhidos no deck
+- [x] A vida na tela só cai quando o golpe chega (antes caía assim que a jogada era feita, antes da animação)
+- [x] Logotipo novo na abertura; zoom das cartas mais ágil
+- [ ] Para decidir com o Dyego: multijogador (servidor, contatos, chat, voz, espectador, torneios; pareamento só entre jogadores do mesmo nível), campanha RPG, artes dos decks de monstros
 
 ## Versão 3.8 (03/10/2026)
 
