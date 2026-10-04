@@ -15,7 +15,8 @@
 import type { Difficulty } from './bot';
 import type { CardDef, HeroDef, StartBonus } from './types';
 
-export type NodeKind = 'battle' | 'training' | 'boss';
+/** battle = inimigo comum da região; elite = o herói da região (mini-chefe, um por bioma); boss = o chefe do mapa. */
+export type NodeKind = 'battle' | 'elite' | 'training' | 'boss';
 export interface MapNode {
   id: number;
   /** Camada (0 = começo; a última é a do chefe) e faixa (de cima para baixo). */
@@ -25,7 +26,7 @@ export interface MapNode {
   kind: NodeKind;
   /** Região do mapa (id do cenário da batalha: floresta, vulcao, cripta…). */
   biome: string;
-  /** Batalha: id do herói oponente. Chefe: id do monstro. */
+  /** Mini-chefe: id do herói. Chefe: id do monstro. (O inimigo comum sai do bioma.) */
   foe?: string;
   /** Nós para onde este leva. */
   next: number[];
@@ -60,9 +61,9 @@ export const xpToNext = (level: number): number => Math.round((40 * Math.pow(lev
 /** Dificuldade de um ponto do mapa: cresce a cada camada e a cada mapa concluído. */
 export const depthOf = (tier: number, layer: number): number => tier * (LAYERS + 1) + layer + 1;
 
-/** XP de uma vitória (cresce com a profundidade; o chefe dá o dobro). Derrota: um quarto. */
-export function xpReward(depth: number, won: boolean, boss = false): number {
-  const win = Math.round((20 + 8 * depth) * (boss ? 2 : 1));
+/** XP de uma vitória (cresce com a profundidade; o mini-chefe dá metade a mais e o chefe, o dobro). Derrota: um quarto. */
+export function xpReward(depth: number, won: boolean, boss = false, elite = false): number {
+  const win = Math.round((20 + 8 * depth) * (boss ? 2 : elite ? 1.5 : 1));
   return won ? win : Math.round(win / 4);
 }
 
@@ -87,7 +88,9 @@ export function rng(seed: number): () => number {
  * Gera um mapa: vários caminhos saem da esquerda e andam uma camada por vez, subindo ou descendo
  * uma faixa (ou seguindo reto); onde dois caminhos pisam no mesmo ponto, eles se juntam — é isso
  * que cria as bifurcações e os cruzamentos. Todos terminam no chefe.
- * `foes`: os oponentes possíveis (herói e a região dele). `boss`: o chefe do mapa.
+ * `foes`: o herói de cada região (o mini-chefe do bioma; um por bioma). `boss`: o chefe do mapa.
+ * Cada bioma tem UM herói; os outros pontos de batalha da região são inimigos comuns, mais fracos.
+ * O mapa não depende de quem joga: é o mesmo para qualquer herói.
  */
 export function generateMap(seed: number, foes: { id: string; biome: string }[], boss: { id: string; biome: string }): JourneyMap {
   const rand = rng(seed);
@@ -111,9 +114,6 @@ export function generateMap(seed: number, foes: { id: string; biome: string }[],
   }
   const order = [...used].sort((a, b) => a - b);
   const idOf = new Map(order.map((k, i) => [k, i]));
-  // oponentes embaralhados, em rodízio, para não repetir o mesmo herói em sequência
-  const bag: { id: string; biome: string }[] = [];
-  const nextFoe = () => { if (!bag.length) bag.push(...[...foes].sort(() => rand() - 0.5)); return bag.pop()!; };
   const nodes: MapNode[] = order.map((k, id) => {
     const layer = Math.floor(k / LANES), lane = k % LANES;
     return {
@@ -134,8 +134,7 @@ export function generateMap(seed: number, foes: { id: string; biome: string }[],
   // regiões: cada bioma dos oponentes ocupa uma área do mapa (os centros ficam bem espalhados); a do chefe fica no fim
   const biomes = [...new Set(foes.map((f) => f.biome))].sort(() => rand() - 0.5);
   const regions: { x: number; y: number; biome: string }[] = [{ x: 0.97, y: 0.5, biome: boss.biome }];
-  const want = Math.max(5, Math.min(7, biomes.length));
-  for (let i = 0; i < want && biomes.length; i++) {
+  for (let i = 0; i < biomes.length; i++) {
     // melhor de vários sorteios: o ponto mais longe dos centros que já existem
     let best = { x: 0, y: 0 }, far = -1;
     for (let t = 0; t < 14; t++) {
@@ -143,15 +142,14 @@ export function generateMap(seed: number, foes: { id: string; biome: string }[],
       const d = Math.min(...regions.map((r) => Math.hypot(r.x - c.x, (r.y - c.y) * 0.6)));
       if (d > far) { far = d; best = c; }
     }
-    regions.push({ ...best, biome: biomes[i % biomes.length] });
+    regions.push({ ...best, biome: biomes[i] });
   }
   const regionOf = (n: { x: number; y: number }) => regions.reduce((a, b) => (Math.hypot(b.x - n.x, (b.y - n.y) * 0.6) < Math.hypot(a.x - n.x, (a.y - n.y) * 0.6) ? b : a)).biome;
-  for (const n of nodes) {
-    n.biome = regionOf(n);
-    if (n.kind !== 'battle') continue;
-    // o oponente é um herói daquela região (em rodízio, se houver mais de um); na região do chefe, qualquer um
-    const local = foes.filter((f) => f.biome === n.biome);
-    n.foe = local.length ? local[Math.floor(rand() * local.length)].id : nextFoe().id;
+  for (const n of nodes) n.biome = regionOf(n);
+  // o mini-chefe de cada bioma: o herói da região, no ponto de batalha mais fundo dela (um só por bioma)
+  for (const f of foes) {
+    const spots = nodes.filter((n) => n.kind === 'battle' && n.biome === f.biome).sort((a, b) => b.layer - a.layer || a.id - b.id);
+    if (spots[0]) { spots[0].kind = 'elite'; spots[0].foe = f.id; }
   }
   const bossNode: MapNode = { id: nodes.length, layer: LAYERS, lane: Math.floor(LANES / 2), kind: 'boss', biome: boss.biome, foe: boss.id, x: (LAYERS + 1.05) / (LAYERS + 1.75), y: 0.5, next: [] };
   for (const n of nodes) if (n.layer === LAYERS - 1) n.next = [bossNode.id];
@@ -178,7 +176,7 @@ export function clearNode(j: JourneyState, id: number): void {
  */
 export function applyResult(j: JourneyState, node: MapNode, won: boolean, forfeit = false): { xp: number; levels: number } {
   const boss = node.kind === 'boss';
-  const xp = forfeit && !won ? 0 : xpReward(depthOf(j.tier ?? 0, node.layer), won, boss);
+  const xp = forfeit && !won ? 0 : xpReward(depthOf(j.tier ?? 0, node.layer), won, boss, node.kind === 'elite');
   const levels = addXp(j, xp);
   if (won) {
     j.wins++; j.stage++; j.best = Math.max(j.best, j.stage - 1);
@@ -217,6 +215,18 @@ export function foeStart(hero: HeroDef, depth: number, boss = false): StartBonus
   }
   if (boss) out.vida += Math.floor(depth / 2);
   return out;
+}
+
+/**
+ * Inimigo comum de uma região: usa o deck do herói dela, mas o boneco é mais fraco — menos vida,
+ * atributos menores (algumas cartas do deck ficam fora do alcance dele), golpe e defesas mais fracos.
+ */
+export function minionOf(hero: HeroDef, id: string, name: string): HeroDef {
+  const attrs = Object.fromEntries(Object.entries(hero.attrs).map(([k, v]) => [k, Math.max(0, v - 1)])) as HeroDef['attrs'];
+  return {
+    ...hero, id, name, attrs, maxHp: Math.max(12, Math.round(hero.maxHp * 0.58)),
+    weapon: { ...hero.weapon, dmg: Math.max(1, hero.weapon.dmg - 1) }, armor: Math.max(0, hero.armor - 1), resist: Math.max(0, hero.resist - 1),
+  };
 }
 
 /** O bot joga melhor conforme a profundidade. */

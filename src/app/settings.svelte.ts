@@ -41,6 +41,10 @@ export interface Settings {
   gamepad: boolean;
   /** Mostrar o alerta de IA e as boas-vindas toda vez que o jogo abre (normalmente aparece só na primeira vez). */
   welcome: boolean;
+  /** Jornada: morte permanente (teste) — perder uma batalha zera o progresso do herói. */
+  permadeath: boolean;
+  /** Modo desenvolvedor: libera o que a progressão tranca (todas as cartas, qualquer ponto do mapa da Jornada…). */
+  dev: boolean;
   keys: Record<KeyAction, string>;
   /** Versão destas configurações (para corrigir valores de versões anteriores). */
   rev: number;
@@ -51,7 +55,7 @@ const DEFAULTS: Settings = {
   display: 'maximized', resolution: '1600x900', uiScale: 0, quality: 'high', showFps: false,
   master: 1, music: 0.6, sfx: 0.8, mute: false, muteInBackground: true,
   pace: 'normal', difficulty: 'normal', timeLimit: true, showLog: true,
-  gamepad: true, welcome: false, keys: { ...DEFAULT_KEYS }, rev: 2,
+  gamepad: true, welcome: false, dev: false, permadeath: false, keys: { ...DEFAULT_KEYS }, rev: 2,
 };
 
 /** O que o programa (Electron) oferece à página; no navegador não existe. */

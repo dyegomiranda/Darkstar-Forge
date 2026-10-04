@@ -109,6 +109,25 @@
 
     /** Número "ao acaso" estável (0 a 1) para um par de sementes. */
     const hash = (a: number, b: number) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+    /** Aura rubra e negra que emana do corpo: nasce nas costas (onde é mais forte) e ao longo do corpo, e é levada para trás e para cima. */
+    const AURA = ['#d0242c', '#8a1219', '#4a090e', '#1c0407'];
+    function aura(t: number) {
+      if (!fig) return;
+      for (let i = 0; i < 150; i++) {
+        const life = 1.5 + hash(i, 11) * 1.8, clock = t + hash(i, 12) * life, age = (clock % life) / life, turn = Math.floor(clock / life);
+        // 3 de cada 4 pontos nascem nas costas (a faixa à esquerda do corpo); os outros, em volta dele
+        const back = i % 4 !== 0, h = hash(i, turn + 13);
+        const x0 = back ? 14 + hash(i, turn + 14) * 16 : 22 + hash(i, turn + 14) * 34;
+        const y0 = 14 + h * 106;
+        const x = x0 - age * (back ? 13 + hash(i, 15) * 12 : 5) + Math.sin((t + i) * 1.4) * age * 4;
+        const y = y0 - age * (10 + hash(i, 16) * 18);
+        fb.globalAlpha = (age < 0.12 ? age / 0.12 : 1 - age) * (back ? 0.8 : 0.4);
+        fb.fillStyle = AURA[Math.min(AURA.length - 1, Math.floor(age * AURA.length + hash(i, 17) * 1.3))];
+        const size = age > 0.5 ? 3 : age > 0.18 ? 2 : 1;
+        fb.fillRect(Math.round(fig.x + x), Math.round(fig.y + y), size, size);
+      }
+      fb.globalAlpha = 1;
+    }
     /** Fumaça negra e roxa que sobe da lâmina: nasce clara, escurece, abre e some. */
     function smoke(t: number) {
       if (!fig) return;
@@ -175,7 +194,7 @@
       // o quadro inteiro, ainda sem falha de tela
       fb.fillStyle = '#000';
       fb.fillRect(0, 0, W, H);
-      if (!blank) { fb.drawImage(base.canvas, 0, 0); smoke(t); drawName(); }
+      if (!blank) { aura(t); fb.drawImage(base.canvas, 0, 0); smoke(t); drawName(); }
 
       out.globalCompositeOperation = 'source-over';
       out.globalAlpha = 1;

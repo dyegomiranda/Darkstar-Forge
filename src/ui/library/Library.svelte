@@ -253,12 +253,15 @@
       <span class="dn">{L('Todas as cartas', 'All cards')}</span>
       <span class="cnt">{editionCount}</span>
     </button>
-    {#each decks as d (d.id)}
-      {@const n = count(d.id)}
+    {#each decks as d, di (d.id)}
+      {@const n = d.kind === 'class' ? count(d.id) : app.cardsOf(d.id).length}
+      {#if d.kind !== 'class' && decks[di - 1]?.kind !== d.kind}
+        <span class="grp">{d.kind === 'resources' ? L('Itens', 'Items') : d.kind === 'equipment' ? L('Equipamentos', 'Equipment') : L('Decks de monstros', 'Monster decks')}</span>
+      {/if}
       <button class="deck" class:on={deck?.id === d.id} onclick={() => { selected = new Set(); router.library(d.id); }}>
         <span class="emb" style="--c:{colorHex(d.colors[0])}"><Glyph id={classIcon(d.colors[0])} size={19} color={lighten(vivid(colorHex(d.colors[0])), 0.35)} /></span>
         <span class="dn">{deckLabel(d).main || COLORS[d.colors[0]].classes[lang]}<small>{deckLabel(d).small}</small></span>
-        <span class="cnt" class:ok={n === sizeOf(d.id)} class:warn={n !== sizeOf(d.id) && d.kind === 'class'}>{n}{d.kind === 'class' ? `/${sizeOf(d.id)}` : ''}</span>
+        <span class="cnt" class:ok={d.kind === 'class' && n === sizeOf(d.id)} class:warn={n !== sizeOf(d.id) && d.kind === 'class'}>{n}{d.kind === 'class' ? `/${sizeOf(d.id)}` : ''}</span>
       </button>
     {/each}
   </aside>
@@ -364,6 +367,10 @@
 {/if}
 
 <style>
+  /* título de um grupo de decks (itens, equipamentos, monstros): um traço curto e o nome */
+  .grp { display: flex; align-items: center; gap: 8px; margin: 12px 4px 2px 12px; font: 700 10px var(--ui); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .grp::before { content: ''; width: 16px; height: 1px; background: var(--line-2); }
+
   .lib { display: grid; grid-template-columns: 268px 1fr; height: 100%; }
   .decks { border-right: 1px solid var(--line); background: var(--bg-2); padding: 18px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
   .side-head { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 7px; }

@@ -13,7 +13,7 @@
   import { fade } from 'svelte/transition';
   import { Plus, Minus, X, Heart, Upload, Swords, Shield, Sparkles, Save, Undo2, Trash2, UserRound, Dna, Shirt, Backpack, Layers, Check, TriangleAlert, Pencil, RotateCcw, ScrollText, Wand2, Star } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
-  import { importImage } from '../../store/media';
+  import { ensureMedia, importImage, mediaUrl } from '../../store/media';
   import { L } from '../../app/i18n.svelte';
   import { ui } from '../../app/ui.svelte';
   import { router } from '../../app/router.svelte';
@@ -185,6 +185,17 @@
   const ancHp = $derived(raceOf(draft.raceId)?.hp ?? 8);
   const clsHp = $derived(CLASS_HP[draft.classColors[0] ?? 'red'] ?? 8);
   const deck = $derived(app.deck(draft.play?.deckId ?? ''));
+  /** Arte da caixa de um deck montado: a carta escolhida; sem ela, a primeira carta do deck que tiver arte. */
+  let coverTick = $state(0);
+  function coverOf(b: { cover?: string; cards: Record<string, number> }): string | undefined {
+    void coverTick;
+    const cid = b.cover && b.cards[b.cover] !== undefined ? b.cover : Object.keys(b.cards).find((c) => app.cards[c]?.art.mediaId);
+    const m = cid ? app.cards[cid]?.art.mediaId : undefined;
+    if (!m) return undefined;
+    const u = mediaUrl(m);
+    if (!u) void ensureMedia(m).then(() => coverTick++);
+    return u;
+  }
   /** Deck montado em uso por este herói (se houver). */
   const activeBuild = $derived((() => { const b = app.build(draft.buildId); return b && buildFits(b, draft.classColors) ? b : undefined; })());
   const deckCards = (deckId: string) => app.cardsOf(deckId).filter((c) => c.game).reduce((n, c) => n + (c.game?.copies ?? 1), 0);
@@ -438,8 +449,8 @@
               <div class="decks">
                 {#each app.builds.filter((x) => buildFits(x, draft.classColors)) as bd (bd.id)}
                   {@const n = buildCount(bd)}
-                  <button class="deck" class:on={activeBuild?.id === bd.id} style="--k:{tint}" onclick={() => (draft.buildId = bd.id)}>
-                    <span class="dic"><Layers size={24} /></span>
+                  <button class="deck" class:on={activeBuild?.id === bd.id} style="--k:{tint}" onclick={() => (draft.buildId = bd.id)} title={bd.name}>
+                    {#if coverOf(bd)}<span class="dic cover" style="background-image:url('{coverOf(bd)}')"></span>{:else}<span class="dic"><Layers size={24} /></span>{/if}
                     <b>{bd.name}</b>
                     <small class:warn={n !== DECK_SIZE}>{n}/{DECK_SIZE} {L('cartas', 'cards')}{n !== DECK_SIZE ? L(' · incompleto', ' · incomplete') : ''}</small>
                     {#if activeBuild?.id === bd.id}<span class="rcheck"><Check size={12} strokeWidth={3} /></span>{/if}
@@ -666,6 +677,7 @@
   .decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .deck { position: relative; display: grid; grid-template-columns: 46px 1fr; grid-template-rows: auto auto; column-gap: 11px; align-items: center; text-align: left; padding: 11px 12px; cursor: pointer; color: var(--text-2); font: inherit; border: 2px solid #2c2647; background: #100e1a; transition: all var(--t); }
   .deck:hover { border-color: #6a5fa8; }
+  .dic.cover { background: #0c0a14 center 22% / cover no-repeat; image-rendering: pixelated; border-radius: 6px; }
   .deck.add { border-style: dashed; } .deck small.warn { color: #e9b96a; }
   .deck.on { border-color: var(--k); background: color-mix(in srgb, var(--k) 14%, #100e1a); box-shadow: 0 0 18px color-mix(in srgb, var(--k) 32%, transparent); }
   .dic { grid-row: 1 / 3; width: 46px; height: 46px; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--k) 60%, #000), color-mix(in srgb, var(--k) 22%, #000)); }

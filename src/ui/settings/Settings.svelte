@@ -191,6 +191,12 @@
           <div class="chips"><button class:on={app.lang === 'pt-BR'} onclick={() => setLang('pt-BR')}>Português</button><button class:on={app.lang === 'en-US'} onclick={() => setLang('en-US')}>English</button></div>
         </div>
         <div class="row3">
+          <div class="lbl"><b>{L('Modo desenvolvedor', 'Developer mode')}</b><small>{L('libera o que a progressão tranca: todas as cartas (4 cópias), os decks de monstros completos e qualquer ponto do mapa da Jornada', 'unlocks what progression locks: every card (4 copies), full monster decks and any spot on the Journey map')}</small></div>
+          <div class="chips">
+            <button class:on={s.dev} onclick={() => (s.dev = !s.dev)}>{s.dev ? L('Ligado', 'On') : L('Desligado', 'Off')}</button>
+          </div>
+        </div>
+        <div class="row3">
           <div class="lbl"><b>{L('Alerta de IA e boas-vindas', 'AI notice and welcome')}</b><small>{L('o aviso que aparece na primeira vez que o jogo abre', 'the notice shown the first time the game opens')}</small></div>
           <div class="chips">
             <button class:on={s.welcome} onclick={() => (s.welcome = !s.welcome)}>{s.welcome ? L('Mostrar ao abrir: sim', 'Show on start: yes') : L('Mostrar ao abrir: não', 'Show on start: no')}</button>
