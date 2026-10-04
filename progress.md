@@ -1,8 +1,17 @@
 # Void Sun — progresso
 
-**Atualizado:** 04/10/2026 (versão 3.9.1: mapa único da Jornada com mini-chefes e inimigos comuns, modo desenvolvedor, morte permanente de teste)
+**Atualizado:** 04/10/2026 (versão 3.9.2: pilhas do montador corrigidas, símbolos de Vigor e Mana, ferramentas do modo desenvolvedor, vila de teste da Campanha)
 **Como abrir:** atalho *Void Sun* no menu de aplicativos, ou o script `Void Sun` na pasta.
 **Código antigo:** preservado no git na etiqueta `legado-v1`. Até a 2.9 o programa se chamava Darkstar Forge.
+
+## Versão 3.9.2 (04/10/2026)
+
+- [x] Símbolos padrão de Vigor (raio) e Mana (redemoinho) nas cartas e em todas as telas
+- [x] Deck em pilhas: arrastar funciona (inclusive para uma coluna nova), carta inteira aparece ao lado, sem destaque amarelo nem frestas
+- [x] Mapa da Jornada: o chão em volta de cada ponto é sempre o do bioma dele
+- [x] Acampamento (antes "campo de treino"): recupera a vida e dá 1 de 3 cartas; opção de teste "a vida não volta depois da batalha"
+- [x] Modo desenvolvedor na Jornada: escolher o nível, vida e dificuldade de inimigos comuns, mini-chefes e chefe
+- [x] Modo desenvolvedor: Campanha e Multijogador clicáveis; a Campanha abre uma vila de teste (WASD, Shift, Espaço, clique para andar, golpe na direção do mouse)
 
 ## Versão 3.9.1 (04/10/2026)
 

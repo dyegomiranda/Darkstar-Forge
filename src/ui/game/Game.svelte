@@ -25,6 +25,7 @@
   import { ATTRS, ATTR_NAMES, rankOf, type Action, type CardRef, type Fx, type Effect, type GameState, type GearItem, type HeroDef, type Pos, type Unit, type Via } from '../../game/types';
   import type { Character } from '../../model/types';
   import Glyph from '../common/Glyph.svelte';
+  import { VIGOR_ICON, MANA_ICON } from '../../render/icons/glyphs';
   import CardImage from '../common/CardImage.svelte';
   import HeroPortrait from '../common/HeroPortrait.svelte';
   import { colorHex } from '../../model/catalog';
@@ -1024,8 +1025,8 @@
                 <span><Sparkles size={13} /> {L('Resist. mágica', 'Magic resist')}</span><i><b style="width:{pct(h.resist, 4)}; --k:#9a7bff"></b></i><em>{h.resist}</em>
               </div>
               <div class="sc-res">
-                <span class="vig"><Glyph id="gauntlet" size={15} color="currentColor" /> Vigor {#each Array(3) as _, i}<i class="pip" class:on={i < h.vigor}></i>{/each}</span>
-                <span class="man"><Glyph id="crystal-cluster" size={15} color="currentColor" /> Mana {#each Array(3) as _, i}<i class="pip" class:on={i < h.mana}></i>{/each}</span>
+                <span class="vig"><Glyph id={VIGOR_ICON} size={15} color="currentColor" /> Vigor {#each Array(3) as _, i}<i class="pip" class:on={i < h.vigor}></i>{/each}</span>
+                <span class="man"><Glyph id={MANA_ICON} size={15} color="currentColor" /> Mana {#each Array(3) as _, i}<i class="pip" class:on={i < h.mana}></i>{/each}</span>
               </div>
               <div class="sc-attrs">{#each ATTRS as a}<i class:hi={h.attrs[a] >= 3}>{L(ATTR_NAMES[a][0], ATTR_NAMES[a][1])} <b>{h.attrs[a]}</b></i>{/each}</div>
               <div class="sc-gear">
@@ -1203,11 +1204,11 @@
           {/if}
           <div class="stat" use:tip={L('Vigor: paga as habilidades físicas. Enche de novo no começo do seu turno; o que sobrar pode pagar Reações no turno do oponente.', 'Vigor: pays physical abilities. Refills at the start of your turn; what is left can pay Reactions on the opponent’s turn.')}>
             <span class="cap">Vigor</span>
-            <span class="val vig" id="res-{p}-vigor"><Glyph id="gauntlet" size={15} color="currentColor" />{#each pips(pl.vigor, pl.maxVigor) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxVigor && !pl.vigor}<small>—</small>{/if}</span>
+            <span class="val vig" id="res-{p}-vigor"><Glyph id={VIGOR_ICON} size={15} color="currentColor" />{#each pips(pl.vigor, pl.maxVigor) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxVigor && !pl.vigor}<small>—</small>{/if}</span>
           </div>
           <div class="stat" use:tip={L('Mana: paga as magias. Enche de novo no começo do seu turno; o que sobrar pode pagar Reações no turno do oponente.', 'Mana: pays spells. Refills at the start of your turn; what is left can pay Reactions on the opponent’s turn.')}>
             <span class="cap">Mana</span>
-            <span class="val man" id="res-{p}-mana"><Glyph id="crystal-cluster" size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
+            <span class="val man" id="res-{p}-mana"><Glyph id={MANA_ICON} size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
           </div>
           {#if g!.noXp}
             <div class="stat" use:tip={L(`Nível ${pl.level}: na Jornada o nível não muda durante a batalha; ele sobe entre as batalhas, com o XP das vitórias.`, `Level ${pl.level}: in the Journey the level does not change during the battle; it rises between battles, with the XP from victories.`)}>
@@ -1636,12 +1637,12 @@
           <p class="muted">{L('Escolha o que o seu herói ganha neste nível:', 'Choose what your hero gains this level:')}</p>
           <div class="lv-opts">
             <button class="lv-opt vig" onclick={() => act({ t: 'levelup', choice: 'vigor' })}>
-              <span class="lv-ic"><Glyph id="gauntlet" size={38} color="currentColor" /></span>
+              <span class="lv-ic"><Glyph id={VIGOR_ICON} size={38} color="currentColor" /></span>
               <b>+1 Vigor</b><small>{L('para golpes e técnicas', 'for strikes and techniques')}</small>
               <em>{P.maxVigor} → {P.maxVigor + 1}</em>
             </button>
             <button class="lv-opt man" onclick={() => act({ t: 'levelup', choice: 'mana' })}>
-              <span class="lv-ic"><Glyph id="crystal-cluster" size={38} color="currentColor" /></span>
+              <span class="lv-ic"><Glyph id={MANA_ICON} size={38} color="currentColor" /></span>
               <b>+1 Mana</b><small>{L('para magias e invocações', 'for spells and summons')}</small>
               <em>{P.maxMana} → {P.maxMana + 1}</em>
             </button>
@@ -1714,7 +1715,7 @@
           <p class="muted">{g.ended === 'timeout' ? L('O tempo esgotou.', 'Time ran out.') : g.ended === 'concede' ? L('Você desistiu da batalha.', 'You conceded the battle.') : won ? L(`${F.hero.name} caiu.`, `${F.hero.name} fell.`) : L(`${P.hero.name} caiu.`, `${P.hero.name} fell.`)} {L(`Turno ${g.turn}.`, `Turn ${g.turn}.`)}</p>
           <div class="lv">
             {#if fixed}
-              <button class="btn primary big" onclick={() => fixed.onEnd(won, g?.ended !== undefined)}><Check size={16} /> {L('Continuar', 'Continue')}</button>
+              <button class="btn primary big" onclick={() => { const h = heroOf(me); fixed.onEnd(won, g?.ended !== undefined, h ? Math.max(0, h.def - h.dmg) : 0); }}><Check size={16} /> {L('Continuar', 'Continue')}</button>
             {:else}
               <button class="btn primary big" onclick={start}><RotateCcw size={16} /> {L('Jogar de novo', 'Play again')}</button>
               <button class="btn big" onclick={leave}>{L('Trocar heróis', 'Change heroes')}</button>

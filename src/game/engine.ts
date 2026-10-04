@@ -64,7 +64,11 @@ export function newGame(a: Side, b: Side, opts: { seed?: number; actionLimit?: b
     players: [newPlayer(scale(a, opts.start?.[0]), build(a), 0, !!opts.heroOff, opts.start?.[0]), newPlayer(scale(b, opts.start?.[1]), build(b), 1, !!opts.heroOff, opts.start?.[1])],
     defs, seed: opts.seed ?? Math.floor(Math.random() * 1e9), active: 0, turn: 1, log: [], actionLimit: !!opts.actionLimit, heroOff: !!opts.heroOff, heroOffFront: !!opts.heroOffFront, seq: 0, fx: [],
   };
-  if (opts.start) s.noXp = true;
+  if (opts.start) {
+    s.noXp = true;
+    // herói que chega ferido de outra batalha
+    opts.start.forEach((st, p) => { const h = figures(s, p as 0 | 1).find((f) => f.u.isHero)?.u; if (h && st?.hurt) h.dmg = Math.min(h.def - 1, Math.max(0, st.hurt)); });
+  }
   for (const p of s.players) shuffle(s, p.deck);
   draw(s, 0, START_HAND + (a.extraCards ?? 0));
   draw(s, 1, START_HAND + (b.extraCards ?? 0));
