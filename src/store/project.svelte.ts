@@ -9,7 +9,6 @@ import { applyScoring } from '../model/scoring';
 import { editionDecks, OLD_EDITION_ID, PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { syncLook } from '../model/lookPaths';
-import { settings } from '../app/settings.svelte';
 import { MAX_COPIES, ownedCopies } from '../model/builds';
 import { normalizeCard } from '../model/cost';
 import { PROTO_GEAR_DECK, migrateGear, presetSlots, protoEquipment, SLOTS } from '../model/equipment';
@@ -484,10 +483,12 @@ class ProjectState {
     this.updateProject((p) => { p.builds = [...(p.builds ?? []), b]; });
     return this.build(b.id)!;
   }
+  /** Modo desenvolvedor ligado (vem dos Ajustes; a tela principal mantém em dia): todas as cartas valem 4 cópias. */
+  devAll = $state(false);
   /** Cópias que o jogador tem de uma carta (veja model/builds.ts). */
   ownedOf(card: Card | undefined): number {
     // modo desenvolvedor: tudo liberado
-    if (settings.v.dev && card?.game) return MAX_COPIES;
+    if (this.devAll && card?.game) return MAX_COPIES;
     return ownedCopies(card, card ? this.deck(card.deckId) : undefined, this.project?.owned);
   }
   /** O jogador ganha 1 cópia da carta (até 4). */
