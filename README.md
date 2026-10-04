@@ -5,13 +5,15 @@
 O jogo roda totalmente no seu computador, sem servidor. Ele traz:
 
 - **Modo batalha** contra o jogo, com 7 heróis prontos (um por cor de classe) e cinco níveis de dificuldade;
+- **Jornada**: o modo solo com progressão — um mapa sorteado a cada jornada, com regiões, inimigos de cada bioma, mini-chefes, acampamentos e um chefe no fim; o herói sobe de nível entre as batalhas e ganha cartas novas;
+- **Cartas que evoluem** com o nível do herói e **decks de batalha** montados pelo jogador (40 cartas);
 - **Criação de personagem**, com boneco em pixel art;
 - **Construtor de decks**: um editor completo de cartas, decks, temas e coleções, com exportação em PNG e PDF para impressão (63 × 88 mm);
 - configurações de vídeo, som, jogo e controles (teclado e joystick).
 
 A **campanha** (mapa aberto, história, criaturas e chefes) e o **multijogador** estão em construção.
 
-> O jogo se chamava *Darkstar Forge* até a versão 2.9. A pasta do projeto e o repositório mantêm o nome antigo; os dados de quem já usava continuam no mesmo lugar.
+**Para jogar:** baixe o instalador em [Releases](https://github.com/dyegomiranda/Void-Sun/releases) — `.exe` no Windows, `.AppImage` ou `.deb` no Linux. Ele já traz os heróis, os decks e as artes das cartas.
 
 > **Licença:** software livre sob a GPL-3.0. A propriedade intelectual do jogo (nome, marca, artes, personagens, textos) **não** está coberta pela GPL.
 
@@ -26,7 +28,7 @@ A **campanha** (mapa aberto, história, criaturas e chefes) e o **multijogador**
 | Tela | O que faz |
 |---|---|
 | **Tela inicial** | Menu principal: Campanha (em construção), Modo batalha, Criação de personagem, Construtor de decks, Configurações e Sobre o jogo. |
-| **Modo batalha** | Solo (contra o jogo) ou Multijogador (em construção). Na batalha solo: seleção de heróis, cenário, dificuldade e velocidade; mão inicial com troca; campo com bonecos animados, reações, níveis, efeitos visíveis, registro, música e sons. |
+| **Modo batalha** | Solo (contra o jogo), Jornada (solo com progressão, mapa e chefe) ou Multijogador (em construção). Na batalha solo: seleção de heróis, cenário, dificuldade e velocidade; mão inicial com troca; campo com bonecos animados, reações, níveis, efeitos visíveis, registro, música e sons. |
 | **Criação de personagem** | Galeria de heróis e o criador, em cinco abas: **Identidade** (nome, classe, ancestralidade, retrato, história), **Atributos** (18 pontos para distribuir, com limite), **Aparência** (boneco em pixel art, com uma miniatura por opção), **Equipamento** (cartas vestidas) e **Deck e recursos**. Trabalha num rascunho: só "Salvar personagem" grava. |
 | **Construtor de decks** | **Biblioteca** (coleções, decks, busca, filtros, curva de custo, importação de artes, PNG e PDF), **Editor** de carta (texto, jogo, arte, aparência), **Tema** do deck ou da coleção (14 estilos que se misturam peça a peça), **Coleção** (nome, sigla, selo e decks) e **Verso** das cartas. |
 | **Configurações** | **Vídeo** (em janela, maximizada ou tela cheia; resolução; escala da interface; qualidade gráfica; contador de quadros), **Som** (geral, música, efeitos), **Jogo** (idioma, dificuldade, velocidade, limite de tempo), **Controles** (teclas configuráveis e joystick) e **Dados** (backup, restauração, planilha, espaço usado). |

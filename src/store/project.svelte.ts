@@ -70,7 +70,7 @@ class ProjectState {
    * Só entram em cartas que ainda não têm imagem; roda uma vez.
    */
   async #addProtoArt(): Promise<void> {
-    const MARK = 'proto-art-4';
+    const MARK = 'proto-art-5';
     const p = this.project!;
     if (p.seeded?.includes(MARK)) return;
     const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -491,6 +491,8 @@ class ProjectState {
     if (this.devAll && card?.game) return MAX_COPIES;
     return ownedCopies(card, card ? this.deck(card.deckId) : undefined, this.project?.owned);
   }
+  /** Cópias que o jogador ganhou de verdade (sem o modo desenvolvedor): é o que vale para as recompensas. */
+  earnedOf(card: Card | undefined): number { return ownedCopies(card, card ? this.deck(card.deckId) : undefined, this.project?.owned); }
   /** O jogador ganha 1 cópia da carta (até 4). */
   grant(cardId: string): void {
     this.updateProject((p) => { const o = (p.owned ??= {}); o[cardId] = Math.min(MAX_COPIES, (o[cardId] ?? 0) + 1); });

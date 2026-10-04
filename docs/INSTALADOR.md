@@ -8,7 +8,7 @@ Ele só **baixa o instalador** e **dá dois cliques**.
 Na página **Releases** do repositório GitHub:
 
 ```
-https://github.com/dyegomiranda/Darkstar-Forge/releases
+https://github.com/dyegomiranda/Void-Sun/releases
 ```
 
 Arquivos típicos:

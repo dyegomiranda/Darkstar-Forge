@@ -35,9 +35,9 @@
   const visible = $derived(cards.slice(first * cols, last * cols).map((c, i) => ({ c, i: first * cols + i })));
 
   /** Largura da carta ampliada (a imagem guardada tem 750 px, então continua nítida). */
-  const ZOOM_W = 440;
+  const ZOOM_W = 350;
   /** Quanto a carta cresce ao parar o mouse: até a largura acima; nada, se a carta já é maior que isso. */
-  const zoomK = $derived(Math.max(1, Math.min(2.2, ZOOM_W / tw)));
+  const zoomK = $derived(Math.max(1, Math.min(1.8, ZOOM_W / tw)));
 
   /** Desloca a carta ampliada o quanto for preciso para ela caber inteira na área visível da grade. */
   function aim(el: HTMLElement) {
