@@ -39,14 +39,16 @@ function parse(hash: string): Route {
 }
 
 class Router {
-  route = $state<Route>(parse(location.hash));
+  // (fora do navegador — nos testes — não há endereço: fica a tela inicial)
+  route = $state<Route>(parse(typeof location === 'undefined' ? '' : location.hash));
   /** Pergunta antes de sair (ex.: editor com alterações). Devolve false para cancelar. */
   guard: (() => Promise<boolean>) | null = null;
   /** Para onde o botão "voltar" de uma tela deve ir (ex.: ficha aberta a partir da seleção da Mesa). */
   returnTo: string | null = null;
-  #last = location.hash;
+  #last = typeof location === 'undefined' ? '' : location.hash;
 
   constructor() {
+    if (typeof location === 'undefined') return;
     addEventListener('hashchange', async () => {
       if (location.hash === this.#last) return;
       if (this.guard && !(await this.guard())) { history.replaceState(null, '', this.#last); return; }
