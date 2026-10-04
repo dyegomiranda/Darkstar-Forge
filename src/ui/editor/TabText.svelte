@@ -4,7 +4,7 @@
   import { RESOURCE_COLORS, RESOURCE_IDS, resourceIcon } from '../../render/icons/glyphs';
   import { applyScoring } from '../../model/scoring';
   import Glyph from '../common/Glyph.svelte';
-  import type { EditorState } from './editor.svelte';
+  import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 

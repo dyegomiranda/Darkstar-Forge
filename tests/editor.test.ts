@@ -7,7 +7,7 @@ vi.mock('../src/store/db', () => ({
 }));
 
 const { app } = await import('../src/store/project.svelte');
-const { EditorState } = await import('../src/ui/editor/editor.svelte');
+const { EditorState } = await import('../src/ui/editor/editorState.svelte');
 
 describe('editor', () => {
   it('edita uma cópia: nada muda no projeto até salvar; descartar volta ao salvo', async () => {

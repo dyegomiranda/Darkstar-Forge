@@ -34,7 +34,7 @@
   import { pieceThumb } from './thumbs';
   import PieceImagePanel from './PieceImagePanel.svelte';
   import type { ColorId, ResourceId } from '../../model/types';
-  import type { EditorState } from './editor.svelte';
+  import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 

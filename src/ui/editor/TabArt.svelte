@@ -5,7 +5,7 @@
   import { ui } from '../../app/ui.svelte';
   import { importImage, ensureMedia } from '../../store/media';
   import { listMedia } from '../../store/db';
-  import type { EditorState } from './editor.svelte';
+  import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 

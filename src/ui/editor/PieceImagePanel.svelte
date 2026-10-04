@@ -12,7 +12,7 @@
   import type { PieceSlot } from '../../render/compose';
   import { skeleton } from '../../render/layout';
   import { DEFAULT_FIT, DEFAULT_PAD, type ImageFit, type PieceImage } from '../../render/pieceImage';
-  import type { EditorState } from './editor.svelte';
+  import type { EditorState } from './editorState.svelte';
 
   /** `slot` é onde grava (pode ser só o ataque ou só a defesa); `kind` é o tipo da peça. */
   let { ed, slot }: { ed: EditorState; slot: PieceSlot } = $props();
