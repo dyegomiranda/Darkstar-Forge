@@ -19,6 +19,7 @@
   import Collection from '../ui/library/Collection.svelte';
   import Builds from '../ui/library/Builds.svelte';
   import Journey from '../ui/game/Journey.svelte';
+  import Village from '../ui/home/Village.svelte';
   import Editor from '../ui/editor/Editor.svelte';
   import ThemeEditor from '../ui/editor/ThemeEditor.svelte';
   import Heroes from '../ui/hero/Heroes.svelte';
@@ -137,6 +138,13 @@
     <Game />
   {:else if route === 'journey'}
     <Journey />
+  {:else if route === 'campaign'}
+    <Village />
+  {:else if route === 'multi'}
+    <div class="wipscreen">
+      <ScreenBar title={L('Multijogador', 'Multiplayer')} kicker={L('Em construção · modo desenvolvedor', 'Work in progress · developer mode')} back={L('Modos', 'Modes')} onback={() => router.go('/batalha')} />
+      <p>{L('Esta tela ainda está vazia: é aqui que entram a lista de contatos, o pareamento e as salas.', 'This screen is still empty: contacts, matchmaking and rooms will live here.')}</p>
+    </div>
   {:else if router.route.name === 'sheet'}
     {#if router.route.id}{#key router.route.id}<HeroCreator id={router.route.id} />{/key}{:else}<Heroes />{/if}
   {:else if route === 'settings'}
@@ -181,6 +189,7 @@
 <PdfDialog />
 
 <style>
+  .wipscreen { height: 100%; display: flex; flex-direction: column; } .wipscreen p { margin: auto; color: var(--muted); max-width: 520px; text-align: center; }
   .shell { display: flex; flex-direction: column; height: 100%; }
   main { flex: 1; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
 

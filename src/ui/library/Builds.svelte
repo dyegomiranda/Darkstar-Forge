@@ -134,33 +134,41 @@
   let drag = $state<{ id: string; x: number; y: number; w: number; dx: number; dy: number } | null>(null);
   $effect(() => { const b = open; void b?.cards; void b?.piles; if (b && !drag) cols = pilesOf(b); });
   const [send, receive] = crossfade({ duration: 200, easing: cubicOut, fallback: (node) => fade(node, { duration: 120 }) });
-  let dragFrom: { id: string; x: number; y: number; el: HTMLElement; moved: boolean } | null = null;
+  let dragFrom: { id: string; x: number; y: number; r: DOMRect; moved: boolean } | null = null;
   let dragged = false;
   let pilesEl = $state<HTMLDivElement>();
+  // (os movimentos são ouvidos na janela: ao mudar de coluna a carta é recriada, e ouvir nela mesma perderia o arrasto)
   function pileDown(e: PointerEvent, cid: string) {
     if (e.button !== 0) return;
-    dragFrom = { id: cid, x: e.clientX, y: e.clientY, el: e.currentTarget as HTMLElement, moved: false };
+    e.preventDefault();
+    dragFrom = { id: cid, x: e.clientX, y: e.clientY, r: (e.currentTarget as HTMLElement).getBoundingClientRect(), moved: false };
+    addEventListener('pointermove', pileMove);
+    addEventListener('pointerup', pileUp);
+    addEventListener('pointercancel', pileUp);
+    addEventListener('mouseup', pileUp);
+    addEventListener('blur', pileUp);
   }
   function pileMove(e: PointerEvent) {
     const d = dragFrom;
     if (!d || !pilesEl) return;
+    // o botão já foi solto (o aviso de soltar pode se perder fora da janela): termina o arrasto
+    if (e.buttons === 0) { pileUp(); return; }
     if (!d.moved) {
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 7) return;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
       d.moved = true;
-      const r = d.el.getBoundingClientRect();
-      d.el.setPointerCapture(e.pointerId);
-      drag = { id: d.id, x: e.clientX, y: e.clientY, w: r.width, dx: e.clientX - r.left, dy: e.clientY - r.top };
+      peek = null;
+      drag = { id: d.id, x: e.clientX, y: e.clientY, w: d.r.width, dx: d.x - d.r.left, dy: d.y - d.r.top };
     }
     if (!drag) return;
     drag.x = e.clientX; drag.y = e.clientY;
-    // para onde vai: a coluna sob o ponteiro (ou uma nova, à direita) e a posição pela altura
+    // para onde vai: a coluna sob o ponteiro (a última é a coluna nova, vazia) e a posição pela altura
     const colEls = [...pilesEl.querySelectorAll<HTMLElement>('.pile')];
-    let ci = colEls.findIndex((c) => { const r = c.getBoundingClientRect(); return e.clientX < r.right + 8; });
+    let ci = colEls.findIndex((c) => e.clientX < c.getBoundingClientRect().right + 7);
     if (ci < 0) ci = colEls.length - 1;
     const items = [...colEls[ci].querySelectorAll<HTMLElement>('.pc')].filter((x) => x.dataset.id !== d.id);
-    const at = items.filter((x) => { const r = x.getBoundingClientRect(); return r.top + Math.min(r.height, 34) / 2 < e.clientY - drag!.dy + 17; }).length;
+    const at = items.filter((x) => { const r = x.getBoundingClientRect(); return r.top + 13 < e.clientY; }).length;
     const from = cols.findIndex((c) => c.includes(d.id));
-    const target = ci >= cols.length ? cols.length : ci;
+    const target = Math.min(ci, cols.length);
     if (from === target && cols[from].indexOf(d.id) === at) return;
     const next = cols.map((c) => c.filter((x) => x !== d.id));
     while (next.length <= target) next.push([]);
@@ -168,6 +176,11 @@
     cols = next;
   }
   function pileUp() {
+    removeEventListener('pointermove', pileMove);
+    removeEventListener('pointerup', pileUp);
+    removeEventListener('pointercancel', pileUp);
+    removeEventListener('mouseup', pileUp);
+    removeEventListener('blur', pileUp);
     const d = dragFrom;
     dragFrom = null;
     if (!d?.moved) return;
@@ -176,6 +189,14 @@
     const b = open, saved = cols.filter((c) => c.length).map((c) => [...c]);
     drag = null;
     if (b) app.updateProject(() => { b.piles = saved; });
+  }
+  /** Carta inteira ao lado da coluna (nunca por cima das pilhas, para os nomes continuarem à vista). */
+  function pilePeek(e: MouseEvent, cid: string) {
+    if (drag || dragFrom?.moved) return;
+    const el = e.currentTarget as HTMLElement, col = el.closest('.pile')!.getBoundingClientRect(), row = el.getBoundingClientRect(), h = PEEK_W * 1.4;
+    const area = pilesEl!.getBoundingClientRect();
+    const x = col.right + 12 + PEEK_W <= area.right ? col.right + 12 : col.left - PEEK_W - 12;
+    peek = { id: cid, x, y: Math.max(70, Math.min(innerHeight - h - 12, row.top - 30)) };
   }
   function autoPiles() { const b = open; if (b) app.updateProject(() => { delete b.piles; }); }
 
@@ -305,7 +326,7 @@
               {#each col as cid (cid)}
                 {@const c = app.cards[cid]}
                 <button class="pc" class:held={drag?.id === cid} data-id={cid} animate:flip={{ duration: 190, easing: cubicOut }} in:receive={{ key: cid }} out:send={{ key: cid }}
-                  onpointerdown={(e) => pileDown(e, cid)} onpointermove={pileMove} onpointerup={pileUp} onpointercancel={pileUp}
+                  onpointerdown={(e) => pileDown(e, cid)} ondragstart={(e) => e.preventDefault()} onmouseenter={(e) => pilePeek(e, cid)} onmouseleave={() => (peek = null)}
                   onclick={() => { if (!dragged) change(cid, 1); }} oncontextmenu={(e) => { e.preventDefault(); change(cid, -1); }}>
                   {#if c}<CardImage card={c} eager />{/if}
                   <span class="pt" style="--k:{colorHex(c?.colors[0] ?? 'red')}"><i>{c?.game?.level}</i><b>{c?.text[app.lang].name}</b></span>
@@ -429,24 +450,25 @@
 
   /* pilhas: colunas de cartas sobrepostas (só a faixa do nome de cada uma aparece; a última, inteira) */
   .piles { --pw: clamp(120px, 11.5vw, 178px); --strip: 26px; flex: 1; min-height: 0; overflow: auto; display: flex; gap: 14px; align-items: flex-start; padding: 18px; }
-  .pile { flex: none; width: var(--pw); min-height: calc(var(--pw) * 1.4); display: flex; flex-direction: column; border-radius: 10px; padding-bottom: calc(var(--pw) * 1.4 - var(--strip)); }
+  .pile { flex: none; width: var(--pw); min-height: calc(var(--pw) * 1.4); display: flex; flex-direction: column; border-radius: 10px; padding-bottom: calc(var(--pw) * 1.4); }
   .pile.ghostcol { border: 2px dashed transparent; align-items: center; justify-content: center; padding: 0; }
   .piles.dragging .pile.ghostcol { border-color: var(--line-2); }
   .newcol { display: none; font-size: 11px; color: var(--muted); text-align: center; padding: 10px; }
   .piles.dragging .newcol { display: block; }
-  .pc { position: relative; display: block; width: 100%; height: var(--strip); padding: 0; border: 0; background: none; cursor: grab; overflow: visible; touch-action: none; }
+  .pc { position: relative; display: block; width: 100%; height: var(--strip); padding: 0; border: 0; background: none; cursor: grab; overflow: visible; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; -webkit-tap-highlight-color: transparent; }
+  .pc:focus, .pc:focus-visible { outline: none; box-shadow: none; }
   .pc > :global(*:first-child) { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 750 / 1050; border-radius: 7px; box-shadow: 0 -3px 8px rgb(0 0 0 / .55); transition: transform .13s cubic-bezier(.2, .8, .3, 1), box-shadow .13s; pointer-events: none; }
-  .pc:hover { z-index: 6; }
-  .piles:not(.dragging) .pc:hover > :global(*:first-child) { transform: scale(1.5); box-shadow: 0 18px 34px rgb(0 0 0 / .85), 0 0 0 2px var(--accent); }
+  .piles:not(.dragging) .pc:hover .pt { border-color: var(--accent); filter: brightness(1.35); }
   /* placa com o nome: é o que se lê de cada carta empilhada (some na carta sob o mouse, que aparece inteira) */
-  .pt { position: absolute; left: 0; right: 0; top: 0; z-index: 6; height: 24px; display: flex; gap: 6px; align-items: center; padding: 0 44px 0 5px; border-radius: 7px 7px 0 0; pointer-events: none; text-align: left;
+  .pt { position: absolute; left: 0; right: 0; top: 0; z-index: 6; height: var(--strip); box-sizing: border-box; display: flex; gap: 6px; align-items: center; padding: 0 44px 0 5px; border-radius: 7px 7px 0 0; pointer-events: none; text-align: left;
     background: linear-gradient(180deg, color-mix(in srgb, var(--k) 46%, #17131f), #100d18); border: 1px solid rgb(255 255 255 / .14); border-bottom-color: rgb(0 0 0 / .6); }
   .pt i { flex: none; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; font: 800 10px var(--ui); font-style: normal; background: rgb(0 0 0 / .45); color: var(--accent-2); }
   .pt b { font: 600 11.5px var(--ui); color: #f3ead6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .piles:not(.dragging) .pc:hover .pt, .piles:not(.dragging) .pc:hover .pn { opacity: 0; }
-  .pile .pc:last-of-type .pt { display: none; }
+  /* de cada pilha só a última carta aparece inteira (logo abaixo da placa dela); as outras são só a placa com o nome */
+  .pile .pc:not(:last-of-type) > :global(*:first-child) { display: none; }
+  .pile .pc:last-of-type > :global(*:first-child) { top: var(--strip); }
   .pc.held .pt { opacity: .3; }
-  .pn { position: absolute; right: 4px; top: 2px; z-index: 7; padding: 0 7px; border-radius: 8px; font: 800 12px/19px var(--ui); color: #fff; background: rgb(10 8 14 / .86); border: 1px solid rgb(255 255 255 / .25); pointer-events: none; }
+  .pn { position: absolute; right: 4px; top: 3px; z-index: 7; padding: 0 7px; border-radius: 8px; font: 800 12px/19px var(--ui); color: #fff; background: rgb(10 8 14 / .86); border: 1px solid rgb(255 255 255 / .25); pointer-events: none; }
   .pc.held > :global(*:first-child) { opacity: .22; }
   .pc.held .pn { opacity: 0; }
   .dragghost { position: fixed; z-index: 200; pointer-events: none; aspect-ratio: 750 / 1050; transform: rotate(-3deg) scale(1.08); filter: drop-shadow(0 22px 30px rgb(0 0 0 / .85)); }

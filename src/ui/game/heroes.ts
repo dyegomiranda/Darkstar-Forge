@@ -48,8 +48,8 @@ export interface FixedMatch {
   guest?: { char: Character; hero: HeroDef };
   /** Texto curto da batalha (ex.: "Etapa 3"). */
   label: string;
-  /** `forfeit`: a partida acabou por desistência ou por tempo. */
-  onEnd: (won: boolean, forfeit: boolean) => void;
+  /** `forfeit`: a partida acabou por desistência ou por tempo. `life`: a vida com que o seu herói terminou. */
+  onEnd: (won: boolean, forfeit: boolean, life: number) => void;
   /** Saiu antes de a batalha começar. */
   onLeave: () => void;
 }

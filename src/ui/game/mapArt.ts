@@ -86,7 +86,11 @@ export function paintMap(cv: HTMLCanvasElement, map: JourneyMap): void {
   const BLEND = 30;
   const hash = (x: number, y: number) => { let n = (x * 374761393 + y * 668265263 + map.seed * 69069) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const wx = x + (nz(x / 30, y / 30) - 0.5) * 34, wy = y + (nz2(x / 30, y / 30) - 0.5) * 34;
+    // perto de um ponto do mapa o terreno não entorta nem se mistura: o chão em volta dele é sempre o do bioma dele
+    let nd = Infinity;
+    for (const p of spots) { const d = Math.hypot(p.x - x, p.y - y); if (d < nd) nd = d; }
+    const free = Math.max(0, Math.min(1, (nd - 14) / 26));
+    const wx = x + (nz(x / 30, y / 30) - 0.5) * 34 * free, wy = y + (nz2(x / 30, y / 30) - 0.5) * 34 * free;
     let best = 0, bd = Infinity, second = 0, sd = Infinity;
     for (let i = 0; i < pts.length; i++) {
       const d = Math.hypot(pts[i].x - wx, (pts[i].y - wy) * 1.07);
@@ -94,7 +98,7 @@ export function paintMap(cv: HTMLCanvasElement, map: JourneyMap): void {
     }
     // chance de o ponto ser da 2ª região: 50% em cima da divisa, caindo a 0 a BLEND pontos dela (em manchas, não ponto a ponto)
     const near = Math.max(0, 1 - (sd - bd) / BLEND);
-    const mix = 0.5 * near * near;
+    const mix = 0.5 * near * near * free;
     const pick = mix > 0 && (hash(x >> 1, y >> 1) * 0.6 + nz2(x / 5, y / 5) * 0.4) < mix ? second : best;
     region[y * W + x] = ids.indexOf(pts[pick].id);
   }

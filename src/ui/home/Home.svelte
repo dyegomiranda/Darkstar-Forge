@@ -15,7 +15,7 @@
 
   interface Item { id: string; pt: string; en: string; hint: [string, string]; go?: () => void; wip?: boolean }
   const ITEMS: Item[] = [
-    { id: 'campaign', pt: 'Campanha', en: 'Campaign', wip: true, hint: ['Um mundo aberto, uma história e batalhas contra criaturas e chefes.', 'An open world, a story and battles against creatures and bosses.'] },
+    { id: 'campaign', pt: 'Campanha', en: 'Campaign', wip: true, go: () => router.go('/campanha'), hint: ['Um mundo aberto, uma história e batalhas contra criaturas e chefes.', 'An open world, a story and battles against creatures and bosses.'] },
     { id: 'battle', pt: 'Modo batalha', en: 'Battle mode', go: () => router.go('/batalha'), hint: ['Escolha o seu herói e enfrente um oponente.', 'Pick your hero and face an opponent.'] },
     { id: 'heroes', pt: 'Criação de personagem', en: 'Character creation', go: () => router.go('/heroi'), hint: ['Crie heróis: ancestralidade, atributos, aparência e equipamento.', 'Create heroes: ancestry, attributes, look and equipment.'] },
     { id: 'decks', pt: 'Construtor de decks', en: 'Deck builder', go: () => router.go('/decks'), hint: ['Crie e edite cartas, decks e coleções.', 'Create and edit cards, decks and collections.'] },
@@ -85,7 +85,7 @@
 
   <nav class="menu" aria-label={L('Menu principal', 'Main menu')}>
     {#each ITEMS as it, i (it.id)}
-      {#if it.wip}
+      {#if it.wip && !settings.v.dev}
         <div class="item wip" style="--i:{i}" aria-disabled="true">
           <span class="cur"></span><span class="tx">{L(it.pt, it.en)}</span><span class="wip-tag">{L('Em construção', 'Work in progress')}</span>
         </div>

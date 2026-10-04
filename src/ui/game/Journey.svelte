@@ -18,6 +18,7 @@
   import HeroPortrait from '../common/HeroPortrait.svelte';
   import CardImage from '../common/CardImage.svelte';
   import Glyph from '../common/Glyph.svelte';
+  import { VIGOR_ICON, MANA_ICON } from '../../render/icons/glyphs';
   import Game from './Game.svelte';
   import { deckName, deckReady, heroColor, heroDef, journeyCards, playable, type FixedMatch } from './heroes';
   import { cardDef } from '../../game/fromApp';
@@ -131,6 +132,17 @@
     return out;
   });
 
+  // ───── ajuste dos oponentes (modo desenvolvedor) ─────
+  const tuneOf = (n: MapNode) => settings.v.tune[n.kind === 'boss' ? 'boss' : n.kind === 'elite' ? 'elite' : 'battle'];
+  /** Como o oponente entra, já com o ajuste de vida do modo desenvolvedor. */
+  function tuned(n: MapNode, fd: HeroDef) {
+    const st = foeStart(fd, depth(n), n.kind === 'boss'), k = tuneOf(n).hp;
+    return k === 1 ? st : { ...st, vida: st.vida + Math.round((fd.maxHp + st.vida) * (k - 1)) };
+  }
+  /** Nível escolhido à mão (modo desenvolvedor): os bônus de nível voltam para a escolha. */
+  function setLevel(n: number) { save((s) => { s.level = n; s.xp = 0; s.vigor = 0; s.mana = 0; s.vida = 0; s.pending = n - 1; s.hurt = 0; }); }
+  const TUNE_ROWS = [['battle', 'Inimigos comuns', 'Common enemies'], ['elite', 'Mini-chefes', 'Mini-bosses'], ['boss', 'Chefe', 'Boss']] as const;
+
   // ───── batalha ─────
   let battle = $state<FixedMatch | null>(null);
   let result = $state<{ won: boolean; xp: number; levels: number; text: string } | null>(null);
@@ -142,10 +154,12 @@
     if (!hero || !foe || !fd || j.pending) return;
     const boss = n.kind === 'boss', d = depth(n), seed = map?.seed ?? 1;
     battle = {
-      myId: hero.id, botId: foe.id, start: [playerStart(j), foeStart(fd, d, boss)], difficulty: foeDifficulty(d), scene: n.biome,
+      myId: hero.id, botId: foe.id, start: [{ ...playerStart(j), hurt: settings.v.keepDamage ? j.hurt ?? 0 : 0 }, tuned(n, fd)], difficulty: tuneOf(n).diff || foeDifficulty(d), scene: n.biome,
       label: boss ? L('Chefe', 'Boss') : L(biomeOf(n.biome).name[0], biomeOf(n.biome).name[1]),
       guest: boss ? { char: bossChar, hero: monster.hero } : n.kind === 'battle' ? { char: foe, hero: fd } : undefined,
-      onEnd: (won, forfeit) => {
+      onEnd: (won, forfeit, life) => {
+        // a vida não volta depois da batalha (teste): o herói carrega o dano até o próximo Acampamento
+        if (won && settings.v.keepDamage && def) { const max = def.maxHp + j.vida; save((s) => { s.hurt = Math.max(0, max - life); }); }
         let r = { xp: 0, levels: 0 };
         save((s) => { r = applyResult(s, n, won, forfeit); });
         // chefe vencido: o mapa de todos é sorteado de novo
@@ -172,8 +186,8 @@
     if (!picks.length) {
       // o jogador já tem tudo: o treino vira XP
       let levels = 0;
-      save((s) => { levels = addXp(s, 30 + 5 * j.level); if (nodeId !== undefined) clearNode(s, nodeId); });
-      ui.toast(L(`Você já tem todas essas cartas: o treino rendeu ${30 + 5 * j.level} XP.`, `You already own all those cards: the training gave ${30 + 5 * j.level} XP.`), 'ok', 4200);
+      save((s) => { levels = addXp(s, 30 + 5 * j.level); if (nodeId !== undefined) { clearNode(s, nodeId); s.hurt = 0; } });
+      ui.toast(L(`Você já tem todas essas cartas: o descanso rendeu ${30 + 5 * j.level} XP.`, `You already own all those cards: the rest gave ${30 + 5 * j.level} XP.`), 'ok', 4200);
       if (levels) chip.sfx('levelup');
       pick = null;
       return;
@@ -182,13 +196,13 @@
   }
   function train(n: MapNode) {
     if (!map || j.pending) return;
-    offer(classRewards, L('Campo de treino', 'Training camp'), L('Escolha uma habilidade nova para o seu inventário. Ela entra no seu deck da Jornada e pode ser usada nos decks montados.', 'Choose a new skill for your inventory. It joins your Journey deck and can be used in built decks.'), map.seed + n.id * 31, n.id);
+    offer(classRewards, L('Acampamento', 'Camp'), L('Escolha uma habilidade nova para o seu inventário. Ela entra no seu deck da Jornada e pode ser usada nos decks montados.', 'Choose a new skill for your inventory. It joins your Journey deck and can be used in built decks.'), map.seed + n.id * 31, n.id);
   }
   function take(c: Card) {
     if (!reward) return;
     app.grant(c.id);
     const nodeId = reward.node;
-    if (nodeId !== undefined) save((s) => clearNode(s, nodeId));
+    if (nodeId !== undefined) save((s) => { clearNode(s, nodeId); s.hurt = 0; });
     ui.toast(L(`“${c.text[app.lang].name}” entrou no inventário (${app.ownedOf(c)}/${MAX_COPIES})`, `“${c.text[app.lang].name}” joined the inventory (${app.ownedOf(c)}/${MAX_COPIES})`), 'ok', 4200);
     chip.sfx('levelup');
     reward = null; pick = null;
@@ -231,9 +245,9 @@
             <h2 class="display">{hero.name}</h2>
             <span class="cls">{L(def.className[0], def.className[1])}</span>
             <div class="stats">
-              <span class="hp"><Heart size={13} /> {def.maxHp + j.vida}</span>
-              <span class="vig"><Glyph id="gauntlet" size={13} color="currentColor" /> {def.vigor + j.vigor}</span>
-              <span class="man"><Glyph id="crystal-cluster" size={13} color="currentColor" /> {def.mana + j.mana}</span>
+              <span class="hp"><Heart size={13} /> {settings.v.keepDamage && j.hurt ? `${Math.max(1, def.maxHp + j.vida - j.hurt)}/` : ''}{def.maxHp + j.vida}</span>
+              <span class="vig"><Glyph id={VIGOR_ICON} size={13} color="currentColor" /> {def.vigor + j.vigor}</span>
+              <span class="man"><Glyph id={MANA_ICON} size={13} color="currentColor" /> {def.mana + j.mana}</span>
             </div>
           </div>
           <div class="lvl"><span class="lvn">{j.level}</span>
@@ -259,8 +273,8 @@
           <div class="card levelup" in:scale={{ duration: 260, start: 0.9 }}>
             <span class="lu-title"><TrendingUp size={15} /> {L('Nível novo! Escolha o bônus', 'New level! Choose the bonus')}{j.pending > 1 ? ` (${j.pending})` : ''}</span>
             <div class="lu-opts">
-              <button class="vig" onclick={() => { save((s) => choose(s, 'vigor')); chip.sfx('select'); }}><Glyph id="gauntlet" size={24} color="currentColor" /><b>+1 Vigor</b></button>
-              <button class="man" onclick={() => { save((s) => choose(s, 'mana')); chip.sfx('select'); }}><Glyph id="crystal-cluster" size={24} color="currentColor" /><b>+1 Mana</b></button>
+              <button class="vig" onclick={() => { save((s) => choose(s, 'vigor')); chip.sfx('select'); }}><Glyph id={VIGOR_ICON} size={24} color="currentColor" /><b>+1 Vigor</b></button>
+              <button class="man" onclick={() => { save((s) => choose(s, 'mana')); chip.sfx('select'); }}><Glyph id={MANA_ICON} size={24} color="currentColor" /><b>+1 Mana</b></button>
               <button class="hp" onclick={() => { save((s) => choose(s, 'vida')); chip.sfx('select'); }}><Heart size={22} /><b>+3 {L('Vida', 'Life')}</b></button>
             </div>
           </div>
@@ -273,17 +287,17 @@
           <div class="card spot" class:boss={node.kind === 'boss'} in:fade={{ duration: 140 }}>
             <span class="sp-where"><MapPin size={12} /> {L(art.name[0], art.name[1])}</span>
             {#if node.kind === 'training'}
-              <div class="sp-head"><span class="sp-ic"><GraduationCap size={26} /></span><span><b class="display">{L('Campo de treino', 'Training camp')}</b><small>{L('Escolha 1 de 3 habilidades novas da sua classe.', 'Choose 1 of 3 new skills of your class.')}</small></span></div>
-              {#if st === 'open' || dev}<button class="btn primary" disabled={!!j.pending} onclick={() => train(node)}><GraduationCap size={16} /> {L('Treinar', 'Train')}</button>{/if}
+              <div class="sp-head"><span class="sp-ic"><GraduationCap size={26} /></span><span><b class="display">{L('Acampamento', 'Camp')}</b><small>{L('Descanse (a vida volta toda) e escolha 1 de 3 habilidades novas da sua classe.', 'Rest (life is fully restored) and choose 1 of 3 new skills of your class.')}</small></span></div>
+              {#if st === 'open' || dev}<button class="btn primary" disabled={!!j.pending} onclick={() => train(node)}><Tent size={16} /> {L('Acampar', 'Camp')}</button>{/if}
             {:else}
               {@const fc = charOf(node)}
               {@const fd = defOf(node)}
               {#if fc && fd}
-                {@const fb = foeStart(fd, depth(node), node.kind === 'boss')}
+                {@const fb = tuned(node, fd)}
                 <div class="sp-head" style="--k:{heroColor(fc)}"><HeroPortrait hero={fc} size={62} round />
                   <span><b class="display">{fc.name}</b><small>{node.kind === 'elite' ? L('Mini-chefe · ', 'Mini-boss · ') : ''}{L(fd.className[0], fd.className[1])} · {L('nível', 'level')} {foeLevel(depth(node), node.kind === 'boss')}</small>
                     <small><Heart size={11} /> {fd.maxHp + fb.vida} · Vigor {fd.vigor + fb.vigor} · Mana {fd.mana + fb.mana}</small>
-                    <small>{L(DIFFICULTIES.find((d) => d.id === foeDifficulty(depth(node)))!.name[0], DIFFICULTIES.find((d) => d.id === foeDifficulty(depth(node)))!.name[1])} · <em><Sparkles size={11} /> +{xpReward(depth(node), true, node.kind === 'boss', node.kind === 'elite')} XP</em></small></span></div>
+                    <small>{L(DIFFICULTIES.find((d) => d.id === (tuneOf(node).diff || foeDifficulty(depth(node))))!.name[0], DIFFICULTIES.find((d) => d.id === (tuneOf(node).diff || foeDifficulty(depth(node))))!.name[1])} · <em><Sparkles size={11} /> +{xpReward(depth(node), true, node.kind === 'boss', node.kind === 'elite')} XP</em></small></span></div>
                 {#if node.kind === 'boss'}<p class="muted sm">{L('Vencer o chefe encerra este mapa e deixa você escolher uma das cartas dele.', 'Beating the boss ends this map and lets you choose one of its cards.')}</p>{/if}
                 {#if st === 'open' || dev}<button class="btn primary" disabled={!!j.pending} onclick={() => fight(node)}><Swords size={16} /> {j.pending ? L('Escolha o bônus do nível', 'Choose the level bonus') : L('Batalhar', 'Fight')}</button>{/if}
               {/if}
@@ -306,10 +320,18 @@
           <small class="rec">{L(`${j.wins} vitória${j.wins === 1 ? '' : 's'} · ${j.losses} derrota${j.losses === 1 ? '' : 's'} · ${tier} chefe${tier === 1 ? '' : 's'} vencido${tier === 1 ? '' : 's'}`, `${j.wins} win${j.wins === 1 ? '' : 's'} · ${j.losses} loss${j.losses === 1 ? '' : 'es'} · ${tier} boss${tier === 1 ? '' : 'es'} beaten`)}</small>
           <label class="perma" title={L('Só para teste: se o herói perder uma batalha, perde todo o progresso da Jornada e recomeça do nível 1. Desligado, ele pode tentar de novo do mesmo ponto.', 'Test only: if the hero loses a battle, all Journey progress is lost and it restarts at level 1. Off, it can retry from the same spot.')}>
             <input type="checkbox" checked={settings.v.permadeath} onchange={(e) => { settings.v.permadeath = (e.currentTarget as HTMLInputElement).checked; settings.save(); }} /> <Skull size={13} /> {L('Morte permanente (teste)', 'Permadeath (test)')}</label>
+          <label class="perma" title={L('Só para teste: a vida perdida numa batalha continua na seguinte. Só o Acampamento recupera a vida.', 'Test only: life lost in a battle carries over to the next. Only the Camp restores life.')}>
+            <input type="checkbox" checked={settings.v.keepDamage} onchange={(e) => { settings.v.keepDamage = (e.currentTarget as HTMLInputElement).checked; settings.save(); }} /> <Heart size={13} /> {L('A vida não volta depois da batalha (teste)', 'Life is not restored after battle (test)')}</label>
           {#if dev}
             <div class="devrow"><span>DEV</span>
-              <button class="btn sm ghost" onclick={() => save((s) => { addXp(s, xpToNext(s.level) - s.xp); })}>{L('+1 nível', '+1 level')}</button>
+              <label>{L('Nível', 'Level')} <select class="select-in" value={j.level} onchange={(e) => setLevel(Number((e.currentTarget as HTMLSelectElement).value))}>{#each Array(JOURNEY_MAX_LEVEL) as _, i}<option value={i + 1}>{i + 1}</option>{/each}</select></label>
               <button class="btn sm ghost" onclick={() => app.updateProject((p) => { p.journeySeed = newSeed(); })}>{L('Sortear outro mapa', 'Roll another map')}</button>
+              {#each TUNE_ROWS as [k, pt, en]}
+                <div class="tune"><b>{L(pt, en)}</b>
+                  <select class="select-in" value={settings.v.tune[k].hp} onchange={(e) => { settings.v.tune[k].hp = Number((e.currentTarget as HTMLSelectElement).value); settings.save(); }} title={L('Vida do oponente', 'Opponent life')}>{#each [0.5, 0.75, 1, 1.25, 1.5, 2] as v}<option value={v}>{L('vida', 'life')} {Math.round(v * 100)}%</option>{/each}</select>
+                  <select class="select-in" value={settings.v.tune[k].diff} onchange={(e) => { settings.v.tune[k].diff = (e.currentTarget as HTMLSelectElement).value as never; settings.save(); }} title={L('Como o bot joga', 'How the bot plays')}><option value="">{L('bot: do mapa', 'bot: by map')}</option>{#each DIFFICULTIES as d (d.id)}<option value={d.id}>{L(d.name[0], d.name[1])}</option>{/each}</select>
+                </div>
+              {/each}
             </div>
           {/if}
           <button class="btn sm ghost" onclick={reset}><RotateCcw size={13} /> {L('Recomeçar a Jornada', 'Restart the Journey')}</button>
@@ -341,7 +363,7 @@
                 {@const fc = n.kind === 'training' ? undefined : charOf(n)}
                 <button class="node {n.kind} {st}" class:sel={pick === n.id} class:here={map.at === n.id} style="left:{n.x * 100}%;top:{n.y * 100}%;--k:{fc ? heroColor(fc) : '#e3b566'}"
                   onclick={() => { pick = n.id; chip.sfx('select'); }} ondblclick={() => { if (st !== 'open' && !dev) return; if (n.kind === 'training') train(n); else fight(n); }}
-                  title={n.kind === 'training' ? L('Campo de treino', 'Training camp') : `${fc?.name ?? ''}${n.kind === 'elite' ? L(' (mini-chefe)', ' (mini-boss)') : ''} · ${L(biomeOf(n.biome).name[0], biomeOf(n.biome).name[1])}`}>
+                  title={n.kind === 'training' ? L('Acampamento', 'Camp') : `${fc?.name ?? ''}${n.kind === 'elite' ? L(' (mini-chefe)', ' (mini-boss)') : ''} · ${L(biomeOf(n.biome).name[0], biomeOf(n.biome).name[1])}`}>
                   <span class="disc">
                     {#if n.kind === 'training'}<Tent size={22} />{:else if fc}<HeroPortrait hero={fc} size={n.kind === 'boss' ? 84 : n.kind === 'elite' ? 58 : 40} round />{/if}
                   </span>
@@ -443,6 +465,9 @@
   .perma { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-2); cursor: pointer; }
   .devrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 8px; border-radius: 10px; border: 1px dashed #b0483c; }
   .devrow span { font: 800 10px var(--ui); letter-spacing: .14em; color: #ff9a8a; }
+  .devrow label { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; color: var(--text-2); }
+  .tune { flex-basis: 100%; display: grid; grid-template-columns: 1fr auto auto; gap: 5px; align-items: center; font-size: 11.5px; color: var(--text-2); }
+  .tune b { font-weight: 600; }
 
   /* ───── o mapa ───── */
   .mapbox { min-width: 0; min-height: 0; display: grid; place-items: center; }

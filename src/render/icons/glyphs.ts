@@ -290,7 +290,10 @@ export const ATK_CHOICES = both('atk');
 export const DEF_CHOICES = both('def');
 
 /** Símbolo padrão de um recurso, de um deck, do ataque e da defesa. */
-export const resourceIcon = (r: string): string | undefined => resourceChoices(r)[0];
+/** Símbolos padrão do jogo para Vigor (o raio) e Mana (o redemoinho): valem nas cartas e em todas as telas. */
+export const VIGOR_ICON = 'f3d-high-voltage', MANA_ICON = 'f3d-cyclone';
+const DEFAULT_RES: Record<string, string> = { vigor: VIGOR_ICON, mana: MANA_ICON };
+export const resourceIcon = (r: string): string | undefined => DEFAULT_RES[r] ?? resourceChoices(r)[0];
 export const classIcon = (c: string): string => classChoices(c)[0];
 export const ATK_ICON = ATK_CHOICES[0];
 export const DEF_ICON = DEF_CHOICES[0];

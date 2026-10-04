@@ -232,7 +232,7 @@ export interface PlayerState {
 }
 
 /** Herói que já entra na partida evoluído (modo de progressão): nível e o que ganhou nos níveis anteriores. */
-export interface StartBonus { level: number; vigor: number; mana: number; vida: number }
+export interface StartBonus { level: number; vigor: number; mana: number; vida: number; /** Dano que o herói já traz de batalhas anteriores (fica com pelo menos 1 de vida). */ hurt?: number }
 
 /** O que o motor precisa saber de cada carta. */
 export interface CardDef { id: string; name: [string, string]; game: CardGame }

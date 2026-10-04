@@ -47,6 +47,8 @@ export interface JourneyState {
   /** Mapas já concluídos (chefes vencidos): cada um deixa os oponentes mais fortes. */
   tier?: number;
   map?: JourneyMap;
+  /** Vida perdida que o herói carrega (só no modo "a vida não volta depois da batalha"); o Acampamento zera. */
+  hurt?: number;
 }
 
 export const JOURNEY_MAX_LEVEL = 30, DECK_SIZE = 40, MAX_COPIES = 4;

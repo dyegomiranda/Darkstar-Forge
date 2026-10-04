@@ -5,6 +5,7 @@
   import { L } from '../../app/i18n.svelte';
   import { router } from '../../app/router.svelte';
   import { chip } from '../../audio/chip';
+  import { settings } from '../../app/settings.svelte';
   import ScreenBar from '../common/ScreenBar.svelte';
 
   let first = $state<HTMLButtonElement>();
@@ -33,6 +34,13 @@
         <em>{L('Jogar', 'Play')} ▶</em>
       </span>
     </button>
+    {#if settings.v.dev}
+      <button class="mode" onclick={() => router.go('/batalha/multi')}>
+        <span class="pic"><img src="ui/batalha-multi.webp" alt="" draggable="false" /></span>
+        <span class="body"><span class="ic"><Users size={20} /></span><b>{L('Multijogador', 'Multiplayer')}</b>
+          <small>{L('Duelos entre jogadores, cada um com o seu herói e o seu deck.', 'Duels between players, each with their own hero and deck.')}</small><em>{L('Abrir', 'Open')} ▶</em></span>
+      </button>
+    {:else}
     <div class="mode off" aria-disabled="true">
       <span class="pic"><img src="ui/batalha-multi.webp" alt="" draggable="false" /></span>
       <span class="body">
@@ -42,6 +50,7 @@
       </span>
       <span class="wip-tag big">{L('Em construção', 'Work in progress')}</span>
     </div>
+    {/if}
   </div>
 </div>
 
