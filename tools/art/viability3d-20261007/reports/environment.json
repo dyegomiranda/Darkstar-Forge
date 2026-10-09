@@ -1,0 +1,15 @@
+{
+  "game_checkout": "/home/djabo/Downloads/Void Sun",
+  "experiment_root": "/home/djabo/Downloads/Void Sun/tools/art/viability3d-20261007",
+  "initial_server": {
+    "reserve_vram_gb": 2,
+    "cache": "default"
+  },
+  "retest_server": {
+    "reserve_vram_gb": 3,
+    "cache": "none"
+  },
+  "server_stopped_after_benchmarks": true,
+  "original_comfyui_revision": "c9602625e445e9ee37d3ac6faf5ea9ec1e0de87e",
+  "gpu": "NVIDIA GeForce RTX 4070, 615.71.09, 12282 MiB"
+}

@@ -1,0 +1,23 @@
+{
+  "case": "brunhild512",
+  "purpose": "local technical viability; not approved production art",
+  "pipeline": "native Pixal3D INT8 convrot, pure512 no upscale",
+  "seeds": {
+    "structure": 56,
+    "shape": 42,
+    "texture": 43
+  },
+  "steps": {
+    "structure": 12,
+    "shape": 20,
+    "texture": 12
+  },
+  "sparse_structure_resolution": 32,
+  "expected_shape_resolution": 512,
+  "mesh_processing": "raw mesh; native nearest voxel vertex colors; no remesh, retopology or rig",
+  "max_seconds": 1800,
+  "max_total_gpu_memory_mib": 10500,
+  "min_available_ram_mib": 4096,
+  "max_gpu_temp_c": 80,
+  "retest_runtime": "no execution cache, reserve VRAM 3 GB; resource guard unchanged"
+}

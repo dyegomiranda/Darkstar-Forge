@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { card, deck } from './fixtures';
 
+const replace = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
 vi.mock('../src/store/db', () => ({
+  replaceProject: replace,
   loadAll: async () => ({ project: undefined, cards: [] }),
   saveProject: async () => undefined, saveCards: async () => undefined, deleteCards: async () => undefined, wipe: async () => undefined,
 }));
@@ -27,5 +30,38 @@ describe('restaurar backup antigo', () => {
     expect(heroBaseOf(hero, app.cards).weapon.dmg).toBe(HERO_BASES[0].weapon.dmg);
     // as cartas agrupadas por deck acompanham o que foi restaurado
     expect(app.cardsOf('d').map((c) => c.id)).toEqual(['c']);
+  });
+});
+
+describe('falha de restauração', () => {
+  it('uma falha na transação não substitui o projeto na memória', async () => {
+    const previous = app.project;
+    const cards = app.cards;
+    const restored = JSON.parse(JSON.stringify(previous));
+    restored.name = 'backup novo';
+    replace.mockRejectedValueOnce(new Error('quota excedida'));
+    await expect(app.replaceAll(restored, [card({ id: 'new-only' })])).rejects.toThrow('quota excedida');
+    expect(app.project).toBe(previous);
+    expect(app.cards).toBe(cards);
+    expect(app.cards['new-only']).toBeUndefined();
+  });
+});
+
+describe('artes do catálogo Protótipo', () => {
+  it('restaurar um projeto troca referências antigas, persiste e não repete a migração', async () => {
+    const { seedProject } = await import('../src/model/seed');
+    const seeded = seedProject();
+    const official = seeded.cards.find(c => c.game && c.deckId.startsWith('proto-'))!;
+    official.art = { mediaId: 'arte-antiga', zoom: 2, x: 90, y: -20, mirror: true };
+    await app.replaceAll(seeded.project, seeded.cards);
+    const saved = app.cards[official.id];
+    expect(saved.art.asset).toMatch(/^art\/rework\/cards-hd\/.+\.png$/);
+    expect(saved.art.mediaId).toBeUndefined();
+    expect(saved.art.zoom).toBe(1);
+    expect(app.hasPending).toBe(false);
+    const later = structuredClone(seeded.project);
+    const cards = seeded.cards.map(c => c.id === official.id ? { ...c, art: { ...c.art, mediaId: 'upload-posterior' } } : c);
+    await app.replaceAll(later, cards);
+    expect(app.cards[official.id].art.mediaId).toBe('upload-posterior');
   });
 });

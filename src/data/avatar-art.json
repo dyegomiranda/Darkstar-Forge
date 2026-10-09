@@ -1,0 +1,256 @@
+{
+  "complete": false,
+  "layers": {
+    "body-male": {
+      "asset": "art/rework/avatarLayers/body-male.png",
+      "slot": "body",
+      "material": "body"
+    },
+    "body-female": {
+      "asset": "art/rework/avatarLayers/body-female.png",
+      "slot": "body",
+      "material": "body"
+    },
+    "hair_parted": {
+      "asset": "art/rework/avatarLayers/hair_parted.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "torso_clothes_longsleeve": {
+      "asset": "art/rework/avatarLayers/torso_clothes_longsleeve.png",
+      "slot": "torso",
+      "material": "cloth"
+    },
+    "hair_long": {
+      "asset": "art/rework/avatarLayers/hair_long.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_long_straight": {
+      "asset": "art/rework/avatarLayers/hair_long_straight.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_bangslong": {
+      "asset": "art/rework/avatarLayers/hair_bangslong.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_ponytail": {
+      "asset": "art/rework/avatarLayers/hair_ponytail.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_wavy": {
+      "asset": "art/rework/avatarLayers/hair_wavy.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_messy1": {
+      "asset": "art/rework/avatarLayers/hair_messy1.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_braid": {
+      "asset": "art/rework/avatarLayers/hair_braid.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_swoop": {
+      "asset": "art/rework/avatarLayers/hair_swoop.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_pixie": {
+      "asset": "art/rework/avatarLayers/hair_pixie.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_high_ponytail": {
+      "asset": "art/rework/avatarLayers/hair_high_ponytail.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_spiked": {
+      "asset": "art/rework/avatarLayers/hair_spiked.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_xlong": {
+      "asset": "art/rework/avatarLayers/hair_xlong.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_curly_long": {
+      "asset": "art/rework/avatarLayers/hair_curly_long.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_topknot_long": {
+      "asset": "art/rework/avatarLayers/hair_topknot_long.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_curly_short": {
+      "asset": "art/rework/avatarLayers/hair_curly_short.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_bob": {
+      "asset": "art/rework/avatarLayers/hair_bob.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_bedhead": {
+      "asset": "art/rework/avatarLayers/hair_bedhead.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_longhawk": {
+      "asset": "art/rework/avatarLayers/hair_longhawk.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_afro": {
+      "asset": "art/rework/avatarLayers/hair_afro.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_plain": {
+      "asset": "art/rework/avatarLayers/hair_plain.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_pigtails": {
+      "asset": "art/rework/avatarLayers/hair_pigtails.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_dreadlocks_long": {
+      "asset": "art/rework/avatarLayers/hair_dreadlocks_long.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "beards_5oclock_shadow": {
+      "asset": "art/rework/avatarLayers/beards_5oclock_shadow.png",
+      "slot": "beard",
+      "material": "hair"
+    },
+    "hair_lob": {
+      "asset": "art/rework/avatarLayers/hair_lob.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "hair_buzzcut": {
+      "asset": "art/rework/avatarLayers/hair_buzzcut.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "beards_trimmed": {
+      "asset": "art/rework/avatarLayers/beards_trimmed.png",
+      "slot": "beard",
+      "material": "hair"
+    },
+    "beards_beard": {
+      "asset": "art/rework/avatarLayers/beards_beard.png",
+      "slot": "beard",
+      "material": "hair"
+    },
+    "hair_long_messy": {
+      "asset": "art/rework/avatarLayers/hair_long_messy.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "beards_winter": {
+      "asset": "art/rework/avatarLayers/beards_winter.png",
+      "slot": "beard",
+      "material": "hair"
+    },
+    "hair_mop": {
+      "asset": "art/rework/avatarLayers/hair_mop.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "beards_medium": {
+      "asset": "art/rework/avatarLayers/beards_medium.png",
+      "slot": "beard",
+      "material": "hair"
+    },
+    "hair_cowlick": {
+      "asset": "art/rework/avatarLayers/hair_cowlick.png",
+      "slot": "hair",
+      "material": "hair"
+    },
+    "beards_mustache": {
+      "asset": "art/rework/avatarLayers/beards_mustache.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "beards_chevron": {
+      "asset": "art/rework/avatarLayers/beards_chevron.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "beards_lampshade": {
+      "asset": "art/rework/avatarLayers/beards_lampshade.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "eyebrows_thin": {
+      "asset": "art/rework/avatarLayers/eyebrows_thin.png",
+      "slot": "eyebrows",
+      "material": "hair"
+    },
+    "beards_handlebar": {
+      "asset": "art/rework/avatarLayers/beards_handlebar.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "eyebrows_thick": {
+      "asset": "art/rework/avatarLayers/eyebrows_thick.png",
+      "slot": "eyebrows",
+      "material": "hair"
+    },
+    "beards_horseshoe": {
+      "asset": "art/rework/avatarLayers/beards_horseshoe.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "eyes_cyclops": {
+      "asset": "art/rework/avatarLayers/eyes_cyclops.png",
+      "slot": "eyes",
+      "material": "eye"
+    },
+    "beards_walrus": {
+      "asset": "art/rework/avatarLayers/beards_walrus.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "head_nose_straight": {
+      "asset": "art/rework/avatarLayers/head_nose_straight.png",
+      "slot": "nose",
+      "material": "body"
+    },
+    "eyes_cyclops2": {
+      "asset": "art/rework/avatarLayers/eyes_cyclops2.png",
+      "slot": "eyes",
+      "material": "eye"
+    },
+    "beards_french": {
+      "asset": "art/rework/avatarLayers/beards_french.png",
+      "slot": "mustache",
+      "material": "hair"
+    },
+    "head_nose_button": {
+      "asset": "art/rework/avatarLayers/head_nose_button.png",
+      "slot": "nose",
+      "material": "body"
+    },
+    "head_nose_large": {
+      "asset": "art/rework/avatarLayers/head_nose_large.png",
+      "slot": "nose",
+      "material": "body"
+    }
+  },
+  "previewEnabled": false
+}

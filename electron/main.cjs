@@ -21,6 +21,8 @@ app.setPath('userData', process.env.VOIDSUN_DATA || path.join(app.getPath('appDa
 
 // a música do jogo pode começar sem esperar um clique
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+// WebGL remains accelerated; avoid Chromium's optional Vulkan path on Linux/Wayland.
+if (process.platform === 'linux') app.commandLine.appendSwitch('disable-features', 'Vulkan');
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, codeCache: true } },

@@ -173,7 +173,7 @@ export interface ComposeInput {
   colors: string[];
   /** Deck (define o símbolo de classe padrão). */
   colorId: string;
-  art?: { src: string; zoom?: number; x?: number; y?: number; mirror?: boolean };
+  art?: { src: string; zoom?: number; x?: number; y?: number; mirror?: boolean; pixelArt?: boolean };
   /** Arte provisória: símbolo da biblioteca sobre fundo na cor da classe. */
   artIcon?: string;
   name: string;
@@ -337,12 +337,14 @@ export function composeEx(inp: ComposeInput): { svg: string; info: ComposeInfo }
   let artImg = '';
   if (inp.art?.src) {
     const z = inp.art.zoom ?? 1;
-    const w = CARD_W * z, h = CARD_H * z;
+    // Sangria mínima evita frestas do SVG nos limites do recorte arredondado.
+    const bleed = inp.art.pixelArt ? 1 : 0;
+    const w = CARD_W * z + bleed * 2, h = CARD_H * z + bleed * 2;
     const x = (CARD_W - w) / 2 + (inp.art.x ?? 0), y = (CARD_H - h) / 2 + (inp.art.y ?? 0);
     const mir = inp.art.mirror ? ` transform="translate(${CARD_W} 0) scale(-1 1)"` : '';
     const px = look.pixelateArt;
     const pixFilter = px && px > 1 ? ` filter="${pixelate(defs, px)}"` : '';
-    artImg = `<g${mir}${pixFilter}><image href="${inp.art.src}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/></g>`;
+    artImg = `<g${mir}${pixFilter}><image href="${inp.art.src}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"${inp.art.pixelArt ? ' style="image-rendering:pixelated"' : ''}/></g>`;
     art += artImg;
   }
 

@@ -34,7 +34,7 @@
       { id: 'cape', icon: Wind, crop: WIDE, px: 2, dir: 'n' }, { id: 'back', icon: Backpack, crop: WIDE, px: 2, dir: 'n' },
     ] },
     { pt: 'Armas', en: 'Arms', cats: [
-      { id: 'weapon', icon: Sword, crop: WIDE, px: 2 }, { id: 'shield', icon: Shield, crop: WIDE, px: 2 },
+      { id: 'weapon', icon: Sword, crop: WIDE, px: 2 }, { id: 'shield', icon: Shield, crop: WIDE, px: 2 }, { id: 'offhand', icon: Sword, crop: WIDE, px: 2 }, { id: 'ring', icon: Gem, crop: FULL, px: 2 }, { id: 'ring2', icon: Gem, crop: FULL, px: 2 },
     ] },
   ];
   const catOf = (id: Cat) => GROUPS.flatMap((g) => g.cats).find((c) => c.id === id)!;

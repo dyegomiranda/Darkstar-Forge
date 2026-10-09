@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Void Sun
 Comment=RPG de cartas: batalhas, criação de personagem e construtor de decks
-Exec=bash "/home/djabo/Downloads/Darkstar Forge/Void Sun"
-Icon=/home/djabo/Downloads/Darkstar Forge/public/brand/icon.png
+Exec=bash "/home/djabo/Downloads/Void Sun/Void Sun"
+Icon=/home/djabo/Downloads/Void Sun/public/brand/icon.png
 Terminal=false
 Type=Application
 Categories=Game;

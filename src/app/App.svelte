@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { LibraryBig, PenTool, Check, CloudAlert, LoaderCircle, SquareStack, BookOpen, Layers } from '@lucide/svelte';
   import Game from '../ui/game/Game.svelte';
+  import Sample3D from '../ui/sample3d/Sample3D.svelte';
+  import BrandIntro from '../ui/intro/BrandIntro.svelte';
   import Back from '../ui/back/Back.svelte';
   import PdfDialog from '../ui/common/PdfDialog.svelte';
   import { app, LAST_EDITION } from '../store/project.svelte';
@@ -74,16 +76,20 @@
       menu: () => { if (!shell.ownMenu && !ui.ask) shell.menu = !shell.menu; else window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); },
     });
 
-    // contador de quadros (só quando ligado nas configurações)
+    return () => { clearTimeout(tidy); removeEventListener('pagehide', flush); removeEventListener('blur', hush); removeEventListener('focus', hush); removeEventListener('resize', rescale); stopInput(); };
+  });
+
+  // Sem contador ligado, não mantém um laço de animação ativo só para medir FPS.
+  $effect(() => {
+    if (!settings.v.showFps) return;
     let raf = 0, frames = 0, since = performance.now();
     const count = (now: number) => {
-      raf = requestAnimationFrame(count);
       frames++;
-      if (now - since >= 500) { if (settings.v.showFps) fps = Math.round((frames * 1000) / (now - since)); frames = 0; since = now; }
+      if (now - since >= 500) { fps = Math.round((frames * 1000) / (now - since)); frames = 0; since = now; }
+      raf = requestAnimationFrame(count);
     };
     raf = requestAnimationFrame(count);
-
-    return () => { clearTimeout(tidy); removeEventListener('pagehide', flush); removeEventListener('blur', hush); removeEventListener('focus', hush); removeEventListener('resize', rescale); stopInput(); cancelAnimationFrame(raf); };
+    return () => cancelAnimationFrame(raf);
   });
 
   $effect(() => { if (router.route.name === 'editor') lastCard = router.route.id; });
@@ -134,6 +140,10 @@
     <Modes />
   {:else if route === 'about'}
     <About />
+  {:else if route === 'intro'}
+    <BrandIntro />
+  {:else if route === 'sample3d'}
+    <Sample3D />
   {:else if route === 'game'}
     <Game />
   {:else if route === 'journey'}

@@ -35,7 +35,7 @@
 
 <span class="sp" style="width:{box}px;height:{box}px">
   {#if shadow}<span class="sh" style="width:{Math.min(w, box) * 0.7}px;height:{box * 0.16}px;bottom:{box * 0.02}px"></span>{/if}
-  <span class="im" style="width:{w}px;height:{h}px;left:{(box - w) / 2}px;bottom:{box * 0.06}px;background-image:url('{src}');background-size:{def.cell[0] * Math.max(def.idle, def.attack) * k}px {def.cell[1] * 4 * k}px;background-position:{-frame * w}px {-row * h}px"></span>
+  <span class="im" style="width:{w}px;height:{h}px;left:{(box - w) / 2}px;bottom:{id.startsWith('rework/') ? 0 : box * 0.06}px;background-image:url('{src}');background-size:{def.cell[0] * Math.max(def.idle, def.attack) * k}px {def.cell[1] * 4 * k}px;background-position:{-frame * w}px {-row * h}px"></span>
 </span>
 
 <style>

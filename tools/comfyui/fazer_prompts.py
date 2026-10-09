@@ -133,7 +133,7 @@ for cid, en, scene, neg in C:
     prompt = f"{STYLE}, {scene}, {PALETTE[deck]}, {COMPOSITION}"
     out.append({"id": cid, "nome": names[cid]['pt-BR']['name'], "name": en, "prompt": prompt,
                 "negative": NEG + (", " + neg if neg else "")})
-json.dump({"_leia": "Prompts das 81 cartas da coleção Classes (Pathfinder). O arquivo de cada imagem deve se chamar <id>.png (ex.: pf-red_001.png) para a importação em lote do Darkstar Forge.",
+json.dump({"_leia": "Prompts das 81 cartas da coleção Classes (Pathfinder). O arquivo de cada imagem deve se chamar <id>.png (ex.: pf-red_001.png) para a importação em lote do Void Sun.",
            "cards": out}, open(os.path.join(RAIZ, 'tools/comfyui/prompts-pf.json'), 'w'), ensure_ascii=False, indent=1)
 
 # versão para copiar e colar (outras IAs)

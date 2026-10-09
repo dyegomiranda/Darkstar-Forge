@@ -1,0 +1,20 @@
+{
+  "clean": {
+    "vertices": 553334,
+    "edges": 1124468,
+    "faces": 562234,
+    "euler": -8900,
+    "genus_if_closed_one_component": 4451.0,
+    "signed_volume": 9.919137399918167e-05,
+    "boundary": 0
+  },
+  "solid": {
+    "vertices": 438101,
+    "edges": 1322517,
+    "faces": 881678,
+    "euler": -2738,
+    "genus_if_closed_one_component": 1370.0,
+    "signed_volume": 0.004154593593476285,
+    "boundary": 0
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "version": "3.12.0",
+  "date": "2026-10-05",
+  "typecheck": "passed",
+  "fullSuite": {
+    "passed": 174,
+    "skipped": 3
+  },
+  "assetRecheck": {
+    "passed": 4
+  },
+  "build": "passed",
+  "packaging": "passed",
+  "launcher": "Void Sun (same script used by application-menu shortcut)",
+  "window": {
+    "width": 1280,
+    "height": 800,
+    "uiScale": 1.35
+  },
+  "profile": "isolated temporary folder; player data untouched",
+  "observedFps": 55,
+  "errors": [],
+  "artApproval": "pending user review; no claim of equivalence to reference game"
+}

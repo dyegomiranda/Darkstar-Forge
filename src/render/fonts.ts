@@ -59,7 +59,10 @@ export function loadCardFonts(): Promise<void> {
 const dataUrls = new Map<string, Promise<string>>();
 
 export function toDataUrl(url: string): Promise<string> {
-  let p = dataUrls.get(url);
+  // As ilustrações HD são grandes: só manter fontes no cache permanente.
+  // A imagem final da carta já é compartilhada e persistida pela fila de desenho.
+  const cache = /\.woff2?(?:$|[?#])/.test(url);
+  let p = cache ? dataUrls.get(url) : undefined;
   if (!p) {
     p = fetch(url).then((r) => {
       if (!r.ok) throw new Error(`Falha ao ler ${url}`);
@@ -70,7 +73,7 @@ export function toDataUrl(url: string): Promise<string> {
       fr.onerror = () => rej(fr.error);
       fr.readAsDataURL(b);
     }));
-    dataUrls.set(url, p);
+    if (cache) dataUrls.set(url, p);
   }
   return p;
 }

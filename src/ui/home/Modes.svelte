@@ -1,5 +1,7 @@
 <!-- Modo batalha: solo (contra o bot), Jornada (solo com progressão) ou multijogador (em construção). -->
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { onMount } from 'svelte';
   import { Swords, Users, Mountain } from '@lucide/svelte';
   import { L } from '../../app/i18n.svelte';
@@ -16,7 +18,7 @@
   <div class="bg"></div>
   <ScreenBar title={L('Modo batalha', 'Battle mode')} kicker={L('Escolha como jogar', 'Choose how to play')} onback={() => router.go('/')} />
   <div class="wrap">
-    <button class="mode" bind:this={first} data-focus-first onclick={() => router.go('/batalha/solo')}>
+    <button data-tutorial="solo" class="mode" bind:this={first} data-focus-first onclick={() => router.go('/batalha/solo')}>
       <span class="pic"><img src="ui/batalha-solo.webp" alt="" draggable="false" /></span>
       <span class="body">
         <span class="ic"><Swords size={20} /></span>
@@ -25,7 +27,7 @@
         <em>{L('Jogar', 'Play')} ▶</em>
       </span>
     </button>
-    <button class="mode" onclick={() => router.go('/batalha/jornada')}>
+    <button data-tutorial="journey" class="mode" onclick={() => router.go('/batalha/jornada')}>
       <span class="pic"><img src="ui/batalha-jornada.webp" alt="" draggable="false" /></span>
       <span class="body">
         <span class="ic"><Mountain size={20} /></span>
@@ -35,13 +37,13 @@
       </span>
     </button>
     {#if settings.v.dev}
-      <button class="mode" onclick={() => router.go('/batalha/multi')}>
+      <button data-tutorial="multi" class="mode" onclick={() => router.go('/batalha/multi')}>
         <span class="pic"><img src="ui/batalha-multi.webp" alt="" draggable="false" /></span>
         <span class="body"><span class="ic"><Users size={20} /></span><b>{L('Multijogador', 'Multiplayer')}</b>
           <small>{L('Duelos entre jogadores, cada um com o seu herói e o seu deck.', 'Duels between players, each with their own hero and deck.')}</small><em>{L('Abrir', 'Open')} ▶</em></span>
       </button>
     {:else}
-    <div class="mode off" aria-disabled="true">
+    <div data-tutorial="multi" class="mode off" aria-disabled="true">
       <span class="pic"><img src="ui/batalha-multi.webp" alt="" draggable="false" /></span>
       <span class="body">
         <span class="ic"><Users size={20} /></span>
@@ -52,9 +54,13 @@
     </div>
     {/if}
   </div>
+  <button class="sample-link" onclick={() => router.go('/amostra-3d')}>Amostra visual 3D · Pátio do Sol Ausente <span>Testar cenário e efeitos →</span></button>
 </div>
 
+<Coach area="modes" lessons={LESSONS.modes}  />
+
 <style>
+  .sample-link {flex-shrink:0;position:relative;align-self:center;margin:0 24px 24px;padding:13px 22px;border:1px solid #89764d;background:#161e1ded;color:#efd499;cursor:pointer;font:500 14px var(--pixel-text);display:flex;gap:22px;align-items:center;} .sample-link:hover{background:#29342c;border-color:#efca75;}.sample-link span{font-size:12px;color:#bfcabc;}
   .modes { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .bg { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(7 6 12 / .55), rgb(7 6 12 / .88)), url('/ui/fundo.webp') center / cover; image-rendering: pixelated; }
   .wrap { position: relative; flex: 1; min-height: 0; display: flex; gap: clamp(18px, 3vw, 48px); align-items: center; justify-content: center; padding: 24px; overflow-y: auto; flex-wrap: wrap; }

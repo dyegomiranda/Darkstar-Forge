@@ -1,0 +1,55 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "brunhild-reference-v2.png"
+    }
+  },
+  "2": {
+    "class_type": "LoadBackgroundRemovalModel",
+    "inputs": {
+      "bg_removal_name": "birefnet.safetensors"
+    }
+  },
+  "3": {
+    "class_type": "RemoveBackground",
+    "inputs": {
+      "bg_removal_model": [
+        "2",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ]
+    }
+  },
+  "4": {
+    "class_type": "ImageCropToMask",
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ],
+      "masks": [
+        "3",
+        0
+      ],
+      "width": 1024,
+      "height": 1024,
+      "pad_factor": 1.1,
+      "grow_mask": 0,
+      "background": "#000000"
+    }
+  },
+  "5": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "4",
+        0
+      ],
+      "filename_prefix": "preprocess/brunhild-input"
+    }
+  }
+}

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { tutorial } from '../../app/tutorial.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { onDestroy } from 'svelte';
   import { ArrowLeft, ChevronLeft, ChevronRight, Undo2, Redo2, Save, RotateCcw, Copy, Trash2, ImageDown, Type, Swords, Image, Palette } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
@@ -135,7 +138,7 @@
         <div class="stage-inner">
           <CardLive {ed} />
           <p class="hint muted">
-            {#if ed.draft.art.mediaId}{L('Arraste a carta para enquadrar a arte · Ctrl + roda para aproximar', 'Drag the card to frame the art · Ctrl + wheel to zoom')}
+            {#if ed.draft.art.mediaId || ed.draft.art.asset}{L('Arraste a carta para enquadrar a arte · Ctrl + roda para aproximar', 'Drag the card to frame the art · Ctrl + wheel to zoom')}
             {:else}{L('Sem arte — adicione uma na aba Arte', 'No art — add one in the Art tab')}{/if}
           </p>
         </div>
@@ -143,6 +146,9 @@
     </div>
   </div>
 {/if}
+
+<Coach area="editor" lessons={LESSONS.editor} active={!!ed}  />
+<Coach area={`editor-${tab}`} lessons={LESSONS[`editor-${tab}`]} active={!!ed && !tutorial.pending('editor')} />
 
 <style>
   .missing { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--muted); }

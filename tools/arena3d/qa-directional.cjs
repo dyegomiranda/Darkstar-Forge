@@ -1,0 +1,31 @@
+// Exercise the same executable selected by the application-menu shortcut in an isolated profile.
+const {_electron}=require('/home/djabo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');const root='/home/djabo/Downloads/Void Sun';
+(async()=>{let app;try{
+ const profile='/tmp/voidsun-directional-qa-'+process.pid;fs.mkdirSync(profile,{recursive:true});fs.writeFileSync(profile+'/janela.json',JSON.stringify({mode:'windowed',width:1280,height:800,zoom:process.env.VOIDSUN_QA_ZOOM?Number(process.env.VOIDSUN_QA_ZOOM):1}));
+ const env=Object.fromEntries(Object.entries({...process.env,DISPLAY:process.env.DISPLAY||':0',VOIDSUN_DATA:profile}).filter(([k])=>k!=='FORGE_DEV_URL'));
+ const packed=process.env.VOIDSUN_QA_PACKED==='1';app=await _electron.launch({executablePath:packed?root+'/Void Sun':root+'/node_modules/electron/dist/electron',args:['--ozone-platform=x11','--disable-features=Vulkan','--no-sandbox',...(packed?[]:[root])],env,timeout:30000});
+ const page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page.waitForTimeout(5500);
+ for(let i=0;i<4;i++){for(const name of ['Próxima página','Entendido!','Pular tutorial']){const b=page.getByRole('button',{name,exact:true});if(await b.isVisible().catch(()=>false))await b.click({force:true});}await page.waitForTimeout(150);}
+ await page.getByRole('button',{name:/Amostra visual 3D/}).click({force:true});await page.waitForSelector('[data-sample-ready=true]',{timeout:30000});
+ const snap=async()=>JSON.parse(await page.locator('output[data-arena-snapshot]').getAttribute('data-arena-snapshot'));
+ const wait=async (d)=>page.waitForFunction(d=>{const e=document.querySelector('[data-arena-snapshot]');return e&&JSON.parse(e.getAttribute('data-arena-snapshot')).sprites?.[0]?.direction===d;},d,{timeout:5000});
+ const capture=async(name)=>{const b64=await app.evaluate(async({BrowserWindow})=>(await BrowserWindow.getAllWindows()[0].webContents.capturePage()).toPNG().toString('base64'));fs.writeFileSync('/tmp/'+name+'.png',Buffer.from(b64,'base64'));};
+ await page.getByRole('button',{name:'Modelos e equipamentos',exact:true}).click();await page.getByRole('button',{name:'Ver personagem de perto',exact:true}).click();await wait('s');await page.waitForTimeout(700);await capture('voidsun-directional-cosmetic');
+ assert.equal((await snap()).sprites[0].equipped,false);
+ await page.getByLabel('Mostrar itens equipados',{exact:true}).check();await page.waitForTimeout(300);await capture('voidsun-directional-equipped');assert.equal((await snap()).sprites[0].equipped,true);
+ const views=[['s','Frente'],['se','Frente ↗'],['e','Direita'],['ne','Costas ↗'],['n','Costas'],['nw','Costas ↖'],['w','Esquerda'],['sw','Frente ↖']];
+ for(const [d,label] of views){await page.getByRole('button',{name:'Ver '+label,exact:true}).click();await wait(d);await page.waitForTimeout(500);await capture('voidsun-directional-'+d);}
+ await page.getByLabel('Elmo',{exact:true}).uncheck();await page.waitForTimeout(300);assert.equal((await snap()).sprites[0].gear.helmet,false);await capture('voidsun-directional-no-helmet');await page.getByLabel('Elmo',{exact:true}).check();
+ await page.getByRole('button',{name:'Isométrica',exact:true}).click();await page.waitForTimeout(900);await page.getByRole('button',{name:'Iniciar caminhada',exact:true}).click();await page.waitForTimeout(600);
+ const seen=new Set(),frames=new Set();for(let i=0;i<72;i++){const s=await snap();seen.add(s.sprites[0].direction);frames.add(s.sprites[0].frame);await page.waitForTimeout(180);}
+ assert.equal(seen.size,8,'Circuit must visit eight directions');assert.equal(frames.size,6,'Walk must use all six frames');await capture('voidsun-directional-walk');
+ await page.getByRole('button',{name:'Parar caminhada',exact:true}).click();await page.waitForTimeout(2300);assert.equal((await snap()).walkingDemo,false);
+ await page.getByRole('button',{name:'Fechar oficina',exact:true}).click();
+ await page.getByRole('button',{name:'Clássica',exact:true}).click();await page.waitForTimeout(1000);const s=await snap(),canvas=page.locator('.stage canvas');let r=await canvas.boundingBox();const before=s.actors.map(a=>a.slot);
+ await page.mouse.move(r.x+r.width*.8,r.y+r.height*.7);await page.mouse.down();await page.mouse.move(r.x+r.width*.8+60,r.y+r.height*.7,{steps:8});await page.mouse.up();await page.waitForTimeout(400);assert.deepEqual((await snap()).actors.map(a=>a.slot),before);
+ await page.getByRole('button',{name:'Isométrica',exact:true}).click();await page.waitForTimeout(800);await page.getByRole('button',{name:'Mover Brunhild',exact:false}).click();r=await canvas.boundingBox();const slot=(await snap()).slots.find(s=>s.id==='player-front-2');await page.mouse.click(r.x+slot.x*r.width,r.y+slot.y*r.height);await page.waitForTimeout(1800);assert.equal((await snap()).actors.find(a=>a.id==='brunhild').slot,'player-front-2');
+ await page.getByLabel('Usar amostra de personagem 2D',{exact:true}).uncheck();await page.waitForTimeout(250);await page.getByLabel('Usar amostra de personagem 2D',{exact:true}).check();await page.waitForTimeout(250);
+ await capture('voidsun-directional-scene');const stats=await snap();assert.equal(errors.length,0,errors.join('\n'));fs.writeFileSync('/tmp/voidsun-directional-qa-results.json',JSON.stringify({packed,errors,directions:[...seen],frames:[...frames],stats},null,2));console.log(JSON.stringify({packed,errors,directions:[...seen],frames:[...frames],fps:stats.fps}));
+ await page.getByRole('button',{name:'Batalha',exact:true}).click();await page.waitForSelector('.sample .stage canvas',{state:'detached',timeout:5000});
+ }catch(e){if(app){const p=await app.firstWindow();fs.writeFileSync('/tmp/voidsun-directional-error.html',await p.content());const b64=await app.evaluate(async({BrowserWindow})=>(await BrowserWindow.getAllWindows()[0].webContents.capturePage()).toPNG().toString('base64'));fs.writeFileSync('/tmp/voidsun-directional-error.png',Buffer.from(b64,'base64'));}throw e;}finally{await app?.close();}})().catch(e=>{console.error(e);process.exitCode=1});

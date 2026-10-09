@@ -1,0 +1,35 @@
+{
+  "source": "outputs/helmet512/colored-raw_00001_.glb",
+  "mesh_objects": 1,
+  "vertices": 1102320,
+  "polygons": 2218284,
+  "triangles": 2218284,
+  "armatures": 0,
+  "uv_layers": [
+    []
+  ],
+  "color_attributes": [
+    [
+      "Color"
+    ]
+  ],
+  "bounds_before": {
+    "min": [
+      -0.455047607421875,
+      -0.3922443389892578,
+      -0.403839111328125
+    ],
+    "max": [
+      0.45928096771240234,
+      0.500058650970459,
+      0.4168863296508789
+    ]
+  },
+  "render_notes": "Imported real generated GLB. CPU Cycles, unlit generated vertex colors (no denoising or texture repairs). No sculpting, retopology, rigging, armor or animation edits.",
+  "center_underside_ray": {
+    "hit": true,
+    "height": 0.8343367576599121,
+    "normalized_model_height": 2.0
+  },
+  "inspection_seconds": 52.7
+}

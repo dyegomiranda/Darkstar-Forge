@@ -1,6 +1,6 @@
 {
   "name": "void-sun",
-  "version": "3.9.5",
+  "version": "3.12.23",
   "private": true,
   "description": "Void Sun — RPG de cartas com criador de heróis e construtor de decks",
   "author": "Void Sun <dyegomiranda@users.noreply.github.com>",
@@ -60,6 +60,7 @@
     "@fontsource/uncial-antiqua": "^5.3.0",
     "@lucide/svelte": "^1.48.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/three": "^0.186.0",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "fflate": "^0.8.3",
@@ -73,5 +74,8 @@
   "allowScripts": {
     "electron@43.2.0": true
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "three": "^0.186.1"
+  }
 }

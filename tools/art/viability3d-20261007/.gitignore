@@ -1,0 +1,8 @@
+runtime/
+models/
+logs/
+*.partial
+__pycache__/
+*.glb
+*.blend
+*.blend1

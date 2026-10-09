@@ -24,16 +24,20 @@
 
   $effect(() => {
     const k = key;
+    url = undefined;
+    failed = false;
     if (!k || !ctx) return;
     const hit = cachedUrl(k);
     if (hit) { url = hit; return; }
     if (!visible) { deprioritize(k); return; }
     let alive = true;
-    failed = false;
-    void ensureCardMedia(card).then(() =>
-      requestImage(k, () => compose(cardInput(card, ctxFor(card)!)), 0)
-        .then((u) => { if (alive) url = u; })
-        .catch(() => { if (alive) failed = true; }));
+    const currentCard = card;
+    const currentCtx = ctx;
+    void ensureCardMedia(currentCard).then(() => {
+      if (!alive) return;
+      return requestImage(k, () => compose(cardInput(currentCard, currentCtx)), 0);
+    }).then((u) => { if (alive) url = u; })
+      .catch(() => { if (alive) failed = true; });
     return () => { alive = false; };
   });
 

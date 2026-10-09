@@ -9,6 +9,9 @@
 </script>
 
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
+  import { avatarForCharacter } from '../../avatar/equipment';
   import { onDestroy } from 'svelte';
   import { fade } from 'svelte/transition';
   import { Plus, Minus, X, Heart, Upload, Swords, Shield, Sparkles, Save, Undo2, Trash2, UserRound, Dna, Shirt, Backpack, Layers, Check, TriangleAlert, Pencil, RotateCcw, ScrollText, Wand2, Star } from '@lucide/svelte';
@@ -40,11 +43,15 @@
   let { id }: { id: string } = $props();
 
   const gameDecks = $derived(app.decks.filter((d) => d.kind === 'class' && app.cardsOf(d.id).some((c) => c.game)));
+  // A tela é remontada por id; estes valores pertencem ao rascunho inicial.
+  // svelte-ignore state_referenced_locally
   const fresh = id === 'novo';
   const found = fresh ? undefined : app.project?.characters.find((c) => c.id === id);
   const missing = !fresh && !found;
   let draft = $state<Character>(fresh || !found ? blankHero('red', app.decks.filter((d) => d.kind === 'class' && app.cardsOf(d.id).some((c) => c.game))) : structuredClone($state.snapshot(found) as Character));
+  // svelte-ignore state_referenced_locally
   let baseline = $state(fresh ? '' : JSON.stringify(draft));
+  const visibleAvatar = $derived(avatarForCharacter(draft, app.cards));
   const dirty = $derived(JSON.stringify(draft) !== baseline);
 
   type Step = 'who' | 'attrs' | 'look' | 'gear' | 'deck';
@@ -234,7 +241,7 @@
       <!-- coluna do herói: boneco, retrato e números -->
       <aside class="side">
         {#if draft.avatar}
-          <HeroStage avatar={draft.avatar} color={tint} onchange={(a: Avatar) => (draft.avatar = a)} />
+          <HeroStage avatar={step === 'look' ? draft.avatar : visibleAvatar!} editable={step === 'look' || !draft.showEquipped} color={tint} onchange={(a: Avatar) => (draft.avatar = a)} />
         {:else}
           <div class="nodoll"><HeroPortrait hero={draft} size={220} /><button class="px-btn" onclick={() => { draft.avatar = defaultAvatar('male'); step = 'look'; }}><Plus size={14} /> {L('Criar o boneco', 'Create the doll')}</button></div>
         {/if}
@@ -391,6 +398,8 @@
 
           {:else if step === 'gear'}
             <div class="gearwrap">
+              <label class="hint"><input type="checkbox" checked={!!draft.showEquipped} onchange={(e) => (draft.showEquipped = e.currentTarget.checked)} /> {L('Mostrar itens equipados', 'Show equipped items')}</label>
+              <p class="hint">{L('Desativado: usa o visual escolhido. Ativado: mostra as peças equipadas que possuem sprite. Seu visual escolhido fica guardado.', 'Off: uses your chosen look. On: shows equipped pieces with a sprite. Your chosen look is preserved.')}</p>
               <div class="rig">
                 {#snippet slotBtn(sid: Slot)}
                   {@const sl = SLOTS.find((x) => x.id === sid)!}
@@ -403,7 +412,7 @@
                 <div class="scol">{#each ['head', 'chest', 'hands', 'legs', 'feet'] as const as sid}{@render slotBtn(sid)}{/each}</div>
                 <div class="altar">
                   <span class="halo"></span>
-                  {#if draft.avatar}<span class="fig"><AvatarSprite avatar={draft.avatar} scale={5} /></span>{:else}<HeroPortrait hero={draft} size={200} />{/if}
+                  {#if draft.avatar}<span class="fig"><AvatarSprite avatar={visibleAvatar!} scale={5} /></span>{:else}<HeroPortrait hero={draft} size={200} />{/if}
                   <span class="plinth"></span>
                 </div>
                 <div class="scol">{#each ['mainHand', 'offHand', 'amulet', 'ring1', 'ring2'] as const as sid}{@render slotBtn(sid)}{/each}</div>
@@ -497,7 +506,7 @@
   {@const shown = opts.find((c) => c.id === peek) ?? opts.find((c) => c.id === draft.slots[picking!]) ?? opts[0]}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="backdrop" onclick={() => (picking = null)}>
-    <div class="picker" role="dialog" aria-modal="true" aria-label={L('Escolher equipamento', 'Choose equipment')} onclick={(e) => e.stopPropagation()}>
+    <div class="picker" role="dialog" tabindex="-1" aria-modal="true" aria-label={L('Escolher equipamento', 'Choose equipment')} onclick={(e) => e.stopPropagation()}>
       <header>
         <div><small>{L('Equipar', 'Equip')}</small><h2>{L(sl.pt, sl.en)}</h2></div>
         <span class="count">{opts.length} {L(opts.length === 1 ? 'carta' : 'cartas', opts.length === 1 ? 'card' : 'cards')}</span>
@@ -538,6 +547,8 @@
     </div>
   </div>
 {/if}
+
+<Coach area={`hero-${step}`} lessons={LESSONS[`hero-${step}`]} active={!missing} />
 
 <style>
   .hc { height: 100%; display: flex; flex-direction: column; background: radial-gradient(ellipse at 20% 0%, color-mix(in srgb, var(--c) 14%, #100d1c), var(--bg) 62%); --panel-bg: #12101c; }

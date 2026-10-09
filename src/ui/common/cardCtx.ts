@@ -4,6 +4,7 @@ import { mediaUrl, ensureAll } from '../../store/media';
 import type { Card } from '../../model/types';
 import { cardInput, lookMediaIds, mergeLook, renderKey, type CardContext } from '../../render/card';
 import { compose } from '../../render/compose';
+import { reworkAsset } from '../../render/reworkArt';
 import { cachedUrl, requestImage } from '../../render/queue';
 
 export function ctxFor(card: Card): CardContext | null {
@@ -29,6 +30,6 @@ export function warmCache(cards: Card[]): void {
 /** Garante que as imagens usadas pela carta (arte, logo da edição, peças de imagem) estejam prontas. */
 export async function ensureCardMedia(card: Card): Promise<void> {
   const deck = app.deck(card.deckId);
-  const ids = [card.art.mediaId, app.edition(deck?.editionId)?.setMediaId, ...(deck ? lookMediaIds(mergeLook(deck.look, card.look)) : [])].filter(Boolean) as string[];
+  const ids = [reworkAsset(card) ? undefined : card.art.mediaId, app.edition(deck?.editionId)?.setMediaId, ...(deck ? lookMediaIds(mergeLook(deck.look, card.look)) : [])].filter(Boolean) as string[];
   if (ids.length) await ensureAll(ids);
 }

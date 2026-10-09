@@ -6,13 +6,17 @@
  * As peças ficam em public/lpc/ e o catálogo em src/data/lpc.json (gerados por
  * tools/lpc/montar.py). Créditos dos artistas: src/data/lpc-credits.json.
  */
+import { illustratedSheet } from './rework';
+import { modernSheet } from './modern';
+import { directionRow } from './direction';
 import raw from '../data/lpc.json';
+import { GEAR } from '../game/gear';
 import { cover, EMBER, EMBER_DARK, EMBER_MID, forge, FORGES } from './forge';
 
 export type Body = 'male' | 'female' | 'muscular';
 export type Anim = 'idle' | 'walk' | 'slash' | 'thrust' | 'shoot' | 'spellcast' | 'hurt';
 export type Dir = 'n' | 'w' | 's' | 'e';
-export type SlotId = 'hair' | 'beard' | 'mustache' | 'eyebrows' | 'eyes' | 'nose' | 'ears' | 'torso' | 'legs' | 'feet' | 'arms' | 'hands' | 'shoulders' | 'head' | 'crest' | 'visor' | 'face' | 'neck' | 'belt' | 'cape' | 'back' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon';
+export type SlotId = 'hair' | 'beard' | 'mustache' | 'eyebrows' | 'eyes' | 'nose' | 'ears' | 'torso' | 'legs' | 'feet' | 'arms' | 'hands' | 'shoulders' | 'head' | 'crest' | 'visor' | 'face' | 'neck' | 'belt' | 'cape' | 'back' | 'horns' | 'wings' | 'tail' | 'shield' | 'weapon' | 'offhand' | 'ring' | 'ring2';
 export type Material = 'body' | 'hair' | 'cloth' | 'metal' | 'eye';
 
 /** Efeitos de "magia imbuída" de uma arma. */
@@ -51,7 +55,19 @@ interface Catalog {
   fixed: { body: Item; head: Record<Body, Item>; face: Item; faces: Record<string, Item>; ammo: Item; heads: Record<string, Item>; heads_f: Record<string, Item>; frames: Record<string, Item> };
   slots: { id: SlotId; pt: string; en: string; optional: boolean; items: Item[] }[];
 }
-export const LPC = raw as unknown as Catalog;
+export const LPC = structuredClone(raw) as unknown as Catalog;
+// Peças oficiais têm uma camada própria, inclusive focos, joias e mão secundária.
+for (const id of ['offhand','ring','ring2'] as SlotId[]) if (!LPC.slots.some(s => s.id === id)) LPC.slots.push({id,pt:id==='offhand'?'Mão secundária':'Anéis',en:id==='offhand'?'Off hand':'Rings',optional:true,items:[]});
+const gearSlots: Record<string, SlotId> = {weapon:'weapon',offhand:'shield',chest:'torso',head:'head',hands:'hands',legs:'legs',feet:'feet',trinket:'neck',ring:'ring'};
+for (const g of GEAR) {
+ const slot = gearSlots[g.slot];
+ const material: Material = ['weapon','shield','head','hands','ring','neck'].includes(slot) || ['plate','chainmail','chainshirt','breastplate'].includes(g.key) ? 'metal' : 'cloth';
+ const i: Item = {id:'gear-'+g.key,pt:g.name[0],en:g.name[1],bodies:['male','female','muscular'],layers:[],recolors:[{material}],...(g.weapon ? {attack:g.weapon.via==='ranged'?'shoot':g.weapon.via==='magic'?'spellcast':/spear|rapier|halberd/.test(g.key)?'thrust':'slash'} : {})};
+ slotOfRaw(slot).items.push(i);
+ if (slot === 'ring') slotOfRaw('ring2').items.push(i);
+}
+function slotOfRaw(id: SlotId) { return LPC.slots.find(s => s.id === id)!; }
+slotOfRaw('offhand').items = [...slotOfRaw('weapon').items];
 export const DIRS: Dir[] = ['n', 'w', 's', 'e'];
 /** Tons de pele "humanos" primeiro; os de fantasia depois. */
 export const SKINS = Object.keys(LPC.palettes.body.colors);
@@ -244,18 +260,22 @@ function drawsOf(item: Item, av: Avatar, anim: Anim, color: string | undefined, 
   });
 }
 
-export interface Sheet { canvas: HTMLCanvasElement; size: number; frames: number; rows: number; /** Veios de brasa (armadura daédrica): só esses pixels, para o boneco animado fazê-los pulsar. */ glow?: HTMLCanvasElement; /** Efeito mágico da arma: só os pixels dela (de onde o efeito nasce), o tipo e a cor. */ fx?: { mask: HTMLCanvasElement; kind: FxKind; color: string } }
+export interface Sheet { /** Pixels físicos por pixel lógico do quadro. */ density?: number; /** Ordem das linhas em atlas futuros de oito vistas. Ausente = LPC de quatro vistas. */ directions?: import('./direction').Facing[]; canvas: HTMLCanvasElement; size: number; frames: number; rows: number; /** Veios de brasa (armadura daédrica): só esses pixels, para o boneco animado fazê-los pulsar. */ glow?: HTMLCanvasElement; /** Efeito mágico da arma: só os pixels dela (de onde o efeito nasce), o tipo e a cor. */ fx?: { mask: HTMLCanvasElement; kind: FxKind; color: string } }
 const sheets = new Map<string, Promise<Sheet>>();
 
 /** Folha de quadros do boneco para uma animação: `frames` colunas × 4 direções (n, o, s, l). */
-export function compose(av: Avatar, anim: Anim): Promise<Sheet> {
-  const key = JSON.stringify([av, anim]);
+export function compose(av: Avatar, anim: Anim, mode: 'auto' | 'layered' = 'auto'): Promise<Sheet> {
+  const key = JSON.stringify([av, anim, mode]);
   let p = sheets.get(key);
-  if (!p) { p = build(av, anim); sheets.set(key, p); if (sheets.size > 500) sheets.delete(sheets.keys().next().value!); }
+  if (!p) { p = build(av, anim, mode); sheets.set(key, p); if (sheets.size > 500) sheets.delete(sheets.keys().next().value!); }
   return p;
 }
 
-async function build(av: Avatar, anim: Anim): Promise<Sheet> {
+async function build(av: Avatar, anim: Anim, mode: 'auto' | 'layered'): Promise<Sheet> {
+  if (mode === 'auto') {
+    const modern = await modernSheet(av, anim); if (modern) return modern;
+    try { const illustrated = await illustratedSheet(av, anim); if (illustrated) return illustrated; } catch { /* mantém a aparência salva se faltar um atlas */ }
+  }
   const { frames, rows } = LPC.anims[anim];
   const frame = av.frame ? LPC.fixed.frames[av.frame] : undefined;
   const head = av.head ? ((av.body === 'female' ? LPC.fixed.heads_f?.[av.head] : undefined) ?? LPC.fixed.heads[av.head]) : undefined;
@@ -379,10 +399,11 @@ export function attackAnim(av: Avatar, fallback: Anim = 'slash'): Anim {
 /** "Foto" do boneco para o retrato: o busto de frente, igual ao boneco, ampliado sem suavizar, sobre um fundo. */
 export async function portrait(av: Avatar, bg = '#2a2420', px = 8): Promise<Blob> {
   const sheet = await compose(av, 'idle');
-  const off = (sheet.size - LPC.frame) / 2;
-  const sx = off + 14, sy = 2 * sheet.size + off + 8, sw = 36, sh = 45; // direção "s" (de frente), do alto da cabeça ao peito
+  const density = sheet.density ?? 1;
+  const off = (sheet.size - LPC.frame * density) / 2;
+  const sx = off + 10 * density, sy = directionRow('s', sheet.directions) * sheet.size + off + 4 * density, sw = 44 * density, sh = 54 * density; // direção "s" (de frente), do alto da cabeça ao peito
   const c = document.createElement('canvas');
-  c.width = sw * px; c.height = sh * px;
+  c.width = sw * px / density; c.height = sh * px / density;
   const ctx = c.getContext('2d')!;
   const g = ctx.createRadialGradient(c.width / 2, c.height * 0.38, 10, c.width / 2, c.height * 0.45, c.width * 0.85);
   g.addColorStop(0, bg); g.addColorStop(1, '#0c0a09');
@@ -398,11 +419,12 @@ export async function portrait(av: Avatar, bg = '#2a2420', px = 8): Promise<Blob
  */
 export async function thumb(av: Avatar, crop: readonly [number, number, number, number] = [0, 0, 64, 64], dir: Dir = 's'): Promise<HTMLCanvasElement> {
   const sheet = await compose(av, 'idle');
-  const off = (sheet.size - LPC.frame) / 2;
+  const density = sheet.density ?? 1;
+  const off = (sheet.size - LPC.frame * density) / 2;
   const c = document.createElement('canvas');
-  c.width = crop[2]; c.height = crop[3];
+  c.width = crop[2] * density; c.height = crop[3] * density;
   const ctx = c.getContext('2d')!;
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(sheet.canvas, off + crop[0], DIRS.indexOf(dir) * sheet.size + off + crop[1], crop[2], crop[3], 0, 0, crop[2], crop[3]);
+  ctx.drawImage(sheet.canvas, off + crop[0] * density, directionRow(dir, sheet.directions) * sheet.size + off + crop[1] * density, crop[2] * density, crop[3] * density, 0, 0, c.width, c.height);
   return c;
 }

@@ -5,6 +5,8 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 APP="$(ls -t "$DIR"/release/*.AppImage 2>/dev/null | head -n1 || true)"
 if [[ -n "$APP" ]]; then
+  # O atalho sempre abre a versão empacotada, mesmo após uma sessão de desenvolvimento.
+  unset FORGE_DEV_URL
   exec "$APP" "$@"
 fi
 cd "$DIR"

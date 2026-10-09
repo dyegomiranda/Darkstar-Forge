@@ -1,0 +1,30 @@
+{
+  "source": "outputs/corpo-masculino/colored-raw_00001_.glb",
+  "mesh_objects": 1,
+  "vertices": 1020926,
+  "polygons": 2047350,
+  "triangles": 2047350,
+  "armatures": 0,
+  "uv_layers": [
+    []
+  ],
+  "color_attributes": [
+    [
+      "Color"
+    ]
+  ],
+  "bounds_before": {
+    "min": [
+      -0.495391845703125,
+      -0.11092567443847656,
+      -0.4685497283935547
+    ],
+    "max": [
+      0.49425411224365234,
+      0.10914087295532227,
+      0.45301055908203125
+    ]
+  },
+  "render_notes": "Imported real generated GLB. CPU Cycles, unlit generated vertex colors (no denoising or texture repairs). No sculpting, retopology, rigging, armor or animation edits.",
+  "inspection_seconds": 44.8
+}

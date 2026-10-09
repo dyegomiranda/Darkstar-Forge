@@ -1,0 +1,156 @@
+{
+  "Armor_Torso": {
+    "source_triangles": 35069,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.29171186685562134,
+        -0.14318899810314178,
+        0.938949704170227
+      ]
+    ]
+  },
+  "Armor_Upper_L": {
+    "source_triangles": 32738,
+    "retained_triangles": 5999,
+    "bounds": [
+      [
+        0.2777489423751831,
+        0.10266425460577011,
+        1.1368449926376343
+      ]
+    ]
+  },
+  "Armor_Upper_R": {
+    "source_triangles": 33497,
+    "retained_triangles": 5999,
+    "bounds": [
+      [
+        -0.6303293108940125,
+        0.014404764398932457,
+        0.7791680693626404
+      ]
+    ]
+  },
+  "Armor_Forearm_L": {
+    "source_triangles": 11831,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        0.3113193213939667,
+        -0.14856411516666412,
+        0.5592821836471558
+      ]
+    ]
+  },
+  "Armor_Forearm_R": {
+    "source_triangles": 12205,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.6425366997718811,
+        -0.06054869294166565,
+        0.617023229598999
+      ]
+    ]
+  },
+  "Armor_Belt": {
+    "source_triangles": 13237,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.300088495016098,
+        -0.00012206091923872009,
+        0.8704794645309448
+      ]
+    ]
+  },
+  "Armor_Pants": {
+    "source_triangles": 27355,
+    "retained_triangles": 5999,
+    "bounds": [
+      [
+        -0.22046570479869843,
+        0.2066713571548462,
+        0.6476638317108154
+      ]
+    ]
+  },
+  "Armor_Thigh_L": {
+    "source_triangles": 39221,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.0026856279000639915,
+        0.019409772008657455,
+        0.45536667108535767
+      ]
+    ]
+  },
+  "Armor_Thigh_R": {
+    "source_triangles": 37893,
+    "retained_triangles": 5999,
+    "bounds": [
+      [
+        -0.6403393745422363,
+        -0.05432291701436043,
+        0.5528122782707214
+      ]
+    ]
+  },
+  "Armor_Boot_L": {
+    "source_triangles": 44421,
+    "retained_triangles": 5999,
+    "bounds": [
+      [
+        0.06848353892564774,
+        -0.03711051121354103,
+        0.382488489151001
+      ]
+    ]
+  },
+  "Armor_Boot_R": {
+    "source_triangles": 44634,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.501305878162384,
+        -0.16443563997745514,
+        0.05009613558650017
+      ]
+    ]
+  },
+  "Cosmetic_Hair": {
+    "source_triangles": 140460,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.5623744130134583,
+        0.41477933526039124,
+        1.5185184478759766
+      ]
+    ]
+  },
+  "Cosmetic_Cape": {
+    "source_triangles": 183149,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.6207037568092346,
+        0.031406860798597336,
+        0.6052305102348328
+      ]
+    ]
+  },
+  "Cosmetic_Scarf": {
+    "source_triangles": 63349,
+    "retained_triangles": 6000,
+    "bounds": [
+      [
+        -0.347941517829895,
+        -0.11597032099962234,
+        1.1658985614776611
+      ]
+    ]
+  }
+}

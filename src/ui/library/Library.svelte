@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { Plus, Search, X, FileDown, Images, Trash2, FolderInput, Paintbrush, SlidersHorizontal, TriangleAlert, CircleCheck, ImageUp } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { router } from '../../app/router.svelte';
@@ -365,6 +367,8 @@
 {#if picking}
   <ArtPicker groups={picking} onconfirm={finishArt} oncancel={() => (picking = null)} />
 {/if}
+
+<Coach area="library" lessons={LESSONS.library}  />
 
 <style>
   /* título de um grupo de decks (itens, equipamentos, monstros): um traço curto e o nome */

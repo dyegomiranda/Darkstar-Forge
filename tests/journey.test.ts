@@ -103,3 +103,30 @@ describe('Jornada', () => {
     expect(s.vigor + s.mana + s.vida / 3).toBe(s.level - 1);
   });
 });
+
+describe('limites e resultados da Jornada', () => {
+  it('um resultado repetido não concede progresso e XP duas vezes', () => {
+    const j = newJourney();
+    j.map = generateMap(11, FOES, BOSS);
+    const node = available(j.map)[0];
+    applyResult(j, node, true);
+    const state = structuredClone(j);
+    expect(applyResult(j, node, true)).toEqual({ xp: 0, levels: 0 });
+    expect(j).toEqual(state);
+  });
+  it('mais de 40 cartas distintas ainda produz um deck de no máximo 40 cartas', () => {
+    const base = defs(0)[0];
+    const cards = Array.from({ length: 45 }, (_, i) => ({ ...base, id: `extra-${i}`, game: { ...base.game, copies: 1, level: 1 } }));
+    const out = journeyDeck(cards, 1);
+    expect(out.reduce((n, c) => n + c.game.copies, 0)).toBe(DECK_SIZE);
+    expect(out.every((c) => c.game.copies > 0)).toBe(true);
+    expect(cards).toHaveLength(45);
+    expect(cards.every((c) => c.game.copies === 1)).toBe(true);
+  });
+  it('nunca joga com mais cópias do que a posse permite', () => {
+    const cards = defs(0);
+    const out = journeyDeck(cards, 10, () => 1);
+    expect(out.every((c) => c.game.copies === 1)).toBe(true);
+    expect(out.reduce((n, c) => n + c.game.copies, 0)).toBeLessThanOrEqual(DECK_SIZE);
+  });
+});

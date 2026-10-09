@@ -1,5 +1,7 @@
 # Void Sun
 
+Para continuar o desenvolvimento com outra IA, leia [Continuidade](docs/CONTINUIDADE.md) e [Visão e objetivos](docs/visao-e-roadmap.md). O contexto também é indicado em `AGENTS.md` e `CLAUDE.md`.
+
 **Void Sun** é um RPG de mesa em forma de jogo de cartas. Você é o herói: a ancestralidade, os atributos e o equipamento saem da sua ficha, e o deck são as habilidades da sua classe (cada cor de deck é um par de classes, com base em Pathfinder 2e e D&D 5e).
 
 O jogo roda totalmente no seu computador, sem servidor. Ele traz:

@@ -45,9 +45,11 @@ export interface FixedMatch {
   /** Cenário da batalha (a região do mapa). */
   scene?: string;
   /** Oponente que não é uma ficha do jogador (chefe): a ficha de mentira dele e o herói já pronto. */
-  guest?: { char: Character; hero: HeroDef };
+  guest?: { char: Character; hero: HeroDef; cards?: Card[] };
   /** Texto curto da batalha (ex.: "Etapa 3"). */
   label: string;
+  /** Regras isoladas de um encontro da campanha; não mudam as preferências salvas. */
+  rules?: {avatarMode?: 'auto' | 'layered'; botMovement?: boolean; hpCap?: number; playerFirst?: boolean; heroOff?: boolean; actionLimit?: boolean; pace?: 'slow' | 'normal' | 'fast'; timeLimit?: boolean};
   /** `forfeit`: a partida acabou por desistência ou por tempo. `life`: a vida com que o seu herói terminou. */
   onEnd: (won: boolean, forfeit: boolean, life: number) => void;
   /** Saiu antes de a batalha começar. */

@@ -11,12 +11,15 @@
   import { host, settings } from '../../app/settings.svelte';
   import { ui } from '../../app/ui.svelte';
   import { chip } from '../../audio/chip';
+  import WelcomeTutorial from '../common/WelcomeTutorial.svelte';
   import FirstRun from './FirstRun.svelte';
 
   interface Item { id: string; pt: string; en: string; hint: [string, string]; go?: () => void; wip?: boolean }
   const ITEMS: Item[] = [
-    { id: 'campaign', pt: 'Campanha', en: 'Campaign', wip: true, go: () => router.go('/campanha'), hint: ['Um mundo aberto, uma história e batalhas contra criaturas e chefes.', 'An open world, a story and battles against creatures and bosses.'] },
+    { id: 'campaign', pt: 'Campanha', en: 'Campaign', go: () => router.go('/campanha'), hint: ['A Última Brasa: uma aventura curta de exploração, golpes e uma batalha de cartas.', 'The Last Ember: a short adventure with exploration, strikes and a card battle.'] },
     { id: 'battle', pt: 'Modo batalha', en: 'Battle mode', go: () => router.go('/batalha'), hint: ['Escolha o seu herói e enfrente um oponente.', 'Pick your hero and face an opponent.'] },
+    { id: 'sample3d', pt: 'Amostra visual 3D', en: '3D visual sample', go: () => router.go('/amostra-3d'), hint: ['Pátio do Sol Ausente: teste câmeras, movimento, água e efeitos.', 'Courtyard of the Absent Sun: test cameras, movement, water and effects.'] },
+    { id: 'intro', pt: 'Abertura Djabo', en: 'Djabo opening', go: () => router.go('/abertura'), hint: ['Reveja a abertura e a identidade gráfica Djabo.', 'Replay the Djabo studio ident.'] },
     { id: 'heroes', pt: 'Criação de personagem', en: 'Character creation', go: () => router.go('/heroi'), hint: ['Crie heróis: ancestralidade, atributos, aparência e equipamento.', 'Create heroes: ancestry, attributes, look and equipment.'] },
     { id: 'decks', pt: 'Construtor de decks', en: 'Deck builder', go: () => router.go('/decks'), hint: ['Crie e edite cartas, decks e coleções.', 'Create and edit cards, decks and collections.'] },
     { id: 'settings', pt: 'Configurações', en: 'Settings', go: () => router.go('/ajustes'), hint: ['Vídeo, som, jogo e controles.', 'Video, sound, game and controls.'] },
@@ -90,11 +93,11 @@
           <span class="cur"></span><span class="tx">{L(it.pt, it.en)}</span><span class="wip-tag">{L('Em construção', 'Work in progress')}</span>
         </div>
       {:else if it.id === 'battle'}
-        <button class="item" class:on={focused === it.id} style="--i:{i}" bind:this={first} data-focus-first onclick={it.go} onfocus={() => (focused = it.id)} onmouseenter={(e) => { focused = it.id; (e.currentTarget as HTMLElement).focus({ preventScroll: true }); }}>
+        <button data-tutorial={it.id === 'battle' ? 'battle-menu' : undefined} class="item" class:on={focused === it.id} style="--i:{i}" bind:this={first} data-focus-first onclick={it.go} onfocus={() => (focused = it.id)} onmouseenter={(e) => { focused = it.id; (e.currentTarget as HTMLElement).focus({ preventScroll: true }); }}>
           <span class="cur"></span><span class="tx">{L(it.pt, it.en)}</span>
         </button>
       {:else}
-        <button class="item" class:on={focused === it.id} style="--i:{i}" onclick={it.go} onfocus={() => (focused = it.id)} onmouseenter={(e) => { focused = it.id; (e.currentTarget as HTMLElement).focus({ preventScroll: true }); }}>
+        <button data-tutorial={it.id === 'battle' ? 'battle-menu' : undefined} class="item" class:on={focused === it.id} style="--i:{i}" onclick={it.go} onfocus={() => (focused = it.id)} onmouseenter={(e) => { focused = it.id; (e.currentTarget as HTMLElement).focus({ preventScroll: true }); }}>
           <span class="cur"></span><span class="tx">{L(it.pt, it.en)}</span>
         </button>
       {/if}
@@ -117,7 +120,7 @@
   </footer>
 </div>
 
-{#if notice}<FirstRun ondone={understood} />{/if}
+{#if notice}<FirstRun ondone={understood} />{:else}<WelcomeTutorial />{/if}
 
 <style>
   .home { position: relative; height: 100%; overflow: hidden; background: #05040a; user-select: none; }

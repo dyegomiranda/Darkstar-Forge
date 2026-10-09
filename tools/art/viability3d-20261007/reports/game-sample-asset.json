@@ -1,0 +1,20 @@
+{
+  "asset": "public/art/sample3d/brunhild-test.glb",
+  "bytes": 37103768,
+  "triangles": 991916,
+  "sha256": "7650b05e67cb3de59f2290fd720e54e80cbfc579b0c83eeabc33f4c940127b1c",
+  "clips": [
+    {
+      "name": "Idle",
+      "tracks": 195
+    },
+    {
+      "name": "Run",
+      "tracks": 195
+    },
+    {
+      "name": "Cast",
+      "tracks": 195
+    }
+  ]
+}

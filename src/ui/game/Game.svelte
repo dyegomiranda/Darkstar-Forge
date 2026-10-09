@@ -6,7 +6,21 @@
   ampliá-la; clique num cemitério para ver tudo.
 -->
 <script lang="ts">
+  import TileGround from '../visual/TileGround.svelte';
+  import IsometricArena from '../visual/IsometricArena.svelte';
+  import AbilityEffects from '../visual/AbilityEffects.svelte';
+  import { abilityProfile, emitAbility } from '../visual/abilityEffects';
+  import Atmosphere from '../visual/Atmosphere.svelte';
+  import { lightingOf } from '../visual/lighting';
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
+  import { tutorial } from '../../app/tutorial.svelte';
+  import { trainingCards, trainingGame, trainingBotAction, prepareOpening, ensureTrainingCard } from '../../game/tutorial';
+  import { avatarForCharacter } from '../../avatar/equipment';
   import { onDestroy, onMount, tick } from 'svelte';
+  import { BattleTimeline } from '../../game/timeline';
+  import { turnOptions } from '../../game/turn';
+  const timeline = new BattleTimeline();
   import { crossfade, fade, fly as flyIn, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { flip } from 'svelte/animate';
@@ -64,11 +78,14 @@
   // svelte-ignore state_referenced_locally
   if (fixed?.guest) { guests.set(fixed.guest.hero.id, fixed.guest.char); onDestroy(() => guests.delete(fixed!.guest!.hero.id)); }
   let myPos = $state<{ row: 0 | 1; col: 0 | 1 | 2 }>({ row: 0, col: 1 });
-  let limit = $state(saved.limit === true);
-  let heroOff = $state(saved.heroOff === true);
+  // svelte-ignore state_referenced_locally — regras iniciais desta partida
+  let limit = $state(fixed?.rules?.actionLimit ?? saved.limit === true);
+  // svelte-ignore state_referenced_locally — regras iniciais desta partida
+  let heroOff = $state(fixed?.rules?.heroOff ?? saved.heroOff === true);
   let heroOffFront = $state(saved.heroOffFront === true);
   /** Teste: heróis com 40% menos vida (partidas mais curtas). */
-  let shortLife = $state(saved.shortLife === true);
+  // svelte-ignore state_referenced_locally — regras iniciais desta partida
+  let shortLife = $state(fixed?.rules ? false : saved.shortLife === true);
   // registro, limite de tempo, velocidade e dificuldade são configurações do jogo (valem em todas as partidas)
   const cfg = settings.v;
   $effect(() => { void [cfg.showLog, cfg.timeLimit, cfg.pace, cfg.difficulty]; settings.save(); });
@@ -80,21 +97,28 @@
     normal: { k: 1.5, think: 1200, card: 2000, shown: 3600, end: 1100 },
     slow: { k: 2.2, think: 2000, card: 3200, shown: 5000, end: 1800 },
   };
-  let starter = $state<'eu' | 'bot' | 'sorteio'>('sorteio');
+  // svelte-ignore state_referenced_locally (preferência inicial da tela de seleção)
+  let starter = $state<'eu' | 'bot' | 'sorteio'>(tutorial.shouldTrain() && !fixed ? 'eu' : 'sorteio');
+  let training = $state(false);
+  let lessonCards = $state<Record<string, Card>>({});
+  let trainingMoves = 0;
   /** Dificuldade da partida em curso (a das configurações, fixada ao começar). */
   let level: Difficulty = cfg.difficulty;
   /** Cenário escolhido para o campo ('random' = sorteia a cada partida). */
-  let scenePick = $state(typeof saved.scene === 'string' ? saved.scene : 'random');
+  let scenePick = $state(typeof saved.scene === 'string' ? saved.scene : 'santuario');
   let sceneOpen = $state(false);
+  let battleView = $state<'classic' | 'isometric'>(saved.battleView === 'isometric' ? 'isometric' : 'classic');
+  // Encontros da campanha usam a visão clássica; o teste é uma preferência do solo.
+  const isometric = $derived(!fixed && battleView === 'isometric');
   /** Cenário da partida em curso. */
   let scene = $state<Scene>(sceneOf('mesa'));
   /**
    * Fundo da mesa. O endereço vai completo: dentro de uma variável CSS, um caminho
    * relativo seria procurado a partir da pasta da folha de estilo (assets/), não do app.
    */
-  const sceneStyle = $derived(scene.img ? `--scene:url("${new URL(scene.img, document.baseURI).href}")` : '');
+  const sceneStyle = $derived(`--scene:${scene.img ? `url("${new URL(scene.img, document.baseURI).href}")` : 'none'};--scene-warm:${lightingOf(scene.id).warm};--scene-shade:${lightingOf(scene.id).shade}`);
   /** Piso de cada casa (varia de casa para casa). */
-  $effect(() => { if (fixed) return; try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, shortLife, scene: scenePick })); } catch { /* sem armazenamento local */ } });
+  $effect(() => { if (fixed) return; try { localStorage.setItem(OPTS_KEY, JSON.stringify({ my: myId, bot: botId, limit, heroOff, heroOffFront, shortLife, scene: scenePick, battleView })); } catch { /* sem armazenamento local */ } });
 
   const colorOf = (h: HeroDef) => colorHex(app.deck(h.deckId)?.colors[0] ?? 'red');
   const ready = $derived(!!myChar && !!botChar && deckReady(myChar) && (!!fixed?.guest || deckReady(botChar)));
@@ -105,7 +129,14 @@
   let backUrl = $state('');
   $effect(() => {
     const ed = app.edition(app.deck(botHero?.deckId ?? '')?.editionId);
-    void rasterize(composeBack(backInput(ed, 'gameback')), 300, 'image/webp').then((b) => { backUrl = URL.createObjectURL(b); });
+    let live = true;
+    let objectUrl = '';
+    void rasterize(composeBack(backInput(ed, 'gameback')), 300, 'image/webp').then((b) => {
+      if (!live) return;
+      objectUrl = URL.createObjectURL(b);
+      backUrl = objectUrl;
+    }).catch(() => undefined);
+    return () => { live = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   });
 
   let g = $state<GameState | null>(null);
@@ -123,7 +154,7 @@
     chip.music(!inMatch || g!.setup ? 'menu' : g!.winner !== undefined ? null : 'battle');
   });
   let ended = false;
-  $effect(() => { const w = g?.winner; if (w !== undefined && !ended) { ended = true; setTimeout(() => chip.sfx(w === me ? 'victory' : 'defeat'), 900); } if (w === undefined) ended = false; });
+  $effect(() => { const w = g?.winner; if (w !== undefined && !ended) { ended = true; timeline.schedule(() => chip.sfx(w === me ? 'victory' : 'defeat'), 900); } if (w === undefined) ended = false; });
   // carta entrando na mão
   let handCount = 0;
   $effect(() => { const n = g?.players[me].hand.length ?? 0; if (n > handCount && step === 'play') chip.sfx('draw'); handCount = n; });
@@ -136,26 +167,34 @@
 
   function toPlace() {
     if (!myHero) return;
+    training = !fixed && tutorial.shouldTrain();
     pickScene();
-    if (heroOff) { start(); return; }
+    if (heroOff && !training) { start(); return; }
     myPos = { row: myHero.row, col: myHero.col };
     step = 'place';
   }
 
   function start() {
     if (!myChar || !botChar || !myHero || !botHero) return;
+    stopMatch();
+    training = !fixed && tutorial.shouldTrain();
+    if (training) { tutorial.beginBattle(); trainingMoves = 0; lessonCards = trainingCards(Object.values(app.cards).find((c) => c.game && !c.gear) ?? Object.values(app.cards)[0], Object.values(app.cards)); }
+    else lessonCards = {};
     const mine = sideFromApp({ ...myHero, row: myPos.row, col: myPos.col }, fixed ? journeyCards(myChar) : deckCards(myChar));
     // a dificuldade vale para a partida inteira; no Muito difícil o bot começa com vantagem (vida e carta a mais)
     level = fixed?.difficulty ?? cfg.difficulty;
     const edge = EDGE[level];
-    const bot = { ...sideFromApp(edge ? { ...botHero, maxHp: botHero.maxHp + edge.hp } : botHero, deckCards(botChar)), extraCards: edge?.cards ?? 0 };
+    const bot = { ...sideFromApp(edge ? { ...botHero, maxHp: botHero.maxHp + edge.hp } : botHero, fixed?.guest?.cards ?? deckCards(botChar)), extraCards: edge?.cards ?? 0 };
     // Jornada: cada deck fica só com as cartas do nível do seu herói
     if (fixed) { mine.cards = journeyDeck(mine.cards, fixed.start[0].level, (c) => app.ownedOf(app.cards[c.id])); bot.cards = journeyDeck(bot.cards, fixed.start[1].level); }
-    const iStart = starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5);
+    if (fixed?.rules?.hpCap) { mine.hero = { ...mine.hero, maxHp: Math.min(mine.hero.maxHp, fixed.rules.hpCap) }; bot.hero = { ...bot.hero, maxHp: Math.min(bot.hero.maxHp, fixed.rules.hpCap) }; }
+    const iStart = fixed?.rules?.playerFirst ?? (starter === 'eu' || (starter === 'sorteio' && Math.random() < 0.5));
     // "jogar de novo" com cenário sorteado: sorteia outro
     if (step === 'play' && scenePick === 'random') pickScene();
     me = iStart ? 0 : 1;
     g = newGame(iStart ? mine : bot, iStart ? bot : mine, { actionLimit: limit, heroOff, heroOffFront: heroOff && heroOffFront, mulligan: true, hpScale: shortLife ? 0.6 : 1, start: fixed ? (iStart ? [fixed.start[0], fixed.start[1]] : [fixed.start[1], fixed.start[0]]) : undefined });
+    if (training) g = trainingGame(mine.hero, bot.hero, lessonCards, iStart);
+    tutorial.emit('start');
     sel = null;
     say('');
     step = 'play';
@@ -165,7 +204,7 @@
     heroAnim = ['idle', 'idle'];
     // o bot decide a mão dele já; a minha aparece em destaque depois do anúncio de quem começa
     const b = other(me);
-    for (let i = 0; i < 5 && g.setup && !g.setup.kept[b]; i++) apply(g, botMulligan($state.snapshot(g) as GameState, b, level));
+    for (let i = 0; i < 5 && g.setup && !g.setup.kept[b]; i++) apply(g, training ? { t: 'keep', p: b, discard: [] } : botMulligan($state.snapshot(g) as GameState, b, level));
     discardSel = [];
     intro = 'who';
   }
@@ -183,6 +222,7 @@
     if (!g) return;
     const err = apply(g, { t: 'mulligan', p: me });
     if (err) { say(err, true); return; }
+    if (training) prepareOpening(g, me);
     touch();
     discardSel = [];
   }
@@ -190,12 +230,23 @@
     if (!g) return;
     const err = apply(g, { t: 'keep', p: me, discard: discardSel });
     if (err) { say(err, true); return; }
+    if (training) for (const id of Object.keys(lessonCards)) ensureTrainingCard(g, me, id);
+    tutorial.emit('keep');
     intro = null;
     zoom = null;
     void tick().then(() => playFx()).then(() => runBot());
   }
 
-  function leave() { if (fixed) { fixed.onLeave(); return; } g = null; step = 'heroes'; }
+  function stopMatch() {
+    timeline.reset();
+    resumeBot?.(); resumeBot = null;
+    botBusy = false;
+    fxPlaying = 0; fxUntil = 0; lag = {};
+    shown = null; caption = ''; banner = null; levelFx = null; floats = [];
+    for (const ghost of ghosts.values()) ghost.remove();
+    ghosts.clear();
+  }
+  function leave() { stopMatch(); if (fixed) { fixed.onLeave(); return; } g = null; step = 'heroes'; }
 
   // ───────────── jogo ─────────────
   type Sel = { kind: 'card'; uid: string; rank: number } | { kind: 'strike' } | { kind: 'unit'; pos: Pos } | { kind: 'move'; from?: Pos } | null;
@@ -203,7 +254,7 @@
   const foe = $derived(other(me));
   /** Uma carta do oponente espera a minha resposta (Reação ou aceitar). */
   const awaiting = $derived(!!g && !!g.pending && actor(g) === me && g.winner === undefined);
-  const myTurn = $derived(!!g && g.active === me && g.winner === undefined && !botBusy && !g.pending && !g.setup);
+  const myTurn = $derived(!!g && g.active === me && g.winner === undefined && !botBusy && !fxPlaying && !g.pending && !g.setup);
   const same = (a: Pos, b: Pos) => a.p === b.p && a.row === b.row && (a.col === b.col || a.col === -1 || b.col === -1);
 
   const targets = $derived.by((): Pos[] => {
@@ -266,10 +317,25 @@
   const canStrike = $derived(myTurn && strikeInfo().can);
 
   async function act(a: Action) {
-    if (!g) return;
+    if (!g || !myTurn || ui.ask) return;
+    const token = timeline.token;
+    const playedCardId = a.t === 'play' ? g.players[me].hand.find((r) => r.uid === a.uid)?.cardId : undefined;
     touch();
     const err = apply(g, a);
     if (err) { say(err, true); return; }
+    if (training) {
+      if (a.t === 'play') {
+        // Posturas saem da mão diretamente para a postura ativa, sem passar pelas recentes.
+        const key = playedCardId;
+        const event = ({ 'tutorial-summon': 'summon', 'tutorial-attack': 'attack-card', 'tutorial-spell': 'spell', 'tutorial-stance': 'stance', 'tutorial-technique': 'technique', 'tutorial-item': 'item' } as Record<string, string>)[key ?? ''];
+        if (event) tutorial.emit(event);
+        if (key === 'tutorial-spell' && (a.rank ?? 0) > 0) tutorial.emit('evolution');
+      } else if (a.t === 'move') { trainingMoves++; tutorial.emit(trainingMoves > 1 ? 'second-move' : 'move'); }
+      else if (a.t === 'strike') tutorial.emit('strike');
+      else if (a.t === 'attack') tutorial.emit('unit-attack');
+      else if (a.t === 'levelup') tutorial.emit('levelup');
+      else if (a.t === 'end') tutorial.emit('end');
+    }
     say('');
     sel = null;
     zoom = null;
@@ -279,12 +345,14 @@
       botBusy = true;
       try {
         await fxDone;
-        await sleep(PACES[cfg.pace].think * 0.6);
+        if (!timeline.current(token) || !alive) return;
+        await sleep(PACES[fixed?.rules?.pace ?? cfg.pace].think * 0.6);
+        if (!timeline.current(token) || !alive) return;
         if (g?.pending) { apply(g, botAction($state.snapshot(g) as GameState, level)); await playFx(true); }
-      } finally { botBusy = false; }
+      } finally { if (timeline.current(token)) botBusy = false; }
     }
     // o turno passou para o oponente: ele só começa depois que a faixa do turno terminar
-    if (g && g.active !== me) { if (cfg.pace !== 'fast') await fxDone; void runBot(); }
+    if (g && g.active !== me) { await fxDone; if (timeline.current(token) && alive) void runBot(); }
   }
 
   // ───────────── limite de tempo: 30 s parado mostra o contador; mais 30 s e perde ─────────────
@@ -300,13 +368,13 @@
   const clock = setInterval(() => {
     const t = Date.now();
     // com o menu, a ajuda ou o cemitério abertos, o tempo não corre
-    if (menuOpen || helpOpen || graveOf !== null || !waitingMe) idleStart += t - now;
+    if (training || menuOpen || helpOpen || ui.ask || rankPick || graveOf !== null || document.hidden || !waitingMe) idleStart += t - now;
     now = t;
-    if (cfg.timeLimit && waitingMe && g && t - idleStart > IDLE_MS + ROPE_MS) concede(true);
+    if (!training && (fixed?.rules?.timeLimit ?? cfg.timeLimit) && waitingMe && !document.hidden && !ui.ask && !menuOpen && !helpOpen && g && t - idleStart > IDLE_MS + ROPE_MS) concede(true);
   }, 250);
   onDestroy(() => clearInterval(clock));
   /** Fração (1 → 0) do contador; null enquanto ele não aparece. */
-  const rope = $derived(cfg.timeLimit && waitingMe && now - idleStart > IDLE_MS ? Math.max(0, 1 - (now - idleStart - IDLE_MS) / ROPE_MS) : null);
+  const rope = $derived(!training && (fixed?.rules?.timeLimit ?? cfg.timeLimit) && waitingMe && now - idleStart > IDLE_MS ? Math.max(0, 1 - (now - idleStart - IDLE_MS) / ROPE_MS) : null);
   let lastTick = 0;
   $effect(() => { if (rope === null) return; const sec = Math.ceil(rope * ROPE_MS / 1000); if (sec !== lastTick && sec <= 10) chip.sfx('select'); lastTick = sec; });
 
@@ -331,8 +399,11 @@
     touch();
     const err = apply(g, a);
     if (err) { say(err, true); return; }
+    if (training) tutorial.emit('reaction');
     zoom = null;
-    await playFx(true); // a carta do oponente resolve no ritmo dele
+    const token = timeline.token;
+    await playFx(true);
+    if (!timeline.current(token) || !alive) return; // a carta do oponente resolve no ritmo dele
     resumeBot?.();
     resumeBot = null;
   }
@@ -420,6 +491,21 @@
     } else if (sel) cancel(L('Seleção cancelada (alvo fora de alcance).', 'Selection cancelled (target out of reach).'));
   }
 
+  const options = $derived(g ? turnOptions(g, me) : { cards: 0, strike: false, attackers: 0, move: false });
+  async function endTurn() {
+    if (!g || !myTurn) return;
+    const token = timeline.token;
+    if (!training && cfg.confirmEndTurn && (options.strike || options.attackers > 0)) {
+      const r = await ui.confirm({
+        title: L('Encerrar sem atacar?', 'End without attacking?'),
+        text: L('Você ainda tem ataques gratuitos disponíveis. Pode usá-los antes de passar a vez.', 'You still have free attacks available. You can use them before passing the turn.'),
+        ok: L('Encerrar turno', 'End turn'), cancel: L('Continuar jogando', 'Keep playing'),
+      });
+      if (r !== 'ok' || !timeline.current(token)) return;
+    }
+    await act({ t: 'end' });
+  }
+
   /** Botão "Golpear": o mesmo que clicar no herói. */
   function startStrike() {
     if (!g || !myTurn) return;
@@ -451,30 +537,35 @@
     ask(sel.from ? 'slot' : 'piece');
   }
 
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const sleep = (ms: number) => timeline.sleep(ms);
   let alive = true;
-  onDestroy(() => { alive = false; chip.music(null, 0.8); if (backUrl) URL.revokeObjectURL(backUrl); });
+  onDestroy(() => { alive = false; stopMatch(); chip.music(null, 0.8); });
 
   async function runBot() {
     if (!g || botBusy) return;
     botBusy = true;
+    const token = timeline.token;
+    const current = () => alive && timeline.current(token);
     try {
-      let steps = 0;
-      while (alive && g && g.active === foe && g.winner === undefined && steps++ < 40) {
+      let steps = 0, lessonPlayed = false;
+      if (training) { ensureTrainingCard(g, me, 'tutorial-reaction'); g.players[me].mana = Math.max(1, g.players[me].mana); }
+      while (current() && g && g.active === foe && g.winner === undefined && steps++ < 40) {
         // espera as animações da jogada anterior terminarem, com uma pausa para dar para acompanhar
-        await sleep(Math.max(0, fxUntil - Date.now()) + PACES[cfg.pace].think);
+        await sleep(Math.max(0, fxUntil - Date.now()) + PACES[fixed?.rules?.pace ?? cfg.pace].think);
         // jogo pausado (menu ou ajuda abertos): o oponente espera
-        while (alive && (menuOpen || helpOpen)) await sleep(120);
-        if (!g || g.active !== foe) break;
-        const a = botAction($state.snapshot(g) as GameState, level);
-        if (a.t === 'end') await sleep(PACES[cfg.pace].end); // deixa ver a última carta antes de ela sair da mesa
+        while (current() && (menuOpen || helpOpen || ui.ask)) await sleep(120);
+        if (!current() || !g || g.active !== foe || g.winner !== undefined) break;
+        const a = training ? trainingBotAction($state.snapshot(g) as GameState, foe, lessonPlayed) : botAction($state.snapshot(g) as GameState, level, false, { movement: fixed?.rules?.botMovement });
+        if (training && a.t === 'play') lessonPlayed = true;
+        if (a.t === 'end') await sleep(PACES[fixed?.rules?.pace ?? cfg.pace].end); // deixa ver a última carta antes de ela sair da mesa
+        if (!current() || !g || g.winner !== undefined) break;
         if (apply(g, a)) apply(g, { t: 'end' });
         await playFx(true);
         // o bot jogou uma carta e eu posso responder: espera a minha decisão
-        if (g?.pending && actor(g) === me) await new Promise<void>((r) => { resumeBot = r; });
+        if (current() && g?.pending && actor(g) === me) await new Promise<void>((r) => { resumeBot = r; });
       }
-      if (g && g.active === foe && g.winner === undefined && !g.pending) { apply(g, { t: 'end' }); await playFx(true); }
-    } finally { botBusy = false; }
+      if (current() && g && g.active === foe && g.winner === undefined && !g.pending) { apply(g, { t: 'end' }); await playFx(true); }
+    } finally { if (current()) { botBusy = false; if (training && g && g.active === me) ensureTrainingCard(g, me, 'tutorial-spell'); } }
   }
 
   /** Esc fecha o que estiver aberto por cima (cenários, ajuda, menu, cemitério); senão, cancela a mira. */
@@ -485,7 +576,7 @@
       if (!inMatch || typing || e.ctrlKey || e.altKey || e.metaKey || menuOpen || helpOpen || intro) return;
       if (settings.is(e, 'log') && cfg.showLog) { logOpen = !logOpen; e.preventDefault(); return; }
       if (!myTurn) return;
-      if (settings.is(e, 'endTurn')) { void act({ t: 'end' }); e.preventDefault(); }
+      if (settings.is(e, 'endTurn')) { void endTurn(); e.preventDefault(); }
       else if (settings.is(e, 'strike')) { startStrike(); e.preventDefault(); }
       else if (settings.is(e, 'swap')) { startMove(); e.preventDefault(); }
       return;
@@ -636,7 +727,7 @@
     if (!r) return;
     const key = ++fxKey;
     floats.push({ key, x: r.left + r.width / 2, y: r.top + r.height * 0.4, text, sub, cls, big });
-    setTimeout(() => { floats = floats.filter((f) => f.key !== key); }, 2100);
+    timeline.schedule(() => { floats = floats.filter((f) => f.key !== key); }, 2100);
   }
 
   /** A figura dentro de uma casa (o boneco; sem boneco, o bloco do ícone) e a transformação que ela já tem. */
@@ -680,7 +771,7 @@
 
   // ───────────── boneco do herói: a animação de cada lado ─────────────
   let heroAnim = $state<[Anim, Anim]>(['idle', 'idle']);
-  const avatarOf = (p: 0 | 1) => (g ? characterOf(g.players[p].hero.id)?.avatar : undefined);
+  const avatarOf = (p: 0 | 1) => (g ? avatarForCharacter(characterOf(g.players[p].hero.id), app.cards) : undefined);
   /** Toca uma animação do boneco (ele volta a ficar parado quando ela termina). */
   function animate(p: 0 | 1, a: Anim) { if (avatarOf(p)) heroAnim[p] = a; }
   function animEnd(p: 0 | 1) { if (heroAnim[p] !== 'hurt') heroAnim[p] = 'idle'; }
@@ -692,6 +783,7 @@
   /** Mostra o que aconteceu desde a última vez, em sequência. `foeAct`: é uma jogada do oponente, no ritmo da velocidade escolhida. */
   async function playFx(foeAct = false): Promise<void> {
     if (!g) return;
+    const token = timeline.token;
     const list = g.fx.filter((e) => e.n > lastFx).map((e) => ({ ...e })) as Fx[];
     if (!list.length) return;
     lastFx = list[list.length - 1].n;
@@ -699,27 +791,28 @@
     const from = lastLine ? g.log.lastIndexOf(lastLine) + 1 : 0;
     const lines = g.log.slice(from).filter((l) => !l.startsWith('—') && !l.includes('XP ('));
     lastLine = g.log[g.log.length - 1] ?? '';
-    const pc = PACES[cfg.pace];
-    if (lines.length) { caption = lines.slice(-2).join('  ·  '); const c = caption; setTimeout(() => { if (caption === c) caption = ''; }, 4200 * (foeAct ? pc.k : 1)); }
+    const pc = PACES[fixed?.rules?.pace ?? cfg.pace];
+    if (lines.length) { caption = lines.slice(-2).join('  ·  '); const c = caption; timeline.schedule(() => { if (caption === c) caption = ''; }, 4200 * (foeAct ? pc.k : 1)); }
     // onde cada criatura estava antes da tela mudar (as derrotadas somem)
     const before = new Map<string, DOMRect>();
     for (const e of list) for (const id of idsOf(e)) { const el = elOf(id); if (el) before.set(id, el.getBoundingClientRect()); }
     // quem vai morrer continua à vista (uma cópia parada no lugar) até o golpe chegar e a derrota aparecer
     for (const e of list) if (e.k === 'death') { const el = elOf(e.id), r = before.get(e.id); if (el && r && !ghosts.has(e.id)) ghosts.set(e.id, ghostOf(el, r)); }
     for (const e of list) { if (e.k === 'dmg') lag[e.id] = (lag[e.id] ?? 0) + e.amount; else if (e.k === 'heal') lag[e.id] = (lag[e.id] ?? 0) - e.amount; }
+    fxPlaying++;
     await tick();
+    if (!timeline.current(token) || !alive) return;
     const rectOf = (id: string) => elOf(id)?.getBoundingClientRect() ?? before.get(id);
     let t = 0, k = foeAct ? pc.k : 1;
     for (const e of list) {
       // o meu turno começou: daqui em diante segue no ritmo normal
       if (e.k === 'turn' && e.p === me) k = 1;
       const at = t;
-      setTimeout(() => show(e, rectOf, before), at);
+      timeline.schedule(() => show(e, rectOf, before), at);
       t += e.k === 'play' ? (e.p !== me ? pc.card : 150) : (FX_MS[e.k] ?? 380) * k;
     }
     fxUntil = Date.now() + t + 400;
-    fxPlaying++;
-    try { await sleep(t + 300); } finally { fxPlaying--; for (const e of list) if (e.k === 'dmg' || e.k === 'heal') delete lag[e.id]; for (const id of list.filter((e) => e.k === 'death').map((e) => (e as { id: string }).id)) vanish(id); }
+    try { await sleep(t + 300); } finally { if (timeline.current(token)) { fxPlaying--; for (const e of list) if (e.k === 'dmg' || e.k === 'heal') delete lag[e.id]; for (const id of list.filter((e) => e.k === 'death').map((e) => (e as { id: string }).id)) vanish(id); } }
   }
 
   /** Cópias das criaturas derrotadas, enquanto a animação não chega na derrota. */
@@ -746,9 +839,10 @@
   function showCard(cardId: string, label: string, cls = '', ms = 2600) {
     shown = { key: ++fxKey, cardId, label, cls };
     const k = shown.key;
-    setTimeout(() => { if (shown?.key === k) shown = null; }, ms);
+    timeline.schedule(() => { if (shown?.key === k) shown = null; }, ms);
   }
 
+  let visualCard = '';
   function show(e: Fx, rectOf: (id: string) => DOMRect | undefined, before: Map<string, DOMRect>) {
     if (!g) return;
     switch (e.k) {
@@ -757,13 +851,14 @@
         const mine = e.p === me;
         banner = { key: ++fxKey, mine, title: mine ? L('Seu turno', 'Your turn') : L(`Turno de ${g.players[e.p].hero.name}`, `${g.players[e.p].hero.name}'s turn`), sub: L(`Turno ${e.turn}`, `Turn ${e.turn}`) };
         const k = banner.key;
-        setTimeout(() => { if (banner?.key === k) banner = null; }, 1400);
+        timeline.schedule(() => { if (banner?.key === k) banner = null; }, 1400);
         break;
       }
       // a carta do oponente aparece grande ao lado (se eu posso responder, ela já está na janela de resposta)
       case 'play':
+        visualCard = e.cardId;
         chip.sfx('card');
-        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}${e.rank ? ` · ${L('Nv', 'Lv')} ${rankOf(g.defs[e.cardId].game, e.rank).level}` : ''}`, '', PACES[cfg.pace].shown);
+        if (e.p !== me && !(g.pending && actor(g) === me)) showCard(e.cardId, `${g.players[e.p].hero.name} ${L('usa', 'uses')}${e.rank ? ` · ${L('Nv', 'Lv')} ${rankOf(g.defs[e.cardId].game, e.rank).level}` : ''}`, '', PACES[fixed?.rules?.pace ?? cfg.pace].shown);
         // cartas que não são um golpe: o boneco conjura (o golpe tem a sua própria animação, logo depois)
         if (g.defs[e.cardId] && !rankOf(g.defs[e.cardId].game, e.rank).effects.some((x) => x.k === 'strike')) animate(e.p, 'spellcast');
         break;
@@ -775,6 +870,7 @@
         else { const hu = heroOf(other(e.p)); float(hu ? rectOf(hu.id) : undefined, L('Ataque anulado!', 'Attack countered!'), 'ward', undefined, true); }
         break;
       case 'attack': {
+        if (e.via !== 'magic') visualCard = '';
         const a = before.get(e.from) ?? rectOf(e.from), b = rectOf(e.to);
         if (a && b) attackAnim(a, b, elOf(e.from), e.via);
         chip.sfx(e.via === 'melee' ? 'slash' : e.via === 'ranged' ? 'arrow' : 'magic');
@@ -787,6 +883,9 @@
       case 'dmg': {
         if (lag[e.id]) lag[e.id] -= e.amount;
         const sub = [e.armor ? (e.via === 'magic' ? L(`resistência absorveu ${e.armor}`, `resistance absorbed ${e.armor}`) : L(`armadura absorveu ${e.armor}`, `armor absorbed ${e.armor}`)) : '', e.marked ? L('+1 Marcado', '+1 Marked') : '', e.armor ? '' : L(VIA[e.via][0], VIA[e.via][1])].filter(Boolean).join(' · ');
+        const card = cardById(visualCard);
+        const profile = abilityProfile(visualCard, card?.text[app.lang].name ?? '', e.via);
+        emitAbility(profile, undefined, rectOf(e.id) ?? before.get(e.id), e.amount);
         chip.sfx('hit');
         float(rectOf(e.id) ?? before.get(e.id), `−${e.amount}`, 'dmg', sub, true);
         hitFlash(elOf(e.id), 'rgb(200 40 30 / .45)');
@@ -795,7 +894,7 @@
         break;
       }
       case 'blocked': chip.sfx('block'); float(rectOf(e.id), L('Bloqueado', 'Blocked'), 'ward', L('a Proteção anulou o dano', 'the ward prevented it')); hitFlash(elOf(e.id), 'rgb(90 150 255 / .4)'); break;
-      case 'heal': if (lag[e.id]) lag[e.id] += e.amount; chip.sfx('heal'); float(rectOf(e.id), `+${e.amount}`, 'heal', L('cura', 'heal'), true); hitFlash(elOf(e.id), 'rgb(60 190 110 / .35)'); break;
+      case 'heal': emitAbility({kind:'light',seed:visualCard.length}, undefined, rectOf(e.id)); if (lag[e.id]) lag[e.id] += e.amount; chip.sfx('heal'); float(rectOf(e.id), `+${e.amount}`, 'heal', L('cura', 'heal'), true); hitFlash(elOf(e.id), 'rgb(60 190 110 / .35)'); break;
       case 'status': {
         const m = {
           afflict: [L('Afligido', 'Afflicted'), L('−1 PV por turno', '−1 HP per turn'), 'curse'],
@@ -821,7 +920,7 @@
         const pl = g.players[e.p];
         levelFx = { key: ++fxKey, name: pl.hero.name, level: pl.level + pl.pendingLevels, mine: e.p === me };
         const k = levelFx.key;
-        setTimeout(() => { if (levelFx?.key === k) levelFx = null; }, 1700);
+        timeline.schedule(() => { if (levelFx?.key === k) levelFx = null; }, 1700);
         const hu = heroOf(e.p);
         if (hu) elOf(hu.id)?.animate([{ boxShadow: '0 0 0 4px #f0c45a, 0 0 50px 10px #f0c45a' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 1400 });
         break;
@@ -873,7 +972,7 @@
     row.style.setProperty('--fs', `${((w * (k - 1)) / 2).toFixed(1)}px`);
   }
   function hover(id: string | undefined, e: Event) {
-    if (!id || !app.cards[id]) { zoom = null; return; }
+    if (!id || !cardById(id)) { zoom = null; return; }
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const zh = ZW * 1.4;
     // ao lado da carta quando não cabe em cima nem embaixo (ex.: lista do cemitério)
@@ -932,7 +1031,7 @@
     dragFrom = null;
     if (!d?.moved) return;
     dragged = true;
-    setTimeout(() => { dragged = false; }, 0);
+    timeline.schedule(() => { dragged = false; }, 0);
     d.el.animate([{ translate: d.el.style.translate }, { translate: '0 0' }], { duration: 160, easing: 'ease-out' });
     d.el.style.translate = '';
     dragUid = null;
@@ -947,8 +1046,9 @@
   // ───────────── apresentação ─────────────
   const heroOf = (p: 0 | 1) => (g ? unitAt(g, heroPos(g, p)) : null);
   /** Vida mostrada: a do jogo, mas o dano (e a cura) que a animação ainda não mostrou fica para a hora dela. */
-  const life = (u: Unit) => u.def - u.dmg + (lag[u.id] ?? 0);
-  const cardOf = (r: CardRef) => app.cards[r.cardId];
+  const life = (u: Unit) => Math.max(0, u.def - u.dmg + (lag[u.id] ?? 0));
+  const cardById = (id: string) => lessonCards[id] ?? app.cards[id];
+  const cardOf = (r: CardRef) => cardById(r.cardId);
   /** Fileiras de cima para baixo: o oponente mostra a retaguarda em cima; você, a frente em cima. */
   const rowsFor = (p: 0 | 1) => (p === me ? [0, 1] : [1, 0]);
   /** Dano do golpe do herói agora (arma + postura + bônus do turno). */
@@ -976,7 +1076,7 @@
     if (st?.cardId) {
       const m = st.mods;
       const what = [m.strike ? L(`golpe +${m.strike}`, `strike +${m.strike}`) : '', m.strikeMagic ? L('golpe mágico', 'magic strike') : '', m.strikeAfflicts ? L('golpe aflige', 'strike afflicts') : '', m.strikeHeals ? L(`golpe cura ${m.strikeHeals}`, `strike heals ${m.strikeHeals}`) : '', m.guard ? L('Guarda', 'Guard') : ''].filter(Boolean).join(', ');
-      out.push({ id: 'stance', icon: Sparkles, tone: 'good', tip: L(`Postura — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'ativa'}. Uma postura por vez: fica até outra postura entrar.`, `Stance — ${app.cards[st.cardId]?.text[app.lang].name ?? ''}: ${what || 'active'}. Lasts until another stance replaces it.`) });
+      out.push({ id: 'stance', icon: Sparkles, tone: 'good', tip: L(`Postura — ${cardById(st.cardId)?.text[app.lang].name ?? ''}: ${what || 'ativa'}. Uma postura por vez: fica até outra postura entrar.`, `Stance — ${cardById(st.cardId)?.text[app.lang].name ?? ''}: ${what || 'active'}. Lasts until another stance replaces it.`) });
     }
     if (u.keys.includes('guarda') || st?.mods.guard) out.push({ id: 'guard', icon: Users, tone: 'trait', tip: L('Guarda: enquanto houver alguém com Guarda, os golpes corpo a corpo inimigos precisam mirar nele.', 'Guard: while it stands, enemy melee attacks must target it.') });
     if (u.keys.includes('rapido') && u.exhausted === false && !u.isHero) out.push({ id: 'swift', icon: Zap, tone: 'trait', tip: L('Rápido: pode atacar no turno em que entra.', 'Swift: can attack the turn it arrives.') });
@@ -1008,7 +1108,7 @@
       {#snippet side(mine: boolean)}
         {@const c = (mine ? myChar : botChar)!}
         {@const h = (mine ? myHero : botHero)!}
-        <section class="vs-side" class:right={!mine} style="--c:{colorOf(h)}">
+        <section data-tutorial={mine ? 'my-hero' : 'opponent'} class="vs-side" class:right={!mine} style="--c:{colorOf(h)}">
           <span class="vs-tag">{mine ? L('Você', 'You') : L('Oponente (bot)', 'Opponent (bot)')}</span>
           <div class="showcase">
             <div class="sc-pic">
@@ -1092,16 +1192,22 @@
             <span class="scene-tx"><small>{L('Selecionar campo de batalha', 'Choose battlefield')}</small><b>{scenePick === 'random' ? L('Aleatório', 'Random') : L(sceneOf(scenePick).name[0], sceneOf(scenePick).name[1])}</b></span>
             <ChevronDown size={16} />
           </button>
-          <label class="starter"><small>{L('Quem começa', 'Who starts')}</small>
+          <label class="starter"><small>{L('Visão do campo', 'Battlefield view')}</small>
+            <select class="select-in" aria-label={L('Visão do campo', 'Battlefield view')} bind:value={battleView}>
+              <option value="classic">{L('Clássica', 'Classic')}</option>
+              <option value="isometric">{L('Isométrica (teste)', 'Isometric (test)')}</option>
+            </select></label>
+          <label data-tutorial="starter" class="starter"><small>{L('Quem começa', 'Who starts')}</small>
             <select class="select-in" bind:value={starter}><option value="sorteio">{L('Sorteio', 'Random')}</option><option value="eu">{L('Você', 'You')}</option><option value="bot">Bot</option></select></label>
           <label class="starter" use:tip={L(`Dificuldade do oponente: ${DIFFICULTIES.find((d) => d.id === cfg.difficulty)!.info[0]}${EDGE[cfg.difficulty] ? ` (+${EDGE[cfg.difficulty]!.hp} de vida e ${EDGE[cfg.difficulty]!.cards} carta a mais na mão inicial)` : ''}`, `Opponent difficulty: ${DIFFICULTIES.find((d) => d.id === cfg.difficulty)!.info[1]}${EDGE[cfg.difficulty] ? ` (+${EDGE[cfg.difficulty]!.hp} life and ${EDGE[cfg.difficulty]!.cards} extra card in the opening hand)` : ''}`)}><small>{L('Dificuldade', 'Difficulty')}</small>
             <select class="select-in" bind:value={cfg.difficulty}>{#each DIFFICULTIES as d (d.id)}<option value={d.id}>{L(d.name[0], d.name[1])}</option>{/each}</select></label>
           <label class="starter" use:tip={L('Velocidade de jogo: quanto tempo o oponente dá para você ler cada carta e ver cada efeito antes da próxima jogada', 'Game speed: how long the opponent gives you to read each card and see each effect before the next play')}><small>{L('Velocidade', 'Speed')}</small>
             <select class="select-in" bind:value={cfg.pace}>{@render paceOpts()}</select></label>
         </div>
-        <div class="foot-go">
+        <div data-tutorial="match-options" class="foot-go">
           <MusicPlayer />
-          <button class="btn primary big" disabled={!ready} onclick={toPlace}><Swords size={18} /> {heroOff ? L('Começar partida', 'Start match') : L('Continuar', 'Continue')}</button>
+          {#if !fixed && tutorial.shouldTrain()}<small>{L('Primeira partida: treino guiado', 'First match: guided training')}</small>{/if}
+          <button data-tutorial="continue" class="btn primary big" disabled={!ready} onclick={toPlace}><Swords size={18} /> {heroOff ? L('Começar partida', 'Start match') : L('Continuar', 'Continue')}</button>
         </div>
       </footer>
       {#if sceneOpen}
@@ -1134,7 +1240,8 @@
 {:else if step === 'place' && myHero && botHero}
   <!-- posicionamento: mesma estrutura da mesa, para o campo ficar exatamente onde ficará na partida -->
   <div class="table">
-    <div class="main" class:scenic={!!scene.img} style={sceneStyle}>
+    <div class="main" class:scenic={!!scene.img} class:isometric style={sceneStyle}>
+      {#if isometric}<IsometricArena scene={scene.id} />{:else}<Atmosphere scene={scene.id} />{/if}
       <div class="hbar dim" style="--c:{colorOf(botHero)}">
         <span class="hb-pic"><HeroPortrait hero={botChar} size={46} round /></span>
         <div class="who"><b class="display">{botHero.name}</b><small>{L('Inimigo (bot)', 'Enemy (bot)')}</small></div>
@@ -1145,8 +1252,9 @@
           <div class="row">
             {#each [0, 1, 2] as col}
               <span class="slot" class:hero={botHero.row === row && botHero.col === col} style="--c:{colorOf(botHero)}">
+                {#if isometric}<TileGround scene={scene.id} active={botHero.row === row && botHero.col === col} />{/if}
                 {#if botHero.row === row && botHero.col === col}
-                  {#if botChar?.sprite}<span class="doll bossfig"><img src={botChar.sprite} alt="" draggable="false" /></span>{:else if botChar?.avatar}<span class="doll"><AvatarSprite avatar={botChar.avatar} dir="s" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span>{/if}
+                  {#if botChar?.sprite}<span class="doll bossfig"><img src={botChar.sprite} alt="" draggable="false" /></span>{:else if botChar?.avatar}<span class="doll"><AvatarSprite renderMode={fixed?.rules?.avatarMode ?? 'auto'} avatar={avatarForCharacter(botChar, app.cards)!} dir={isometric ? 'sw' : 's'} scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={botChar} size={80} /></span>{/if}
                   <span class="unit"><span class="u-nm">{botHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </span>
@@ -1156,15 +1264,16 @@
         <div class="zone"><span class="zhint">{L('campo do inimigo', 'enemy field')}</span></div>
       </div>
       <div class="mid mine"><span class="mid-orn"></span><div class="mid-plate"><span>{L('Clique numa casa do SEU campo para escolher onde o seu herói começa', 'Click a slot on YOUR field to choose where your hero starts')}</span></div><span class="mid-orn r"></span></div>
-      <div class="side-field">
+      <div data-tutorial="placement" class="side-field">
         <div class="zone"><span class="zhint">{L('seu campo', 'your field')}</span></div>
         {#each [0, 1] as row}
           <div class="row">
             {#each [0, 1, 2] as col}
               {@const on = myPos.row === row && myPos.col === col}
               <button class="slot" class:hero={on} class:target={!on} style="--c:{colorOf(myHero)}" onclick={() => (myPos = { row: row as 0 | 1, col: col as 0 | 1 | 2 })}>
+                {#if isometric}<TileGround scene={scene.id} active={on} />{/if}
                 {#if on}
-                  {#if myChar?.avatar}<span class="doll"><AvatarSprite avatar={myChar.avatar} dir="n" scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={myChar} size={80} /></span>{/if}
+                  {#if myChar?.avatar}<span class="doll"><AvatarSprite renderMode={fixed?.rules?.avatarMode ?? 'auto'} avatar={avatarForCharacter(myChar, app.cards)!} dir={isometric ? 'ne' : 'n'} scale={2} /></span>{:else}<span class="mini"><HeroPortrait hero={myChar} size={80} /></span>{/if}
                   <span class="unit"><span class="u-nm">{myHero.name}</span></span>
                 {:else}<span class="empty">{row === 0 ? L('frente', 'front') : L('retaguarda', 'back')}</span>{/if}
               </button>
@@ -1179,7 +1288,7 @@
         <span class="hb-pic"><HeroPortrait hero={myChar} size={46} round /></span>
         <div class="who"><b class="display">{myHero.name}</b><small>{L(myHero.className[0], myHero.className[1])}</small></div>
         <button class="btn sm" onclick={() => { if (fixed) fixed.onLeave(); else step = 'heroes'; }}>{L('Voltar', 'Back')}</button>
-        <button class="btn sm primary" onclick={start}><Swords size={15} /> {L('Começar partida', 'Start match')}</button>
+        <button data-tutorial="start-match" class="btn sm primary" onclick={start}><Swords size={15} /> {L('Começar partida', 'Start match')}</button>
       </div>
     </div>
   </div>
@@ -1187,8 +1296,9 @@
   {@const P = g.players[me]}
   {@const F = g.players[foe]}
   <div class="table">
-    <div class="main" class:scenic={!!scene.img} style={sceneStyle} onmousemove={(e) => { lastMouse = { x: e.clientX, y: e.clientY }; if (sel) mouse = lastMouse; }} onclick={mainClick}
+    <div class="main" class:scenic={!!scene.img} class:isometric style={sceneStyle} onmousemove={(e) => { lastMouse = { x: e.clientX, y: e.clientY }; if (sel) mouse = lastMouse; }} onclick={mainClick}
       oncontextmenu={(e) => { if (sel) { e.preventDefault(); cancel(); } }} role="presentation">
+      {#if isometric}<IsometricArena scene={scene.id} />{:else}<Atmosphere scene={scene.id} />{/if}
       <!-- ───── barra de herói ───── -->
       {#snippet bar(p: 0 | 1, mine: boolean)}
         {@const pl = g!.players[p]}
@@ -1204,16 +1314,16 @@
           {/if}
           <div class="stat" use:tip={L('Vigor: paga as habilidades físicas. Enche de novo no começo do seu turno; o que sobrar pode pagar Reações no turno do oponente.', 'Vigor: pays physical abilities. Refills at the start of your turn; what is left can pay Reactions on the opponent’s turn.')}>
             <span class="cap">Vigor</span>
-            <span class="val vig" id="res-{p}-vigor"><Glyph id={VIGOR_ICON} size={15} color="currentColor" />{#each pips(pl.vigor, pl.maxVigor) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxVigor && !pl.vigor}<small>—</small>{/if}</span>
+            <span class="val vig" id="res-{p}-vigor"><b>{pl.vigor}<small>/{pl.maxVigor}</small></b><Glyph id={VIGOR_ICON} size={15} color="currentColor" />{#each pips(pl.vigor, pl.maxVigor) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxVigor && !pl.vigor}<small>—</small>{/if}</span>
           </div>
           <div class="stat" use:tip={L('Mana: paga as magias. Enche de novo no começo do seu turno; o que sobrar pode pagar Reações no turno do oponente.', 'Mana: pays spells. Refills at the start of your turn; what is left can pay Reactions on the opponent’s turn.')}>
             <span class="cap">Mana</span>
-            <span class="val man" id="res-{p}-mana"><Glyph id={MANA_ICON} size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
+            <span class="val man" id="res-{p}-mana"><b>{pl.mana}<small>/{pl.maxMana}</small></b><Glyph id={MANA_ICON} size={15} color="currentColor" />{#each pips(pl.mana, pl.maxMana) as k}<i class="pip {k}"></i>{/each}{#if !pl.maxMana && !pl.mana}<small>—</small>{/if}</span>
           </div>
           {#if g!.noXp}
-            <div class="stat" use:tip={L(`Nível ${pl.level}: na Jornada o nível não muda durante a batalha; ele sobe entre as batalhas, com o XP das vitórias.`, `Level ${pl.level}: in the Journey the level does not change during the battle; it rises between battles, with the XP from victories.`)}>
+            <div class="stat" use:tip={fixed?.rules ? L('Este encontro curto começa e termina no nível 1.','This short encounter begins and ends at level 1.') : L(`Nível ${pl.level}: na Jornada o nível não muda durante a batalha; ele sobe entre as batalhas, com o XP das vitórias.`, `Level ${pl.level}: in the Journey the level does not change during the battle; it rises between battles, with the XP from victories.`)}>
               <span class="cap">{L('Nível', 'Level')}</span>
-              <span class="val xpv" id="xp-{p}"><b>{pl.level}</b><small>{L('Jornada', 'Journey')}</small></span>
+              <span class="val xpv" id="xp-{p}"><b>{pl.level}</b><small>{fixed?.rules ? L('Campanha', 'Campaign') : L('Jornada', 'Journey')}</small></span>
             </div>
           {:else}
             <div class="stat" use:tip={L(`Nível e XP: o herói está no nível ${pl.level}. Todo herói ganha +1 XP no começo do próprio turno (por isso sobe de nível mesmo sem fazer nada), +1 por criatura derrotada e +1 na 1ª vez que fere o herói inimigo no turno. A cada ${XP_PER_LEVEL} XP, um nível novo (+1 Vigor, +1 Mana ou +3 Vida).`, `Level and XP: the hero is level ${pl.level}. Every hero gets +1 XP at the start of its own turn (so it levels up even doing nothing), +1 per defeated creature, +1 the first time it hits the enemy hero each turn. Every ${XP_PER_LEVEL} XP, a new level.`)}>
@@ -1250,10 +1360,12 @@
       {#snippet heroBody(u: Unit, p: 0 | 1)}
         {@const av = avatarOf(p)}
         {@const boss = characterOf(g!.players[p].hero.id)?.sprite}
-        {#if boss}
+        {#if boss && characterOf(g!.players[p].hero.id)?.preset === 'dragon'}
+          <span class="doll" class:sick={u.afflicted}><SheetSprite id="rework/dragon" def={{cell:[64,64],idle:1,attack:3,fps:8}} attacking={heroAnim[p] !== 'idle' && heroAnim[p] !== 'hurt'} back={p === me} scale={3} onend={() => animEnd(p)} /></span>
+        {:else if boss}
           <span class="doll bossfig" class:sick={u.afflicted} class:hit={heroAnim[p] === 'hurt'}><img src={boss} alt="" draggable="false" /></span>
         {:else if av}
-          <span class="doll" class:tall={g!.heroOff} class:sick={u.afflicted}><AvatarSprite avatar={av} anim={heroAnim[p]} dir={p === me ? 'n' : 's'} scale={g!.heroOff ? 3 : 2} loop={heroAnim[p] === 'idle'} onend={() => animEnd(p)} /></span>
+          <span class="doll" class:tall={g!.heroOff} class:sick={u.afflicted}><AvatarSprite renderMode={fixed?.rules?.avatarMode ?? 'auto'} avatar={av} anim={heroAnim[p]} dir={isometric ? (p === me ? 'ne' : 'sw') : (p === me ? 'n' : 's')} scale={g!.heroOff ? 3 : 2} loop={heroAnim[p] === 'idle'} onend={() => animEnd(p)} /></span>
         {:else}
           <span class="mini"><HeroPortrait hero={characterOf(g!.players[p].hero.id)} size={120} /></span>
         {/if}
@@ -1275,6 +1387,7 @@
           class:hero={!!u?.isHero} class:fig={!!u && !u.isHero && hasFigure(u.icon)} class:ready={!!u?.isHero && p === me && canStrike && !sel} class:exh={!!u && u.exhausted && !u.isHero && p === me} onclick={() => clickSlot(pos)} data-uid={u?.id}
           data-pos="{p}-{row}-{col}" onmouseenter={(e) => { hoverPos = pos; hover(u?.src, e); }} onmouseleave={() => { hoverPos = null; zoom = null; }} style="--c:{colorOf(g!.players[p].hero)}"
           use:tip={u?.isHero && p === me && g!.active === me ? strikeInfo().why : ''}>
+          {#if isometric && row !== -1}<TileGround scene={scene.id} active={!!u?.isHero || isTarget(pos)} />{/if}
           <!-- a figura fica num bloco com chave: ao sair da casa (morrer, ser empurrada), a animação de saída ainda sabe quem ela é -->
           {#each u ? [u] : [] as x (x.id)}
             {#if x.isHero}
@@ -1283,7 +1396,7 @@
               {@const cr = creatureOf(x.icon)}
               {@const sh = cr ? undefined : sheetOf(x.icon)}
               {#if sh}<span class="doll" class:sick={x.afflicted}><SheetSprite id={sh.id} def={sh.def} attacking={!!unitAnim[x.id]} back={p === me} scale={2} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
-              {#if cr}<span class="doll" class:sick={x.afflicted}><AvatarSprite avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={p === me ? 'n' : 's'} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
+              {#if cr}<span class="doll" class:sick={x.afflicted}><AvatarSprite renderMode={fixed?.rules?.avatarMode ?? 'auto'} avatar={cr.avatar} anim={unitAnim[x.id] ?? 'idle'} dir={isometric ? (p === me ? 'ne' : 'sw') : (p === me ? 'n' : 's')} scale={2} loop={!unitAnim[x.id]} onend={() => { delete unitAnim[x.id]; }} /></span>{/if}
               <span class="unit" in:recvU={{ key: x.id }} out:sendU={{ key: x.id }}>
                 {#if !cr && !sh}<span class="u-ic"><Glyph id={x.icon ?? 'death-skull'} size={44} color="#e6dccb" /></span>{/if}
                 <span class="u-nm">{L(x.name[0], x.name[1])}</span>
@@ -1310,10 +1423,10 @@
       {#snippet zone(p: 0 | 1)}
         {@const pl = g!.players[p]}
         <div class="zone" id="zone-{p}">
-          {#if pl.stance?.cardId && app.cards[pl.stance.cardId]}
+          {#if pl.stance?.cardId && cardById(pl.stance.cardId)}
             <div class="zc stance" onmouseenter={(e) => hover(pl.stance?.cardId, e)} onmouseleave={() => (zoom = null)} role="img">
               <span class="ztag"><Sparkles size={11} /> {L('Postura', 'Stance')}</span>
-              <CardImage card={app.cards[pl.stance.cardId]} eager />
+              <CardImage card={cardById(pl.stance.cardId)} eager />
             </div>
           {/if}
           {#each pl.recent as r (r.uid)}
@@ -1362,7 +1475,7 @@
             {#each h.gear.filter((it) => it.slot !== 'weapon') as it}
               <span class="gchip" use:tip={L(`${it.name[0]}: ${it.info[0]}.`, `${it.name[1]}: ${it.info[1]}.`)}>
                 <span class="gic sm"><Glyph id={gearIcon(it, h)} size={17} color="#f3ead6" /></span>
-                <small>{[it.armor ? `+${it.armor}🛡` : '', it.resist ? `+${it.resist}✦` : '', it.hp ? `+${it.hp}♥` : '', it.strike ? `+${it.strike}⚔` : ''].filter(Boolean).join(' ')}</small>
+                <small>{[it.armor ? `${it.armor > 0 ? '+' : ''}${it.armor}🛡` : '', it.resist ? `${it.resist > 0 ? '+' : ''}${it.resist}✦` : '', it.hp ? `${it.hp > 0 ? '+' : ''}${it.hp}♥` : '', it.strike ? `${it.strike > 0 ? '+' : ''}${it.strike}⚔` : ''].filter(Boolean).join(' ')}</small>
               </span>
             {/each}
           </div>
@@ -1383,7 +1496,7 @@
         <span class="mid-orn"></span>
         <div class="mid-plate" class:long={!!(msg || caption)}>
           {#key msg || caption}
-            <span in:fade={{ duration: 160 }}>{msg || caption || (awaiting ? L('O oponente jogou uma carta: reaja ou aceite', 'The opponent played a card: react or accept') : myTurn ? L('Seu turno', 'Your turn') : g.winner === undefined ? L(`Turno de ${F.hero.name}`, `${F.hero.name}'s turn`) : '')}</span>
+            <span in:fade={{ duration: 160 }}>{msg || caption || (g.setup ? L('Preparando a batalha', 'Preparing the battle') : awaiting ? L('O oponente jogou uma carta: reaja ou aceite', 'The opponent played a card: react or accept') : myTurn ? L('Seu turno', 'Your turn') : g.winner === undefined ? L(`Turno de ${F.hero.name}`, `${F.hero.name}'s turn`) : '')}</span>
           {/key}
           {#if sel}<button class="cancel-btn" onclick={() => cancel()}><X size={13} /> {L('Cancelar (Esc ou botão direito)', 'Cancel (Esc or right-click)')}</button>{/if}
         </div>
@@ -1414,7 +1527,7 @@
       {@render bar(me, true)}
 
       {#if rankPick && myTurn}
-        {@const card = app.cards[g.players[me].hand.find((c) => c.uid === rankPick!.uid)?.cardId ?? '']}
+        {@const card = cardById(g.players[me].hand.find((c) => c.uid === rankPick!.uid)?.cardId ?? '')}
         <div class="rankpick" in:scale={{ duration: 160, start: 0.92 }}>
           <span class="rp-title">{card?.text[app.lang].name} · {L('qual versão jogar?', 'which version to play?')}</span>
           <div class="rp-opts">
@@ -1433,18 +1546,28 @@
       {@render piles(foe, true)}
       {@render piles(me, false)}
 
+      {#if training && !tutorial.pending('battle') && g.winner === undefined}
+        <button class="training-done btn primary" onclick={() => { tutorial.finish('battle'); leave(); }}>{L('Concluir treino', 'Finish training')}</button>
+      {/if}
       <!-- ───── ações do turno (flutuam acima do cemitério) ───── -->
       <div class="actions" class:idle={!myTurn} style="--c:{colorOf(P.hero)}">
         <span class="act-title"><i></i>{myTurn ? L('Suas ações', 'Your actions') : L('Aguarde a sua vez', 'Wait for your turn')}<i></i></span>
+        {#if cfg.turnGuide && g.winner === undefined && !g.setup}
+          <div class="turn-guide" aria-live="polite">
+            <b>{awaiting ? L('Sua resposta', 'Your response') : myTurn ? L('Prepare sua jogada', 'Plan your play') : L('Observe o oponente', 'Watch your opponent')}</b>
+            <p>{awaiting ? L('Use uma Reação ou aceite a carta para continuar.', 'Play a Reaction or accept the card to continue.') : sel ? msg : myTurn ? L(`${options.cards} ${options.cards === 1 ? "carta jogável" : "cartas jogáveis"} · ${options.attackers + (options.strike ? 1 : 0)} ${options.attackers + (options.strike ? 1 : 0) === 1 ? "atacante pronto" : "atacantes prontos"}`, `${options.cards} playable ${options.cards === 1 ? "card" : "cards"} · ${options.attackers + (options.strike ? 1 : 0)} ready ${options.attackers + (options.strike ? 1 : 0) === 1 ? "attacker" : "attackers"}`) : L('Os recursos restantes podem pagar suas Reações.', 'Remaining resources can pay for your Reactions.')}</p>
+            <button onclick={() => (helpOpen = true)}><CircleHelp size={12} />{L('Como jogar', 'How to play')}</button>
+          </div>
+        {/if}
         <button class="act strike" class:lit={canStrike} disabled={!myTurn} data-action="strike" onclick={startStrike} use:tip={myTurn ? strikeInfo().why : ''}>
           <span class="act-ic"><Swords size={19} /></span>
           <span class="act-tx"><b>{L('Golpear', 'Strike')}</b><small>{P.struck ? L('já usado', 'already used') : L(`${strikeDmg(me)} de dano · grátis`, `${strikeDmg(me)} damage · free`)}</small></span>
         </button>
-        <button class="act" disabled={!myTurn || P.moved || !movable().length} onclick={startMove} use:tip={L('Mover peça: leva o herói ou uma criatura sua para outra casa livre do seu campo (frente ou retaguarda). 1 vez por turno.', 'Move piece: moves your hero or one of your creatures to another free slot on your field (front or back). Once per turn.')}>
+        <button data-action="move" class="act" disabled={!myTurn || P.moved || !movable().length} onclick={startMove} use:tip={L('Mover peça: leva o herói ou uma criatura sua para outra casa livre do seu campo (frente ou retaguarda). 1 vez por turno.', 'Move piece: moves your hero or one of your creatures to another free slot on your field (front or back). Once per turn.')}>
           <span class="act-ic"><ArrowLeftRight size={19} /></span>
           <span class="act-tx"><b>{L('Mover peça', 'Move piece')}</b><small>{P.moved ? L('já moveu', 'already moved') : L('1 vez por turno', 'once per turn')}</small></span>
         </button>
-        <button class="act end" disabled={!myTurn} data-action="end-turn" onclick={() => act({ t: 'end' })}>
+        <button class="act end" disabled={!myTurn} data-action="end-turn" onclick={endTurn}>
           <span class="act-ic"><Hourglass size={19} /></span>
           <span class="act-tx"><b>{L('Encerrar turno', 'End turn')}</b><small>{L('passa a vez', 'pass the turn')}</small></span>
         </button>
@@ -1485,18 +1608,18 @@
           </div>
         {/key}
       {/if}
-      {#if shown && app.cards[shown.cardId]}
+      {#if shown && cardById(shown.cardId)}
         {#key shown.key}
           <div class="shown {shown.cls}" in:flyIn={{ y: -30, duration: 280 }} out:fade={{ duration: 250 }}>
             <span>{shown.label}</span>
-            <CardImage card={app.cards[shown.cardId]} eager />
+            <CardImage card={cardById(shown.cardId)} eager />
           </div>
         {/key}
       {/if}
 
       <!-- ───── janela de resposta: o oponente jogou uma carta e eu posso reagir ───── -->
       {#if awaiting && g.pending && !fxPlaying}
-        {@const pc = app.cards[g.pending?.ref?.cardId ?? '']}
+        {@const pc = cardById(g.pending?.ref?.cardId ?? '')}
         {@const atkU = g.pending?.attack === 'unit' && g.pending.from ? unitAt(g, g.pending.from) : null}
         {@const tgtU = g.pending?.target ? unitAt(g, g.pending.target) : null}
         <div class="respond" in:scale={{ duration: 220, start: 0.9 }}>
@@ -1604,9 +1727,9 @@
       {/each}
     </div>
 
-    {#if zoom && app.cards[zoom.id]}
+    {#if zoom && cardById(zoom.id)}
       <div class="zoom" style="left:{zoom.x}px;{zoom.up ? `bottom:${innerHeight - zoom.y}px` : `top:${zoom.y}px`};width:{ZW}px" transition:fade={{ duration: 120 }}>
-        <CardImage card={app.cards[zoom.id]} eager />
+        <CardImage card={cardById(zoom.id)} eager />
       </div>
     {/if}
 
@@ -1674,7 +1797,7 @@
           <h2 class="display">{me === 0 ? L('Você começa!', 'You go first!') : L(`${first.hero.name} começa!`, `${first.hero.name} goes first!`)}</h2>
           <p>{me === 0 ? L('Você joga o primeiro turno (e não compra carta nele).', 'You play the first turn (and draw no card on it).') : L('O oponente joga o primeiro turno. Você compra uma carta no começo do seu.', 'The opponent plays the first turn. You draw a card at the start of yours.')}</p>
         </div>
-        <button class="btn primary big" onclick={() => (intro = 'hand')}>{L('Ver a minha mão inicial', 'See my opening hand')}</button>
+        <button class="btn primary big" onclick={() => { intro = 'hand'; tutorial.emit('opening'); }}>{L('Ver a minha mão inicial', 'See my opening hand')}</button>
       </div>
     {:else if intro === 'hand' && g.setup}
       <div class="intro hand-intro" in:fade={{ duration: 200 }}>
@@ -1728,7 +1851,22 @@
   </div>
 {/if}
 
+{#if step === 'play'}<AbilityEffects />{/if}
+
+<Coach area="solo" lessons={LESSONS.solo} active={!fixed && step === 'heroes'} />
+<Coach area="placement" lessons={LESSONS.placement} active={training && step === 'place'} />
+<Coach area="initiative" lessons={LESSONS.initiative} active={training && intro === 'who'} />
+<Coach area="opening" lessons={LESSONS.opening} active={training && intro === 'hand'} />
+<Coach area="reaction" lessons={LESSONS.reaction} active={training && awaiting && !fxPlaying && !intro && !menuOpen} />
+<Coach area="level" lessons={LESSONS.level} active={training && !!g && !!g.players[me].pendingLevels && !fxPlaying && !g?.pending && !intro && g?.active === me && !menuOpen} />
+<Coach area="battle" lessons={LESSONS.battle} active={training && !!g && !intro && myTurn && !g.players[me].pendingLevels && !menuOpen && !helpOpen && !ui.ask && g.winner === undefined} />
+
 <style>
+  .turn-guide { padding: 9px 10px; margin-bottom: 5px; background: rgb(8 7 17 / .94); border: 1px solid rgb(227 181 102 / .32); border-radius: 8px; color: var(--text-2); }
+  .turn-guide b { font-size: 12px; color: var(--accent-2); }
+  .turn-guide p { margin: 5px 0; font-size: 11px; line-height: 1.45; max-width: 170px; }
+  .turn-guide button { display: inline-flex; align-items: center; gap: 5px; background: none; border: 0; padding: 3px 0; color: var(--accent-2); cursor: pointer; font: inherit; font-size: 11px; }
+
   /* ───── seleção de heróis ───── */
   .pick-wrap { height: 100%; display: flex; flex-direction: column; }
   .pick-screen { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 22px 28px 20px; position: relative;
@@ -1838,13 +1976,16 @@
   .place-help { align-items: center; }
   .place-help p { color: var(--muted); font-size: 13px; text-align: center; max-width: 520px; }
 
+  .training-done { position: absolute; top: 54px; right: 16px; z-index: 20; }
   /* ───── mesa ───── */
   .table { --edge: clamp(14px, 4.2vw, 96px); --row: clamp(64px, 9.4vh, 150px); --zone: clamp(52px, 7.2vh, 120px); --hand: clamp(110px, 22vh, 300px);
     height: 100%; display: grid; grid-template-columns: 1fr; min-height: 0; position: relative; }
   .main { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: 5px; padding: 8px 14px 10px; min-height: 0; overflow: hidden;
     background: radial-gradient(ellipse at 50% 50%, #241e1a 0%, #100e0c 70%); }
   /* cenário: a imagem em pixel art por baixo e um escurecido por cima (mais forte em cima e embaixo, onde ficam mão e barras) */
-  .main.scenic::before { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--scene) center / cover no-repeat; image-rendering: pixelated; }
+  .main.scenic::before { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--scene) center / cover no-repeat; image-rendering: pixelated;  }
+  .main.scenic.isometric::before { display: none; }
+  .main.scenic.isometric::after { display: none; }
   .main.scenic::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background: linear-gradient(180deg, rgb(8 6 5 / .82) 0%, rgb(8 6 5 / .34) 20%, rgb(8 6 5 / .22) 48%, rgb(8 6 5 / .4) 66%, rgb(8 6 5 / .9) 100%), radial-gradient(ellipse at 50% 46%, transparent 40%, rgb(0 0 0 / .5) 100%); }
 
@@ -2264,4 +2405,37 @@
   .gc:hover { transform: scale(1.04); }
   .lv { display: flex; gap: 8px; flex-wrap: wrap; }
   @media (max-width: 1100px) { .vs-wrap { grid-template-columns: 1fr; } .vs-mid { width: auto; } .showcase { flex-direction: column !important; } .sc-pic { width: min(240px, 70%); } }
+  .isometric .slot:not(.off) { pointer-events: none; overflow: visible; border-radius: 0; box-shadow: none; }
+  .isometric .slot:not(.off)::before { display: none; }
+  /* Restrict targeting to the projected floor, so overlapping rectangular hitboxes
+     cannot capture a click meant for the neighbouring tile. */
+  .isometric .slot:not(.off)::after { content: ''; position: absolute; inset: 34% 0 -14%; clip-path: polygon(50% 6%, 99% 43%, 50% 88%, 1% 43%); pointer-events: auto; z-index: 2; }
+  .isometric .slot:not(.off) .doll, .isometric .slot:not(.off) .unit { pointer-events: auto; }
+  .isometric .slot:not(.off).hero, .slot:not(.off).target, .slot:not(.off).selected { box-shadow: none; animation: none; }
+  .isometric .slot:not(.off):hover :global(.tile-ground .surface) { stroke: #ead9a6; stroke-width: 2.5; }
+  .isometric .slot:not(.off).target :global(.tile-ground), .slot:not(.off).selected :global(.tile-ground) { filter: drop-shadow(0 0 4px rgb(240 196 90 / .55)); }
+  .isometric .slot:not(.off).target :global(.surface) { stroke: #f0c45a; stroke-width: 3; }
+  .isometric .slot:not(.off).selected :global(.surface) { stroke: #7fb0ff; stroke-width: 3; }
+  .isometric .slot:not(.off) .doll { bottom: calc(31% - 16px); z-index: 1; }
+  .isometric .slot:not(.off) .unit { position: absolute; top: 88%; padding: 2px 6px; border-radius: 5px; background: rgb(17 28 30 / .82); z-index: 3; }
+  .isometric .slot:not(.off) .empty { position: absolute; top: 75%; z-index: 1; font-size: 9px; text-shadow: 0 1px 2px #142323; }
+  .isometric .slot:not(.off) .strike-tag { top: 122%; bottom: auto; z-index: 4; }
+  /* Orthographic projection: columns advance right/down; rows advance left/down.
+     Sprites and labels remain upright; only their world positions are projected. */
+  .isometric .rows { gap: 0; width: calc(var(--row) * 3.35); padding-bottom: calc(var(--row) * 1.02); }
+  .isometric .row { grid-template-columns: repeat(var(--cols, 3), calc(var(--row) * .70)); gap: 0; width: calc(var(--row) * 2.8); height: calc(var(--row) * .34); margin-left: calc(var(--row) * .70); }
+  .isometric .row + .row { margin-left: 0; }
+  .isometric .rows .row { align-self: flex-start; }
+  .isometric .side-field > .row { position: relative; left: calc(var(--row) * .35); margin-left: 0; }
+  .isometric .side-field > .row + .row { left: calc(var(--row) * -.35); }
+  .isometric .row .slot { width: calc(var(--row) * 1.35); }
+  .isometric .row .slot:nth-child(2) { translate: 0 calc(var(--row) * .32); z-index: 4; }
+  .isometric .row .slot:nth-child(3) { translate: 0 calc(var(--row) * .64); z-index: 5; }
+  .isometric .row + .row .slot { z-index: 6; }
+  .isometric .row + .row .slot:nth-child(2) { z-index: 7; }
+  .isometric .row + .row .slot:nth-child(3) { z-index: 8; }
+  .isometric .row .slot:has(.doll) { z-index: 20 !important; }
+  .isometric .side-field { gap: 10px; }
+  .isometric .side-field > .row:last-of-type { margin-bottom: calc(var(--row) * 1.02); }
+  .isometric .slot:not(.off).bossfig { z-index: 3; }
 </style>

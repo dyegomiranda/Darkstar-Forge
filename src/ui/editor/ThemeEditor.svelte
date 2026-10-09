@@ -6,6 +6,8 @@
   fica. Nada é gravado até "Aplicar".
 -->
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { onDestroy } from 'svelte';
   import { ArrowLeft, ChevronLeft, ChevronRight, Undo2, Redo2, RotateCcw, Check } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
@@ -84,7 +86,7 @@
     <button class="btn" onclick={() => router.library(deckId)}>{L('Voltar à biblioteca', 'Back to library')}</button>
   </div>
 {:else}
-  <div class="editor">
+  <div data-tutorial="theme-editor" class="editor">
     <header class="bar">
       <button class="btn ghost icon" title={L('Voltar à biblioteca', 'Back to library')} onclick={() => router.library(scope === 'deck' ? deck.id : undefined)}><ArrowLeft size={18} /></button>
       <div class="crumb">
@@ -99,7 +101,7 @@
         <span class="dirty">{L('Não aplicado', 'Not applied')}</span>
         <button class="btn sm" onclick={() => ed.discard()}><RotateCcw size={15} /> {L('Descartar', 'Discard')}</button>
       {/if}
-      <button class="btn sm primary" disabled={!ed.dirty && scope !== 'collection'} onclick={apply}><Check size={15} />
+      <button data-tutorial="theme-apply" class="btn sm primary" disabled={!ed.dirty && scope !== 'collection'} onclick={apply}><Check size={15} />
         {scope === 'deck' ? L(`Aplicar ao deck (${count} cartas)`, `Apply to deck (${count} cards)`) : L(`Aplicar à coleção (${count} cartas)`, `Apply to collection (${count} cards)`)}</button>
     </header>
 
@@ -136,6 +138,8 @@
     </div>
   </div>
 {/if}
+
+<Coach area="theme" lessons={LESSONS.theme} />
 
 <style>
   .missing { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--muted); }

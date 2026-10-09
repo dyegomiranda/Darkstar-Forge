@@ -1,0 +1,75 @@
+{
+  "original_geometric_vertices": 480382,
+  "converted_geometric_vertices": 480382,
+  "original_triangles": 961086,
+  "converted_triangles": 961086,
+  "same_triangle_count": true,
+  "original_components_count": 1,
+  "largest_components": [
+    {
+      "welded_vertices": 480382,
+      "triangles": 961086,
+      "min": [
+        -0.5506150126457214,
+        -1.0,
+        -0.6640220284461975
+      ],
+      "max": [
+        0.5506150126457214,
+        1.0,
+        0.6640220284461975
+      ]
+    }
+  ],
+  "original_boundary_edges": 0,
+  "original_edges_more_than_two_faces": 465,
+  "original_total_welded_edges": 1441164,
+  "original_euler_characteristic": 304,
+  "source_bounds": {
+    "min": [
+      -0.5506149530410767,
+      -1.0,
+      -0.6640217304229736
+    ],
+    "max": [
+      0.5506149530410767,
+      1.0,
+      0.6640217304229736
+    ]
+  },
+  "converted_bounds": {
+    "min": [
+      -0.5506149530410767,
+      -1.0,
+      -0.6640217304229736
+    ],
+    "max": [
+      0.5506149530410767,
+      1.0,
+      0.6640217304229736
+    ]
+  },
+  "note": "All position statistics are local mesh coordinates; original glTF node scale is 0.5.",
+  "geometry_equivalence_checks": [
+    {
+      "decimals": 3,
+      "same_quantized_unique_vertices": true,
+      "same_quantized_triangle_topology": true
+    },
+    {
+      "decimals": 4,
+      "same_quantized_unique_vertices": true,
+      "same_quantized_triangle_topology": true
+    },
+    {
+      "decimals": 5,
+      "same_quantized_unique_vertices": true,
+      "same_quantized_triangle_topology": true
+    },
+    {
+      "decimals": 6,
+      "same_quantized_unique_vertices": true,
+      "same_quantized_triangle_topology": true
+    }
+  ]
+}

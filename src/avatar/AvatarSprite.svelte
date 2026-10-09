@@ -4,22 +4,26 @@
   Animações que não repetem (`loop` falso) param no último quadro e avisam em `onend`.
 -->
 <script lang="ts">
-  import { compose, DIRS, FX_COLORS, LPC, type Anim, type Avatar, type Dir, type Sheet } from './lpc';
+  import { untrack } from 'svelte';
+  import { frameForDistance } from './walk';
+  import { ANIMATION_FPS as FPS } from './animation';
+  import { directionRow, type Facing } from './direction';
+  import { compose, FX_COLORS, LPC, type Anim, type Avatar, type Sheet } from './lpc';
 
-  let { avatar, anim = 'idle', dir = 's', scale = 2, loop = true, shadow = true, speed = 1, onend }: {
-    avatar: Avatar; anim?: Anim; dir?: Dir; scale?: number; loop?: boolean; shadow?: boolean; /** Multiplica a velocidade da animação (1 = normal). */ speed?: number; onend?: () => void;
+  let { avatar, anim = 'idle', dir = 's', scale = 2, loop = true, shadow = true, speed = 1, travel, renderMode = 'auto', onend }: {
+    avatar: Avatar; renderMode?: 'auto' | 'layered'; anim?: Anim; dir?: Facing; scale?: number; loop?: boolean; shadow?: boolean; /** Multiplica a velocidade da animação (1 = normal). */ speed?: number; /** Distância percorrida no mundo: sincroniza o passo aos pés. */ travel?: number; onend?: () => void;
   } = $props();
 
-  const FPS: Record<Anim, number> = { idle: 1.6, walk: 10, slash: 13, thrust: 13, shoot: 14, spellcast: 11, hurt: 9 };
   let canvas = $state<HTMLCanvasElement>();
   let sheet = $state<Sheet | null>(null);
   let frame = 0;
+  let loadedAnim = $state<Anim>('idle');
 
   // troca de boneco ou de animação: carrega a folha e recomeça
   $effect(() => {
-    const a = anim, key = JSON.stringify(avatar);
+    const a = anim, key = JSON.stringify(avatar), mode = renderMode;
     let alive = true;
-    void compose(JSON.parse(key) as Avatar, a).then((s) => { if (alive) { frame = 0; sheet = s; } });
+    void compose(JSON.parse(key) as Avatar, a, mode).then((s) => { if (alive) { frame = 0; loadedAnim = a; sheet = s; } }).catch(() => { if (alive) { sheet = null; canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height); } });
     return () => { alive = false; };
   });
 
@@ -29,7 +33,7 @@
     const ctx = canvas.getContext('2d')!;
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, s.size, s.size);
-    const row = s.rows === 1 ? 0 : DIRS.indexOf(dir);
+    const row = s.rows === 1 ? 0 : directionRow(dir, s.directions);
     ctx.drawImage(s.canvas, f * s.size, row * s.size, s.size, s.size, 0, 0, s.size, s.size);
     if (s.glow) {
       // os veios de brasa respiram: acendem e apagam devagar, com um tremor curto por cima
@@ -113,25 +117,42 @@
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  // A direção muda sem reiniciar o relógio nem repetir o callback de fim.
+  $effect(() => { const s = sheet, a = anim, loaded = loadedAnim; void dir; const distance = travel; if (s && loaded === a) untrack(() => { if (anim === 'walk' && distance !== undefined) frame = s.frames === 9 && !s.directions ? 1 + frameForDistance(distance, 8, 80) : frameForDistance(distance, s.frames, s.frames > 4 ? 80 : 40); draw(s, Math.min(frame, s.frames - 1)); }); });
   $effect(() => {
-    const s = sheet, a = anim, repeat = loop;
-    void dir;
-    if (!s) return;
-    draw(s, Math.min(frame, s.frames - 1));
-    const timer = setInterval(() => {
-      if (frame + 1 >= s.frames) {
-        if (!repeat) { clearInterval(timer); onend?.(); return; }
-        frame = 0;
-      } else frame++;
-      draw(s, frame);
-    }, 1000 / (FPS[a] * speed));
-    // o efeito mágico tem o seu próprio ritmo (mexe mesmo com o boneco parado)
-    const glow = s.fx || s.glow ? setInterval(() => draw(s, Math.min(frame, s.frames - 1)), 75) : undefined;
-    return () => { clearInterval(timer); clearInterval(glow); };
+    const s = sheet, a = anim, repeat = loop, rate = Math.max(0.1, Number.isFinite(speed) ? speed : 1);
+    if (!s || loadedAnim !== a || (a === 'walk' && travel !== undefined)) return;
+    const interval = 1000 / (FPS[a] * rate);
+    let previous = performance.now(), elapsed = 0, glowElapsed = 0, completed = false, raf = 0;
+    untrack(() => draw(s, Math.min(frame, s.frames - 1)));
+    function tick(now: number) {
+      const dt = document.hidden ? 0 : Math.min(100, now - previous);
+      previous = now;
+      let changed = false;
+      if (!completed) {
+        elapsed += dt;
+        while (elapsed >= interval) {
+          elapsed -= interval;
+          if (frame + 1 >= s!.frames) {
+            if (!repeat) { completed = true; onend?.(); break; }
+            frame = 0;
+          } else frame++;
+          changed = true;
+        }
+      }
+      glowElapsed += dt;
+      if (changed || ((s!.fx || s!.glow) && glowElapsed >= 75)) {
+        draw(s!, Math.min(frame, s!.frames - 1)); glowElapsed = 0;
+      }
+      if (!completed || s!.fx || s!.glow) raf = requestAnimationFrame(tick);
+    }
+    if (repeat && s.frames === 1 && !s.fx && !s.glow) return;
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   });
 
   const box = $derived(LPC.frame * scale);
-  const big = $derived((sheet?.size ?? LPC.frame) * scale);
+  const big = $derived((sheet?.size ?? LPC.frame) * scale / (sheet?.density ?? 1));
 </script>
 
 <span class="av" style="width:{box}px;height:{box}px">

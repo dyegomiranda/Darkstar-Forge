@@ -1,3 +1,4 @@
+import { withoutPathfinder } from '../model/retireCollection';
 /**
  * Estado do projeto na memória + salvamento.
  *
@@ -6,7 +7,7 @@
  * - Editar uma carta trabalha numa cópia; só "Salvar" (ou autossalvar) aplica.
  */
 import { applyScoring } from '../model/scoring';
-import { editionDecks, OLD_EDITION_ID, PF_ID, pfCollection, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
+import { editionDecks, OLD_EDITION_ID, presetHeroes, PROTO_ID, protoCollection, seedProject } from '../model/seed';
 import { newId } from '../model/id';
 import { syncLook } from '../model/lookPaths';
 import { MAX_COPIES, ownedCopies } from '../model/builds';
@@ -18,7 +19,7 @@ import { upgradeHero } from '../model/hero';
 import { PROJECT_VERSION, type Build, type Card, type ColorId, type Deck, type Lang, type Project, type ResourceId } from '../model/types';
 import * as store from './db';
 import { PRESET_AVATARS } from '../avatar/presets';
-import { importImage } from './media';
+import { withPrototypeArt } from '../render/reworkArt';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -43,7 +44,11 @@ class ProjectState {
   get lang(): Lang { return this.project?.lang ?? 'pt-BR'; }
 
   async load(): Promise<void> {
-    const { project, cards } = await store.loadAll();
+    let { project, cards } = await store.loadAll();
+    if (project && (project.editions.some(e => e.id === 'pf1') || cards.some(c => c.deckId.startsWith('pf-')))) {
+      await store.retirePathfinder();
+      ({ project, cards } = await store.loadAll());
+    }
     if (project) {
       this.project = project;
       this.cards = Object.fromEntries(cards.map((c) => [c.id, normalizeCard(c)]));
@@ -61,35 +66,20 @@ class ProjectState {
     try { last = localStorage.getItem(LAST_EDITION) ?? ''; } catch { /* sem armazenamento local */ }
     const eds = this.project!.editions;
     this.editionId = eds.some((e) => e.id === last) ? last : eds[0]?.id ?? '';
+    this.#addProtoArt();
+    await this.flush();
     this.ready = true;
-    void this.#addProtoArt();
   }
 
-  /**
-   * Artes em pixel art das cartas do Protótipo (vêm junto com o app, em art/proto/).
-   * Só entram em cartas que ainda não têm imagem; roda uma vez.
-   */
-  async #addProtoArt(): Promise<void> {
-    const MARK = 'proto-art-5';
-    const p = this.project!;
-    if (p.seeded?.includes(MARK)) return;
-    const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const cache = new Map<string, string | null>();
+  /** Substitui as artes antigas do catálogo Protótipo, uma vez por projeto. */
+  #addProtoArt(): void {
+    const MARK = 'proto-art-rework-2';
+    if (this.project!.seeded?.includes(MARK)) return;
     for (const c of Object.values(this.cards)) {
-      if (!c.game || !c.deckId.startsWith('proto-') || c.art.mediaId) continue;
-      const key = slug(c.text['en-US'].name);
-      if (!cache.has(key)) {
-        try {
-          const r = await fetch(new URL(`art/proto/${key}.webp`, document.baseURI));
-          cache.set(key, r.ok ? await importImage(await r.blob(), `${key}.webp`) : null);
-        } catch { cache.set(key, null); }
-      }
-      const id = cache.get(key);
-      if (!id) continue;
-      this.putCard({ ...this.cards[c.id], art: { ...c.art, mediaId: id, zoom: 1, x: 0, y: 0 } });
+      const updated = withPrototypeArt(c);
+      if (updated !== c) this.putCard(updated);
     }
-    // só marca como feito quando todas as artes existem (enquanto o conjunto estiver incompleto, tenta de novo ao abrir)
-    if (cache.size && ![...cache.values()].some((v) => v === null)) this.updateProject((pr) => { pr.seeded = [...(pr.seeded ?? []), MARK]; });
+    this.updateProject((pr) => { pr.seeded = [...(pr.seeded ?? []), MARK]; });
   }
 
   /** Projeto de versão antiga: regrava as cartas já convertidas (custo em lista). */
@@ -109,7 +99,7 @@ class ProjectState {
   #addMissingCollections(): void {
     const p = this.project!;
     let changed = false;
-    for (const [id, make] of [[PF_ID, pfCollection], [PROTO_ID, protoCollection]] as const) {
+    for (const [id, make] of [[PROTO_ID, protoCollection]] as const) {
       if (p.seeded?.includes(id)) continue;
       p.seeded = [...(p.seeded ?? []), id];
       changed = true;
@@ -416,6 +406,7 @@ class ProjectState {
     const c = applyScoring($state.snapshot(card) as Card);
     c.updatedAt = Date.now();
     this.cards[c.id] = c;
+    this.#deletedCards.delete(c.id);
     this.#dirtyCards.add(c.id);
     this.#schedule();
   }
@@ -425,6 +416,7 @@ class ProjectState {
       const c = applyScoring($state.snapshot(card) as Card);
       c.updatedAt = Date.now();
       this.cards[c.id] = c;
+      this.#deletedCards.delete(c.id);
       this.#dirtyCards.add(c.id);
     }
     this.#schedule();
@@ -512,19 +504,22 @@ class ProjectState {
     this.#schedule();
   }
 
-  async replaceAll(project: Project, cards: Card[]): Promise<void> {
-    cards = cards.map(normalizeCard);
+  async replaceAll(project: Project, cards: Card[], media: store.MediaRow[] = []): Promise<void> {
+    const retired = withoutPathfinder(project, cards);
+    project = retired.project;
+    cards = retired.cards.map(normalizeCard);
+    media = media.filter(row => !retired.mediaIds.has(row.id));
     project.version = PROJECT_VERSION;
     await this.flush();
-    await store.wipe();
-    await store.saveProject(project);
-    await store.saveCards(cards);
+    if (this.hasPending) throw new Error(this.saveError || 'Há alterações que ainda não puderam ser salvas.');
+    await store.replaceProject(project, cards, media);
     this.project = project;
     this.cards = Object.fromEntries(cards.map((c) => [c.id, c]));
     if (!project.editions.some((e) => e.id === this.editionId)) this.editionId = project.editions[0]?.id ?? '';
     // backup de uma versão anterior do programa: passa pelas mesmas atualizações de quando o app abre
     // (estilos que saíram, equipamento em cartas, coleções novas…)
     this.#addMissingCollections();
+    this.#addProtoArt();
     await this.flush();
   }
 
@@ -559,15 +554,16 @@ class ProjectState {
     this.#projectDirty = false;
     try {
       const cards = ids.map((id) => this.cards[id]).filter(Boolean).map((c) => $state.snapshot(c) as Card);
+      const project = proj && this.project ? $state.snapshot(this.project) as Project : null;
       if (cards.length) await store.saveCards(cards);
       if (del.length) await store.deleteCards(del);
-      if (proj && this.project) await store.saveProject($state.snapshot(this.project) as Project);
-      this.saveState = 'saved';
+      if (project) await store.saveProject(project);
+      this.saveState = this.hasPending ? 'saving' : 'saved';
       this.saveError = '';
     } catch (e) {
       // devolve à fila para tentar de novo na próxima alteração/fechamento
-      ids.forEach((id) => this.#dirtyCards.add(id));
-      del.forEach((id) => this.#deletedCards.add(id));
+      ids.forEach((id) => { if (this.cards[id] && !this.#deletedCards.has(id)) this.#dirtyCards.add(id); });
+      del.forEach((id) => { if (!this.cards[id]) this.#deletedCards.add(id); });
       if (proj) this.#projectDirty = true;
       this.saveState = 'error';
       this.saveError = e instanceof Error ? e.message : String(e);

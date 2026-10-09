@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "origin": "User-supplied Djabo logo",
+  "body": {
+    "vertices": 54880,
+    "triangles": 109996,
+    "clips": [
+      "Andar",
+      "Conjurar",
+      "Correr",
+      "Dano",
+      "Golpe",
+      "Guarda",
+      "Morte",
+      "Parado"
+    ]
+  },
+  "weapon": {
+    "triangles": 13979,
+    "grip": [
+      0,
+      0,
+      0
+    ],
+    "axis": "Y",
+    "blade_material": "black steel; purple aura separate"
+  },
+  "vfx": "separate runtime shaders and world-space blade trail",
+  "review": "not yet approved"
+}

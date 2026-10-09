@@ -18,6 +18,8 @@ export type RarityId = 'common' | 'uncommon' | 'rare' | 'unique';
 export interface CardText { name: string; type: string; subtype: string; rules: string; flavor: string }
 
 export interface CardArt {
+  /** Arte distribuída com o jogo; usada quando não há mídia personalizada. */
+  asset?: string;
   /** Imagem guardada no banco de mídia (id = hash do conteúdo). */
   mediaId?: string;
   /** Zoom (1 = cobre a carta). */
@@ -35,6 +37,8 @@ export interface CostPart { resource: ResourceId; amount: number; show?: 'number
 
 /** Bônus de uma carta de equipamento. `weapon` = é uma arma: define o dano e o tipo do golpe do herói. */
 export interface CardGear {
+  /** Camadas visuais da peça, independentes de seus bônus. Objeto vazio = sem sprite. */
+  appearance?: Partial<Record<import('../avatar/lpc').SlotId, import('../avatar/lpc').Part>>;
   armor?: number;
   resist?: number;
   hp?: number;
@@ -150,6 +154,8 @@ export interface Character {
   play?: import('../game/types').HeroBase;
   /** Boneco em pixel art montado no criador (peças do LPC): vira a miniatura animada e o retrato. */
   avatar?: import('../avatar/lpc').Avatar;
+  /** Padrão falso: mantém a aparência escolhida. */
+  showEquipped?: boolean;
   /** Herói pronto do Protótipo (usa o retrato que vem com o app enquanto não houver outro). */
   preset?: string;
   /** Figura pronta (imagem) no lugar do boneco de peças: os chefes da Jornada. */

@@ -4,7 +4,7 @@
  * backup completo (ZIP com projeto + cartas + imagens) e planilha CSV.
  */
 import { strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
-import { appendBezierCurve, clip, closePath, degrees, endPath, lineTo, moveTo, PDFDocument, popGraphicsState, pushGraphicsState, rgb, type PDFImage, type PDFPage } from 'pdf-lib';
+import type { PDFImage, PDFPage } from 'pdf-lib';
 import { composeBack } from '../render/back';
 import { backInput, ensureBackMedia } from '../ui/back/backCtx';
 import { L } from '../app/i18n.svelte';
@@ -15,7 +15,7 @@ import { PROJECT_VERSION, type Card, type Project } from '../model/types';
 import { cardInput } from '../render/card';
 import { compose } from '../render/compose';
 import { rasterize } from '../render/raster';
-import { getMedia, listMedia, putMedia } from '../store/db';
+import { getMedia, listMedia, type MediaRow } from '../store/db';
 import { app } from '../store/project.svelte';
 import { ctxFor, ensureCardMedia } from '../ui/common/cardCtx';
 
@@ -29,7 +29,8 @@ const RADIUS_MM = 3;
  * Desenha a imagem da carta recortada no formato da carta (cantos arredondados):
  * fora dos cantos fica o branco do papel. `turn` = girar 180° (verso virado pela borda curta).
  */
-function drawCard(page: PDFPage, img: PDFImage, x: number, y: number, w: number, h: number, turn = false, guide = false): void {
+function drawCard(page: PDFPage, img: PDFImage, x: number, y: number, w: number, h: number, turn: boolean, guide: boolean, lib: typeof import('pdf-lib')): void {
+  const { appendBezierCurve, clip, closePath, degrees, endPath, lineTo, moveTo, popGraphicsState, pushGraphicsState, rgb } = lib;
   const r = RADIUS_MM * MM, k = r * 0.5523;
   page.pushOperators(
     pushGraphicsState(),
@@ -142,7 +143,9 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
   const fronts = o.backs === 'only' ? [] : await withProgress(L('Preparando o PDF…', 'Preparing PDF…'), cards as Card[],
     async (c) => new Uint8Array(await (await cardBlob(c, 1500, 'image/jpeg', 0.93)).arrayBuffer()));
   if (!fronts) return;
-  const pdf = await PDFDocument.create();
+  // A biblioteca de impressão só é carregada quando alguém exporta um PDF.
+  const lib = await import('pdf-lib');
+  const pdf = await lib.PDFDocument.create();
   const cw = CARD_MM.w * MM, ch = CARD_MM.h * MM;
   // cada carta leva o verso da SUA coleção (sem carta = coleção aberta); cada verso é desenhado uma vez só
   const edOf = (c: Card | null) => (c ? app.deck(c.deckId)?.editionId : undefined) ?? app.editionId;
@@ -155,9 +158,9 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
 
   if (o.layout === 'single') {
     for (let i = 0; i < n; i++) {
-      if (o.backs !== 'only') drawCard(pdf.addPage([cw, ch]), await pdf.embedJpg(fronts[i]), 0, 0, cw, ch);
+      if (o.backs !== 'only') drawCard(pdf.addPage([cw, ch]), await pdf.embedJpg(fronts[i]), 0, 0, cw, ch, false, false, lib);
       const bk = backImg(i);
-      if (bk) drawCard(pdf.addPage([cw, ch]), bk, 0, 0, cw, ch);
+      if (bk) drawCard(pdf.addPage([cw, ch]), bk, 0, 0, cw, ch, false, false, lib);
     }
   } else {
     const ox = (A4.w - (3 * cw + 2 * GAP)) / 2, oy = (A4.h - (3 * ch + 2 * GAP)) / 2;
@@ -168,9 +171,9 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
         const page = pdf.addPage([A4.w, A4.h]);
         for (let k = 0; k < count; k++) {
           const p = at(k % 3, Math.floor(k / 3));
-          drawCard(page, await pdf.embedJpg(fronts[i + k]), p.x, p.y, cw, ch, false, true);
+          drawCard(page, await pdf.embedJpg(fronts[i + k]), p.x, p.y, cw, ch, false, true, lib);
         }
-        cropMarks(page, ox, oy, cw, ch);
+        cropMarks(page, ox, oy, cw, ch, lib);
       }
       if (backs.size) {
         // o verso de cada carta tem de cair exatamente atrás dela quando a folha é virada:
@@ -182,9 +185,9 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
           else row = 2 - row;
           const p = at(col, row);
           const bk = backImg(i + k)!;
-          drawCard(page, bk, p.x, p.y, cw, ch, o.flip === 'short', true);
+          drawCard(page, bk, p.x, p.y, cw, ch, o.flip === 'short', true, lib);
         }
-        cropMarks(page, ox, oy, cw, ch);
+        cropMarks(page, ox, oy, cw, ch, lib);
       }
     }
   }
@@ -194,7 +197,8 @@ async function buildPdf(cards: (Card | null)[], o: PdfOptions): Promise<void> {
 }
 
 /** Marcas de corte: prolongam as bordas de cada carta para fora da grade. */
-function cropMarks(page: PDFPage, ox: number, oy: number, cw: number, ch: number): void {
+function cropMarks(page: PDFPage, ox: number, oy: number, cw: number, ch: number, lib: typeof import('pdf-lib')): void {
+  const { rgb } = lib;
   const mark = (x1: number, y1: number, x2: number, y2: number) =>
     page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 0.4, color: rgb(0.35, 0.35, 0.35) });
   const len = 5 * MM, off = 1.5 * MM;
@@ -243,14 +247,23 @@ export async function importBackup(file: File): Promise<void> {
     const dec = new TextDecoder();
     const project = JSON.parse(dec.decode(z['project.json'])) as Project;
     const cards = JSON.parse(dec.decode(z['cards.json'])) as Card[];
-    if (!project || !Array.isArray(cards) || (project.version ?? 0) > PROJECT_VERSION) throw new Error(L('Arquivo de backup inválido ou de versão mais nova.', 'Invalid or newer backup file.'));
-    await app.replaceAll(project, cards);
+    if (!project || typeof project.name !== 'string' || !['pt-BR', 'en-US'].includes(project.lang)
+      || !Array.isArray(project.editions) || !project.editions.length || !Array.isArray(project.decks)
+      || !Array.isArray(project.characters) || !Array.isArray(cards) || (project.version ?? 0) > PROJECT_VERSION)
+      throw new Error(L('Arquivo de backup inválido ou de versão mais nova.', 'Invalid or newer backup file.'));
+    // Valida e prepara toda a mídia antes de substituir qualquer dado atual.
+    const media: MediaRow[] = [];
     for (const [path, bytes] of Object.entries(z)) {
-      const m = path.match(/^media\/([0-9a-f]+)$/);
+      const m = path.match(/^media\/([0-9a-f]{40})$/);
       if (!m) continue;
       const meta = z[`${path}.json`] ? JSON.parse(dec.decode(z[`${path}.json`])) : { name: '', type: 'image/png' };
-      await putMedia(new Blob([bytes], { type: meta.type }), meta.name);
+      if (!meta || typeof meta.name !== 'string' || typeof meta.type !== 'string') throw new Error(L('Metadados de mídia inválidos.', 'Invalid media metadata.'));
+      const digest = await crypto.subtle.digest('SHA-1', bytes as Uint8Array<ArrayBuffer>);
+      const id = [...new Uint8Array(digest)].map((n) => n.toString(16).padStart(2, '0')).join('');
+      if (id !== m[1]) throw new Error(L('Uma imagem do backup está corrompida.', 'An image in the backup is corrupted.'));
+      media.push({ id, blob: new Blob([bytes as Uint8Array<ArrayBuffer>], { type: meta.type }), name: meta.name, type: meta.type, addedAt: Date.now() });
     }
+    await app.replaceAll(project, cards, media);
     ui.toast(L('Backup restaurado', 'Backup restored'));
   } catch (e) {
     ui.toast(e instanceof Error ? e.message : String(e), 'error', 6000);

@@ -1,7 +1,7 @@
 /**
  * Cenários do campo de batalha. Cada um tem a imagem de fundo (public/cenarios,
- * gerada por tools/comfyui/gerar_cenarios.py). As casas do campo são uma área
- * escura e transparente por cima do cenário (veja Game.svelte).
+ * gerada e revisada em tools/art/). A área central fica livre; as casas
+ * são piso projetado no próprio campo, com os pés das figuras ancorados nele.
  */
 export interface Scene {
   id: string;
@@ -11,6 +11,7 @@ export interface Scene {
 }
 
 export const SCENES: Scene[] = [
+  { id: 'santuario', name: ['Santuário do Sol Velado', 'Sanctuary of the Veiled Sun'], img: 'cenarios/santuario.png' },
   { id: 'floresta', name: ['Floresta', 'Forest'], img: 'cenarios/floresta.webp' },
   { id: 'campo', name: ['Campo aberto', 'Open plains'], img: 'cenarios/campo.webp' },
   { id: 'vulcao', name: ['Vulcão', 'Volcano'], img: 'cenarios/vulcao.webp' },

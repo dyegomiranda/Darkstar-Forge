@@ -1,0 +1,508 @@
+[
+  {
+    "file": "tools/art/warrior-base-assessment-20261008/source/original-pool2640.glb",
+    "bytes": 34026084,
+    "sha256": "0e6f0d98517481adfb50087d54ea19f36711fb1be529ef2c5b9a01b34cdaa3a8",
+    "asset": {
+      "generator": "glTF-Transform v4.5.1",
+      "version": "2.0"
+    },
+    "extensionsUsed": [],
+    "nodes": [
+      {
+        "name": "tripo_node_41caa145-61de-4440-b59d-c111cc9aee5e",
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "tripo_material_41caa145-61de-4440-b59d-c111cc9aee5e",
+        "pbrMetallicRoughness": {
+          "baseColorTexture": {
+            "index": 0
+          },
+          "metallicRoughnessTexture": {
+            "index": 2
+          }
+        },
+        "normalTexture": {
+          "index": 1
+        }
+      }
+    ],
+    "images": [
+      {
+        "name": "Color_41caa145-61de-4440-b59d-c111cc9aee5e",
+        "mimeType": "image/png",
+        "bufferView": 0
+      },
+      {
+        "name": "ORM_41caa145-61de-4440-b59d-c111cc9aee5e",
+        "mimeType": "image/png",
+        "bufferView": 1
+      },
+      {
+        "name": "NormalGL_41caa145-61de-4440-b59d-c111cc9aee5e",
+        "mimeType": "image/png",
+        "bufferView": 2
+      }
+    ],
+    "skins_count": 0,
+    "animations_count": 0,
+    "meshes": [
+      {
+        "name": null,
+        "primitives": [
+          {
+            "vertices": 500698,
+            "index_count": 2883258,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TEXCOORD_0"
+            ],
+            "bounds": {
+              "min": [
+                -0.5506149530410767,
+                -1,
+                -0.6640217304229736
+              ],
+              "max": [
+                0.5506149530410767,
+                1,
+                0.6640217304229736
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "/home/djabo/Downloads/chibi_armored_warrior_-_tripo_3d_vs_supavoxel.glb",
+    "bytes": 55133612,
+    "sha256": "a2ae00d374b620d309909d436196a9d4c622b3760277e643b2812d2e017cf8b4",
+    "asset": {
+      "extras": {
+        "author": "Elif Romero (https://sketchfab.com/elifromero)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/chibi-armored-warrior-tripo-3d-vs-supavoxel-29198cd4cc294249b9dee8aa8299f828",
+        "title": "Chibi Armored Warrior - Tripo 3D vs SupaVoxel"
+      },
+      "generator": "Sketchfab-0.13.0",
+      "version": "2.0"
+    },
+    "extensionsUsed": [],
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "Sketchfab_model"
+      },
+      {
+        "children": [
+          2
+        ],
+        "name": "root"
+      },
+      {
+        "children": [
+          3
+        ],
+        "name": "GLTF_SceneRootNode"
+      },
+      {
+        "children": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "name": "tripo_node_41caa145-61de-4440-b59d-c111cc9aee5e_0"
+      },
+      {
+        "mesh": 0,
+        "name": "Object_4"
+      },
+      {
+        "mesh": 1,
+        "name": "Object_5"
+      },
+      {
+        "mesh": 2,
+        "name": "Object_6"
+      },
+      {
+        "mesh": 3,
+        "name": "Object_7"
+      },
+      {
+        "mesh": 4,
+        "name": "Object_8"
+      },
+      {
+        "mesh": 5,
+        "name": "Object_9"
+      },
+      {
+        "mesh": 6,
+        "name": "Object_10"
+      },
+      {
+        "mesh": 7,
+        "name": "Object_11"
+      },
+      {
+        "mesh": 8,
+        "name": "Object_12"
+      }
+    ],
+    "materials": [
+      {
+        "name": "tripo_material_41caa145-61de-4440-b59d-c111cc9aee5e",
+        "normalTexture": {
+          "index": 2,
+          "texCoord": 2
+        },
+        "pbrMetallicRoughness": {
+          "baseColorTexture": {
+            "index": 0
+          },
+          "metallicRoughnessTexture": {
+            "index": 1,
+            "texCoord": 1
+          }
+        }
+      }
+    ],
+    "images": [
+      {
+        "bufferView": 4,
+        "mimeType": "image/png"
+      },
+      {
+        "bufferView": 5,
+        "mimeType": "image/png"
+      },
+      {
+        "bufferView": 6,
+        "mimeType": "image/png"
+      }
+    ],
+    "skins_count": 0,
+    "animations_count": 0,
+    "meshes": [
+      {
+        "name": "Object_0",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 352791,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.5426801443099976,
+                -0.9383525848388672,
+                -0.6640217304229736
+              ],
+              "max": [
+                0.3716239035129547,
+                0.9355449080467224,
+                -0.11035493016242981
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_1",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 349761,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.538407564163208,
+                -0.9998779296875,
+                -0.5419476628303528
+              ],
+              "max": [
+                0.47209081053733826,
+                0.8909878730773926,
+                0.15381328761577606
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_2",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 344895,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.5504928827285767,
+                -0.9915769100189209,
+                -0.4980925917625427
+              ],
+              "max": [
+                0.5008087158203125,
+                0.9429914355278015,
+                0.5731986165046692
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_3",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 352347,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.5093539357185364,
+                -0.9993896484375,
+                -0.003662221133708954
+              ],
+              "max": [
+                0.47184666991233826,
+                0.9551988244056702,
+                0.5471968650817871
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_4",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 369486,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.43156224489212036,
+                -1.0,
+                0.22559282183647156
+              ],
+              "max": [
+                0.29093295335769653,
+                0.599566638469696,
+                0.6640217304229736
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_5",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 367980,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.3960387110710144,
+                -0.9993896484375,
+                -0.3072908818721771
+              ],
+              "max": [
+                0.5414593815803528,
+                0.9549546837806702,
+                0.4980925917625427
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_6",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 371331,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.3492843508720398,
+                -0.9415265321731567,
+                -0.3229163587093353
+              ],
+              "max": [
+                0.5506149530410767,
+                1.0,
+                0.26432082056999207
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_7",
+        "primitives": [
+          {
+            "vertices": 65532,
+            "index_count": 358242,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                -0.5506149530410767,
+                -0.9432355761528015,
+                -0.491256445646286
+              ],
+              "max": [
+                0.47318950295448303,
+                0.999755859375,
+                0.03344828635454178
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      },
+      {
+        "name": "Object_8",
+        "primitives": [
+          {
+            "vertices": 3228,
+            "index_count": 16425,
+            "indices_type": 5125,
+            "attributes": [
+              "NORMAL",
+              "POSITION",
+              "TANGENT",
+              "TEXCOORD_0",
+              "TEXCOORD_1",
+              "TEXCOORD_2",
+              "TEXCOORD_3"
+            ],
+            "bounds": {
+              "min": [
+                0.049562059342861176,
+                -0.8887905478477478,
+                -0.4521927535533905
+              ],
+              "max": [
+                0.2147282361984253,
+                0.16089358925819397,
+                -0.1342814415693283
+              ]
+            },
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      }
+    ]
+  }
+]

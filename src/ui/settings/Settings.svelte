@@ -3,6 +3,7 @@
   Tudo vale na hora e fica guardado neste computador.
 -->
 <script lang="ts">
+  import { tutorial } from '../../app/tutorial.svelte';
   import { onMount } from 'svelte';
   import { Monitor, Volume2, Gamepad2, Swords, HardDrive, Download, Upload, FileSpreadsheet, Trash, RotateCcw, Maximize, AppWindow, Fullscreen, Keyboard } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
@@ -44,7 +45,7 @@
   // (só quando o jogador muda algo: abrir esta tela não mexe na janela)
   let opened = false;
   $effect(() => { void [s.display, s.resolution]; if (opened) settings.applyVideo(); });
-  $effect(() => { void [s.uiScale, s.quality]; if (opened) settings.applyVideo(false); });
+  $effect(() => { void [s.uiScale, s.quality, s.reducedMotion]; if (opened) settings.applyVideo(false); });
   $effect(() => { opened = true; });
   $effect(() => { void [s.master, s.music, s.sfx, s.mute]; settings.applyAudio(); });
   $effect(() => { JSON.stringify(s); settings.save(); });
@@ -154,13 +155,17 @@
           </div>
         </div>
         <div class="row3">
-          <div class="lbl"><b>{L('Qualidade gráfica', 'Graphics quality')}</b><small>{L('efeitos da interface; as cartas e a pixel art não mudam', 'interface effects; cards and pixel art do not change')}</small></div>
+          <div class="lbl"><b>{L('Qualidade gráfica', 'Graphics quality')}</b><small>{L('iluminação, atmosfera e efeitos; a nitidez da pixel art é preservada', 'lighting, atmosphere and effects; pixel art stays crisp')}</small></div>
           <div class="choices">
             {#each QUALITIES as q (q.id)}
               <button class="choice" class:on={s.quality === q.id} onclick={() => (s.quality = q.id)}><b>{L(q.pt, q.en)}</b><small>{L(q.info[0], q.info[1])}</small></button>
             {/each}
           </div>
         </div>
+        <label class="row toggle">
+          <input type="checkbox" bind:checked={s.reducedMotion} />
+          <span class="lbl"><b>{L('Reduzir movimentos', 'Reduce motion')}</b><small>{L('reduz animações e transições; a preferência do sistema também é respeitada', 'reduces animations and transitions; also respects your system preference')}</small></span>
+        </label>
         <label class="row3 check">
           <div class="lbl"><b>{L('Mostrar quadros por segundo', 'Show frames per second')}</b><small>{L('um contador pequeno no canto da tela', 'a small counter in the corner of the screen')}</small></div>
           <input type="checkbox" bind:checked={s.showFps} />
@@ -186,6 +191,10 @@
         </label>
 
       {:else if tab === 'game'}
+        <div class="row"><div class="lbl"><b>{L('Aprender a jogar', 'Learn to play')}</b><small>{L('Batalha guiada e dicas na Jornada, no criador e no construtor. Repetir reinicia apenas os tutoriais.', 'Guided battle and tips in Journey, character creator and deck builder. Replay resets only tutorials.')}</small></div>
+          <div class="choices"><button class="btn" onclick={() => { tutorial.replay(); router.go('/batalha'); }}>{L('Repetir tutoriais', 'Replay tutorials')}</button>
+          <button class="btn ghost" onclick={() => tutorial.choose(!tutorial.enabled)}>{tutorial.enabled ? L('Desativar dicas', 'Disable tips') : L('Ativar dicas', 'Enable tips')}</button></div>
+        </div>
         <div class="row3">
           <div class="lbl"><b>{L('Idioma', 'Language')}</b><small>{L('interface e cartas', 'interface and cards')}</small></div>
           <div class="chips"><button class:on={app.lang === 'pt-BR'} onclick={() => setLang('pt-BR')}>Português</button><button class:on={app.lang === 'en-US'} onclick={() => setLang('en-US')}>English</button></div>
@@ -215,6 +224,14 @@
             <button class:on={s.pace === 'fast'} onclick={() => (s.pace = 'fast')}>{L('Rápido', 'Fast')}</button>
           </div>
         </div>
+        <label class="row toggle">
+          <input type="checkbox" bind:checked={s.turnGuide} />
+          <span class="lbl"><b>{L('Guia de turno', 'Turn guide')}</b><small>{L('mostra cartas jogáveis e atacantes disponíveis durante a batalha', 'shows playable cards and available attackers during battle')}</small></span>
+        </label>
+        <label class="row toggle">
+          <input type="checkbox" bind:checked={s.confirmEndTurn} />
+          <span class="lbl"><b>{L('Avisar sobre ataques disponíveis', 'Warn about available attacks')}</b><small>{L('confirma antes de encerrar um turno com ataques gratuitos sem uso', 'asks before ending a turn with unused free attacks')}</small></span>
+        </label>
         <label class="row3 check">
           <div class="lbl"><b>{L('Limite de tempo por jogada', 'Time limit per play')}</b><small>{L('30 s parado mostra o contador; mais 30 s e você perde', '30 s idle shows the countdown; 30 s more and you lose')}</small></div>
           <input type="checkbox" bind:checked={s.timeLimit} />

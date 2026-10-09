@@ -1,0 +1,117 @@
+{
+  "unique_exact_vertices": 480382,
+  "exact_boundary_edges": 0,
+  "exact_edges_more_than_two_faces": 465,
+  "triangles_with_repeated_geometric_vertices": 0,
+  "sections": [
+    {
+      "title": "Cabeca / cranio",
+      "local_gltf_y": 0.55,
+      "normalized_height_from_feet": 1.55,
+      "contour_components": [
+        {
+          "points": 1236,
+          "min_depth_and_width": [
+            -0.40894,
+            -0.3442
+          ],
+          "max_depth_and_width": [
+            0.54384,
+            0.54203
+          ]
+        },
+        {
+          "points": 102,
+          "min_depth_and_width": [
+            0.37887,
+            0.23119
+          ],
+          "max_depth_and_width": [
+            0.41945,
+            0.29717
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Torax / peitoral",
+      "local_gltf_y": 0.05,
+      "normalized_height_from_feet": 1.05,
+      "contour_components": [
+        {
+          "points": 1559,
+          "min_depth_and_width": [
+            -0.20822,
+            -0.53853
+          ],
+          "max_depth_and_width": [
+            0.39455,
+            0.53114
+          ]
+        },
+        {
+          "points": 369,
+          "min_depth_and_width": [
+            0.21179,
+            -0.11638
+          ],
+          "max_depth_and_width": [
+            0.35179,
+            0.10929
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Perna / joelho",
+      "local_gltf_y": -0.4,
+      "normalized_height_from_feet": 0.6,
+      "contour_components": [
+        {
+          "points": 1271,
+          "min_depth_and_width": [
+            -0.45329,
+            -0.47404
+          ],
+          "max_depth_and_width": [
+            -0.1275,
+            0.4658
+          ]
+        },
+        {
+          "points": 1197,
+          "min_depth_and_width": [
+            -0.11729,
+            -0.35917
+          ],
+          "max_depth_and_width": [
+            0.3235,
+            0.35259
+          ]
+        },
+        {
+          "points": 352,
+          "min_depth_and_width": [
+            -0.0678,
+            0.43928
+          ],
+          "max_depth_and_width": [
+            0.18582,
+            0.65857
+          ]
+        },
+        {
+          "points": 345,
+          "min_depth_and_width": [
+            -0.0695,
+            -0.66111
+          ],
+          "max_depth_and_width": [
+            0.18158,
+            -0.44725
+          ]
+        }
+      ]
+    }
+  ]
+}

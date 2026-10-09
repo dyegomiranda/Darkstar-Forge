@@ -17,6 +17,7 @@
   // quando a arte muda, espera a imagem ficar pronta e redesenha
   $effect(() => {
     void ed.draft.art.mediaId;
+    void ed.draft.art.asset;
     // imagens das peças (Aparência) também precisam estar carregadas
     void lookMediaIds(mergeLook(ed.deck.look, ed.draft.look)).join();
     void ensureCardMedia(ed.draft).then(() => { mediaReady++; });
@@ -43,7 +44,7 @@
   let drag: { x: number; y: number; ax: number; ay: number; k: number } | null = null;
 
   function down(e: PointerEvent) {
-    if (!ed.draft.art.mediaId || e.button !== 0) return;
+    if (!(ed.draft.art.mediaId || ed.draft.art.asset) || e.button !== 0) return;
     const k = CARD_W / host.getBoundingClientRect().width;
     drag = { x: e.clientX, y: e.clientY, ax: ed.draft.art.x, ay: ed.draft.art.y, k };
     host.setPointerCapture(e.pointerId);
@@ -55,20 +56,20 @@
   }
   function up() { if (drag) { drag = null; ed.touch(); } }
   function wheel(e: WheelEvent) {
-    if (!e.ctrlKey || !ed.draft.art.mediaId) return;
+    if (!e.ctrlKey || !(ed.draft.art.mediaId || ed.draft.art.asset)) return;
     e.preventDefault();
     ed.draft.art.zoom = Math.min(4, Math.max(0.5, +(ed.draft.art.zoom * (e.deltaY < 0 ? 1.05 : 0.95)).toFixed(3)));
     ed.touch();
   }
 </script>
 
-<div class="live" class:grab={!!ed.draft.art.mediaId} bind:this={host} onpointerdown={down} onpointermove={move} onpointerup={up}
+<div class="live" class:grab={!!(ed.draft.art.mediaId || ed.draft.art.asset)} bind:this={host} onpointerdown={down} onpointermove={move} onpointerup={up}
   onpointercancel={up} onwheel={wheel} role="img" aria-label={ed.draft.text[ed.lang].name}>
   {@html svg}
 </div>
 
 <style>
-  .live { width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7), 0 0 0 1px rgb(255 255 255 / .04); touch-action: none; user-select: none; }
+  .live { width: 100%; aspect-ratio: 750 / 1050; border-radius: 4.8% / 3.43%; overflow: hidden; box-shadow: 0 30px 70px rgb(0 0 0 / .7); touch-action: none; user-select: none; }
   .live.grab { cursor: grab; }
   .live.grab:active { cursor: grabbing; }
   .live :global(svg) { width: 100%; height: 100%; display: block; }
