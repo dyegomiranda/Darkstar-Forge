@@ -1,0 +1,19 @@
+[
+  {
+    "name": "tripo_node_41caa145-61de-4440-b59d-c111cc9aee5e",
+    "vertices": 500698,
+    "polygons": 961086,
+    "materials": [
+      "tripo_material_41caa145-61de-4440-b59d-c111cc9aee5e"
+    ],
+    "dimensions": [
+      0.5506149530410767,
+      0.6640217304229736,
+      1.0
+    ],
+    "modifiers": [],
+    "uv_layers": [
+      "UVMap"
+    ]
+  }
+]

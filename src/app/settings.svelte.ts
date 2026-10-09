@@ -29,6 +29,9 @@ export interface Settings {
   uiScale: number;
   quality: Quality;
   showFps: boolean;
+  reducedMotion: boolean;
+  turnGuide: boolean;
+  confirmEndTurn: boolean;
   master: number;
   music: number;
   sfx: number;
@@ -56,9 +59,9 @@ export interface Settings {
 
 const KEY = 'voidsun.settings';
 const DEFAULTS: Settings = {
-  display: 'maximized', resolution: '1600x900', uiScale: 0, quality: 'high', showFps: false,
+  display: 'maximized', resolution: '1600x900', uiScale: 0, quality: 'high', showFps: false, reducedMotion: false, turnGuide: true, confirmEndTurn: true,
   master: 1, music: 0.6, sfx: 0.8, mute: false, muteInBackground: true,
-  pace: 'normal', difficulty: 'normal', timeLimit: true, showLog: true,
+  pace: 'normal', difficulty: 'normal', timeLimit: false, showLog: true,
   gamepad: true, welcome: false, dev: false, permadeath: false, keepDamage: false, tune: { battle: { hp: 1, diff: '' }, elite: { hp: 1, diff: '' }, boss: { hp: 1, diff: '' } }, keys: { ...DEFAULT_KEYS }, rev: 2,
 };
 
@@ -74,19 +77,39 @@ export const host = (): Host | undefined => (globalThis as unknown as { voidsun?
 
 function load(): Settings {
   let s: Partial<Settings> = {};
-  try { s = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>; } catch { /* usa o padrão */ }
+  try { const data: unknown = JSON.parse(localStorage.getItem(KEY) ?? '{}'); if (data && typeof data === 'object' && !Array.isArray(data)) s = data as Partial<Settings>; } catch { /* usa o padrão */ }
   // primeira vez: aproveita o que a versão anterior guardava (som e opções da mesa)
-  if (!localStorage.getItem(KEY)) {
-    try {
+  try {
+    if (!localStorage.getItem(KEY)) {
       const som = JSON.parse(localStorage.getItem('darkstar.som') ?? '{}') as { music?: number; sfx?: number; mute?: boolean };
       const mesa = JSON.parse(localStorage.getItem('darkstar.mesa') ?? '{}') as { pace?: Pace; timeLimit?: boolean; showLog?: boolean };
       s = { music: som.music, sfx: som.sfx, mute: som.mute, pace: mesa.pace, timeLimit: mesa.timeLimit, showLog: mesa.showLog };
       for (const k of Object.keys(s) as (keyof Settings)[]) if (s[k] === undefined) delete s[k];
-    } catch { /* sem dados antigos */ }
-  }
+    }
+  } catch { /* armazenamento indisponível: usa o padrão */ }
   // a 3.0 podia guardar "em janela" sozinha ao abrir, e não tinha escala automática: volta ao padrão nesses dois pontos
   if (s.rev !== 2) { delete s.display; delete s.uiScale; }
-  return { ...DEFAULTS, ...s, keys: { ...DEFAULT_KEYS, ...(s.keys ?? {}) }, rev: 2 };
+  // Valores inválidos ou configurações parciais antigas nunca chegam aos controles.
+  const out = structuredClone(DEFAULTS);
+  for (const key of Object.keys(DEFAULTS) as (keyof Settings)[]) {
+    if (key === 'keys' || key === 'tune') continue;
+    const value = s[key];
+    if (typeof value === typeof DEFAULTS[key] && (typeof value !== 'number' || Number.isFinite(value)))
+      (out as unknown as Record<string, unknown>)[key] = value;
+  }
+  for (const key of Object.keys(DEFAULT_KEYS) as KeyAction[]) if (typeof s.keys?.[key] === 'string' && s.keys[key].length) out.keys[key] = s.keys[key];
+  for (const key of ['battle', 'elite', 'boss'] as const) {
+    const tune = s.tune?.[key];
+    if (typeof tune?.hp === 'number' && Number.isFinite(tune.hp)) out.tune[key].hp = Math.max(0.1, Math.min(10, tune.hp));
+    if (tune?.diff === '' || ['veryEasy', 'easy', 'normal', 'hard', 'veryHard'].includes(tune?.diff ?? '')) out.tune[key].diff = tune!.diff;
+  }
+  if (!['slow', 'normal', 'fast'].includes(out.pace)) out.pace = DEFAULTS.pace;
+  if (!['veryEasy', 'easy', 'normal', 'hard', 'veryHard'].includes(out.difficulty)) out.difficulty = DEFAULTS.difficulty;
+  if (!['high', 'medium', 'low'].includes(out.quality)) out.quality = DEFAULTS.quality;
+  if (!['windowed', 'maximized', 'fullscreen'].includes(out.display)) out.display = DEFAULTS.display;
+  for (const key of ['master', 'music', 'sfx'] as const) out[key] = Math.max(0, Math.min(1, out[key]));
+  out.rev = 2;
+  return out;
 }
 
 class SettingsState {
@@ -104,7 +127,7 @@ class SettingsState {
   }
 
   save(): void { try { localStorage.setItem(KEY, JSON.stringify(this.v)); } catch { /* sem armazenamento local */ } }
-  reset(): void { this.v = { ...DEFAULTS, keys: { ...DEFAULT_KEYS } }; }
+  reset(): void { this.v = structuredClone(DEFAULTS); }
   resetKeys(): void { this.v.keys = { ...DEFAULT_KEYS }; }
 
   /** Escala em uso agora (a escolhida ou, na automática, a calculada pela altura da janela). */
@@ -140,6 +163,7 @@ class SettingsState {
     this.applyZoom();
     document.body.classList.toggle('q-medium', s.quality === 'medium');
     document.body.classList.toggle('q-low', s.quality === 'low');
+    document.body.classList.toggle('reduced-motion', s.reducedMotion);
   }
 
   applyAudio(): void {

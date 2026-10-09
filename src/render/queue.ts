@@ -8,8 +8,8 @@
 import { getRender, putRender } from '../store/db';
 import { rasterize } from './raster';
 
-/** Largura da imagem guardada: nativa da carta (nítida até em telas 2×). */
-export const CACHE_WIDTH = 750;
+/** Largura da imagem guardada: dobro da carta, para inspeção em telas 2×. */
+export const CACHE_WIDTH = 1500;
 
 interface Job { key: string; build: () => string; prio: number; resolve: (u: string) => void; reject: (e: unknown) => void }
 
@@ -32,7 +32,10 @@ export function requestImage(key: string, build: () => string, prio: number): Pr
   const hit = ready.get(key);
   if (hit) return Promise.resolve(hit);
   const job = jobs.get(key);
-  if (job) { job.prio = Math.min(job.prio, prio); job.build = build; return waiting.get(key)!; }
+  if (job) { job.prio = Math.min(job.prio, prio); job.build = build; }
+  // O pedido continua compartilhado enquanto o desenho está em execução.
+  const pending = waiting.get(key);
+  if (pending) return pending;
   const p = new Promise<string>((resolve, reject) => {
     jobs.set(key, { key, build, prio, resolve, reject });
   });
@@ -65,10 +68,12 @@ function pump(): void {
 
 async function run(job: Job): Promise<void> {
   try {
-    let blob = await getRender(job.key);
+    // Cache é uma otimização: uma falha de leitura não pode esconder a carta.
+    let blob: Blob | undefined;
+    try { blob = await getRender(job.key); } catch { /* desenha sem cache */ }
     if (!blob) {
-      blob = await rasterize(job.build(), CACHE_WIDTH, 'image/webp', 0.92);
-      void putRender(job.key, blob);
+      blob = await rasterize(job.build(), CACHE_WIDTH, 'image/png');
+      void putRender(job.key, blob).catch(() => undefined);
     }
     const url = URL.createObjectURL(blob);
     ready.set(job.key, url);

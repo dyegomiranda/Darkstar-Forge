@@ -1,0 +1,25 @@
+{
+  "packed": true,
+  "version": "3.12.3",
+  "errors": [],
+  "snapshot": {
+    "ready": true,
+    "mode": "cinema",
+    "time": 9,
+    "phase": "signature",
+    "meshes": 26,
+    "triangles": 132615,
+    "clips": [
+      "Andar",
+      "Conjurar",
+      "Correr",
+      "Dano",
+      "Golpe",
+      "Guarda",
+      "Morte",
+      "Parado"
+    ],
+    "effects": true,
+    "fps": 55
+  }
+}

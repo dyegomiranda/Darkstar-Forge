@@ -1,0 +1,30 @@
+{
+  "source": "outputs/brunhild512/colored-raw_00001_.glb",
+  "mesh_objects": 1,
+  "vertices": 346788,
+  "polygons": 721536,
+  "triangles": 721536,
+  "armatures": 0,
+  "uv_layers": [
+    []
+  ],
+  "color_attributes": [
+    [
+      "Color"
+    ]
+  ],
+  "bounds_before": {
+    "min": [
+      -0.19992828369140625,
+      -0.1167144775390625,
+      -0.4319648742675781
+    ],
+    "max": [
+      0.21426773071289062,
+      0.1327838897705078,
+      0.45185279846191406
+    ]
+  },
+  "render_notes": "Imported real generated GLB. CPU Cycles, unlit generated vertex colors (no denoising or texture repairs). No sculpting, retopology, rigging, armor or animation edits.",
+  "inspection_seconds": 16.26
+}

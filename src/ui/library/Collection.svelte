@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { BookOpen, Layers, Image as ImageIcon, Paintbrush } from '@lucide/svelte';
   import { router } from '../../app/router.svelte';
   import { app } from '../../store/project.svelte';
@@ -36,7 +38,7 @@
 
 <div class="settings">
   <div class="inner">
-    <section class="panel sec">
+    <section data-tutorial="collection-info" class="panel sec">
       <header><BookOpen size={18} /><h2>{L('Coleção', 'Collection')}</h2><span class="grow"></span><EditionPicker /></header>
       <div class="cols">
         <div class="stack">
@@ -61,7 +63,7 @@
     <section class="panel sec">
       <header><Layers size={18} /><h2>{L('Decks e temas', 'Decks & themes')}</h2></header>
       <p class="muted">{L('Os decks da coleção aberta. O visual (estilo, cores, peças, símbolos) se edita na tela de tema: “Editar tema” abre a do deck e “Editar coleção” muda todos de uma vez.', 'The decks of the open collection. The look (style, colors, pieces, symbols) is edited on the theme screen: “Edit theme” opens the deck’s and “Edit collection” changes all at once.')}</p>
-      <div class="decks">
+      <div data-tutorial="collection-decks" class="decks">
         {#each app.decksOf() as d, i (d.id)}
           {@const n = app.cardsOf(d.id).length}
           <div class="deck">
@@ -84,6 +86,8 @@
 
   </div>
 </div>
+
+<Coach area="collection" lessons={LESSONS.collection} />
 
 <style>
   .settings { height: 100%; overflow-y: auto; }

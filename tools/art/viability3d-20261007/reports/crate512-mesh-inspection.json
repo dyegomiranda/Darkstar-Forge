@@ -1,0 +1,30 @@
+{
+  "source": "outputs/crate512/colored-raw_00001_.glb",
+  "mesh_objects": 1,
+  "vertices": 2559905,
+  "polygons": 5253982,
+  "triangles": 5253982,
+  "armatures": 0,
+  "uv_layers": [
+    []
+  ],
+  "color_attributes": [
+    [
+      "Color"
+    ]
+  ],
+  "bounds_before": {
+    "min": [
+      -0.45243072509765625,
+      -0.49559783935546875,
+      -0.4182929992675781
+    ],
+    "max": [
+      0.4683094024658203,
+      0.4992666244506836,
+      0.4745674133300781
+    ]
+  },
+  "render_notes": "Imported real generated GLB. CPU Cycles, unlit generated vertex colors (no denoising or texture repairs). No sculpting, retopology, rigging, armor or animation edits.",
+  "inspection_seconds": 114.76
+}

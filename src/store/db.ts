@@ -4,6 +4,7 @@
  * do conteúdo, então a mesma arte nunca é guardada duas vezes.
  */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { withoutPathfinder } from '../model/retireCollection';
 import type { Card, Project } from '../model/types';
 
 export interface MediaRow { id: string; blob: Blob; name: string; type: string; addedAt: number }
@@ -51,6 +52,26 @@ export async function deleteCards(ids: string[]): Promise<void> {
   const d = await db();
   const tx = d.transaction('cards', 'readwrite');
   await Promise.all([...ids.map((id) => tx.store.delete(id)), tx.done]);
+}
+
+/** Troca o conteúdo inteiro numa transação: uma falha preserva os dados anteriores. */
+export async function replaceProject(project: Project, cards: Card[], media: MediaRow[] = []): Promise<void> {
+  const tx = (await db()).transaction(['project', 'cards', 'media', 'renders'], 'readwrite');
+  const writes: Promise<unknown>[] = [];
+  try {
+    writes.push(
+      tx.objectStore('project').clear(), tx.objectStore('cards').clear(),
+      tx.objectStore('media').clear(), tx.objectStore('renders').clear(),
+    );
+    writes.push(tx.objectStore('project').put(structuredClone(project), 'main'));
+    for (const card of cards) writes.push(tx.objectStore('cards').put(structuredClone(card)));
+    for (const row of media) writes.push(tx.objectStore('media').put(row));
+    await Promise.all([...writes, tx.done]);
+  } catch (error) {
+    try { tx.abort(); } catch { /* a transação já pode ter sido abortada pelo banco */ }
+    await Promise.allSettled([...writes, tx.done]);
+    throw error;
+  }
 }
 
 /** Apaga tudo (projeto, cartas, mídia e cache). */
@@ -121,4 +142,23 @@ export async function pruneOldRenders(prefix: string): Promise<number> {
 export async function storageEstimate(): Promise<{ used: number; quota: number }> {
   const e = await navigator.storage?.estimate?.();
   return { used: e?.usage ?? 0, quota: e?.quota ?? 0 };
+}
+
+/** Retira Classes e apenas as mídias exclusivas dela numa transação. */
+export async function retirePathfinder(): Promise<void> {
+  const d = await db();
+  const tx = d.transaction(['project', 'cards', 'media', 'renders'], 'readwrite');
+  const project = await tx.objectStore('project').get('main');
+  if (project) {
+    const cards = await tx.objectStore('cards').getAll();
+    const result = withoutPathfinder(project, cards);
+    if (result.project !== project) {
+      const keep = new Set(result.cards.map(c => c.id));
+      await tx.objectStore('project').put(result.project, 'main');
+      for (const c of cards) if (!keep.has(c.id)) await tx.objectStore('cards').delete(c.id);
+      for (const id of result.mediaIds) await tx.objectStore('media').delete(id);
+      await tx.objectStore('renders').clear();
+    }
+  }
+  await tx.done;
 }

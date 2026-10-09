@@ -10,10 +10,13 @@ import type { Anim, Avatar } from './lpc';
 export interface Creature { avatar: Avatar; attack: Anim }
 /** Criatura de folha pronta: tamanho do quadro, nº de quadros parado/atacando, velocidade. */
 export interface SheetDef { cell: number[]; idle: number; attack: number; fps: number; scale?: number }
+const REWORK: Record<string,string> = {'death-skull':'skeleton','daemon-skull':'demon','rock-golem':'stone','fire-silhouette':'flame','wolf-head':'wolf','wolf-howl':'wolf','bear-head':'bear','magic-gate':'tower','hunter-eyes':'hawk','oak-leaf':'spirit','hooded-figure':'thief','angel-outfit':'angel','winged-sword':'sword','dragon-shield':'whelp',shield:'guardian',crossbow:'ballista'};
+const REWORK_DEF: SheetDef = {cell:[64,64],idle:1,attack:3,fps:8};
 const SHEET = sheets as Record<string, SheetDef>;
 /** Ícone da unidade → folha de quadros (animais, máquinas e construções). */
 const SHEET_OF: Record<string, string> = { 'wolf-head': 'wolf', 'wolf-howl': 'wolf', 'bear-head': 'bear', 'magic-gate': 'tower', crossbow: 'ballista' };
 export const sheetOf = (icon: string | undefined): { id: string; def: SheetDef } | undefined => {
+  if (icon && REWORK[icon]) return {id: 'rework/' + REWORK[icon], def: REWORK_DEF};
   const id = icon ? SHEET_OF[icon] : undefined;
   return id && SHEET[id] ? { id, def: SHEET[id] } : undefined;
 };
@@ -43,4 +46,4 @@ export const CREATURES: Record<string, Creature> = {
   },
 };
 
-export const creatureOf = (icon: string | undefined): Creature | undefined => (icon ? CREATURES[icon] : undefined);
+export const creatureOf = (icon: string | undefined): Creature | undefined => (icon && !REWORK[icon] ? CREATURES[icon] : undefined);

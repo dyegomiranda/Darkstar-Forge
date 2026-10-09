@@ -109,7 +109,7 @@ def corte(a):
     """Gera a imagem mais alta e corta a faixa de baixo: é ali que o Flux costuma "assinar" o quadro."""
     return {
         "14": {"class_type": "ImageCrop", "inputs": {"image": ["8", 0], "width": a.largura, "height": a.altura, "x": 0, "y": 0}},
-        "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "darkstar/" + a._nome, "images": ["14", 0]}},
+        "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "void-sun/" + a._nome, "images": ["14", 0]}},
     }
 
 

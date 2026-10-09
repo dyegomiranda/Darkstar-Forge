@@ -8,6 +8,8 @@
   Regras: 40 cartas, até 4 cópias de cada, e nunca mais cópias do que o jogador tem.
 -->
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { tick } from 'svelte';
   import { flip } from 'svelte/animate';
   import { crossfade, fade, scale } from 'svelte/transition';
@@ -402,6 +404,8 @@
 {#if peek && app.cards[peek.id] && !drag}
   {#key peek.id}<div class="peek" style="left:{peek.x}px;top:{peek.y}px;width:{PEEK_W}px" in:scale={{ duration: 110, start: 0.94 }}><CardImage card={app.cards[peek.id]} eager /></div>{/key}
 {/if}
+
+<Coach area="builds" lessons={LESSONS.builds}  />
 
 <style>
   .builds { height: 100%; display: grid; grid-template-columns: 268px minmax(0, 1fr) 340px; min-height: 0; }

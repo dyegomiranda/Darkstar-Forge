@@ -17,6 +17,8 @@
 </script>
 
 <script lang="ts">
+  import { avatarForCharacter } from '../../avatar/equipment';
+  import { app } from '../../store/project.svelte';
   import type { Character } from '../../model/types';
   import { ensureMedia, mediaUrl } from '../../store/media';
   import { heroColor } from '../game/heroes';
@@ -26,19 +28,21 @@
   let tick = $state(0);
   let broken = $state('');
   $effect(() => { const id = hero?.portraitMediaId; if (id) void ensureMedia(id).then(() => tick++); });
+  const visibleAvatar = $derived(avatarForCharacter(hero, app.cards));
   let bustSrc = $state('');
   $effect(() => {
     bustSrc = '';
     if (hero?.portraitMediaId || !hero?.avatar) return;
     let alive = true;
-    void bustUrl($state.snapshot(hero.avatar) as Avatar, heroColor(hero)).then((u) => { if (alive) bustSrc = u; });
+    void bustUrl($state.snapshot(visibleAvatar!) as Avatar, heroColor(hero)).then((u) => { if (alive) bustSrc = u; });
     return () => { alive = false; };
   });
-  const pixel = $derived(!hero?.portraitMediaId && !!hero?.avatar);
+  const pixel = $derived(!hero?.portraitMediaId && (!!hero?.avatar || hero?.preset === 'dragon'));
   const src = $derived.by(() => {
     void tick;
     if (hero?.portraitMediaId) return mediaUrl(hero.portraitMediaId);
     if (hero?.avatar) return bustSrc || undefined;
+    if (hero?.preset === 'dragon') return 'heroes/rework/dragon.png';
     return hero?.preset ? `heroes/${hero.preset}.webp` : undefined;
   });
 </script>

@@ -1,0 +1,142 @@
+{
+  "packed": true,
+  "errors": [],
+  "stats": {
+    "crate": {
+      "x": 0.5768462749835396,
+      "y": 0.6384680771727705,
+      "alive": false
+    },
+    "fps": 55,
+    "draws": 142,
+    "triangles": 50312,
+    "particles": 0,
+    "slots": [
+      {
+        "id": "player-front-0",
+        "x": 0.41795530053227975,
+        "y": 0.48612130822779465
+      },
+      {
+        "id": "player-front-1",
+        "x": 0.47106963765325566,
+        "y": 0.5606055890355244
+      },
+      {
+        "id": "player-front-2",
+        "x": 0.5241839747742315,
+        "y": 0.635089869843254
+      },
+      {
+        "id": "player-back-0",
+        "x": 0.36823124024881293,
+        "y": 0.5558512732392863
+      },
+      {
+        "id": "player-back-1",
+        "x": 0.42134557736978884,
+        "y": 0.6303355540470159
+      },
+      {
+        "id": "player-back-2",
+        "x": 0.47445991449076474,
+        "y": 0.7048198348547456
+      },
+      {
+        "id": "enemy-front-0",
+        "x": 0.4758160252257684,
+        "y": 0.40498098530533166
+      },
+      {
+        "id": "enemy-front-1",
+        "x": 0.5289303623467443,
+        "y": 0.47946526611306134
+      },
+      {
+        "id": "enemy-front-2",
+        "x": 0.5820446994677202,
+        "y": 0.553949546920791
+      },
+      {
+        "id": "enemy-back-0",
+        "x": 0.5255400855092351,
+        "y": 0.33525102029384
+      },
+      {
+        "id": "enemy-back-1",
+        "x": 0.578654422630211,
+        "y": 0.4097353011015697
+      },
+      {
+        "id": "enemy-back-2",
+        "x": 0.631768759751187,
+        "y": 0.48421958190929937
+      }
+    ],
+    "orbit": {
+      "yaw": 0.7853981633974481,
+      "pitch": 0.7349359893805927,
+      "zoom": 1.2300000000000004,
+      "dragging": false
+    },
+    "models": [
+      {
+        "body": "female-strong",
+        "hair": "ponytail",
+        "equipped": true,
+        "gear": [
+          "armor",
+          "weapon",
+          "boots",
+          "gloves",
+          "cape",
+          "shield"
+        ],
+        "rig": "human-v1",
+        "height": 2.46,
+        "skinMeshes": 23
+      },
+      {
+        "body": "male-normal",
+        "hair": "short",
+        "equipped": false,
+        "gear": [
+          "armor",
+          "weapon",
+          "boots",
+          "gloves",
+          "cape"
+        ],
+        "rig": "human-v1",
+        "height": 2.3,
+        "skinMeshes": 22
+      }
+    ],
+    "actors": [
+      {
+        "id": "brunhild",
+        "slot": "player-front-2",
+        "moving": false,
+        "x": 2.35,
+        "y": 0.096,
+        "z": 1.28
+      },
+      {
+        "id": "kael",
+        "slot": "player-back-0",
+        "moving": false,
+        "x": -2.35,
+        "y": 0.096,
+        "z": 3.48
+      },
+      {
+        "id": "skeleton",
+        "slot": "enemy-front-0",
+        "moving": false,
+        "x": -2.35,
+        "y": 0.096,
+        "z": -1.28
+      }
+    ]
+  }
+}

@@ -11,3 +11,41 @@ __pycache__/
 artes-proto/
 artes-pf/
 artes-proto-antigas/
+
+# ── material de trabalho que fica só na máquina (pesado, regenerável ou de terceiros) ──
+exports/
+docs/references/
+# ambiente dos geradores 3D (ComfyUI de pesquisa, modelos, entradas e saídas): ~19 GB
+tools/art/viability3d-20261007/runtime/
+tools/art/viability3d-20261007/models/
+tools/art/viability3d-20261007/outputs/
+tools/art/viability3d-20261007/inputs/
+tools/art/viability3d-20261007/source/
+tools/art/viability3d-20261007/logs/
+# arquivos intermediários do Blender e fontes de arte em tools/art: os scripts e os .md vão para o repositório
+tools/art/**/build/
+tools/art/**/*.blend
+tools/art/**/*.blend1
+tools/art/**/*.glb
+tools/art/**/*.gltf
+tools/art/**/*.fbx
+tools/art/**/*.npz
+tools/art/**/*.npy
+tools/art/**/*.png
+tools/art/**/*.jpg
+tools/art/**/*.jpeg
+tools/art/**/*.webp
+tools/art/**/*.gif
+tools/art/**/*.mp4
+tools/art/**/*.zip
+tools/art/**/*.exr
+tools/art/**/*.psd
+tools/art/**/*.safetensors
+tools/art/**/*.bin
+# amostra com armas de marcas de terceiros (só teste particular)
+docs/amostras/teste-base-equipada-8-direcoes-2026-10-09.gif
+# originais em PNG das artes HD das cartas (715 MB): ficam só na máquina; o jogo usa as versões WebP em public/art/rework/cards-hd
+artes-cartas-hd/
+# cópias de projetos de terceiros usadas só como ferramenta ou consulta
+tools/art/**/source/
+tools/art/skills/terceiros/

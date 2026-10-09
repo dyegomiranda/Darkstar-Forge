@@ -3,11 +3,12 @@
  */
 import { colorHex, DECK_SIZE } from '../model/catalog';
 import { hash } from '../model/id';
+import { reworkAsset } from './reworkArt';
 import type { Card, Deck, Edition, Lang } from '../model/types';
 import type { ComposeInput, Look } from './compose';
 
 /** Muda quando o desenho muda (invalida o cache de imagens). */
-export const RENDER_VERSION = 'r17';
+export const RENDER_VERSION = 'r23';
 
 /** Tema final = tema do deck + ajustes da carta (a carta ganha). */
 export function mergeLook(base: Look, over?: Partial<Look>): Look {
@@ -83,14 +84,15 @@ export function typeLine(card: Card, lang: Lang): string {
 /** Entrada do compose; `forKey` troca URLs por ids estáveis (chave de cache). */
 export function cardInput(card: Card, ctx: CardContext, forKey = false): ComposeInput {
   const t = card.text[ctx.lang] ?? card.text['pt-BR'];
-  const src = card.art.mediaId ? (forKey ? card.art.mediaId : ctx.mediaUrl(card.art.mediaId)) : undefined;
+  const replacement = reworkAsset(card);
+  const src = replacement ? (forKey ? replacement : new URL(replacement, document.baseURI).href) : card.art.mediaId ? (forKey ? card.art.mediaId : ctx.mediaUrl(card.art.mediaId)) : card.art.asset ? (forKey ? card.art.asset : new URL(card.art.asset, document.baseURI).href) : undefined;
   const set = ctx.edition?.setMediaId;
   return {
     uid: `k${card.id.slice(-8)}`,
     colors: card.colors.map(colorHex),
     colorId: card.colors[0] ?? ctx.deck.colors[0],
     classIds: card.colors.length ? [...card.colors] : [ctx.deck.colors[0]],
-    art: src ? { src, zoom: card.art.zoom, x: card.art.x, y: card.art.y, mirror: card.art.mirror } : undefined,
+    art: src ? { src, zoom: card.art.zoom, x: card.art.x, y: card.art.y, mirror: card.art.mirror, pixelArt: !!replacement || !!card.art.asset?.startsWith('art/rework/cards/') } : undefined,
     artIcon: card.art.icon,
     name: t.name,
     typeLine: typeLine(card, ctx.lang),

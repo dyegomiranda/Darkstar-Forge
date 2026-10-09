@@ -1,0 +1,131 @@
+{
+  "case": "preprocess",
+  "prompt_id": "84eb856e-eb36-46e3-90ae-66cf38d11afc",
+  "status": "success",
+  "elapsed_seconds": 20.2,
+  "peak_gpu_memory_mib": 885,
+  "peak_gpu_temp_c": 44,
+  "min_available_ram_mib": 20632,
+  "telemetry_interval_seconds": 2,
+  "error": null,
+  "history": {
+    "prompt": [
+      0,
+      "84eb856e-eb36-46e3-90ae-66cf38d11afc",
+      {
+        "1": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "brunhild-reference-v2.png"
+          }
+        },
+        "2": {
+          "class_type": "LoadBackgroundRemovalModel",
+          "inputs": {
+            "bg_removal_name": "birefnet.safetensors"
+          }
+        },
+        "3": {
+          "class_type": "RemoveBackground",
+          "inputs": {
+            "bg_removal_model": [
+              "2",
+              0
+            ],
+            "image": [
+              "1",
+              0
+            ]
+          }
+        },
+        "4": {
+          "class_type": "ImageCropToMask",
+          "inputs": {
+            "images": [
+              "1",
+              0
+            ],
+            "masks": [
+              "3",
+              0
+            ],
+            "width": 1024,
+            "height": 1024,
+            "pad_factor": 1.1,
+            "grow_mask": 0,
+            "background": "#000000"
+          }
+        },
+        "5": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "4",
+              0
+            ],
+            "filename_prefix": "preprocess/brunhild-input"
+          }
+        }
+      },
+      {
+        "client_id": "voidsun-local-viability",
+        "create_time": 1791397686656
+      },
+      [
+        "5"
+      ]
+    ],
+    "outputs": {
+      "5": {
+        "images": [
+          {
+            "filename": "brunhild-input_00001_.png",
+            "subfolder": "preprocess",
+            "type": "output",
+            "metadata": {
+              "kind": "image",
+              "width": 1024,
+              "height": 1024
+            }
+          }
+        ]
+      }
+    },
+    "status": {
+      "status_str": "success",
+      "completed": true,
+      "messages": [
+        [
+          "execution_start",
+          {
+            "prompt_id": "84eb856e-eb36-46e3-90ae-66cf38d11afc",
+            "timestamp": 1791397686657
+          }
+        ],
+        [
+          "execution_cached",
+          {
+            "nodes": [],
+            "prompt_id": "84eb856e-eb36-46e3-90ae-66cf38d11afc",
+            "timestamp": 1791397686662
+          }
+        ],
+        [
+          "execution_success",
+          {
+            "prompt_id": "84eb856e-eb36-46e3-90ae-66cf38d11afc",
+            "timestamp": 1791397705192
+          }
+        ]
+      ]
+    },
+    "meta": {
+      "5": {
+        "node_id": "5",
+        "display_node": "5",
+        "parent_node": null,
+        "real_node_id": "5"
+      }
+    }
+  }
+}

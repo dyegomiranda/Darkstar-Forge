@@ -6,6 +6,8 @@
   do mapa, em mapArt.ts.
 -->
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { Swords, Heart, Sparkles, Crown, Lock, TrendingUp, RotateCcw, Trophy, Skull, Layers, Pencil, Check, Tent, MapPin, GraduationCap } from '@lucide/svelte';
@@ -456,6 +458,8 @@
   {/if}
 </div>
 {/if}
+
+<Coach area="journey" lessons={LESSONS.journey} active={!battle && !camp && !reward} />
 
 <style>
   .journey { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; }

@@ -1,0 +1,1529 @@
+{
+  "prompt": "Recreate the attached original Void Sun illustration as ONE SINGLE finely detailed HIGH RESOLUTION portrait pixel-art illustration, native 1060x1484 or higher, full-bleed aspect 5:7. NOT a grid, atlas, collage, mockup, contact sheet or card. Preserve exactly the source's subject, number of figures, action, costumes, colours, environment and composition. The input is a tiny low-resolution crop: reconstruct fine new pixel detail at the new native resolution, DO NOT just enlarge large existing pixel blocks, do not blur or apply sharpening halos. Premium finely clustered tactical RPG pixel art inspired by Sword of Convallaria. Keep small adult sprite-like figures with tiny simplified pixel faces and modest eyes; no anime portraits, no glossy eyes, no childlike faces, no gigantic heads. Crisp small pixel clusters in armour, foliage, stonework and effects. The scene remains a wide-view environment with compact figures, not a close-up portrait. Main action in upper 65%, quieter matching scenery bottom third for later rules overlay. Entire canvas is the painting from edge to edge: no vertical edge lines, borders, gutters, lettering, watermark, card UI or frames. Preserve recognizable visual narrative of the supplied image.",
+  "images": [
+    {
+      "name": "intimidate",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-81a5c0af-9af7-4e59-a693-dbb2bcdb4971.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "arcane-blade",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9f9a23cd-5fe6-4e73-8380-f57f26fc0d7d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "ancestral-rage",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-25d48b9b-6ca6-446e-8451-3c1333f772f9.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "assassin-s-stance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b0962d32-1c1d-43cb-8e13-db4db7b46b6f.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "ambush",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-82e7b2b3-896f-4add-a271-194c4653867a.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "assassinate",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-96cbf3de-b83d-4a40-92e2-18b1fb89a18e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "arcane-darts",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f9f28716-e3f0-4bbc-b2a0-9f1c29560d8c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "aura-of-protection",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-91bb2c32-f705-49ec-befc-05a4dcf1f9bf.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "ballad-of-the-hero",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b1b10eb5-6ec9-4fb2-b628-dae998fd6a52.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "bardic-inspiration",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f81e58fa-8ac8-492d-85d2-352688b7e15f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "arcane-shield",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2cd530df-dae8-447a-bbfc-af40b8dd92d0.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "axe-throw",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-36f3e0c1-c19e-42b6-a53f-8033c3a85b92.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "battle-mage-stance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1f5bf9fb-44ec-492e-8764-dfe005b6eeef.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "arcane-golem",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6ea1b9bb-157e-4cc0-be52-dfdb0fdaf35e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "barkskin",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-70cf058a-bf0f-4a3b-a236-9e1ce11307e8.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "bleeding-cut",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-709b8611-bfe6-4cdb-bf32-d88641a84dea.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "blinding-smite",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e0ca7e53-0d6e-42b0-a7e2-964d44869157.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "battle-breath",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-717c10ce-fa3e-4dfc-aa7f-59c2332803fb.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "arrow-rain",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-27c39f73-c29a-41ce-9505-0586126fba0f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "bear-companion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-92a63462-1538-4308-9c59-432754880a79.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "bless",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-33af7fbd-61ec-4acb-9e13-2987a4d88068.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "blood-pact",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f6a9b4e9-64ec-4dcd-bba3-82e73d03d7ee.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "bloodthirst",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-70c496e8-b3fb-4c3a-8f6d-d25bda2e5aae.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "blade-flurry",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ea94ac42-b5a0-4380-b542-389949123d79.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "bound-demon",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2d872113-3ea5-442d-a46f-b67ca57ca919.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "arcane-wall",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-651a614b-7278-4b16-9811-1cb82a59200b.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "brutal-strike",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-74d77528-2f18-4bd0-ac76-b29d229b6440.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "bone-legion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-13764363-a4f2-4e3d-97a4-b3bc21a64a6f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "cleave",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-832266c3-6b74-40b5-ae31-2dda42f9e589.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "burning-hands",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e6f74de5-7458-4acd-a62b-2bf3d1118594.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "countercharm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-63e9c63d-065f-4300-a3ae-537ff7f19493.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "counterspell",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-aff7c000-a2db-4089-b2be-5fb6210f9770.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "call-of-the-pack",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-fc29c955-9bf6-4d51-bb24-1acd3a5f38fb.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "camouflage",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-89118935-bbc8-45ac-a356-87a916ad510c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "crane-stance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-c9e7953d-c8db-4e11-9f89-ab4ec8ccb279.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "cunning-action",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bf069ec2-9df0-4cb7-9674-e480116b3e52.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "coup-de-grace",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-a13752cf-727f-457d-8372-33841f6bfbb6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "curse-of-ruin",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-72f59555-b159-4903-a5e7-6df9b29c1e3e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "chain-lightning",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d1f8b862-8a24-4137-a0d1-3ce861c6be7b.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "devastating-blow",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d1edc924-0187-46e8-9dbf-1708daabb463.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "death-mark",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-caf57a9c-9591-42aa-a73a-ba195e824b3e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "cure-wounds",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7054d144-5210-4b2a-b4e0-71c725e28398.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "dirty-trick",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-fdfd0398-35ee-46ec-8324-a5fe0550915d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "charge",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8a62d9df-556f-4bb9-b701-234cccbb20aa.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "defensive-stance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bd3ef12b-cf93-4bba-8082-a5023f4afdb3.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "dissonant-whispers",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f107c9de-ad30-4cec-9ff4-35f991f7d60c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "divine-protection",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-5f986d99-e034-4c9f-8e69-c71d44cc1dcb.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "disintegrate",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-aad710bb-0ac3-40ef-8ab3-5a50b45066aa.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "chill-touch",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ff5b2068-c5eb-4109-afcc-6d8e2517d4a6.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "destructive-smite",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8c42f70f-7813-432d-8351-2b58f203cead.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "execute",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bcb086d4-ca5b-43cb-a2a0-b473dd399d4a.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "divine-smite",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2000fa55-1058-4509-b0d2-be322c4881ef.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "finger-of-death",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6711c32f-8008-40f3-8f8a-4b22ae9e5dbf.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "dodge",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-5311b0fb-6b60-496d-8a69-d899a639a0c3.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "fire-lance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-23b5a531-55f2-4444-9ee3-475e3915aff0.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "fireball",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0a9b3f0d-82eb-4d28-8a19-a71e4fea497c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "flurry-of-blows",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b58c7f57-2bcf-449b-90df-3e50fa7c9edb.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "fire-bolt",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bf6ab448-4589-4b72-ae6c-e642c1c803cf.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "double-shot",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-07686c07-724f-4179-890e-02046b021426.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "flame-strike",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b3ee607b-afd6-4d54-812b-26bdbb5fa22f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "flying-kick",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6a3df738-0272-4ca4-98d7-0f6eb234451b.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "fire-elemental",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0d296283-34c2-48d2-8cc5-1dbe6c672879.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "entangle",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4c03786d-2c19-49a0-8fa8-62aa141116d9.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "focus",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e9ad2d86-c49a-440c-9f9c-c012b35adb53.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "forest-spirit",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-09f02d0c-9c5f-48b2-bffa-81b49c3838f8.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "frost-ray",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-09b689ca-9f2b-4813-bb14-59a38dd6e11e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "healing-sap",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4604db18-24c2-4ae5-b7eb-2cbbdc501b48.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "garrote",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-aea6333e-ba8a-4534-b098-02cf1ff8bebb.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "guardian-angel",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-55275743-be32-485a-9c05-e57f4a74c5a5.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "holy-charge",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e9222d8c-fb60-4876-a5b4-8fd2bf7af62b.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "hunting-grounds",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ec006eee-42b6-4052-bb91-a2ec7722e99e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "healing-herb",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ea3557fd-ae14-4843-a5c7-e3c6b32181fa.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "holy-water",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-a522ee2f-6264-4f0c-85d9-9fd630d61ba5.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "hunting-hawk",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6fe886c7-1726-4074-b7f7-fd366ca4891f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "healing-potion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-15f9dbb2-3079-49bf-8fbb-ad54297342cb.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "hypnotic-pattern",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7e72c4f6-71a5-47fa-b6e3-51b93a5412fc.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "headbutt",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-028625b3-edaa-4280-bdee-9436ba3737a7.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "kick",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ea58b0c2-80b3-4196-97ff-da2aea9e00c2.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "ice-storm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-c9c18279-7fd6-4ea9-b377-168bf5dc73f7.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "hamstring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-619e363d-4a4f-4f2c-8c3a-67da02f9651d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "lay-on-hands",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ad163040-04f2-4455-8fff-7d3e77a23136.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "guard-breaker",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7a6eb01a-45c6-4334-a8b2-3b2a0ead8a39.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "intimidating-shout",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1a860bbd-88a8-430a-a639-889b9b080560.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "mage-armor",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-739f67fd-9566-4a6e-bc60-7a71c8207e0c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "life-drain",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-dd81fa8f-598a-4b15-a3a4-97c8d9f7e649.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "iron-skin",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-10d28188-67cd-4ee2-a2b4-7e91fdecc6c0.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "mark-prey",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-32d0d1fd-d5d3-4ba9-a26c-c7ee46467667.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "ki-fist",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-5b735fb0-2adf-4a22-b4df-6103d15715d5.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "living-roots",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8f927b84-024d-4386-80ef-a6656f4f0ec9.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "mass-healing-word",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4eeaa443-8f60-48f1-942a-52a2156c2873.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "mana-potion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-c9f91914-ba1f-4c1d-8e6a-682e98d18069.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "meditation",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-faaa6023-e21f-4467-94c5-341d487bd34e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "lunge",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bb65ac4c-fc42-4e0a-91a3-886db733a29d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "oath-of-devotion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d5cc1120-bb2e-4d5b-9135-3e54acbbdb74.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "parry",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bf36e8fb-ba6b-4f0a-88a8-fba92f3574bd.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "meteor",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d82b9362-a1dd-4abd-ba70-513786dde144.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "open-palm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-859e7470-27f9-4c13-9eff-cd45bd8e3e59.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "patient-defense",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3c8ce568-84ec-41eb-a4c5-8789b31ae7fc.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "ossuary",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-684bf379-5814-4b75-94c2-4c30586056e1.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "piercing-shot",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-16f047b4-2a00-4cbf-adf3-3f8a8acbd112.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "mirror-image",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-795ac142-f2c0-4ca3-a65c-26a08c475246.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "patron-s-whisper",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d7dc6dd2-128d-455b-b273-4788085ec19d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "plague",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7334e6f9-6ee8-47cb-8b9d-d0cc08c0f933.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "pact-blade",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-04a70689-3b0a-4db4-999b-3f249134732e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "poisoned-blade",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-abc05934-23a2-427c-9948-2d5d74efc0a2.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "quick-stab",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-cf45055f-142e-431b-a565-5e52f5c6c240.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "quivering-palm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6380cd35-5786-43ac-be09-665ace398391.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "prayer",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ab433337-6618-4a7b-80b8-d43b5d61a810.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "poison-arrow",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-968f1cd9-5285-4604-8eb7-0011306edae4.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "radiant-light",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ac18202f-d5b5-4b5d-bcf0-8389b86b5fcd.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "rain-of-blows",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f672b10e-4bb1-46c7-bd37-25f75a80856c.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "quick-shot",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-41687618-9967-4655-9360-a70d44debd9e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "rage",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9e329e5c-f805-4c6c-a72f-ae4680e8c4c2.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "poison-dart",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8af2d517-709f-429a-a7d3-fae463f58263.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "raise-skeleton",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-73d8f85d-0fac-449a-a5f0-2862c566a5ae.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "rebuke",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d362318c-98fe-4ccf-b41b-ff87227033f6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "revivify",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f72132eb-440c-498a-86d9-d0cffb786ef4.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "poison-the-cup",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-370f3e1a-fc9c-4d73-a93e-1482d373ebb9.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "raise-zombie",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8b6601e5-b90c-4e44-8af6-ac29d7f20aac.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "sacred-flame",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-00f5bb94-8807-4feb-84db-c35ba367f338.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "relentless-fury",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7d19b6d0-7259-467f-bb31-562c0501af03.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "righteous-strike",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-919aef5e-2928-491f-b5d2-8bbdc558db24.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "reap-souls",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3356cd53-2e75-411d-9899-1972eba7c64a.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "shadow-blade-stance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d783709d-60a6-4901-96de-6d3c65c9e887.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "shadow-bolt",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2ee02e36-db37-46ba-b577-9d46815821b6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "scroll-of-protection",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ce349594-5e1a-4df3-97a3-9a7d5f36d8ba.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "shadow-cut",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-dc73efed-e9f1-45ab-997b-e40259964f33.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "shield-bash",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4e74e912-1804-45c7-afd9-77057660623f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "second-wind",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-aa02f2b9-6adb-4c90-85c9-09a067e34759.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "shadow-dance",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1cbdceab-af56-493a-9c13-4ff9fe562199.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "smoke-bomb",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-c7a306bd-480d-4c7c-9429-0e753141075b.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "shield-of-faith",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0a013691-ad4d-498f-abf6-6e533e916620.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "shadow-reprisal",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-5690aff4-6967-4f78-87f3-e2addcfa47ab.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "song-of-courage",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-fc426830-bc37-4f76-b4aa-784747f33632.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "sneak-attack",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6f398281-ef67-41c3-9c6d-5792b5542f8b.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "spinning-kick",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-06e15ed0-9908-4133-b3e2-6ac6b149393b.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "shadow-riposte",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-c2363b94-265a-4d17-a724-c5d3d6e6395d.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "song-of-rest",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7b616515-f282-4903-865b-a7dcc231d0e4.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "steel-whirlwind",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-eb9e2f43-b44f-4d4d-9183-6ff1361c69e6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "shatter",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-20e415ec-0f77-41f3-a98f-c648a1622c20.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "spirit-hammer",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2f044004-19f6-4a78-a410-4c845e80a3c3.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "stone-elemental",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2f72b2da-88bf-4e17-abae-85fcfa1dbf10.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "spark",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-d13ae786-8a67-4052-902e-f5f8a864c3b7.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "step-of-the-wind",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-a68a860a-695f-452d-beb0-72d94e813604.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "spiritual-weapon",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b91dde3a-13e1-4c0c-a960-45130fc08e03.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "thieves-gang",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-555241d2-9c1a-42b4-a8e0-70eef9bcb8d3.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "still-mind",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b3b79fcf-e506-439f-baca-c26b0720e740.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "study",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8159c388-1b12-4016-9e94-fb31addcb9f4.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "stampede",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1ce12b7c-9642-47f4-bf29-00317f007655.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "thorn-storm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e8e160b3-e11c-4eb0-b915-18d88ffe13a1.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "study-the-mark",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-714c1814-d338-4225-bc5d-359aa42254fe.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "vampiric-touch",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-a2a6bec3-7c03-4f79-bee0-697b976f51a7.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "stunning-strike",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-89a0c56f-831a-414c-9083-3eec7884f4ef.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "thousand-cuts",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-51ceb8b3-a99b-4a57-a7ed-db1cf1ea1481.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "vanish",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-178b345a-cb0d-4604-83a1-eb0b06eb6c51.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "vial-of-poison",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ccf67c63-de19-407a-b8c7-dbb8182d9a29.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "vicious-mockery",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9e5d157b-581d-4d83-acc6-cb6e0e2baf38.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "summoning-circle",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e0a7c192-eaf9-4c88-9378-d5376a42b4e0.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "thrown-daggers",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-a07e08bc-e133-4625-8e81-8e23d2be5102.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "void-fist",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8dc5df99-b0b8-465e-9499-2c16c7b3373e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "vigor-potion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-db9029d5-6c2a-490f-ba8a-42a1ab71ec60.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "void-claws",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-78c8eb9e-94f0-4dd6-9c29-e1e7e7d257e5.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "toxic-cloud",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7b16ae4b-50ed-43c9-94de-71ddb03a920d.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "wolf-companion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-15c94718-2b96-42f3-9bfe-bd964e97daf4.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "war-cry",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e30db40c-6f0a-4d53-b794-5005649fab95.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-dagger",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6b96c625-7561-4a8e-8cba-5dfe7b300d9e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "true-shot",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-86eb3c16-25b2-41a5-b8cd-64c6efcd659a.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "wide-swing",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-e1a3b77a-b135-4048-aa82-4d988dfa84d5.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "wraith-form",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4078b2e3-64a2-49ae-bb3c-68a55df04c1a.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-spear",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8704ece9-dc1e-4229-be8d-0206f3e5cd17.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-shortsword",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3ec1f9da-ab20-450c-9da1-df0772826917.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "wyvern-venom",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9265b8bd-22f9-400d-b697-52be9d4ed65d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-longsword",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-853e1b46-8f6e-4609-9bd0-b934a6697f83.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "wild-instinct",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-78af8b3c-bb52-421a-ad4f-8af077164bc9.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-mace",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6fc16662-5043-4c35-83d5-3785e050fbf8.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-rapier",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-376d0ff7-7e22-4d34-b9a3-d142d3adb4bb.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-greataxe",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6ccde794-f68b-4d7b-abfc-8c97c06809f1.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-handcrossbow",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-88ffaa8d-5a8f-46a4-804b-73e2c819d1f6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-handwraps",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1bd6938d-8a56-4190-bcda-38112d063197.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-battleaxe",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8786efa2-9cdf-424f-8f4f-3f6f48c95ea6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-sling",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-40ff04bc-3176-4068-855e-518c3267dc7f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-shortbow",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-dfdd0019-379a-40b6-88dd-9e30f2a0668c.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-katana",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-90aee17b-a54e-4a6b-9588-0eaffcbf12bd.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-druidstaff",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3c3b0a2e-697e-4763-b798-14df29325fb5.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-longbow",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ad71aad4-5062-4d50-8998-e75c65e1451d.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-greatsword",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f95e463b-c310-4cf4-b5a1-86699decc828.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-skullstaff",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-92124324-bb35-441e-a8ae-fa90bda59668.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-buckler",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-08e49110-f6ea-45af-87f1-fbf0f8723036.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-halberd",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-27a80291-96b8-4c84-babf-241e629cd8fd.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-heavycrossbow",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-78604eb9-5c25-4aa4-8b83-9747c8d9b1a3.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-lute",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-98a381d4-e288-497d-a5bf-8f6e0b6a3568.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-shield",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-18fee407-e798-4120-bfb3-19e2f68f419a.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-wand",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0bdc3dad-7b9b-46ae-a8c7-b41a835472c7.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-towershield",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9349de81-a3bb-4479-8c2a-555fa78ca1ec.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-staff",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-adab05b2-3fdd-4b95-987e-2ccdc8725f01.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-hornedhelm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-be9903fa-dbc3-4b29-a5a9-49428f6ac89b.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-orb",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6599d33e-7573-4bd9-8356-803e118e5f76.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-greathelm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-45a64c98-4ce6-4fd0-853a-09e8d9d81a24.png",
+      "width": 1061,
+      "height": 1482
+    },
+    {
+      "name": "eq-tome",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-78ffba26-72fd-4647-96bc-eb26303bfd29.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-wizardhat",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b83bb164-a1d5-4d8f-989c-71f52ffe91ea.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-circlet",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1a0f9cb5-7292-404e-a46b-9251e13debb9.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-shadowcloak",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-54b6438c-3bc6-47e9-8f39-1f39cf7cde2c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-holysymbol",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1a44bb16-66b5-41ce-acbc-134dc5f47636.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-clericvest",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3f434a82-5f88-4ba8-b30c-6f719c4f5d7f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-hood",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1f2a2519-c087-4eca-93ee-bd566e6abe94.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-leather",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-fc285988-224f-4b28-9263-3e4f58bb3d53.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-headband",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ac76dd3e-3abe-4845-805e-b1020e68b526.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-ironhelm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3153ab00-9014-479f-ab27-0777fa9b379c.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-chainmail",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-5e353bc1-e81d-41a7-92ae-bd1ee0d7cb57.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-studded",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-985673e6-927a-4bf6-845b-657bbb4e39ac.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-plate",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-210fcac7-d02e-48db-8ebf-aec603e17bd9.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-hide",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3046ed9b-4443-44de-bca9-1f02ed474cb2.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-gauntlets",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4dbd9f63-0c1c-4245-9a76-74ff2fa04df0.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-chainshirt",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0f59f2e7-57d0-423e-9952-1e88eae2540c.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-ogregauntlets",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0e7036c4-c00d-476a-8ec1-fed8d42a5281.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-breastplate",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-457b9196-bfd3-4cd3-988a-3e8f8a0a0dbb.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-runegloves",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-798c7599-6d8f-4de6-82b5-b33085b58f91.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-leatherpants",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-ef833804-a47d-4f36-ada7-260abe5c913e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-greaves",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9a282ac7-184f-4076-87d9-fd8aaf2c83f3.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-elvenleggings",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-4e119832-dada-45bf-b32e-6de8db699374.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-arcanemedallion",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-60779f73-8174-41b1-9e68-5a1b2d62436d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-travelboots",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-a20a9a86-4726-4f50-94b2-ec376213699e.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-wingedboots",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9b8f0963-3686-4a2d-89c0-d448deb843d4.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-fangnecklace",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-45f3c6c8-371d-4a6b-950a-8192050292da.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-wardamulet",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3858f777-9bac-46aa-821b-3ad4ca12d750.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-ironboots",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-889fe232-a953-4ad3-9ffa-0ded2bdb9e09.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-strengthring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2656117e-c16b-4826-8174-e8c0c4def414.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-protectionring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-271081be-d082-4a9c-a961-01a152f8352d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-elvenboots",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9d8c82c7-a467-424f-9e4a-491deaad6bc6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-vigorring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-736e6b74-1621-4fd6-b87d-606102f52da2.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-agilityring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-f13e7444-b023-48dd-83fe-8c4370bb2aa7.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-periapt",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-62e6592e-15e9-4011-92f7-50a37d10d136.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "iron-scales",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-bb8b7d34-5095-4165-a018-d029916a1e15.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-bloodring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-beff10bf-2cc9-4d90-92d8-d645fe605701.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "rending-claw",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-cecfa4da-9ffd-466c-8b01-39ccd4ff8d19.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "terrifying-roar",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-90f61d6e-c471-43b5-8a81-cef1afa8804d.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-healthamulet",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-18aca9f2-0524-4c0a-90a6-c6da982d63e4.png",
+      "width": 1047,
+      "height": 1503
+    },
+    {
+      "name": "bite",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-02d0506b-fcd6-4511-9e31-826bac8d675f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "dragon-whelp",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-cb012577-e155-4b1f-a6fe-4b7841e2c104.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "draconic-fury",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6fc26b10-47ee-4b42-93db-826c1e97ad77.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "tail-sweep",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-6514b67d-26ae-4ade-b55c-74ad89c1023f.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "inferno",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-8401c939-810b-4aee-b61a-610c0363eb65.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "dive",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-1690a9dd-fbfe-4d26-abfc-8b88e8776179.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-monkgarb",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-9dfded8f-5d85-4a01-b7ba-cbc113d76a4f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-thiefgloves",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-0e3dfa55-a04c-4a67-abbd-fe625efff913.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "cataclysm",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-96ab12e6-6eb7-4418-b24e-c22052682f86.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-mask",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-674ebba5-d2fc-47d4-9ac0-68dd191c4484.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-archmagering",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-7ef01482-3efc-40cf-84ae-cf1f2eb8f23f.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-robe",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-dbb2cc77-9a04-4ad7-900a-5cbb77bc49c2.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-berserkerring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-289dbe6e-66bc-40d1-a682-aa4f9d717a40.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "eq-archrobe",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-b01cbc6b-ea5a-4d96-b97c-b2ebba611ad6.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "eq-patronring",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2f6ca75d-cc4b-4200-a1dd-d87958dda188.png",
+      "width": 1060,
+      "height": 1484
+    },
+    {
+      "name": "dragon-hoard",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-734a4641-ea87-4308-b800-9e7fa4164936.png",
+      "width": 1061,
+      "height": 1483
+    },
+    {
+      "name": "fire-breath",
+      "source": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-3265d8f8-ec0c-4c05-b5b1-43464e33e641.png",
+      "width": 1060,
+      "height": 1484
+    }
+  ]
+}

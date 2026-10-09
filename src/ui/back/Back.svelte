@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Coach from '../common/Coach.svelte';
+  import { LESSONS } from '../../app/tutorialLessons';
   import { untrack } from 'svelte';
   import { Upload, Trash2, ImageDown, Plus, X, RotateCcw, Printer } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
@@ -69,7 +71,7 @@
 </script>
 
 <div class="page">
-  <aside class="side">
+  <aside data-tutorial="card-back-controls" class="side">
     <header>
       <h1>{L('Verso das cartas', 'Card back')}</h1>
       <EditionPicker />
@@ -154,6 +156,8 @@
     <div class="card">{@html svg}</div>
   </section>
 </div>
+
+<Coach area="back" lessons={LESSONS.back} />
 
 <style>
   .page { display: grid; grid-template-columns: minmax(360px, 440px) 1fr; height: 100%; }

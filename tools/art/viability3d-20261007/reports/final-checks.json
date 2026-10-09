@@ -1,0 +1,26 @@
+{
+  "scripts_parse": true,
+  "document_links_resolve": true,
+  "missing_links": [],
+  "completed_cases": {
+    "benchmark": {
+      "success": true,
+      "glb_exists": true
+    },
+    "benchmark1024": {
+      "success": true,
+      "glb_exists": true
+    },
+    "crate512": {
+      "success": true,
+      "glb_exists": true
+    },
+    "helmet512": {
+      "success": true,
+      "glb_exists": true
+    }
+  },
+  "isolated_server_stopped": true,
+  "gpu_after": "756 MiB, 42",
+  "no_game_verification_claim": "Standalone asset experiment; no game build, browser gameplay, rig, armor fitting, animation or mobile test performed."
+}

@@ -1,27 +1,13 @@
-/**
- * Projeto inicial: 1ª edição com os 9 decks e as 450 cartas de exemplo, mais a
- * coleção "Classes" (9 cartas por deck, fiéis ao Pathfinder 2e, geradas por
- * tools/pf-cards.py com custo e raridade pela tabela de pontuação).
- */
-import pfCards from '../data/pf-cards.json';
+import { withPrototypeArt } from '../render/reworkArt';
+/** Projeto inicial: coleção jogável Protótipo, seus equipamentos e heróis. */
 import { HERO_BASES, PROTO_DECKS, PROTO_ITEMS, PROTO_MONSTERS, type ProtoCard } from '../game/decks';
 import { PRESET_AVATARS } from '../avatar/presets';
 import { gameText } from '../game/text';
 import { ATTR_NAMES, KIND_NAMES, type HeroWeapon } from '../game/types';
 import type { Look } from '../render/compose';
 import { CLASS_COLORS, COLORS } from './catalog';
-import { normalizeCost } from './cost';
-import { applyScoring } from './scoring';
 import { PROJECT_VERSION, type Card, type Character, type ColorId, type Deck, type Edition, type Lang, type Project, type RarityId, type ResourceId } from './types';
 import { newId } from './id';
-
-interface SeedCard {
-  deck: string; n: number; colors: ColorId[];
-  text: Card['text'];
-  cost: { resource: string; amount: number } | null;
-  stats: { atk: number; def: number } | null;
-  rarity: string; mechanics: string[]; tags: string[];
-}
 
 /** A antiga 1ª Edição (amostra de cartas sem jogo), que saiu na 3.6. */
 export const OLD_EDITION_ID = 'ed1';
@@ -43,40 +29,7 @@ export function editionDecks(editionId: string, prefix = ''): Deck[] {
   ];
 }
 
-function toCards(list: SeedCard[], prefix: string, mode: Card['rarityMode']): Card[] {
-  const now = Date.now();
-  return list.map((s): Card => applyScoring({
-    id: newId('card'),
-    deckId: prefix + s.deck,
-    n: s.n,
-    text: s.text,
-    colors: s.colors,
-    cost: normalizeCost(s.cost),
-    stats: s.stats,
-    rarity: s.rarity as RarityId,
-    mechanics: s.mechanics,
-    tags: s.tags,
-    // custo fixo; a raridade das cartas de Classes segue a tabela (e já bate com ela)
-    costMode: 'manual',
-    rarityMode: mode,
-    art: { zoom: 1, x: 0, y: 0, mirror: false },
-    createdAt: now,
-    updatedAt: now,
-  }));
-}
-
 export const PF_ID = 'pf1';
-const PF_PREFIX = 'pf-';
-
-/** Coleção "Classes" (Pathfinder 2e): edição, decks e cartas. */
-export function pfCollection(): { edition: Edition; decks: Deck[]; cards: Card[] } {
-  return {
-    edition: { id: PF_ID, name: 'Classes — Pathfinder', code: 'CLS' },
-    decks: editionDecks(PF_ID, PF_PREFIX),
-    cards: toCards((pfCards as SeedCard[]).filter((c) => c.deck !== 'equipment'), PF_PREFIX, 'auto'),
-  };
-}
-
 import { presetSlots, protoEquipment } from './equipment';
 
 export const PROTO_ID = 'proto1';
@@ -132,24 +85,22 @@ export function protoCollection(): { edition: Edition; decks: Deck[]; cards: Car
   ];
   // as cartas de equipamento dos heróis prontos (arma + 5 peças de cada um)
   const eq = protoEquipment(PROTO_ID);
-  return { edition: { id: PROTO_ID, name: 'Protótipo', code: 'PROTO', deckSize: 40 }, decks: [...decks, eq.deck], cards: [...cards, ...eq.cards] };
+  return { edition: { id: PROTO_ID, name: 'Protótipo', code: 'PROTO', deckSize: 40 }, decks: [...decks, eq.deck], cards: [...cards, ...eq.cards].map(withPrototypeArt) };
 }
 
 export function seedProject(): { project: Project; cards: Card[] } {
-  const pf = pfCollection();
   const proto = protoCollection();
-  // o jogo abre na coleção Protótipo (a do jogo); a de Classes — Pathfinder fica como exemplo de cartas
-  const decks = [...proto.decks, ...pf.decks];
-  const cards = [...proto.cards, ...pf.cards];
+  const decks = proto.decks;
+  const cards = proto.cards;
   const project: Project = {
     version: PROJECT_VERSION,
     name: 'Void Sun',
     lang: 'pt-BR',
-    editions: [proto.edition, pf.edition],
+    editions: [proto.edition],
     decks,
     characters: presetHeroes(),
     themes: [],
-    seeded: [PF_ID, PROTO_ID, 'proto-rules-8', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
+    seeded: [PROTO_ID, 'drop-pf-1', 'proto-rules-8', 'proto-heroes-1', 'proto-avatars-1', 'proto-equipment-1', 'gear-overhaul-1', 'proto-decks-7', 'drop-ed1-1', 'preset-gear-2'],
   };
   return { project, cards };
 }

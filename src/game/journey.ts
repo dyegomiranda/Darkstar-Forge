@@ -167,7 +167,7 @@ export function available(m: JourneyMap): MapNode[] {
 
 /** Conclui um ponto do mapa (batalha vencida, treino feito). */
 export function clearNode(j: JourneyState, id: number): void {
-  if (!j.map) return;
+  if (!j.map || !j.map.nodes[id] || j.map.cleared.includes(id)) return;
   j.map.at = id;
   j.map.cleared.push(id);
 }
@@ -177,6 +177,8 @@ export function clearNode(j: JourneyState, id: number): void {
  * fica concluído. Vencer o chefe encerra o mapa: o próximo é sorteado de novo, mais difícil.
  */
 export function applyResult(j: JourneyState, node: MapNode, won: boolean, forfeit = false): { xp: number; levels: number } {
+  // Um resultado atrasado ou repetido não concede XP nem avança o mapa de novo.
+  if (!j.map || !j.map.nodes[node.id] || j.map.nodes[node.id].layer !== node.layer || j.map.nodes[node.id].kind !== node.kind || j.map.cleared.includes(node.id)) return { xp: 0, levels: 0 };
   const boss = node.kind === 'boss';
   const xp = forfeit && !won ? 0 : xpReward(depthOf(j.tier ?? 0, node.layer), won, boss, node.kind === 'elite');
   const levels = addXp(j, xp);
@@ -240,12 +242,11 @@ export const foeDifficulty = (depth: number): Difficulty => (depth <= 3 ? 'easy'
  * sem passar de 4 cópias (nem do que o jogador tem: `cap`). Reações e itens não se multiplicam.
  */
 export function journeyDeck(cards: CardDef[], level: number, cap: (c: CardDef) => number = () => MAX_COPIES): CardDef[] {
-  const ok = cards.filter((c) => c.game.level <= level && c.game.copies > 0).map((c) => ({ ...c, game: { ...c.game } }));
+  const ok = cards.filter((c) => c.game.level <= level && c.game.copies > 0).map((c) => ({ ...c, game: { ...c.game, copies: Math.max(0, Math.min(MAX_COPIES, Math.floor(cap(c)), Math.floor(c.game.copies))) } })).filter((c) => c.game.copies > 0);
   let total = ok.reduce((n, c) => n + c.game.copies, 0);
   // cartas demais (o deck inicial mais as recompensas ganhas): saem cópias das cartas mais repetidas, as de nível mais baixo primeiro
   while (total > DECK_SIZE) {
     const most = ok.reduce((a, b) => (b.game.copies > a.game.copies || (b.game.copies === a.game.copies && b.game.level < a.game.level) ? b : a));
-    if (most.game.copies <= 1) break;
     most.game.copies--;
     total--;
   }
@@ -258,7 +259,7 @@ export function journeyDeck(cards: CardDef[], level: number, cap: (c: CardDef) =
     least.game.copies++;
     total++;
   }
-  return ok;
+  return ok.filter((c) => c.game.copies > 0);
 }
 
 /** O que o nível `level` libera num deck: cartas daquele nível e evoluções daquele nível. */

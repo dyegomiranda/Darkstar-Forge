@@ -1,0 +1,15 @@
+import {describe,it,expect} from 'vitest';
+import * as T from 'three';
+import {BODIES,gaitFoot,solveLeg,requireGearFit,type BodyId} from '../src/ui/sample3d/fit';
+import {RigCharacter} from '../src/ui/sample3d/character';
+import type {SampleMaterials} from '../src/ui/sample3d/materials';
+const names=Object.keys(BODIES) as BodyId[];
+const material=new T.MeshStandardMaterial();
+const bank={skin:material,cloth:material,green:material,leather:material,steel:material,gold:material,hairRed:material,hairBrown:material,face:()=>material,flat:()=>material} as unknown as SampleMaterials;
+describe('Human sample: shared skeleton and usable equipment',()=>{
+ it('makes stronger bodies taller without enlarging the head',()=>{for(const sex of ['male','female']){const base=BODIES[(sex+'-normal') as BodyId],strong=BODIES[(sex+'-strong') as BodyId];expect(strong.height).toBeGreaterThan(base.height);expect(strong.head).toBe(base.head);expect(strong.shoulder).toBeGreaterThan(base.shoulder);}});
+ it('rejects an item from an incompatible anatomical family',()=>{expect(()=>requireGearFit('male-normal','helmet','minotaur-v1')).toThrow('compatível');});
+ it('keeps the planted foot stationary as the hero travels',()=>{for(const side of [-1,1])for(let cycle=0;cycle<2;cycle+=.017){const foot=gaitFoot(cycle,side),next=gaitFoot(cycle+.001,side);if(foot.stance&&next.stance){expect(foot.y).toBe(0);expect(next.z+1.08*.001).toBeCloseTo(foot.z,8);}}});
+ it('solves the ankle contact and compensates foot orientation throughout a stride',()=>{for(let cycle=0;cycle<1;cycle+=.02){const f=gaitFoot(cycle,1),p=solveLeg(.95,.06+f.y,f.z);const y=.95-.46*Math.cos(p.thigh)-.48*Math.cos(p.thigh+p.shin),z=-.46*Math.sin(p.thigh)-.48*Math.sin(p.thigh+p.shin);expect(y).toBeCloseTo(.06+f.y,5);expect(z).toBeCloseTo(f.z,5);expect(p.thigh+p.shin+p.foot).toBeCloseTo(0,8);}});
+ for(const body of names)it(`keeps ${body} feet on the floor and hands/gear on the same skeleton`,()=>{const rig=new RigCharacter(body,bank);try{rig.setEquipment(true);rig.setGear('helmet',true);for(let i=0;i<80;i++){rig.update(.016,.014,0,null);for(const mesh of rig.root.children.filter(o=>o instanceof T.SkinnedMesh)){expect((mesh as T.SkinnedMesh).skeleton.bones).toContain(rig.root.getObjectByName('head'));expect(mesh.scale.toArray()).toEqual([1,1,1]);}for(const side of ['L','R']){const foot=rig.root.getObjectByName('foot'+side)!;const p=foot.getWorldPosition(new T.Vector3());expect(p.y).toBeGreaterThanOrEqual(.055);expect(p.y).toBeLessThan(.27);}}rig.update(.016,0,0,null);const hand=rig.socket('handR');rig.strike();rig.update(.42,0,0,null);expect(rig.socket('handR').distanceTo(hand)).toBeGreaterThan(.15);rig.update(1.1,0,0,null);const resting=rig.socket('handR').y;rig.update(.016,0,.45,'fire');expect(rig.socket('handR').y).toBeGreaterThan(resting+.25);expect(rig.root.children.some(o=>o.name==='hair'&&o.visible)).toBe(false);rig.setEquipment(false);expect(rig.root.children.some(o=>o.name==='hair'&&o.visible)).toBe(true);}finally{rig.dispose();}});
+});

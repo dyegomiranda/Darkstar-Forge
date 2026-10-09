@@ -1,0 +1,11 @@
+{"elapsed_s": 0.02, "gpu_memory_mib": 885, "gpu_utilization_percent": 10, "gpu_temp_c": 44, "available_ram_mib": 23330}
+{"elapsed_s": 2.04, "gpu_memory_mib": 885, "gpu_utilization_percent": 3, "gpu_temp_c": 44, "available_ram_mib": 22326}
+{"elapsed_s": 4.06, "gpu_memory_mib": 885, "gpu_utilization_percent": 9, "gpu_temp_c": 44, "available_ram_mib": 22396}
+{"elapsed_s": 6.08, "gpu_memory_mib": 885, "gpu_utilization_percent": 3, "gpu_temp_c": 44, "available_ram_mib": 22241}
+{"elapsed_s": 8.1, "gpu_memory_mib": 885, "gpu_utilization_percent": 8, "gpu_temp_c": 44, "available_ram_mib": 22299}
+{"elapsed_s": 10.11, "gpu_memory_mib": 885, "gpu_utilization_percent": 3, "gpu_temp_c": 44, "available_ram_mib": 22294}
+{"elapsed_s": 12.13, "gpu_memory_mib": 885, "gpu_utilization_percent": 8, "gpu_temp_c": 44, "available_ram_mib": 21910}
+{"elapsed_s": 14.15, "gpu_memory_mib": 885, "gpu_utilization_percent": 3, "gpu_temp_c": 44, "available_ram_mib": 20823}
+{"elapsed_s": 16.16, "gpu_memory_mib": 885, "gpu_utilization_percent": 8, "gpu_temp_c": 44, "available_ram_mib": 20821}
+{"elapsed_s": 18.18, "gpu_memory_mib": 885, "gpu_utilization_percent": 3, "gpu_temp_c": 44, "available_ram_mib": 20632}
+{"elapsed_s": 20.2, "gpu_memory_mib": 885, "gpu_utilization_percent": 7, "gpu_temp_c": 44, "available_ram_mib": 22159}

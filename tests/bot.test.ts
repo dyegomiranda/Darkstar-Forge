@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PROTO_DECKS } from '../src/game/decks';
 import { newGame, type Side } from '../src/game/engine';
-import { botTurn, DIFFICULTIES, EDGE, type Difficulty } from '../src/game/bot';
+import { botAction, botTurn, DIFFICULTIES, EDGE, type Difficulty } from '../src/game/bot';
 import type { CardDef } from '../src/game/types';
 
 const side = (i: number): Side => ({ hero: PROTO_DECKS[i].hero, cards: PROTO_DECKS[i].cards.map((c, k): CardDef => ({ id: `${i}-${k}`, name: c.name, game: c.game })) });
@@ -47,4 +47,11 @@ describe('bot: níveis de dificuldade', () => {
     expect(series('easy', n)).toBeLessThan(n / 2);
     expect(series('veryHard', n)).toBeGreaterThan(n / 2);
   }, 120000);
+});
+
+it('o vigia sem recuo ainda escolhe atacar, sem alterar o estado ao decidir', () => {
+ const s=newGame({...side(0), cards:[]},{...side(1), cards:[]},{seed:42});
+ const before=structuredClone(s);
+ expect(botAction(s,'hard',true,{movement:false}).t).toBe('strike');
+ expect(s).toEqual(before);
 });

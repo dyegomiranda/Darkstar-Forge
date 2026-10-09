@@ -23,7 +23,7 @@ Não precisa abrir o navegador nem montar o fluxo: o script faz isso sozinho.
 Em **outro** terminal (aqui não precisa do venv):
 
 ```
-cd ~/Downloads/"Darkstar Forge"
+cd ~/Downloads/"Void Sun"
 python3 tools/comfyui/gerar_artes.py --listar
 python3 tools/comfyui/gerar_artes.py --so pf-red_001,pf-blue_002,pf-equipment_001
 ```

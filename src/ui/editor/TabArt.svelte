@@ -54,7 +54,7 @@
   </button>
   <input type="file" accept="image/*" hidden bind:this={input} onchange={(e) => take((e.currentTarget as HTMLInputElement).files)} />
 
-  {#if art.mediaId}
+  {#if art.mediaId || art.asset}
     <section class="stack s">
       <span class="section-title">{L('Enquadramento', 'Framing')}</span>
       <label class="field"><span>{L('Zoom', 'Zoom')} · {Math.round(art.zoom * 100)}%</span>

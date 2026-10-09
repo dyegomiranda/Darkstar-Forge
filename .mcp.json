@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "blender": {
+      "command": "/home/djabo/.local/bin/blender-mcp",
+      "env": { "BLENDER_PATH": "/home/djabo/.local/bin/blender", "BLENDER_MCP_HOST": "localhost", "BLENDER_MCP_PORT": "9876" }
+    }
+  }
+}

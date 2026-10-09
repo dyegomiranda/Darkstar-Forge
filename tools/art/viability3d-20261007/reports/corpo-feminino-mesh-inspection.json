@@ -1,0 +1,30 @@
+{
+  "source": "outputs/corpo-feminino/colored-raw_00001_.glb",
+  "mesh_objects": 1,
+  "vertices": 1017173,
+  "polygons": 2034818,
+  "triangles": 2034818,
+  "armatures": 0,
+  "uv_layers": [
+    []
+  ],
+  "color_attributes": [
+    [
+      "Color"
+    ]
+  ],
+  "bounds_before": {
+    "min": [
+      -0.48416662216186523,
+      -0.13975191116333008,
+      -0.48786067962646484
+    ],
+    "max": [
+      0.48419952392578125,
+      0.07928943634033203,
+      0.4531841278076172
+    ]
+  },
+  "render_notes": "Imported real generated GLB. CPU Cycles, unlit generated vertex colors (no denoising or texture repairs). No sculpting, retopology, rigging, armor or animation edits.",
+  "inspection_seconds": 43.49
+}

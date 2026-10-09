@@ -3,15 +3,19 @@
   Cada animação toca uma vez e o boneco volta a ficar parado ("Andar" repete).
 -->
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import Atmosphere from '../visual/Atmosphere.svelte';
   import { RotateCcw, RotateCw, Dices, Swords } from '@lucide/svelte';
   import { L } from '../../app/i18n.svelte';
+  import { avatarArtPreview } from '../../avatar/modern';
   import AvatarSprite from '../../avatar/AvatarSprite.svelte';
+  import { EIGHT_DIRECTIONS, type Facing } from '../../avatar/direction';
   import { attackAnim, colorsOf, DIRS, LPC, OWN_SKIN, SKINS, type Anim, type Avatar, type Dir } from '../../avatar/lpc';
 
-  let { avatar, color = '#6b5532', onchange }: { avatar: Avatar; color?: string; onchange: (a: Avatar) => void } = $props();
+  let { avatar, color = '#6b5532', editable = true, onchange }: { avatar: Avatar; color?: string; editable?: boolean; onchange: (a: Avatar) => void } = $props();
 
   type Pick = Anim | 'weapon';
-  let dir = $state<Dir>('s');
+  let dir = $state<Facing>('s');
   /** O botão marcado; `anim` é o que o boneco está fazendo (o "ataque da arma" vira a animação da arma). */
   let sel = $state<Pick>('idle');
   let playKey = $state(0);
@@ -26,7 +30,8 @@
   function play(p: Pick) { sel = p; playKey++; }
   let back: ReturnType<typeof setTimeout> | undefined;
   function ended() { const k = playKey; clearTimeout(back); back = setTimeout(() => { if (k === playKey) sel = 'idle'; }, 600); }
-  const turn = (d: number) => { dir = DIRS[(DIRS.indexOf(dir) + d + 4) % 4]; };
+  onDestroy(() => clearTimeout(back));
+  const turn = (d: number) => { dir = EIGHT_DIRECTIONS[(EIGHT_DIRECTIONS.indexOf(dir) + d + 8) % 8]; };
 
   function random() {
     const rnd = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
@@ -47,14 +52,19 @@
   }
 </script>
 
+{#if avatarArtPreview}
+  <p class="art-preview">{L('Prévia dos novos modelos: corpo, cabelos e peças disponíveis. As peças restantes ainda não aparecem neste teste. Sua aparência salva é preservada.', 'New model preview: body, hair and available pieces. Remaining pieces are not shown in this test. Your saved appearance is preserved.')}</p>
+{/if}
 <div class="stage" style="--c:{color}">
   <div class="sky"></div>
   <div class="floor"></div>
+  <Atmosphere scene="santuario" />
+  <div class="plinth" aria-hidden="true"></div>
   <div class="doll">{#key playKey}<AvatarSprite {avatar} {anim} {dir} scale={5} loop={LOOPS.includes(anim)} onend={ended} />{/key}</div>
   <div class="turn">
     <button class="px-icon" onclick={() => turn(1)} title={L('Girar', 'Rotate')} aria-label={L('Girar para a esquerda', 'Rotate left')}><RotateCcw size={15} /></button>
     <button class="px-icon" onclick={() => turn(-1)} title={L('Girar', 'Rotate')} aria-label={L('Girar para a direita', 'Rotate right')}><RotateCw size={15} /></button>
-    <button class="px-icon" onclick={random} title={L('Aparência aleatória', 'Random look')} aria-label={L('Aparência aleatória', 'Random look')}><Dices size={15} /></button>
+    <button class="px-icon" disabled={!editable} onclick={random} title={L('Aparência aleatória', 'Random look')} aria-label={L('Aparência aleatória', 'Random look')}><Dices size={15} /></button>
   </div>
   <div class="anims">
     {#each ANIMS as a (a.id)}
@@ -64,12 +74,15 @@
 </div>
 
 <style>
+  .art-preview { margin: 0 0 8px; padding: 10px; border: 1px solid #8c713c; background: #292114; color: #f2d39b; font: 12px/1.5 var(--ui); }
   .stage { position: relative; height: 380px; overflow: hidden; display: grid; place-items: center; border: 2px solid #2c2647; background: #07060c; }
-  .sky { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--c) 40%, #1b1533), #07060c 75%); }
+  .sky { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(13 23 34 / .32), rgb(13 23 34 / .55)), url("/cenarios/santuario.png") 50% 24% / cover; image-rendering: pixelated; }
   .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 38%; background: linear-gradient(180deg, rgb(255 255 255 / .05), transparent 3px), linear-gradient(180deg, transparent, rgb(0 0 0 / .55)); }
-  .doll { position: relative; margin-top: -56px; }
-  .turn { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
-  .anims { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+  .plinth { position: absolute; width: 240px; height: 68px; left: calc(50% - 120px); top: 244px; border-radius: 50%; background: radial-gradient(ellipse, rgb(181 157 110 / .16) 20%, rgb(48 57 61 / .7) 65%, transparent 67%); border-bottom: 2px solid rgb(228 210 162 / .22); box-shadow: 0 15px 16px rgb(7 15 24 / .5); }
+  .doll { position: relative; z-index: 2; margin-top: -56px; filter: drop-shadow(-1px -1px 0 rgb(237 197 138 / .25)) drop-shadow(4px 6px 3px rgb(16 25 38 / .4)); }
+
+  .turn { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; gap: 4px; }
+  .anims { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
   .anims button { display: inline-flex; gap: 4px; align-items: center; padding: 4px 8px; border: 1px solid #3a3260; background: rgb(8 7 14 / .8); color: var(--text-2); font: 500 11px var(--ui); cursor: pointer; }
   .anims button:hover { color: var(--text); border-color: #6a5fa8; }
   .anims button.on { border-color: var(--accent); color: var(--accent-2); background: rgb(227 181 102 / .12); }

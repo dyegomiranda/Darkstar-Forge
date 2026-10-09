@@ -1,0 +1,4127 @@
+{
+  "jobs": [
+    {
+      "id": "hair_long",
+      "slot": "hair",
+      "description": "Long (hair long)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_long_straight",
+      "slot": "hair",
+      "description": "Long straight (hair long straight)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_wavy",
+      "slot": "hair",
+      "description": "Wavy (hair wavy)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_bangslong",
+      "slot": "hair",
+      "description": "Long with bangs (hair bangslong)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_xlong",
+      "slot": "hair",
+      "description": "Extra long (hair xlong)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_ponytail",
+      "slot": "hair",
+      "description": "Ponytail (hair ponytail)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_high_ponytail",
+      "slot": "hair",
+      "description": "High ponytail (hair high ponytail)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_braid",
+      "slot": "hair",
+      "description": "Braid (hair braid)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_topknot_long",
+      "slot": "hair",
+      "description": "Topknot (hair topknot long)",
+      "material": "hair",
+      "z": 145
+    },
+    {
+      "id": "hair_bob",
+      "slot": "hair",
+      "description": "Bob (hair bob)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_plain",
+      "slot": "hair",
+      "description": "Short (hair plain)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_messy1",
+      "slot": "hair",
+      "description": "Messy (hair messy1)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_parted",
+      "slot": "hair",
+      "description": "Parted (hair parted)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_swoop",
+      "slot": "hair",
+      "description": "Swoop (hair swoop)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_pixie",
+      "slot": "hair",
+      "description": "Pixie (hair pixie)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_spiked",
+      "slot": "hair",
+      "description": "Spiked (hair spiked)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_curly_long",
+      "slot": "hair",
+      "description": "Curly long (hair curly long)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_curly_short",
+      "slot": "hair",
+      "description": "Curly short (hair curly short)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_afro",
+      "slot": "hair",
+      "description": "Afro (hair afro)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_dreadlocks_long",
+      "slot": "hair",
+      "description": "Dreadlocks (hair dreadlocks long)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_buzzcut",
+      "slot": "hair",
+      "description": "Buzzcut (hair buzzcut)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_mop",
+      "slot": "hair",
+      "description": "Mop (hair mop)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_bedhead",
+      "slot": "hair",
+      "description": "Bedhead (hair bedhead)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_longhawk",
+      "slot": "hair",
+      "description": "Mohawk (hair longhawk)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_pigtails",
+      "slot": "hair",
+      "description": "Pigtails (hair pigtails)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_lob",
+      "slot": "hair",
+      "description": "Long bob (hair lob)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_long_messy",
+      "slot": "hair",
+      "description": "Long messy (hair long messy)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "hair_cowlick",
+      "slot": "hair",
+      "description": "Cowlick (hair cowlick)",
+      "material": "hair",
+      "z": 120
+    },
+    {
+      "id": "beards_5oclock_shadow",
+      "slot": "beard",
+      "description": "Stubble (beards 5oclock shadow)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_trimmed",
+      "slot": "beard",
+      "description": "Trimmed (beards trimmed)",
+      "material": "hair",
+      "z": 110
+    },
+    {
+      "id": "beards_medium",
+      "slot": "beard",
+      "description": "Medium (beards medium)",
+      "material": "hair",
+      "z": 110
+    },
+    {
+      "id": "beards_beard",
+      "slot": "beard",
+      "description": "Full (beards beard)",
+      "material": "hair",
+      "z": 110
+    },
+    {
+      "id": "beards_winter",
+      "slot": "beard",
+      "description": "Long (beards winter)",
+      "material": "hair",
+      "z": 110
+    },
+    {
+      "id": "beards_mustache",
+      "slot": "mustache",
+      "description": "Basic (beards mustache)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_chevron",
+      "slot": "mustache",
+      "description": "Chevron (beards chevron)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_handlebar",
+      "slot": "mustache",
+      "description": "Handlebar (beards handlebar)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_horseshoe",
+      "slot": "mustache",
+      "description": "Horseshoe (beards horseshoe)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_walrus",
+      "slot": "mustache",
+      "description": "Walrus (beards walrus)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_french",
+      "slot": "mustache",
+      "description": "French (beards french)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_bigstache",
+      "slot": "mustache",
+      "description": "Big (beards bigstache)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "beards_lampshade",
+      "slot": "mustache",
+      "description": "Lampshade (beards lampshade)",
+      "material": "hair",
+      "z": 111
+    },
+    {
+      "id": "eyebrows_thin",
+      "slot": "eyebrows",
+      "description": "Thin (eyebrows thin)",
+      "material": "hair",
+      "z": 106
+    },
+    {
+      "id": "eyebrows_thick",
+      "slot": "eyebrows",
+      "description": "Thick (eyebrows thick)",
+      "material": "hair",
+      "z": 106
+    },
+    {
+      "id": "eyes_cyclops",
+      "slot": "eyes",
+      "description": "Cyclops (eyes cyclops)",
+      "material": "eye",
+      "z": 105
+    },
+    {
+      "id": "eyes_cyclops2",
+      "slot": "eyes",
+      "description": "Big-eyed cyclops (eyes cyclops2)",
+      "material": "eye",
+      "z": 105
+    },
+    {
+      "id": "head_nose_button",
+      "slot": "nose",
+      "description": "Button (head nose button)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "head_nose_straight",
+      "slot": "nose",
+      "description": "Straight (head nose straight)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "head_nose_large",
+      "slot": "nose",
+      "description": "Large (head nose large)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "head_nose_big",
+      "slot": "nose",
+      "description": "Big (head nose big)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "head_nose_elderly",
+      "slot": "nose",
+      "description": "Elderly (head nose elderly)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "head_ears_elven",
+      "slot": "ears",
+      "description": "Elven (head ears elven)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_ears_long",
+      "slot": "ears",
+      "description": "Long (head ears long)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_ears_medium",
+      "slot": "ears",
+      "description": "Pointed (head ears medium)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_ears_big",
+      "slot": "ears",
+      "description": "Big (head ears big)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "head_ears_down",
+      "slot": "ears",
+      "description": "Drooping (head ears down)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_ears_hang",
+      "slot": "ears",
+      "description": "Hanging (head ears hang)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_ears_dragon",
+      "slot": "ears",
+      "description": "Dragon (head ears dragon)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_ears_cat_skin",
+      "slot": "ears",
+      "description": "Cat (head ears cat skin)",
+      "material": "body",
+      "z": 131
+    },
+    {
+      "id": "head_ears_wolf_skin",
+      "slot": "ears",
+      "description": "Wolf (head ears wolf skin)",
+      "material": "body",
+      "z": 131
+    },
+    {
+      "id": "torso_clothes_tshirt",
+      "slot": "torso",
+      "description": "T-shirt (torso clothes tshirt)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_tshirt_vneck",
+      "slot": "torso",
+      "description": "V-neck T-shirt (torso clothes tshirt vneck)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_shortsleeve",
+      "slot": "torso",
+      "description": "Short-sleeve shirt (torso clothes shortsleeve)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_longsleeve",
+      "slot": "torso",
+      "description": "Long-sleeve shirt (torso clothes longsleeve)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_longsleeve_laced",
+      "slot": "torso",
+      "description": "Laced shirt (torso clothes longsleeve laced)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_sleeveless",
+      "slot": "torso",
+      "description": "Sleeveless shirt (torso clothes sleeveless)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_sleeveless_laced",
+      "slot": "torso",
+      "description": "Laced sleeveless (torso clothes sleeveless laced)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_tunic",
+      "slot": "torso",
+      "description": "Tunic (torso clothes tunic)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_tunic_sara",
+      "slot": "torso",
+      "description": "Short tunic (torso clothes tunic sara)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_blouse",
+      "slot": "torso",
+      "description": "Blouse (torso clothes blouse)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_blouse_longsleeve",
+      "slot": "torso",
+      "description": "Long-sleeve blouse (torso clothes blouse longsleeve)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "torso_clothes_corset",
+      "slot": "torso",
+      "description": "Corset (torso clothes corset)",
+      "material": "cloth",
+      "z": 45
+    },
+    {
+      "id": "torso_clothes_robe",
+      "slot": "torso",
+      "description": "Robe (torso clothes robe)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "dress_kimono",
+      "slot": "torso",
+      "description": "Kimono (dress kimono)",
+      "material": "cloth",
+      "z": 30
+    },
+    {
+      "id": "dress_kimono_longsleeve",
+      "slot": "torso",
+      "description": "Long-sleeve kimono (dress kimono longsleeve)",
+      "material": "cloth",
+      "z": 145
+    },
+    {
+      "id": "dress_slit",
+      "slot": "torso",
+      "description": "Slit dress (dress slit)",
+      "material": "cloth",
+      "z": 30
+    },
+    {
+      "id": "dress_sash",
+      "slot": "torso",
+      "description": "Sash dress (dress sash)",
+      "material": "cloth",
+      "z": 30
+    },
+    {
+      "id": "dress_bodice",
+      "slot": "torso",
+      "description": "Bodice dress (dress bodice)",
+      "material": "cloth",
+      "z": 45
+    },
+    {
+      "id": "torso_clothes_vest",
+      "slot": "torso",
+      "description": "Vest (torso clothes vest)",
+      "material": "cloth",
+      "z": 45
+    },
+    {
+      "id": "torso_clothes_vest_open",
+      "slot": "torso",
+      "description": "Open vest (torso clothes vest open)",
+      "material": "cloth",
+      "z": 45
+    },
+    {
+      "id": "torso_jacket_tabard",
+      "slot": "torso",
+      "description": "Tabard (torso jacket tabard)",
+      "material": "cloth",
+      "z": 55
+    },
+    {
+      "id": "torso_jacket_frock",
+      "slot": "torso",
+      "description": "Frock coat (torso jacket frock)",
+      "material": "cloth",
+      "z": 55
+    },
+    {
+      "id": "torso_jacket_collared",
+      "slot": "torso",
+      "description": "Collared coat (torso jacket collared)",
+      "material": "cloth",
+      "z": 55
+    },
+    {
+      "id": "torso_jacket_trench",
+      "slot": "torso",
+      "description": "Trench coat (torso jacket trench)",
+      "material": "cloth",
+      "z": 55
+    },
+    {
+      "id": "torso_jacket_iverness",
+      "slot": "torso",
+      "description": "Inverness cloak (torso jacket iverness)",
+      "material": "cloth",
+      "z": 55
+    },
+    {
+      "id": "torso_bandages",
+      "slot": "torso",
+      "description": "Bandages (torso bandages)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "torso_armour_leather",
+      "slot": "torso",
+      "description": "Leather armor (torso armour leather)",
+      "material": "cloth",
+      "z": 60
+    },
+    {
+      "id": "torso_chainmail",
+      "slot": "torso",
+      "description": "Chain mail (torso chainmail)",
+      "material": "metal",
+      "z": 50
+    },
+    {
+      "id": "torso_armour_legion",
+      "slot": "torso",
+      "description": "Legion armor (torso armour legion)",
+      "material": "metal",
+      "z": 60
+    },
+    {
+      "id": "torso_armour_plate",
+      "slot": "torso",
+      "description": "Plate armor (torso armour plate)",
+      "material": "metal",
+      "z": 60
+    },
+    {
+      "id": "legs_pants",
+      "slot": "legs",
+      "description": "Pants (legs pants)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_pants2",
+      "slot": "legs",
+      "description": "Straight pants (legs pants2)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_cuffed",
+      "slot": "legs",
+      "description": "Cuffed pants (legs cuffed)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_widepants",
+      "slot": "legs",
+      "description": "Wide pants (legs widepants)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_pantaloons",
+      "slot": "legs",
+      "description": "Pantaloons (legs pantaloons)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_formal",
+      "slot": "legs",
+      "description": "Formal pants (legs formal)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_leggings",
+      "slot": "legs",
+      "description": "Leggings (legs leggings)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_hose",
+      "slot": "legs",
+      "description": "Hose (legs hose)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_shorts",
+      "slot": "legs",
+      "description": "Shorts (legs shorts)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_shorts_short",
+      "slot": "legs",
+      "description": "Short shorts (legs shorts short)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_skirts_plain",
+      "slot": "legs",
+      "description": "Skirt (legs skirts plain)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_skirts_slit",
+      "slot": "legs",
+      "description": "Slit skirt (legs skirts slit)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_skirt_straight",
+      "slot": "legs",
+      "description": "Straight skirt (legs skirt straight)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_skirt_belle",
+      "slot": "legs",
+      "description": "Belle skirt (legs skirt belle)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_skirt_overskirt",
+      "slot": "legs",
+      "description": "Overskirt (legs skirt overskirt)",
+      "material": "cloth",
+      "z": 35
+    },
+    {
+      "id": "legs_skirts_legion",
+      "slot": "legs",
+      "description": "Legion skirt (legs skirts legion)",
+      "material": "cloth",
+      "z": 20
+    },
+    {
+      "id": "legs_armour",
+      "slot": "legs",
+      "description": "Plate legs (legs armour)",
+      "material": "metal",
+      "z": 20
+    },
+    {
+      "id": "feet_boots_basic",
+      "slot": "feet",
+      "description": "Boots (feet boots basic)",
+      "material": "cloth",
+      "z": 25
+    },
+    {
+      "id": "feet_boots_fold",
+      "slot": "feet",
+      "description": "Folded boots (feet boots fold)",
+      "material": "cloth",
+      "z": 25
+    },
+    {
+      "id": "feet_boots_rim",
+      "slot": "feet",
+      "description": "Rimmed boots (feet boots rim)",
+      "material": "cloth",
+      "z": 25
+    },
+    {
+      "id": "feet_boots_revised",
+      "slot": "feet",
+      "description": "Tall boots (feet boots revised)",
+      "material": "cloth",
+      "z": 25
+    },
+    {
+      "id": "feet_shoes_basic",
+      "slot": "feet",
+      "description": "Shoes (feet shoes basic)",
+      "material": "cloth",
+      "z": 15
+    },
+    {
+      "id": "feet_shoes_revised",
+      "slot": "feet",
+      "description": "Light shoes (feet shoes revised)",
+      "material": "cloth",
+      "z": 15
+    },
+    {
+      "id": "feet_shoes_ghillies",
+      "slot": "feet",
+      "description": "Ghillies (feet shoes ghillies)",
+      "material": "cloth",
+      "z": 15
+    },
+    {
+      "id": "feet_slippers",
+      "slot": "feet",
+      "description": "Slippers (feet slippers)",
+      "material": "cloth",
+      "z": 15
+    },
+    {
+      "id": "feet_sandals",
+      "slot": "feet",
+      "description": "Sandals (feet sandals)",
+      "material": "cloth",
+      "z": 15
+    },
+    {
+      "id": "feet_socks_tabi",
+      "slot": "feet",
+      "description": "Tabi socks (feet socks tabi)",
+      "material": "cloth",
+      "z": 14
+    },
+    {
+      "id": "feet_hoofs",
+      "slot": "feet",
+      "description": "Hoofs (feet hoofs)",
+      "material": "body",
+      "z": 15
+    },
+    {
+      "id": "feet_armour",
+      "slot": "feet",
+      "description": "Plate boots (feet armour)",
+      "material": "metal",
+      "z": 15
+    },
+    {
+      "id": "arms_bracers",
+      "slot": "arms",
+      "description": "Bracers (arms bracers)",
+      "material": "metal",
+      "z": 70
+    },
+    {
+      "id": "wrists_cuffs",
+      "slot": "arms",
+      "description": "Cuffs (wrists cuffs)",
+      "material": "cloth",
+      "z": 70
+    },
+    {
+      "id": "arms_armour",
+      "slot": "arms",
+      "description": "Plate arms (arms armour)",
+      "material": "metal",
+      "z": 60
+    },
+    {
+      "id": "arms_gloves",
+      "slot": "hands",
+      "description": "Gloves (arms gloves)",
+      "material": "metal",
+      "z": 70
+    },
+    {
+      "id": "arms_hands_ring_stud",
+      "slot": "hands",
+      "description": "Ring (arms hands ring stud)",
+      "material": "cloth",
+      "z": 75
+    },
+    {
+      "id": "shoulders_pauldrons",
+      "slot": "shoulders",
+      "description": "Pauldrons (shoulders pauldrons)",
+      "material": "cloth",
+      "z": 60
+    },
+    {
+      "id": "shoulders_legion",
+      "slot": "shoulders",
+      "description": "Legion shoulders (shoulders legion)",
+      "material": "metal",
+      "z": 60
+    },
+    {
+      "id": "shoulders_mantal",
+      "slot": "shoulders",
+      "description": "Mantle (shoulders mantal)",
+      "material": "cloth",
+      "z": 75
+    },
+    {
+      "id": "shoulders_epaulets",
+      "slot": "shoulders",
+      "description": "Epaulets (shoulders epaulets)",
+      "material": "cloth",
+      "z": 60
+    },
+    {
+      "id": "bauldron",
+      "slot": "shoulders",
+      "description": "Bauldron (bauldron)",
+      "material": "cloth",
+      "z": 65
+    },
+    {
+      "id": "hat_hood_cloth",
+      "slot": "head",
+      "description": "Hood (hat hood cloth)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_hood_sack_cloth",
+      "slot": "head",
+      "description": "Sack hood (hat hood sack cloth)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_bandana",
+      "slot": "head",
+      "description": "Bandana (hat bandana)",
+      "material": "cloth",
+      "z": 120
+    },
+    {
+      "id": "hat_bandana_pirate",
+      "slot": "head",
+      "description": "Pirate bandana (hat bandana pirate)",
+      "material": "cloth",
+      "z": 120
+    },
+    {
+      "id": "hat_headband_thick",
+      "slot": "head",
+      "description": "Headband (hat headband thick)",
+      "material": "cloth",
+      "z": 125
+    },
+    {
+      "id": "hat_headband_tied",
+      "slot": "head",
+      "description": "Tied headband (hat headband tied)",
+      "material": "cloth",
+      "z": 125
+    },
+    {
+      "id": "hat_magic_wizard",
+      "slot": "head",
+      "description": "Wizard hat (hat magic wizard)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_magic_celestial",
+      "slot": "head",
+      "description": "Celestial hat (hat magic celestial)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_magic_celestial_moon",
+      "slot": "head",
+      "description": "Moon hat (hat magic celestial moon)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_magic_large",
+      "slot": "head",
+      "description": "Witch hat (hat magic large)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_tricorne",
+      "slot": "head",
+      "description": "Tricorne (hat tricorne)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_cap_cavalier_feather",
+      "slot": "head",
+      "description": "Feathered hat (hat cap cavalier feather)",
+      "material": "cloth",
+      "z": 131
+    },
+    {
+      "id": "hat_cap_leather",
+      "slot": "head",
+      "description": "Leather cap (hat cap leather)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_cap_bonnie",
+      "slot": "head",
+      "description": "Bonnie (hat cap bonnie)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_formal_crown",
+      "slot": "head",
+      "description": "Crown (hat formal crown)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_formal_tiara",
+      "slot": "head",
+      "description": "Tiara (hat formal tiara)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_barbarian",
+      "slot": "head",
+      "description": "Barbarian helm (hat helmet barbarian)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_barbarian_viking",
+      "slot": "head",
+      "description": "Viking helm (hat helmet barbarian viking)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_horned",
+      "slot": "head",
+      "description": "Horned helm (hat helmet horned)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_nasal",
+      "slot": "head",
+      "description": "Nasal helm (hat helmet nasal)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_spangenhelm",
+      "slot": "head",
+      "description": "Spangenhelm (hat helmet spangenhelm)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_kettle",
+      "slot": "head",
+      "description": "Kettle helm (hat helmet kettle)",
+      "material": "metal",
+      "z": 135
+    },
+    {
+      "id": "hat_helmet_mail",
+      "slot": "head",
+      "description": "Mail coif (hat helmet mail)",
+      "material": "metal",
+      "z": 125
+    },
+    {
+      "id": "hat_helmet_greathelm",
+      "slot": "head",
+      "description": "Great helm (hat helmet greathelm)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_sugarloaf",
+      "slot": "head",
+      "description": "Sugarloaf helm (hat helmet sugarloaf)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_armet",
+      "slot": "head",
+      "description": "Armet (hat helmet armet)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_barbuta",
+      "slot": "head",
+      "description": "Barbuta (hat helmet barbuta)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_bascinet",
+      "slot": "head",
+      "description": "Bascinet (hat helmet bascinet)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_legion",
+      "slot": "head",
+      "description": "Legion helm (hat helmet legion)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_morion",
+      "slot": "head",
+      "description": "Morion (hat helmet morion)",
+      "material": "metal",
+      "z": 135
+    },
+    {
+      "id": "hat_helmet_norman",
+      "slot": "head",
+      "description": "Norman helm (hat helmet norman)",
+      "material": "metal",
+      "z": 135
+    },
+    {
+      "id": "hat_helmet_pointed",
+      "slot": "head",
+      "description": "Pointed helm (hat helmet pointed)",
+      "material": "metal",
+      "z": 135
+    },
+    {
+      "id": "hat_helmet_flattop",
+      "slot": "head",
+      "description": "Flat-top helm (hat helmet flattop)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_close",
+      "slot": "head",
+      "description": "Close helm (hat helmet close)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_maximus",
+      "slot": "head",
+      "description": "Gladiator helm (hat helmet maximus)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_xeon",
+      "slot": "head",
+      "description": "Knight helm (hat helmet xeon)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_spangenhelm_viking",
+      "slot": "head",
+      "description": "Nordic helm (hat helmet spangenhelm viking)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_barbarian_nasal",
+      "slot": "head",
+      "description": "Barbarian nasal helm (hat helmet barbarian nasal)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_bascinet_round",
+      "slot": "head",
+      "description": "Round bascinet (hat helmet bascinet round)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_armet_simple",
+      "slot": "head",
+      "description": "Plain armet (hat helmet armet simple)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_helmet_barbuta_simple",
+      "slot": "head",
+      "description": "Plain barbuta (hat helmet barbuta simple)",
+      "material": "metal",
+      "z": 130
+    },
+    {
+      "id": "hat_accessory_horns_upward",
+      "slot": "crest",
+      "description": "Upward horns (hat accessory horns upward)",
+      "material": "metal",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_horns_downward",
+      "slot": "crest",
+      "description": "Downward horns (hat accessory horns downward)",
+      "material": "metal",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_horns_short",
+      "slot": "crest",
+      "description": "Short horns (hat accessory horns short)",
+      "material": "metal",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_wings",
+      "slot": "crest",
+      "description": "Wings (hat accessory wings)",
+      "material": "metal",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_crest",
+      "slot": "crest",
+      "description": "Crest (hat accessory crest)",
+      "material": "metal",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_crest_centurion",
+      "slot": "crest",
+      "description": "Centurion crest (hat accessory crest centurion)",
+      "material": "metal",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_plumage",
+      "slot": "crest",
+      "description": "Plumage (hat accessory plumage)",
+      "material": "cloth",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_plumage_centurion",
+      "slot": "crest",
+      "description": "Centurion plumage (hat accessory plumage centurion)",
+      "material": "cloth",
+      "z": 139
+    },
+    {
+      "id": "hat_accessory_plumage_legion",
+      "slot": "crest",
+      "description": "Legion plumage (hat accessory plumage legion)",
+      "material": "cloth",
+      "z": 139
+    },
+    {
+      "id": "hat_visor_slit",
+      "slot": "visor",
+      "description": "Slit (hat visor slit)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "hat_visor_slit_narrow",
+      "slot": "visor",
+      "description": "Narrow slit (hat visor slit narrow)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "hat_visor_grated",
+      "slot": "visor",
+      "description": "Grated (hat visor grated)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "hat_visor_grated_narrow",
+      "slot": "visor",
+      "description": "Narrow grate (hat visor grated narrow)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "hat_visor_round",
+      "slot": "visor",
+      "description": "Round (hat visor round)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "hat_visor_pigface",
+      "slot": "visor",
+      "description": "Pigface (hat visor pigface)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "hat_visor_horned",
+      "slot": "visor",
+      "description": "Horned (hat visor horned)",
+      "material": "metal",
+      "z": 132
+    },
+    {
+      "id": "facial_eyepatch_left",
+      "slot": "face",
+      "description": "Eyepatch (facial eyepatch left)",
+      "material": "cloth",
+      "z": 115
+    },
+    {
+      "id": "facial_eyepatch_right",
+      "slot": "face",
+      "description": "Left eyepatch (facial eyepatch right)",
+      "material": "cloth",
+      "z": 115
+    },
+    {
+      "id": "facial_mask_plain",
+      "slot": "face",
+      "description": "Mask (facial mask plain)",
+      "material": "cloth",
+      "z": 114
+    },
+    {
+      "id": "facial_glasses_round",
+      "slot": "face",
+      "description": "Round glasses (facial glasses round)",
+      "material": "cloth",
+      "z": 115
+    },
+    {
+      "id": "facial_glasses",
+      "slot": "face",
+      "description": "Glasses (facial glasses)",
+      "material": "cloth",
+      "z": 115
+    },
+    {
+      "id": "facial_glasses_halfmoon",
+      "slot": "face",
+      "description": "Half-moon glasses (facial glasses halfmoon)",
+      "material": "cloth",
+      "z": 115
+    },
+    {
+      "id": "facial_monocle_right",
+      "slot": "face",
+      "description": "Monocle (facial monocle right)",
+      "material": "cloth",
+      "z": 115
+    },
+    {
+      "id": "neck_scarf",
+      "slot": "neck",
+      "description": "Scarf (neck scarf)",
+      "material": "cloth",
+      "z": 90
+    },
+    {
+      "id": "neck_necklace",
+      "slot": "neck",
+      "description": "Necklace (neck necklace)",
+      "material": "cloth",
+      "z": 80
+    },
+    {
+      "id": "neck_necklace_chain",
+      "slot": "neck",
+      "description": "Chain (neck necklace chain)",
+      "material": "cloth",
+      "z": 80
+    },
+    {
+      "id": "neck_necklace_beaded_large",
+      "slot": "neck",
+      "description": "Beaded necklace (neck necklace beaded large)",
+      "material": "metal",
+      "z": 80
+    },
+    {
+      "id": "neck_amulet_star",
+      "slot": "neck",
+      "description": "Star amulet (neck amulet star)",
+      "material": "cloth",
+      "z": 81
+    },
+    {
+      "id": "neck_amulet_cross",
+      "slot": "neck",
+      "description": "Cross amulet (neck amulet cross)",
+      "material": "cloth",
+      "z": 81
+    },
+    {
+      "id": "neck_gem_round",
+      "slot": "neck",
+      "description": "Gem (neck gem round)",
+      "material": "cloth",
+      "z": 81
+    },
+    {
+      "id": "neck_capeclip",
+      "slot": "neck",
+      "description": "Cape clip (neck capeclip)",
+      "material": "cloth",
+      "z": 90
+    },
+    {
+      "id": "belt_leather",
+      "slot": "belt",
+      "description": "Leather belt (belt leather)",
+      "material": "cloth",
+      "z": 70
+    },
+    {
+      "id": "belt_double",
+      "slot": "belt",
+      "description": "Double belt (belt double)",
+      "material": "cloth",
+      "z": 70
+    },
+    {
+      "id": "belt_loose",
+      "slot": "belt",
+      "description": "Loose belt (belt loose)",
+      "material": "cloth",
+      "z": 70
+    },
+    {
+      "id": "belt_mage",
+      "slot": "belt",
+      "description": "Mage belt (belt mage)",
+      "material": "cloth",
+      "z": 90
+    },
+    {
+      "id": "belt_robe",
+      "slot": "belt",
+      "description": "Robe rope (belt robe)",
+      "material": "cloth",
+      "z": 70
+    },
+    {
+      "id": "belt_sash",
+      "slot": "belt",
+      "description": "Sash (belt sash)",
+      "material": "cloth",
+      "z": 65
+    },
+    {
+      "id": "belt_obi",
+      "slot": "belt",
+      "description": "Obi (belt obi)",
+      "material": "cloth",
+      "z": 65
+    },
+    {
+      "id": "cape_solid",
+      "slot": "cape",
+      "description": "Cape (cape solid)",
+      "material": "cloth",
+      "z": 85
+    },
+    {
+      "id": "cape_tattered",
+      "slot": "cape",
+      "description": "Tattered cape (cape tattered)",
+      "material": "cloth",
+      "z": 85
+    },
+    {
+      "id": "cape_trim",
+      "slot": "cape",
+      "description": "Trimmed cape (cape trim)",
+      "material": "cloth",
+      "z": 90
+    },
+    {
+      "id": "quiver",
+      "slot": "back",
+      "description": "Quiver (quiver)",
+      "material": "cloth",
+      "z": 8
+    },
+    {
+      "id": "backpack",
+      "slot": "back",
+      "description": "Backpack (backpack)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "backpack_squarepack",
+      "slot": "back",
+      "description": "Square pack (backpack squarepack)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "backpack_basket",
+      "slot": "back",
+      "description": "Basket (backpack basket)",
+      "material": "cloth",
+      "z": 130
+    },
+    {
+      "id": "head_horns_curled",
+      "slot": "horns",
+      "description": "Curled horns (head horns curled)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_horns_backwards",
+      "slot": "horns",
+      "description": "Backward horns (head horns backwards)",
+      "material": "body",
+      "z": 126
+    },
+    {
+      "id": "head_fins_fin",
+      "slot": "horns",
+      "description": "Fins (head fins fin)",
+      "material": "body",
+      "z": 125
+    },
+    {
+      "id": "head_fins_fin_short",
+      "slot": "horns",
+      "description": "Short fins (head fins fin short)",
+      "material": "body",
+      "z": 125
+    },
+    {
+      "id": "wings_bat",
+      "slot": "wings",
+      "description": "Demon wings (wings bat)",
+      "material": "cloth",
+      "z": 105
+    },
+    {
+      "id": "wings_lizard_bat",
+      "slot": "wings",
+      "description": "Dragon wings (wings lizard bat)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "wings_lizard",
+      "slot": "wings",
+      "description": "Lizard wings (wings lizard)",
+      "material": "body",
+      "z": 105
+    },
+    {
+      "id": "wings_lizard_alt",
+      "slot": "wings",
+      "description": "Membrane wings (wings lizard alt)",
+      "material": "cloth",
+      "z": 105
+    },
+    {
+      "id": "wings_feathered",
+      "slot": "wings",
+      "description": "Feathered wings (wings feathered)",
+      "material": "cloth",
+      "z": 105
+    },
+    {
+      "id": "wings_lunar",
+      "slot": "wings",
+      "description": "Lunar wings (wings lunar)",
+      "material": "cloth",
+      "z": 105
+    },
+    {
+      "id": "wings_pixie",
+      "slot": "wings",
+      "description": "Pixie wings (wings pixie)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "wings_dragonfly",
+      "slot": "wings",
+      "description": "Dragonfly wings (wings dragonfly)",
+      "material": "cloth",
+      "z": 105
+    },
+    {
+      "id": "wings_monarch",
+      "slot": "wings",
+      "description": "Butterfly wings (wings monarch)",
+      "material": "cloth",
+      "z": 105
+    },
+    {
+      "id": "tail_wolf",
+      "slot": "tail",
+      "description": "Wolf tail (tail wolf)",
+      "material": "cloth",
+      "z": 125
+    },
+    {
+      "id": "tail_wolf_fluffy",
+      "slot": "tail",
+      "description": "Fluffy tail (tail wolf fluffy)",
+      "material": "cloth",
+      "z": 125
+    },
+    {
+      "id": "tail_cat",
+      "slot": "tail",
+      "description": "Cat tail (tail cat)",
+      "material": "cloth",
+      "z": 125
+    },
+    {
+      "id": "tail_lizard",
+      "slot": "tail",
+      "description": "Lizard tail (tail lizard)",
+      "material": "body",
+      "z": 85
+    },
+    {
+      "id": "tail_lizard_alt",
+      "slot": "tail",
+      "description": "Demon tail (tail lizard alt)",
+      "material": "cloth",
+      "z": 85
+    },
+    {
+      "id": "shield_round",
+      "slot": "shield",
+      "description": "Round shield (shield round)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "shield_spartan",
+      "slot": "shield",
+      "description": "Spartan shield (shield spartan)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "shield_crusader",
+      "slot": "shield",
+      "description": "Crusader shield (shield crusader)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "shield_scutum",
+      "slot": "shield",
+      "description": "Scutum (shield scutum)",
+      "material": "cloth",
+      "z": 110
+    },
+    {
+      "id": "weapon_sword_arming",
+      "slot": "weapon",
+      "description": "Arming sword (weapon sword arming)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_sword_longsword",
+      "slot": "weapon",
+      "description": "Longsword (weapon sword longsword)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_sword_katana",
+      "slot": "weapon",
+      "description": "Katana (weapon sword katana)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_sword_dagger",
+      "slot": "weapon",
+      "description": "Dagger (weapon sword dagger)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_sword_rapier",
+      "slot": "weapon",
+      "description": "Rapier (weapon sword rapier)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_sword_saber",
+      "slot": "weapon",
+      "description": "Saber (weapon sword saber)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_sword_scimitar",
+      "slot": "weapon",
+      "description": "Scimitar (weapon sword scimitar)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_blunt_waraxe",
+      "slot": "weapon",
+      "description": "War axe (weapon blunt waraxe)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_blunt_mace",
+      "slot": "weapon",
+      "description": "Mace (weapon blunt mace)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_blunt_flail",
+      "slot": "weapon",
+      "description": "Flail (weapon blunt flail)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_polearm_spear",
+      "slot": "weapon",
+      "description": "Spear (weapon polearm spear)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_polearm_longspear",
+      "slot": "weapon",
+      "description": "Long spear (weapon polearm longspear)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_polearm_trident",
+      "slot": "weapon",
+      "description": "Trident (weapon polearm trident)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_polearm_halberd",
+      "slot": "weapon",
+      "description": "Halberd (weapon polearm halberd)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_polearm_scythe",
+      "slot": "weapon",
+      "description": "Scythe (weapon polearm scythe)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_polearm_dragonspear",
+      "slot": "weapon",
+      "description": "Dragon spear (weapon polearm dragonspear)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_polearm_cane",
+      "slot": "weapon",
+      "description": "Cane (weapon polearm cane)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_magic_simple",
+      "slot": "weapon",
+      "description": "Simple staff (weapon magic simple)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_magic_gnarled",
+      "slot": "weapon",
+      "description": "Gnarled staff (weapon magic gnarled)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_magic_crystal",
+      "slot": "weapon",
+      "description": "Crystal staff (weapon magic crystal)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_magic_diamond",
+      "slot": "weapon",
+      "description": "Diamond staff (weapon magic diamond)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_magic_loop",
+      "slot": "weapon",
+      "description": "Loop staff (weapon magic loop)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_magic_s",
+      "slot": "weapon",
+      "description": "S staff (weapon magic s)",
+      "material": "cloth",
+      "z": 150
+    },
+    {
+      "id": "weapon_ranged_bow_normal",
+      "slot": "weapon",
+      "description": "Bow (weapon ranged bow normal)",
+      "material": "cloth",
+      "z": 141
+    },
+    {
+      "id": "weapon_ranged_bow_recurve",
+      "slot": "weapon",
+      "description": "Recurve bow (weapon ranged bow recurve)",
+      "material": "cloth",
+      "z": 141
+    },
+    {
+      "id": "weapon_ranged_bow_great",
+      "slot": "weapon",
+      "description": "Great bow (weapon ranged bow great)",
+      "material": "cloth",
+      "z": 141
+    },
+    {
+      "id": "weapon_ranged_crossbow",
+      "slot": "weapon",
+      "description": "Crossbow (weapon ranged crossbow)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "weapon_ranged_slingshot",
+      "slot": "weapon",
+      "description": "Slingshot (weapon ranged slingshot)",
+      "material": "cloth",
+      "z": 140
+    },
+    {
+      "id": "race-skeleton",
+      "slot": "race",
+      "description": "skeleton fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-zombie",
+      "slot": "race",
+      "description": "zombie fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-vampire",
+      "slot": "race",
+      "description": "vampire fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-orc",
+      "slot": "race",
+      "description": "orc fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-goblin",
+      "slot": "race",
+      "description": "goblin fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-troll",
+      "slot": "race",
+      "description": "troll fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-minotaur",
+      "slot": "race",
+      "description": "minotaur fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-wolf",
+      "slot": "race",
+      "description": "wolf fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-boarman",
+      "slot": "race",
+      "description": "boarman fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-lizard",
+      "slot": "race",
+      "description": "lizard fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-frankenstein",
+      "slot": "race",
+      "description": "frankenstein fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-jack",
+      "slot": "race",
+      "description": "jack fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-alien",
+      "slot": "race",
+      "description": "alien fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-wartotaur",
+      "slot": "race",
+      "description": "wartotaur fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-rabbit",
+      "slot": "race",
+      "description": "rabbit fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-rat",
+      "slot": "race",
+      "description": "rat fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-pig",
+      "slot": "race",
+      "description": "pig fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-sheep",
+      "slot": "race",
+      "description": "sheep fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "race-mouse",
+      "slot": "race",
+      "description": "mouse fantasy adult head only",
+      "material": "body",
+      "z": 115
+    },
+    {
+      "id": "expression-neutral",
+      "slot": "expression",
+      "description": "neutral tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-angry",
+      "slot": "expression",
+      "description": "angry tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-sad",
+      "slot": "expression",
+      "description": "sad tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-happy",
+      "slot": "expression",
+      "description": "happy tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-shock",
+      "slot": "expression",
+      "description": "shock tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-closed",
+      "slot": "expression",
+      "description": "closed tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-closing",
+      "slot": "expression",
+      "description": "closing tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-look_l",
+      "slot": "expression",
+      "description": "look_l tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-look_r",
+      "slot": "expression",
+      "description": "look_r tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-eyeroll",
+      "slot": "expression",
+      "description": "eyeroll tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-shame",
+      "slot": "expression",
+      "description": "shame tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-blush",
+      "slot": "expression",
+      "description": "blush tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-angry2",
+      "slot": "expression",
+      "description": "angry2 tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-sad2",
+      "slot": "expression",
+      "description": "sad2 tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-happy2",
+      "slot": "expression",
+      "description": "happy2 tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "expression-tears",
+      "slot": "expression",
+      "description": "tears tiny pixel facial expression, ONLY eyes brows and mouth",
+      "material": "eye",
+      "z": 115
+    },
+    {
+      "id": "frame-skeleton",
+      "slot": "body",
+      "description": "skeleton full adult fantasy anatomical base with bald head and plain grey undergarments",
+      "material": "body",
+      "z": 0
+    },
+    {
+      "id": "frame-zombie",
+      "slot": "body",
+      "description": "zombie full adult fantasy anatomical base with bald head and plain grey undergarments",
+      "material": "body",
+      "z": 0
+    },
+    {
+      "id": "gear-dagger",
+      "slot": "weapon",
+      "description": "Dagger: Light and discreet; fits the other hand too.",
+      "material": "metal",
+      "gear": "dagger",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-dagger.png",
+      "z": 140
+    },
+    {
+      "id": "gear-shortsword",
+      "slot": "weapon",
+      "description": "Shortsword: The weapon of those who fight with a blade in each hand.",
+      "material": "metal",
+      "gear": "shortsword",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shortsword.png",
+      "z": 140
+    },
+    {
+      "id": "gear-mace",
+      "slot": "weapon",
+      "description": "Mace: Blessed in the temples: wards its wielder against magic.",
+      "material": "metal",
+      "gear": "mace",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-mace.png",
+      "z": 140
+    },
+    {
+      "id": "gear-spear",
+      "slot": "weapon",
+      "description": "Spear: Reaches the foe over an ally's shoulder.",
+      "material": "metal",
+      "gear": "spear",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-spear.png",
+      "z": 140
+    },
+    {
+      "id": "gear-longsword",
+      "slot": "weapon",
+      "description": "Longsword: A balance of reach, weight and edge.",
+      "material": "metal",
+      "gear": "longsword",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-longsword.png",
+      "z": 140
+    },
+    {
+      "id": "gear-rapier",
+      "slot": "weapon",
+      "description": "Rapier: Precise thrusts: it asks for agility, not strength.",
+      "material": "metal",
+      "gear": "rapier",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-rapier.png",
+      "z": 140
+    },
+    {
+      "id": "gear-battleaxe",
+      "slot": "weapon",
+      "description": "Battleaxe: Heavy for one hand, but leaves the other free for a shield.",
+      "material": "metal",
+      "gear": "battleaxe",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-battleaxe.png",
+      "z": 140
+    },
+    {
+      "id": "gear-katana",
+      "slot": "weapon",
+      "description": "Katana: A curved two-handed blade made for quick cuts.",
+      "material": "metal",
+      "gear": "katana",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-katana.png",
+      "z": 140
+    },
+    {
+      "id": "gear-greatsword",
+      "slot": "weapon",
+      "description": "Greatsword: Long enough to parry blows.",
+      "material": "metal",
+      "gear": "greatsword",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greatsword.png",
+      "z": 140
+    },
+    {
+      "id": "gear-halberd",
+      "slot": "weapon",
+      "description": "Halberd: An axe on a pole: strikes from the second row.",
+      "material": "metal",
+      "gear": "halberd",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-halberd.png",
+      "z": 140
+    },
+    {
+      "id": "gear-greataxe",
+      "slot": "weapon",
+      "description": "Greataxe: The heaviest blow a warrior can deal.",
+      "material": "metal",
+      "gear": "greataxe",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greataxe.png",
+      "z": 140
+    },
+    {
+      "id": "gear-handwraps",
+      "slot": "weapon",
+      "description": "Fighting wraps: Hands and feet as weapons; a light body keeps its breath.",
+      "material": "metal",
+      "gear": "handwraps",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-handwraps.png",
+      "z": 140
+    },
+    {
+      "id": "gear-sling",
+      "slot": "weapon",
+      "description": "Sling: Stones from afar, with the other hand free.",
+      "material": "metal",
+      "gear": "sling",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-sling.png",
+      "z": 140
+    },
+    {
+      "id": "gear-handcrossbow",
+      "slot": "weapon",
+      "description": "Hand crossbow: Small enough for a single hand.",
+      "material": "metal",
+      "gear": "handcrossbow",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-handcrossbow.png",
+      "z": 140
+    },
+    {
+      "id": "gear-shortbow",
+      "slot": "weapon",
+      "description": "Shortbow: Easy to draw, for anyone.",
+      "material": "metal",
+      "gear": "shortbow",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shortbow.png",
+      "z": 140
+    },
+    {
+      "id": "gear-longbow",
+      "slot": "weapon",
+      "description": "Longbow: It needs a trained arm; hits far and hard.",
+      "material": "metal",
+      "gear": "longbow",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-longbow.png",
+      "z": 140
+    },
+    {
+      "id": "gear-heavycrossbow",
+      "slot": "weapon",
+      "description": "Heavy crossbow: The bolt pierces shields, but reloading is tiring.",
+      "material": "metal",
+      "gear": "heavycrossbow",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-heavycrossbow.png",
+      "z": 140
+    },
+    {
+      "id": "gear-wand",
+      "slot": "weapon",
+      "description": "Wand: Fires magic with one hand and leaves the other for an orb or tome.",
+      "material": "metal",
+      "gear": "wand",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wand.png",
+      "z": 140
+    },
+    {
+      "id": "gear-staff",
+      "slot": "weapon",
+      "description": "Arcane staff: Stores arcane energy for the next spell.",
+      "material": "metal",
+      "gear": "staff",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-staff.png",
+      "z": 140
+    },
+    {
+      "id": "gear-druidstaff",
+      "slot": "weapon",
+      "description": "Oak staff: It still sprouts leaves: its sap strengthens the bearer.",
+      "material": "metal",
+      "gear": "druidstaff",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-druidstaff.png",
+      "z": 140
+    },
+    {
+      "id": "gear-skullstaff",
+      "slot": "weapon",
+      "description": "Skull staff: Lends power in exchange for a bit of your life.",
+      "material": "metal",
+      "gear": "skullstaff",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-skullstaff.png",
+      "z": 140
+    },
+    {
+      "id": "gear-lute",
+      "slot": "weapon",
+      "description": "Lute: Songs that wound, charm and inspire.",
+      "material": "metal",
+      "gear": "lute",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-lute.png",
+      "z": 140
+    },
+    {
+      "id": "gear-buckler",
+      "slot": "shield",
+      "description": "Buckler: Small and light; turns the blow aside.",
+      "material": "metal",
+      "gear": "buckler",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-buckler.png",
+      "z": 140
+    },
+    {
+      "id": "gear-shield",
+      "slot": "shield",
+      "description": "Steel shield: The soldier's shield.",
+      "material": "metal",
+      "gear": "shield",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shield.png",
+      "z": 140
+    },
+    {
+      "id": "gear-towershield",
+      "slot": "shield",
+      "description": "Tower shield: A portable wall; it weighs on every step.",
+      "material": "metal",
+      "gear": "towershield",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-towershield.png",
+      "z": 140
+    },
+    {
+      "id": "gear-orb",
+      "slot": "shield",
+      "description": "Arcane orb: Gathers the mana scattered in the air.",
+      "material": "metal",
+      "gear": "orb",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-orb.png",
+      "z": 140
+    },
+    {
+      "id": "gear-tome",
+      "slot": "shield",
+      "description": "Grimoire: Years of study in a leather cover.",
+      "material": "metal",
+      "gear": "tome",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-tome.png",
+      "z": 140
+    },
+    {
+      "id": "gear-holysymbol",
+      "slot": "shield",
+      "description": "Holy symbol: Faith raised against evil.",
+      "material": "metal",
+      "gear": "holysymbol",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-holysymbol.png",
+      "z": 140
+    },
+    {
+      "id": "gear-hood",
+      "slot": "head",
+      "description": "Hood: Hides the face and the next step.",
+      "material": "metal",
+      "gear": "hood",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-hood.png",
+      "z": 140
+    },
+    {
+      "id": "gear-ironhelm",
+      "slot": "head",
+      "description": "Iron helm: Simple and reliable.",
+      "material": "metal",
+      "gear": "ironhelm",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-ironhelm.png",
+      "z": 140
+    },
+    {
+      "id": "gear-hornedhelm",
+      "slot": "head",
+      "description": "Horned helm: Protects and frightens; the horns hurt too.",
+      "material": "metal",
+      "gear": "hornedhelm",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-hornedhelm.png",
+      "z": 140
+    },
+    {
+      "id": "gear-greathelm",
+      "slot": "head",
+      "description": "Great helm: Nothing gets through, not even a caster's focus.",
+      "material": "metal",
+      "gear": "greathelm",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greathelm.png",
+      "z": 140
+    },
+    {
+      "id": "gear-wizardhat",
+      "slot": "head",
+      "description": "Wizard hat: Old and patched, it keeps the lore of generations.",
+      "material": "metal",
+      "gear": "wizardhat",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wizardhat.png",
+      "z": 140
+    },
+    {
+      "id": "gear-headband",
+      "slot": "head",
+      "description": "Headband of intellect: Clears the mind and closes it to foreign spells.",
+      "material": "metal",
+      "gear": "headband",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-headband.png",
+      "z": 140
+    },
+    {
+      "id": "gear-circlet",
+      "slot": "head",
+      "description": "Circlet of presence: Every eye turns to the one who wears it.",
+      "material": "metal",
+      "gear": "circlet",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-circlet.png",
+      "z": 140
+    },
+    {
+      "id": "gear-mask",
+      "slot": "head",
+      "description": "Assassin's mask: Whoever wears it forgets caution.",
+      "material": "metal",
+      "gear": "mask",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-mask.png",
+      "z": 140
+    },
+    {
+      "id": "gear-robe",
+      "slot": "torso",
+      "description": "Apprentice's robe: Embroidered with simple warding runes.",
+      "material": "cloth",
+      "gear": "robe",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-robe.png",
+      "z": 140
+    },
+    {
+      "id": "gear-archrobe",
+      "slot": "torso",
+      "description": "Archmage's robe: Woven of starthread: only a master bears its weight.",
+      "material": "cloth",
+      "gear": "archrobe",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-archrobe.png",
+      "z": 140
+    },
+    {
+      "id": "gear-clericvest",
+      "slot": "torso",
+      "description": "Priestly vestments: Consecrated at the altar, they remind the cleric whom they serve.",
+      "material": "cloth",
+      "gear": "clericvest",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-clericvest.png",
+      "z": 140
+    },
+    {
+      "id": "gear-monkgarb",
+      "slot": "torso",
+      "description": "Monk's garb: No armor: the wearer defends with the body itself, light as wind.",
+      "material": "cloth",
+      "gear": "monkgarb",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-monkgarb.png",
+      "z": 140
+    },
+    {
+      "id": "gear-shadowcloak",
+      "slot": "torso",
+      "description": "Shadow cloak: Dark leather that blends with the night.",
+      "material": "cloth",
+      "gear": "shadowcloak",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shadowcloak.png",
+      "z": 140
+    },
+    {
+      "id": "gear-leather",
+      "slot": "torso",
+      "description": "Leather jerkin: Light armor: protects without hindering.",
+      "material": "cloth",
+      "gear": "leather",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-leather.png",
+      "z": 140
+    },
+    {
+      "id": "gear-studded",
+      "slot": "torso",
+      "description": "Studded leather: Light and riveted: protects those who know how to dodge.",
+      "material": "cloth",
+      "gear": "studded",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-studded.png",
+      "z": 140
+    },
+    {
+      "id": "gear-hide",
+      "slot": "torso",
+      "description": "Hide armor: Thick hides, no metal: the armor of druids and barbarians.",
+      "material": "cloth",
+      "gear": "hide",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-hide.png",
+      "z": 140
+    },
+    {
+      "id": "gear-chainshirt",
+      "slot": "torso",
+      "description": "Chain shirt: Medium armor: the metal rings hinder spell gestures.",
+      "material": "metal",
+      "gear": "chainshirt",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-chainshirt.png",
+      "z": 140
+    },
+    {
+      "id": "gear-breastplate",
+      "slot": "torso",
+      "description": "Breastplate: Reinforced medium armor.",
+      "material": "metal",
+      "gear": "breastplate",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-breastplate.png",
+      "z": 140
+    },
+    {
+      "id": "gear-chainmail",
+      "slot": "torso",
+      "description": "Chain mail: Heavy armor: holds well, but nearly stops magic.",
+      "material": "metal",
+      "gear": "chainmail",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-chainmail.png",
+      "z": 140
+    },
+    {
+      "id": "gear-plate",
+      "slot": "torso",
+      "description": "Plate armor: The best protection there is, at the price of breath and magic.",
+      "material": "metal",
+      "gear": "plate",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-plate.png",
+      "z": 140
+    },
+    {
+      "id": "gear-gauntlets",
+      "slot": "hands",
+      "description": "Steel gauntlets: Protect hands and forearms.",
+      "material": "metal",
+      "gear": "gauntlets",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-gauntlets.png",
+      "z": 140
+    },
+    {
+      "id": "gear-ogregauntlets",
+      "slot": "hands",
+      "description": "Gauntlets of ogre power: Whoever wears them grips like an ogre.",
+      "material": "metal",
+      "gear": "ogregauntlets",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-ogregauntlets.png",
+      "z": 140
+    },
+    {
+      "id": "gear-runegloves",
+      "slot": "hands",
+      "description": "Runic gloves: Runes that deflect hostile magic.",
+      "material": "metal",
+      "gear": "runegloves",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-runegloves.png",
+      "z": 140
+    },
+    {
+      "id": "gear-thiefgloves",
+      "slot": "hands",
+      "description": "Thief's gloves: Nimble fingers find the gap in the guard.",
+      "material": "metal",
+      "gear": "thiefgloves",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-thiefgloves.png",
+      "z": 140
+    },
+    {
+      "id": "gear-leatherpants",
+      "slot": "legs",
+      "description": "Leather breeches: Tanned leather that endures the road.",
+      "material": "cloth",
+      "gear": "leatherpants",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-leatherpants.png",
+      "z": 140
+    },
+    {
+      "id": "gear-greaves",
+      "slot": "legs",
+      "description": "Steel greaves: Plates over shins and knees.",
+      "material": "cloth",
+      "gear": "greaves",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greaves.png",
+      "z": 140
+    },
+    {
+      "id": "gear-elvenleggings",
+      "slot": "legs",
+      "description": "Elven leggings: Woven with threads that repel charms.",
+      "material": "cloth",
+      "gear": "elvenleggings",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-elvenleggings.png",
+      "z": 140
+    },
+    {
+      "id": "gear-travelboots",
+      "slot": "feet",
+      "description": "Traveler boots: Worn from long walks; stamina comes with them.",
+      "material": "cloth",
+      "gear": "travelboots",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-travelboots.png",
+      "z": 140
+    },
+    {
+      "id": "gear-ironboots",
+      "slot": "feet",
+      "description": "Iron boots: Heavy and steady.",
+      "material": "cloth",
+      "gear": "ironboots",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-ironboots.png",
+      "z": 140
+    },
+    {
+      "id": "gear-elvenboots",
+      "slot": "feet",
+      "description": "Elven boots: Silent on stone and dry leaves alike.",
+      "material": "cloth",
+      "gear": "elvenboots",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-elvenboots.png",
+      "z": 140
+    },
+    {
+      "id": "gear-wingedboots",
+      "slot": "feet",
+      "description": "Winged boots: Too light: the wearer feels every blow.",
+      "material": "cloth",
+      "gear": "wingedboots",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wingedboots.png",
+      "z": 140
+    },
+    {
+      "id": "gear-healthamulet",
+      "slot": "neck",
+      "description": "Amulet of health: A red stone that beats along with the heart.",
+      "material": "metal",
+      "gear": "healthamulet",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-healthamulet.png",
+      "z": 140
+    },
+    {
+      "id": "gear-periapt",
+      "slot": "neck",
+      "description": "Periapt of wisdom: Brings the calm of one who has seen it all.",
+      "material": "metal",
+      "gear": "periapt",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-periapt.png",
+      "z": 140
+    },
+    {
+      "id": "gear-arcanemedallion",
+      "slot": "neck",
+      "description": "Arcane medallion: A silver ring of metal that never cools.",
+      "material": "metal",
+      "gear": "arcanemedallion",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-arcanemedallion.png",
+      "z": 140
+    },
+    {
+      "id": "gear-fangnecklace",
+      "slot": "neck",
+      "description": "Fang necklace: Trophies from the first hunt.",
+      "material": "metal",
+      "gear": "fangnecklace",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-fangnecklace.png",
+      "z": 140
+    },
+    {
+      "id": "gear-wardamulet",
+      "slot": "neck",
+      "description": "Amulet of warding: Engraved with the sun: dark magic slides off it.",
+      "material": "metal",
+      "gear": "wardamulet",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wardamulet.png",
+      "z": 140
+    },
+    {
+      "id": "gear-protectionring",
+      "slot": "ring",
+      "description": "Ring of protection: An unseen field against blades and spells.",
+      "material": "metal",
+      "gear": "protectionring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-protectionring.png",
+      "z": 140
+    },
+    {
+      "id": "gear-vigorring",
+      "slot": "ring",
+      "description": "Ring of vigor: Pushes the body past fatigue.",
+      "material": "metal",
+      "gear": "vigorring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-vigorring.png",
+      "z": 140
+    },
+    {
+      "id": "gear-archmagering",
+      "slot": "ring",
+      "description": "Archmage's ring: Burns mana from the wearer's own blood.",
+      "material": "metal",
+      "gear": "archmagering",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-archmagering.png",
+      "z": 140
+    },
+    {
+      "id": "gear-bloodring",
+      "slot": "ring",
+      "description": "Blood ring: Each blow takes a little from the one who deals it.",
+      "material": "metal",
+      "gear": "bloodring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-bloodring.png",
+      "z": 140
+    },
+    {
+      "id": "gear-strengthring",
+      "slot": "ring",
+      "description": "Ring of strength: A thick iron band, warm to the touch.",
+      "material": "metal",
+      "gear": "strengthring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-strengthring.png",
+      "z": 140
+    },
+    {
+      "id": "gear-agilityring",
+      "slot": "ring",
+      "description": "Ring of agility: Light as a feather: the fingers grow quicker.",
+      "material": "metal",
+      "gear": "agilityring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-agilityring.png",
+      "z": 140
+    },
+    {
+      "id": "gear-berserkerring",
+      "slot": "ring",
+      "description": "Berserker's ring: Rage forgets the guard.",
+      "material": "metal",
+      "gear": "berserkerring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-berserkerring.png",
+      "z": 140
+    },
+    {
+      "id": "gear-patronring",
+      "slot": "ring",
+      "description": "Patron's ring: The pact shows on the skin, along with the power.",
+      "material": "metal",
+      "gear": "patronring",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-patronring.png",
+      "z": 140
+    },
+    {
+      "id": "body-muscular",
+      "slot": "body",
+      "description": "a strongly built muscular adult human anatomical base, bald with tiny natural face, fitted grey sleeveless undershirt and shorts, warm neutral skin, same pose positions and foot anchors as template",
+      "material": "body",
+      "z": 0
+    }
+  ],
+  "gear": [
+    {
+      "key": "dagger",
+      "slot": "weapon",
+      "name": [
+        "Adaga",
+        "Dagger"
+      ],
+      "icon": "plain-dagger",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 2,
+        "via": "melee"
+      },
+      "dual": 1,
+      "flavor": [
+        "Leve e discreta; cabe tamb\u00e9m na outra m\u00e3o.",
+        "Light and discreet; fits the other hand too."
+      ]
+    },
+    {
+      "key": "shortsword",
+      "slot": "weapon",
+      "name": [
+        "Espada curta",
+        "Shortsword"
+      ],
+      "icon": "broad-dagger",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 3,
+        "via": "melee"
+      },
+      "dual": 2,
+      "flavor": [
+        "A arma de quem luta com uma l\u00e2mina em cada m\u00e3o.",
+        "The weapon of those who fight with a blade in each hand."
+      ]
+    },
+    {
+      "key": "mace",
+      "slot": "weapon",
+      "name": [
+        "Ma\u00e7a",
+        "Mace"
+      ],
+      "icon": "spiked-mace",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 3,
+        "via": "melee"
+      },
+      "resist": 1,
+      "dual": 1,
+      "flavor": [
+        "Aben\u00e7oada nos templos: protege quem a empunha da magia.",
+        "Blessed in the temples: wards its wielder against magic."
+      ]
+    },
+    {
+      "key": "spear",
+      "slot": "weapon",
+      "name": [
+        "Lan\u00e7a",
+        "Spear"
+      ],
+      "icon": "broadhead-arrow",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 3,
+        "via": "melee",
+        "reach": true
+      },
+      "dual": 1,
+      "flavor": [
+        "Alcan\u00e7a o inimigo por cima do ombro de um aliado.",
+        "Reaches the foe over an ally's shoulder."
+      ]
+    },
+    {
+      "key": "longsword",
+      "slot": "weapon",
+      "name": [
+        "Espada longa",
+        "Longsword"
+      ],
+      "icon": "broadsword",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 4,
+        "via": "melee"
+      },
+      "dual": 2,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "Equil\u00edbrio entre alcance, peso e corte.",
+        "A balance of reach, weight and edge."
+      ]
+    },
+    {
+      "key": "rapier",
+      "slot": "weapon",
+      "name": [
+        "Rapieira",
+        "Rapier"
+      ],
+      "icon": "sword-brandish",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 4,
+        "via": "melee"
+      },
+      "dual": 2,
+      "req": [
+        "des",
+        3
+      ],
+      "flavor": [
+        "Estocadas precisas: pede agilidade, n\u00e3o for\u00e7a.",
+        "Precise thrusts: it asks for agility, not strength."
+      ]
+    },
+    {
+      "key": "battleaxe",
+      "slot": "weapon",
+      "name": [
+        "Machado de batalha",
+        "Battleaxe"
+      ],
+      "icon": "battle-axe",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 5,
+        "via": "melee"
+      },
+      "dual": 2,
+      "req": [
+        "for",
+        3
+      ],
+      "flavor": [
+        "Pesado para uma m\u00e3o s\u00f3, mas deixa a outra livre para o escudo.",
+        "Heavy for one hand, but leaves the other free for a shield."
+      ]
+    },
+    {
+      "key": "katana",
+      "slot": "weapon",
+      "name": [
+        "Katana",
+        "Katana"
+      ],
+      "icon": "curvy-knife",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 5,
+        "via": "melee",
+        "hands": 2
+      },
+      "req": [
+        "des",
+        3
+      ],
+      "flavor": [
+        "L\u00e2mina curva de duas m\u00e3os, feita para cortes r\u00e1pidos.",
+        "A curved two-handed blade made for quick cuts."
+      ]
+    },
+    {
+      "key": "greatsword",
+      "slot": "weapon",
+      "name": [
+        "Montante",
+        "Greatsword"
+      ],
+      "icon": "two-handed-sword",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 5,
+        "via": "melee",
+        "hands": 2
+      },
+      "armor": 1,
+      "req": [
+        "for",
+        3
+      ],
+      "flavor": [
+        "Longa o bastante para aparar golpes.",
+        "Long enough to parry blows."
+      ]
+    },
+    {
+      "key": "halberd",
+      "slot": "weapon",
+      "name": [
+        "Alabarda",
+        "Halberd"
+      ],
+      "icon": "axe-sword",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 5,
+        "via": "melee",
+        "hands": 2,
+        "reach": true
+      },
+      "req": [
+        "for",
+        3
+      ],
+      "flavor": [
+        "Machado na ponta de uma haste: golpeia da segunda fileira.",
+        "An axe on a pole: strikes from the second row."
+      ]
+    },
+    {
+      "key": "greataxe",
+      "slot": "weapon",
+      "name": [
+        "Machado grande",
+        "Greataxe"
+      ],
+      "icon": "war-axe",
+      "rarity": "rare",
+      "weapon": {
+        "dmg": 6,
+        "via": "melee",
+        "hands": 2
+      },
+      "req": [
+        "for",
+        4
+      ],
+      "flavor": [
+        "O golpe mais pesado que um guerreiro consegue dar.",
+        "The heaviest blow a warrior can deal."
+      ]
+    },
+    {
+      "key": "handwraps",
+      "slot": "weapon",
+      "name": [
+        "Faixas de luta",
+        "Fighting wraps"
+      ],
+      "icon": "mailed-fist",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 4,
+        "via": "melee",
+        "hands": 2
+      },
+      "req": [
+        "des",
+        2
+      ],
+      "flavor": [
+        "M\u00e3os e p\u00e9s como armas; o corpo leve guarda f\u00f4lego.",
+        "Hands and feet as weapons; a light body keeps its breath."
+      ]
+    },
+    {
+      "key": "sling",
+      "slot": "weapon",
+      "name": [
+        "Funda",
+        "Sling"
+      ],
+      "icon": "rune-stone",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 2,
+        "via": "ranged"
+      },
+      "flavor": [
+        "Pedras \u00e0 dist\u00e2ncia, com a outra m\u00e3o livre.",
+        "Stones from afar, with the other hand free."
+      ]
+    },
+    {
+      "key": "handcrossbow",
+      "slot": "weapon",
+      "name": [
+        "Besta de m\u00e3o",
+        "Hand crossbow"
+      ],
+      "icon": "crossbow",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 3,
+        "via": "ranged"
+      },
+      "dual": 1,
+      "req": [
+        "des",
+        2
+      ],
+      "flavor": [
+        "Pequena o bastante para uma m\u00e3o s\u00f3.",
+        "Small enough for a single hand."
+      ]
+    },
+    {
+      "key": "shortbow",
+      "slot": "weapon",
+      "name": [
+        "Arco curto",
+        "Shortbow"
+      ],
+      "icon": "bow-arrow",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 3,
+        "via": "ranged",
+        "hands": 2
+      },
+      "flavor": [
+        "F\u00e1cil de puxar, para qualquer um.",
+        "Easy to draw, for anyone."
+      ]
+    },
+    {
+      "key": "longbow",
+      "slot": "weapon",
+      "name": [
+        "Arco longo",
+        "Longbow"
+      ],
+      "icon": "bowman",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 4,
+        "via": "ranged",
+        "hands": 2
+      },
+      "req": [
+        "des",
+        3
+      ],
+      "flavor": [
+        "Precisa de bra\u00e7o treinado; acerta longe e forte.",
+        "It needs a trained arm; hits far and hard."
+      ]
+    },
+    {
+      "key": "heavycrossbow",
+      "slot": "weapon",
+      "name": [
+        "Besta pesada",
+        "Heavy crossbow"
+      ],
+      "icon": "crossbow",
+      "rarity": "rare",
+      "weapon": {
+        "dmg": 5,
+        "via": "ranged",
+        "hands": 2
+      },
+      "vigor": -1,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "O virote atravessa escudos, mas recarregar cansa.",
+        "The bolt pierces shields, but reloading is tiring."
+      ]
+    },
+    {
+      "key": "wand",
+      "slot": "weapon",
+      "name": [
+        "Varinha",
+        "Wand"
+      ],
+      "icon": "crystal-wand",
+      "rarity": "common",
+      "weapon": {
+        "dmg": 3,
+        "via": "magic"
+      },
+      "dual": 1,
+      "flavor": [
+        "Dispara magia com uma m\u00e3o e deixa a outra para um orbe ou grim\u00f3rio.",
+        "Fires magic with one hand and leaves the other for an orb or tome."
+      ]
+    },
+    {
+      "key": "staff",
+      "slot": "weapon",
+      "name": [
+        "Cajado arcano",
+        "Arcane staff"
+      ],
+      "icon": "wizard-staff",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 4,
+        "via": "magic",
+        "hands": 2
+      },
+      "mana": 1,
+      "req": [
+        "int",
+        2
+      ],
+      "flavor": [
+        "Guarda energia arcana para o pr\u00f3ximo feiti\u00e7o.",
+        "Stores arcane energy for the next spell."
+      ]
+    },
+    {
+      "key": "druidstaff",
+      "slot": "weapon",
+      "name": [
+        "Cajado de carvalho",
+        "Oak staff"
+      ],
+      "icon": "crescent-staff",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 3,
+        "via": "magic",
+        "hands": 2
+      },
+      "hp": 3,
+      "attrs": {
+        "sab": 1
+      },
+      "req": [
+        "sab",
+        2
+      ],
+      "flavor": [
+        "Ainda brota folhas: a seiva fortalece quem o carrega.",
+        "It still sprouts leaves: its sap strengthens the bearer."
+      ]
+    },
+    {
+      "key": "skullstaff",
+      "slot": "weapon",
+      "name": [
+        "Cajado de caveira",
+        "Skull staff"
+      ],
+      "icon": "skull-staff",
+      "rarity": "rare",
+      "weapon": {
+        "dmg": 4,
+        "via": "magic",
+        "hands": 2
+      },
+      "mana": 2,
+      "hp": -3,
+      "req": [
+        "car",
+        2
+      ],
+      "flavor": [
+        "Empresta poder em troca de um pouco da sua vida.",
+        "Lends power in exchange for a bit of your life."
+      ]
+    },
+    {
+      "key": "lute",
+      "slot": "weapon",
+      "name": [
+        "Ala\u00fade",
+        "Lute"
+      ],
+      "icon": "pan-flute",
+      "rarity": "uncommon",
+      "weapon": {
+        "dmg": 2,
+        "via": "magic",
+        "hands": 2
+      },
+      "mana": 1,
+      "attrs": {
+        "car": 1
+      },
+      "flavor": [
+        "Can\u00e7\u00f5es que ferem, encantam e inspiram.",
+        "Songs that wound, charm and inspire."
+      ]
+    },
+    {
+      "key": "buckler",
+      "slot": "offhand",
+      "name": [
+        "Broquel",
+        "Buckler"
+      ],
+      "icon": "round-shield",
+      "rarity": "common",
+      "armor": 1,
+      "flavor": [
+        "Pequeno e leve; desvia o golpe.",
+        "Small and light; turns the blow aside."
+      ]
+    },
+    {
+      "key": "shield",
+      "slot": "offhand",
+      "name": [
+        "Escudo de a\u00e7o",
+        "Steel shield"
+      ],
+      "icon": "templar-shield",
+      "rarity": "common",
+      "armor": 2,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "O escudo do soldado.",
+        "The soldier's shield."
+      ]
+    },
+    {
+      "key": "towershield",
+      "slot": "offhand",
+      "name": [
+        "Escudo torre",
+        "Tower shield"
+      ],
+      "icon": "crenulated-shield",
+      "rarity": "rare",
+      "armor": 3,
+      "vigor": -1,
+      "req": [
+        "for",
+        3
+      ],
+      "flavor": [
+        "Uma parede port\u00e1til; pesa a cada passo.",
+        "A portable wall; it weighs on every step."
+      ]
+    },
+    {
+      "key": "orb",
+      "slot": "offhand",
+      "name": [
+        "Orbe arcano",
+        "Arcane orb"
+      ],
+      "icon": "concentration-orb",
+      "rarity": "uncommon",
+      "mana": 1,
+      "flavor": [
+        "Concentra a mana dispersa no ar.",
+        "Gathers the mana scattered in the air."
+      ]
+    },
+    {
+      "key": "tome",
+      "slot": "offhand",
+      "name": [
+        "Grim\u00f3rio",
+        "Grimoire"
+      ],
+      "icon": "spell-book",
+      "rarity": "uncommon",
+      "attrs": {
+        "int": 1
+      },
+      "flavor": [
+        "Anos de estudo numa capa de couro.",
+        "Years of study in a leather cover."
+      ]
+    },
+    {
+      "key": "holysymbol",
+      "slot": "offhand",
+      "name": [
+        "S\u00edmbolo sagrado",
+        "Holy symbol"
+      ],
+      "icon": "holy-symbol",
+      "rarity": "common",
+      "resist": 1,
+      "hp": 2,
+      "flavor": [
+        "A f\u00e9 erguida diante do mal.",
+        "Faith raised against evil."
+      ]
+    },
+    {
+      "key": "hood",
+      "slot": "head",
+      "name": [
+        "Capuz",
+        "Hood"
+      ],
+      "icon": "hooded-figure",
+      "rarity": "common",
+      "attrs": {
+        "des": 1
+      },
+      "flavor": [
+        "Esconde o rosto e o pr\u00f3ximo passo.",
+        "Hides the face and the next step."
+      ]
+    },
+    {
+      "key": "ironhelm",
+      "slot": "head",
+      "name": [
+        "Elmo de ferro",
+        "Iron helm"
+      ],
+      "icon": "visored-helm",
+      "rarity": "common",
+      "hp": 2,
+      "flavor": [
+        "Simples e confi\u00e1vel.",
+        "Simple and reliable."
+      ]
+    },
+    {
+      "key": "hornedhelm",
+      "slot": "head",
+      "name": [
+        "Elmo com chifres",
+        "Horned helm"
+      ],
+      "icon": "horned-helm",
+      "rarity": "uncommon",
+      "strike": 1,
+      "hp": 1,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "Protege e assusta; o choque dos chifres tamb\u00e9m fere.",
+        "Protects and frightens; the horns hurt too."
+      ]
+    },
+    {
+      "key": "greathelm",
+      "slot": "head",
+      "name": [
+        "Elmo fechado",
+        "Great helm"
+      ],
+      "icon": "black-knight-helm",
+      "rarity": "uncommon",
+      "hp": 3,
+      "mana": -1,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "Nada passa, nem a concentra\u00e7\u00e3o do conjurador.",
+        "Nothing gets through, not even a caster's focus."
+      ]
+    },
+    {
+      "key": "wizardhat",
+      "slot": "head",
+      "name": [
+        "Chap\u00e9u de mago",
+        "Wizard hat"
+      ],
+      "icon": "pointy-hat",
+      "rarity": "common",
+      "mana": 1,
+      "flavor": [
+        "Velho e remendado, guarda o conhecimento de gera\u00e7\u00f5es.",
+        "Old and patched, it keeps the lore of generations."
+      ]
+    },
+    {
+      "key": "headband",
+      "slot": "head",
+      "name": [
+        "Tiara do intelecto",
+        "Headband of intellect"
+      ],
+      "icon": "jewel-crown",
+      "rarity": "rare",
+      "attrs": {
+        "int": 1
+      },
+      "resist": 1,
+      "flavor": [
+        "Clareia a mente e a fecha para feiti\u00e7os alheios.",
+        "Clears the mind and closes it to foreign spells."
+      ]
+    },
+    {
+      "key": "circlet",
+      "slot": "head",
+      "name": [
+        "Diadema da presen\u00e7a",
+        "Circlet of presence"
+      ],
+      "icon": "imperial-crown",
+      "rarity": "rare",
+      "attrs": {
+        "car": 1
+      },
+      "flavor": [
+        "Todos os olhos se voltam para quem o usa.",
+        "Every eye turns to the one who wears it."
+      ]
+    },
+    {
+      "key": "mask",
+      "slot": "head",
+      "name": [
+        "M\u00e1scara do assassino",
+        "Assassin's mask"
+      ],
+      "icon": "domino-mask",
+      "rarity": "uncommon",
+      "strike": 1,
+      "hp": -2,
+      "flavor": [
+        "Quem a usa esquece a cautela.",
+        "Whoever wears it forgets caution."
+      ]
+    },
+    {
+      "key": "robe",
+      "slot": "chest",
+      "name": [
+        "T\u00fanica de aprendiz",
+        "Apprentice's robe"
+      ],
+      "icon": "angel-outfit",
+      "rarity": "common",
+      "resist": 1,
+      "mana": 1,
+      "flavor": [
+        "Bordada com runas simples de prote\u00e7\u00e3o.",
+        "Embroidered with simple warding runes."
+      ]
+    },
+    {
+      "key": "archrobe",
+      "slot": "chest",
+      "name": [
+        "Manto do arquimago",
+        "Archmage's robe"
+      ],
+      "icon": "wing-cloak",
+      "rarity": "unique",
+      "resist": 2,
+      "mana": 1,
+      "attrs": {
+        "int": 1
+      },
+      "req": [
+        "int",
+        3
+      ],
+      "flavor": [
+        "Tecido de fio de estrela: s\u00f3 um mestre aguenta o seu peso.",
+        "Woven of starthread: only a master bears its weight."
+      ]
+    },
+    {
+      "key": "clericvest",
+      "slot": "chest",
+      "name": [
+        "Vestes sacerdotais",
+        "Priestly vestments"
+      ],
+      "icon": "holy-grail",
+      "rarity": "uncommon",
+      "resist": 1,
+      "attrs": {
+        "sab": 1
+      },
+      "flavor": [
+        "Consagradas no altar, lembram ao cl\u00e9rigo a quem ele serve.",
+        "Consecrated at the altar, they remind the cleric whom they serve."
+      ]
+    },
+    {
+      "key": "monkgarb",
+      "slot": "chest",
+      "name": [
+        "Veste de monge",
+        "Monk's garb"
+      ],
+      "icon": "linden-leaf",
+      "rarity": "common",
+      "armor": 1,
+      "vigor": 1,
+      "req": [
+        "sab",
+        2
+      ],
+      "flavor": [
+        "Sem armadura: quem a veste se defende pelo pr\u00f3prio corpo, leve como o vento.",
+        "No armor: the wearer defends with the body itself, light as wind."
+      ]
+    },
+    {
+      "key": "shadowcloak",
+      "slot": "chest",
+      "name": [
+        "Capa das sombras",
+        "Shadow cloak"
+      ],
+      "icon": "cloak-dagger",
+      "rarity": "uncommon",
+      "armor": 1,
+      "attrs": {
+        "des": 1
+      },
+      "flavor": [
+        "Couro escuro que se confunde com a noite.",
+        "Dark leather that blends with the night."
+      ]
+    },
+    {
+      "key": "leather",
+      "slot": "chest",
+      "name": [
+        "Gib\u00e3o de couro",
+        "Leather jerkin"
+      ],
+      "icon": "chest-armor",
+      "rarity": "common",
+      "armor": 1,
+      "hp": 2,
+      "flavor": [
+        "Armadura leve: protege sem atrapalhar.",
+        "Light armor: protects without hindering."
+      ]
+    },
+    {
+      "key": "studded",
+      "slot": "chest",
+      "name": [
+        "Couro batido",
+        "Studded leather"
+      ],
+      "icon": "belt-armor",
+      "rarity": "uncommon",
+      "armor": 2,
+      "req": [
+        "des",
+        3
+      ],
+      "flavor": [
+        "Leve e cravejada: protege quem sabe se esquivar.",
+        "Light and riveted: protects those who know how to dodge."
+      ]
+    },
+    {
+      "key": "hide",
+      "slot": "chest",
+      "name": [
+        "Gib\u00e3o de peles",
+        "Hide armor"
+      ],
+      "icon": "heart-armor",
+      "rarity": "common",
+      "armor": 2,
+      "hp": 2,
+      "req": [
+        "con",
+        2
+      ],
+      "flavor": [
+        "Peles grossas, sem metal: a armadura dos druidas e b\u00e1rbaros.",
+        "Thick hides, no metal: the armor of druids and barbarians."
+      ]
+    },
+    {
+      "key": "chainshirt",
+      "slot": "chest",
+      "name": [
+        "Camis\u00e3o de malha",
+        "Chain shirt"
+      ],
+      "icon": "layered-armor",
+      "rarity": "common",
+      "armor": 2,
+      "mana": -1,
+      "flavor": [
+        "Armadura m\u00e9dia: os an\u00e9is de metal atrapalham os gestos de magia.",
+        "Medium armor: the metal rings hinder spell gestures."
+      ]
+    },
+    {
+      "key": "breastplate",
+      "slot": "chest",
+      "name": [
+        "Peitoral de a\u00e7o",
+        "Breastplate"
+      ],
+      "icon": "armor-punch",
+      "rarity": "uncommon",
+      "armor": 3,
+      "mana": -1,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "Armadura m\u00e9dia refor\u00e7ada.",
+        "Reinforced medium armor."
+      ]
+    },
+    {
+      "key": "chainmail",
+      "slot": "chest",
+      "name": [
+        "Cota de malha",
+        "Chain mail"
+      ],
+      "icon": "shoulder-armor",
+      "rarity": "uncommon",
+      "armor": 3,
+      "hp": 2,
+      "mana": -2,
+      "req": [
+        "for",
+        3
+      ],
+      "flavor": [
+        "Armadura pesada: segura bem, mas quase impede a magia.",
+        "Heavy armor: holds well, but nearly stops magic."
+      ]
+    },
+    {
+      "key": "plate",
+      "slot": "chest",
+      "name": [
+        "Armadura de placas",
+        "Plate armor"
+      ],
+      "icon": "spiked-armor",
+      "rarity": "rare",
+      "armor": 5,
+      "mana": -2,
+      "vigor": -1,
+      "req": [
+        "for",
+        4
+      ],
+      "flavor": [
+        "A melhor prote\u00e7\u00e3o que existe, ao pre\u00e7o do f\u00f4lego e da magia.",
+        "The best protection there is, at the price of breath and magic."
+      ]
+    },
+    {
+      "key": "gauntlets",
+      "slot": "hands",
+      "name": [
+        "Manoplas de a\u00e7o",
+        "Steel gauntlets"
+      ],
+      "icon": "gauntlet",
+      "rarity": "common",
+      "hp": 2,
+      "flavor": [
+        "Protegem as m\u00e3os e os antebra\u00e7os.",
+        "Protect hands and forearms."
+      ]
+    },
+    {
+      "key": "ogregauntlets",
+      "slot": "hands",
+      "name": [
+        "Manoplas da for\u00e7a do ogro",
+        "Gauntlets of ogre power"
+      ],
+      "icon": "thor-fist",
+      "rarity": "rare",
+      "attrs": {
+        "for": 1
+      },
+      "flavor": [
+        "Quem as veste aperta como um ogro.",
+        "Whoever wears them grips like an ogre."
+      ]
+    },
+    {
+      "key": "runegloves",
+      "slot": "hands",
+      "name": [
+        "Luvas r\u00fanicas",
+        "Runic gloves"
+      ],
+      "icon": "magic-palm",
+      "rarity": "uncommon",
+      "resist": 1,
+      "flavor": [
+        "Runas que desviam a magia hostil.",
+        "Runes that deflect hostile magic."
+      ]
+    },
+    {
+      "key": "thiefgloves",
+      "slot": "hands",
+      "name": [
+        "Luvas do gatuno",
+        "Thief's gloves"
+      ],
+      "icon": "claw-slashes",
+      "rarity": "uncommon",
+      "strike": 1,
+      "req": [
+        "des",
+        2
+      ],
+      "flavor": [
+        "Dedos \u00e1geis acham a brecha na guarda.",
+        "Nimble fingers find the gap in the guard."
+      ]
+    },
+    {
+      "key": "leatherpants",
+      "slot": "legs",
+      "name": [
+        "Cal\u00e7as de couro",
+        "Leather breeches"
+      ],
+      "icon": "leg-armor",
+      "rarity": "common",
+      "hp": 2,
+      "flavor": [
+        "Couro curtido que aguenta a estrada.",
+        "Tanned leather that endures the road."
+      ]
+    },
+    {
+      "key": "greaves",
+      "slot": "legs",
+      "name": [
+        "Grevas de a\u00e7o",
+        "Steel greaves"
+      ],
+      "icon": "leg-armor",
+      "rarity": "common",
+      "hp": 3,
+      "req": [
+        "for",
+        2
+      ],
+      "flavor": [
+        "Placas sobre as canelas e os joelhos.",
+        "Plates over shins and knees."
+      ]
+    },
+    {
+      "key": "elvenleggings",
+      "slot": "legs",
+      "name": [
+        "Perneiras \u00e9lficas",
+        "Elven leggings"
+      ],
+      "icon": "vine-leaf",
+      "rarity": "uncommon",
+      "resist": 1,
+      "flavor": [
+        "Tecidas com fios que repelem encantos.",
+        "Woven with threads that repel charms."
+      ]
+    },
+    {
+      "key": "travelboots",
+      "slot": "feet",
+      "name": [
+        "Botas de viagem",
+        "Traveler boots"
+      ],
+      "icon": "boot-stomp",
+      "rarity": "common",
+      "vigor": 1,
+      "flavor": [
+        "Gastas de tanto caminhar; o f\u00f4lego vem com elas.",
+        "Worn from long walks; stamina comes with them."
+      ]
+    },
+    {
+      "key": "ironboots",
+      "slot": "feet",
+      "name": [
+        "Botas de ferro",
+        "Iron boots"
+      ],
+      "icon": "metal-boot",
+      "rarity": "common",
+      "hp": 2,
+      "flavor": [
+        "Pesadas e firmes.",
+        "Heavy and steady."
+      ]
+    },
+    {
+      "key": "elvenboots",
+      "slot": "feet",
+      "name": [
+        "Botas \u00e9lficas",
+        "Elven boots"
+      ],
+      "icon": "boot-kick",
+      "rarity": "uncommon",
+      "attrs": {
+        "des": 1
+      },
+      "flavor": [
+        "N\u00e3o fazem barulho em pedra nem em folha seca.",
+        "Silent on stone and dry leaves alike."
+      ]
+    },
+    {
+      "key": "wingedboots",
+      "slot": "feet",
+      "name": [
+        "Botas aladas",
+        "Winged boots"
+      ],
+      "icon": "angel-wings",
+      "rarity": "unique",
+      "vigor": 1,
+      "attrs": {
+        "des": 1
+      },
+      "hp": -2,
+      "flavor": [
+        "Leveza demais: quem as usa sente cada golpe.",
+        "Too light: the wearer feels every blow."
+      ]
+    },
+    {
+      "key": "healthamulet",
+      "slot": "trinket",
+      "name": [
+        "Amuleto da sa\u00fade",
+        "Amulet of health"
+      ],
+      "icon": "intricate-necklace",
+      "rarity": "rare",
+      "hp": 3,
+      "attrs": {
+        "con": 1
+      },
+      "flavor": [
+        "Uma pedra vermelha que bate junto com o cora\u00e7\u00e3o.",
+        "A red stone that beats along with the heart."
+      ]
+    },
+    {
+      "key": "periapt",
+      "slot": "trinket",
+      "name": [
+        "Periapto da sabedoria",
+        "Periapt of wisdom"
+      ],
+      "icon": "gems",
+      "rarity": "rare",
+      "attrs": {
+        "sab": 1
+      },
+      "flavor": [
+        "Traz a calma de quem j\u00e1 viu de tudo.",
+        "Brings the calm of one who has seen it all."
+      ]
+    },
+    {
+      "key": "arcanemedallion",
+      "slot": "trinket",
+      "name": [
+        "Medalh\u00e3o arcano",
+        "Arcane medallion"
+      ],
+      "icon": "magic-swirl",
+      "rarity": "uncommon",
+      "mana": 1,
+      "flavor": [
+        "Um c\u00edrculo de prata que nunca esfria.",
+        "A silver ring of metal that never cools."
+      ]
+    },
+    {
+      "key": "fangnecklace",
+      "slot": "trinket",
+      "name": [
+        "Colar de presas",
+        "Fang necklace"
+      ],
+      "icon": "triple-claws",
+      "rarity": "common",
+      "attrs": {
+        "for": 1
+      },
+      "hp": 1,
+      "flavor": [
+        "Trof\u00e9us da primeira ca\u00e7ada.",
+        "Trophies from the first hunt."
+      ]
+    },
+    {
+      "key": "wardamulet",
+      "slot": "trinket",
+      "name": [
+        "Amuleto de prote\u00e7\u00e3o",
+        "Amulet of warding"
+      ],
+      "icon": "heraldic-sun",
+      "rarity": "common",
+      "resist": 1,
+      "hp": 1,
+      "flavor": [
+        "Gravado com o sol: a magia sombria escorrega nele.",
+        "Engraved with the sun: dark magic slides off it."
+      ]
+    },
+    {
+      "key": "protectionring",
+      "slot": "ring",
+      "name": [
+        "Anel de prote\u00e7\u00e3o",
+        "Ring of protection"
+      ],
+      "icon": "power-ring",
+      "rarity": "rare",
+      "armor": 1,
+      "resist": 1,
+      "flavor": [
+        "Um campo invis\u00edvel contra l\u00e2minas e feiti\u00e7os.",
+        "An unseen field against blades and spells."
+      ]
+    },
+    {
+      "key": "vigorring",
+      "slot": "ring",
+      "name": [
+        "Anel do vigor",
+        "Ring of vigor"
+      ],
+      "icon": "pouring-chalice",
+      "rarity": "uncommon",
+      "vigor": 1,
+      "hp": -1,
+      "flavor": [
+        "Empurra o corpo al\u00e9m do cansa\u00e7o.",
+        "Pushes the body past fatigue."
+      ]
+    },
+    {
+      "key": "archmagering",
+      "slot": "ring",
+      "name": [
+        "Anel do arquimago",
+        "Archmage's ring"
+      ],
+      "icon": "fire-ring",
+      "rarity": "unique",
+      "mana": 2,
+      "hp": -3,
+      "flavor": [
+        "Queima a mana do pr\u00f3prio sangue.",
+        "Burns mana from the wearer's own blood."
+      ]
+    },
+    {
+      "key": "bloodring",
+      "slot": "ring",
+      "name": [
+        "Anel de sangue",
+        "Blood ring"
+      ],
+      "icon": "skull-ring",
+      "rarity": "rare",
+      "strike": 2,
+      "hp": -3,
+      "flavor": [
+        "Cada golpe cobra um pouco de quem o d\u00e1.",
+        "Each blow takes a little from the one who deals it."
+      ]
+    },
+    {
+      "key": "strengthring",
+      "slot": "ring",
+      "name": [
+        "Anel da for\u00e7a",
+        "Ring of strength"
+      ],
+      "icon": "power-ring",
+      "rarity": "uncommon",
+      "attrs": {
+        "for": 1
+      },
+      "flavor": [
+        "Um aro de ferro grosso, quente ao toque.",
+        "A thick iron band, warm to the touch."
+      ]
+    },
+    {
+      "key": "agilityring",
+      "slot": "ring",
+      "name": [
+        "Anel da agilidade",
+        "Ring of agility"
+      ],
+      "icon": "fire-ring",
+      "rarity": "uncommon",
+      "attrs": {
+        "des": 1
+      },
+      "flavor": [
+        "Leve como uma pena: os dedos ficam mais r\u00e1pidos.",
+        "Light as a feather: the fingers grow quicker."
+      ]
+    },
+    {
+      "key": "berserkerring",
+      "slot": "ring",
+      "name": [
+        "Anel do berserker",
+        "Berserker's ring"
+      ],
+      "icon": "skull-ring",
+      "rarity": "rare",
+      "strike": 1,
+      "armor": -1,
+      "req": [
+        "for",
+        3
+      ],
+      "flavor": [
+        "A f\u00faria esquece a guarda.",
+        "Rage forgets the guard."
+      ]
+    },
+    {
+      "key": "patronring",
+      "slot": "ring",
+      "name": [
+        "Anel do patrono",
+        "Patron's ring"
+      ],
+      "icon": "cursed-star",
+      "rarity": "rare",
+      "mana": 1,
+      "attrs": {
+        "car": 1
+      },
+      "hp": -1,
+      "flavor": [
+        "O pacto aparece na pele, junto do poder.",
+        "The pact shows on the skin, along with the power."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+ "model": "heroi.glb",
+ "height": 1.0,
+ "skin": [
+  0.505432468828216,
+  0.2801243652610849,
+  0.1572807278900734
+ ],
+ "fps": 24,
+ "clips": {
+  "Andar": {
+   "duration": 1.3333,
+   "loop": true,
+   "speed": 0.1325
+  },
+  "Conjurar": {
+   "duration": 1.4583,
+   "loop": false,
+   "events": {
+    "lancar": 0.667
+   }
+  },
+  "Correr": {
+   "duration": 0.9167,
+   "loop": true,
+   "speed": 0.3875
+  },
+  "Dano": {
+   "duration": 0.3333,
+   "loop": false
+  },
+  "Golpe": {
+   "duration": 1.5417,
+   "loop": false,
+   "events": {
+    "impacto": 0.75
+   }
+  },
+  "Guarda": {
+   "duration": 1.6667,
+   "loop": true
+  },
+  "Morte": {
+   "duration": 2.4167,
+   "loop": false
+  },
+  "Parado": {
+   "duration": 2.5,
+   "loop": true
+  }
+ },
+ "parts": [
+  {
+   "name": "Faixa",
+   "slot": "faixa",
+   "layer": "cosmetico",
+   "minZ": 0.6321,
+   "triangles": 8000,
+   "regions": [
+    {
+     "name": "Faixa",
+     "hiddenBy": []
+    }
+   ]
+  },
+  {
+   "name": "Cabelo",
+   "slot": "cabelo",
+   "layer": "cosmetico",
+   "minZ": 0.5994,
+   "triangles": 29999,
+   "regions": [
+    {
+     "name": "Cabelo",
+     "hiddenBy": []
+    }
+   ]
+  },
+  {
+   "name": "Cabeca",
+   "slot": "cabeca",
+   "layer": "cosmetico",
+   "minZ": 0.5492,
+   "triangles": 65536,
+   "regions": [
+    {
+     "name": "Cabeca",
+     "hiddenBy": []
+    }
+   ]
+  },
+  {
+   "name": "Armadura",
+   "slot": "conjunto",
+   "layer": "equipamento",
+   "minZ": -0.0166,
+   "triangles": 98448,
+   "regions": [
+    {
+     "name": "Armadura",
+     "hiddenBy": []
+    }
+   ]
+  },
+  {
+   "name": "Malha",
+   "slot": "malha",
+   "layer": "equipamento",
+   "minZ": 0.0396,
+   "triangles": 15448,
+   "regions": [
+    {
+     "name": "Malha",
+     "hiddenBy": []
+    }
+   ]
+  }
+ ],
+ "body": [
+  {
+   "name": "Corpo_00",
+   "hiddenBy": [
+    "Armadura"
+   ]
+  },
+  {
+   "name": "Corpo_01",
+   "hiddenBy": [
+    "Armadura",
+    "Cabeca"
+   ]
+  }
+ ],
+ "socket": {
+  "mao": "DEF-hand.R"
+ }
+}

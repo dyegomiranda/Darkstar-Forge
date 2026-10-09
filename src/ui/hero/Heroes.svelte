@@ -1,5 +1,6 @@
 <!-- Criação de personagem: a galeria dos heróis. Daqui se cria (do zero), edita, duplica ou exclui. -->
 <script lang="ts">
+  import { avatarForCharacter } from '../../avatar/equipment';
   import { Plus, Trash2, Pencil, Copy, Heart, Swords, Shield, Sparkles } from '@lucide/svelte';
   import { app } from '../../store/project.svelte';
   import { L } from '../../app/i18n.svelte';
@@ -51,7 +52,7 @@
           <button class="main" onclick={() => open(c.id)} title={L('Abrir', 'Open')}>
             <span class="pic">
               <span class="glow"></span>
-              {#if c.avatar}<span class="doll"><AvatarSprite avatar={c.avatar} scale={3} anim={hover === c.id ? 'walk' : 'idle'} /></span>{:else}<HeroPortrait hero={c} size={150} />{/if}
+              {#if c.avatar}<span class="doll"><AvatarSprite avatar={avatarForCharacter(c, app.cards)!} scale={3} anim={hover === c.id ? 'walk' : 'idle'} /></span>{:else}<HeroPortrait hero={c} size={150} />{/if}
             </span>
             <b class="nm">{c.name || L('Sem nome', 'Unnamed')}</b>
             <span class="cl">{RACES.find((r) => r.id === c.raceId)?.name[app.lang] ?? ''}{c.raceId && d ? ' · ' : ''}{d ? L(d.className[0], d.className[1]) : c.classColors.map((col) => COLORS[col].classes[app.lang]).join(' / ')}</span>

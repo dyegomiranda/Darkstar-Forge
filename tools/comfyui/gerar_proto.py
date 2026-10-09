@@ -27,7 +27,7 @@ def wf(prompt, seed, w=768, h=1072):
       "7": {"class_type": "KSampler", "inputs": {"model": ["10", 0], "positive": ["5", 0], "negative": ["5", 0], "latent_image": ["6", 0],
              "seed": seed, "steps": 24, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}},
       "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
-      "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "darkstar"}},
+      "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "void-sun"}},
     }
 
 def pixelar(data, grade=4, cores=56):

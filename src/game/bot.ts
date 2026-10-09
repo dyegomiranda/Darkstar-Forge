@@ -129,18 +129,18 @@ function planTurn(s: GameState, p: 0 | 1): Action {
 }
 
 /** Próxima jogada do bot (de quem decide agora: o jogador da vez ou quem responde a uma carta). */
-export function botAction(s: GameState, level: Difficulty = 'hard', exact = false): Action {
+export function botAction(s: GameState, level: Difficulty = 'hard', exact = false, rules: { movement?: boolean } = {}): Action {
   const k: Skill = exact ? { ...SKILL[level], noise: 0, lazy: 0, react: 1 } : SKILL[level];
   if (s.pending) return response(s, k);
   const p = s.active;
   if (s.players[p].pendingLevels) return levelChoice(s, p, k);
   if (k.lazy && Math.random() < k.lazy) return { t: 'end' };
-  if (k.plan) return planTurn(s, p);
+  if (k.plan && rules.movement !== false) return planTurn(s, p);
   const base = evaluate(s, p);
   let best: Action = { t: 'end' };
   let bestScore = base + 0.05;
   for (const a of legalActions(s)) {
-    if (a.t === 'end' || a.t === 'levelup' || sameStance(s, a)) continue;
+    if (a.t === 'end' || a.t === 'levelup' || (a.t === 'move' && rules.movement === false) || sameStance(s, a)) continue;
     const sim = clone(s);
     if (apply(sim, a)) continue;
     if (sim.pending) apply(sim, { t: 'pass' }); // conta que o oponente aceita

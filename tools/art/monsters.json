@@ -1,0 +1,20 @@
+[
+  {
+    "id": "summons-a",
+    "original": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-af8f7c58-3b91-4cff-b35d-a2ab1ae9922f.png",
+    "prompt": "Use case: stylized-concept. Original transparent production pixel-art creature sprite sheet for Void Sun. References are style only. Match their readable compact tactical JRPG chibi proportion and clustered pixel shading. True transparent background, no text/grid/labels, no floor tiles, no copies of reference characters. EXACT 6 columns by 7 rows uniform rectangular grid with large transparent gutters; each sprite fully inside cell, feet at 88 percent height, centered horizontally, same creature scale in its row. Each ROW has one creature, ALL SIX poses of SAME creature: col1 idle facing SOUTHWEST/front-left three-quarter; col2 idle facing NORTHEAST/back-right three-quarter; col3 front-left attack windup; col4 front-left strike; col5 back-right attack windup; col6 back-right strike. Never flip or rotate front image to draw the back, draw true back views. Camera down 35 degrees, warm highlights, cool coloured shade, clean restrained coloured outlines, crisp pixels. Rows: 1: armoured skeleton warrior, old iron sword and round wooden shield; 2: small crimson horned winged demon with claws; 3: massive moss-covered stone golem with glowing amber eyes; 4: living compact flame elemental with charcoal core; 5: gray timber wolf with expressive alert eyes; 6: large brown woodland bear; 7: small crystalline arcane stone tower and barrier. Prefer 1536x1792.",
+    "file": "tools/art/source-atlases/summons-a.png"
+  },
+  {
+    "id": "summons-b",
+    "original": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-2cc2cba0-9f38-482a-adba-f4f77e3db8b5.png",
+    "prompt": "Use case: stylized-concept. Original transparent production pixel-art creature sprite sheet for Void Sun. References are style only. Match their readable compact tactical JRPG chibi proportion and clustered pixel shading. True transparent background, no text/grid/labels, no floor tiles, no copies of reference characters. EXACT 6 columns by 7 rows uniform rectangular grid with large transparent gutters; each sprite fully inside cell, feet at 88 percent height, centered horizontally, same creature scale in its row. Each ROW has one creature, ALL SIX poses of SAME creature: col1 idle facing SOUTHWEST/front-left three-quarter; col2 idle facing NORTHEAST/back-right three-quarter; col3 front-left attack windup; col4 front-left strike; col5 back-right attack windup; col6 back-right strike. Never flip or rotate front image to draw the back, draw true back views. Camera down 35 degrees, warm highlights, cool coloured shade, clean restrained coloured outlines, crisp pixels. Rows: 1: brown hunting hawk with spread feathers, standing just above ground; 2: woodland spirit, tiny moss-clad antlered forest guardian; 3: hooded male thief in dark leather with dagger; 4: ivory-winged guardian angel with golden spear; 5: floating silver spiritual sword with blue runes; 6: small teal dragon whelp with orange eyes; 7: armoured human training guardian, silver steel armour, blue tabard, shield. Prefer 1536x1792.",
+    "file": "tools/art/source-atlases/summons-b.png"
+  },
+  {
+    "id": "summons-c",
+    "original": "/home/djabo/.codex/generated_images/01a10786-8ac8-7d01-b164-4025e0f22b4c/exec-32e0f474-d497-4f93-aff5-383dc8cbf81f.png",
+    "prompt": "ballista and ancient dragon, six poses, 6x2 grid",
+    "file": "tools/art/source-atlases/summons-c.png"
+  }
+]

@@ -18,6 +18,7 @@
   import { protoWeapon } from '../../model/seed';
   import { SLOT_TAGS, gearText, slotTagOf } from '../../model/equipment';
   import type { CardGear } from '../../model/types';
+  import GearVisual from './GearVisual.svelte';
   import type { Via } from '../../game/types';
 
   let { ed }: { ed: EditorState } = $props();
@@ -41,7 +42,7 @@
   function setGearTag(tag: string) {
     const all = SLOT_TAGS.map((t) => t.tag);
     d.tags = [...d.tags.filter((t) => !all.includes(t)), tag];
-    setGear((g) => { if (tag === 'weapon') g.weapon ??= { dmg: 3, via: 'melee' }; else delete g.weapon; });
+    setGear((g) => { delete g.appearance; if (tag === 'weapon') g.weapon ??= { dmg: 3, via: 'melee' }; else delete g.weapon; });
   }
   const gnum = (e: Event, max: number, min = 0) => Math.max(min, Math.min(max, Math.round(+(e.currentTarget as HTMLInputElement).value || 0)));
   function gearRules() { for (const l of ['pt-BR', 'en-US'] as const) d.text[l].rules = gearText(d.gear, l); ed.touch(); }
@@ -155,6 +156,7 @@
         </div>
         {#if !gearTag}<span class="muted small">{L('Escolha um espaço para a carta poder ser vestida na ficha do herói.', 'Choose a slot so the card can be worn on the hero sheet.')}</span>{/if}
       </div>
+      <GearVisual card={d} tag={gearTag} onchange={(appearance) => setGear((g) => { g.appearance = appearance; })} />
       {#if d.gear?.weapon}
         {@const w = d.gear.weapon}
         <div class="grid2">

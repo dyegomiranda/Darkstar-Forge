@@ -1,0 +1,14 @@
+{
+  "pitch": 0.0035,
+  "grid": [
+    630,
+    147,
+    584
+  ],
+  "solid_voxels": 258581,
+  "volume": 0.011086660375000001,
+  "vertices": 438101,
+  "faces": 881678,
+  "method": "barycentric surface voxelization, small-gap seal, binary fill holes, preserved shell recovery, marching cubes",
+  "rss_mib": 446.42578125
+}
