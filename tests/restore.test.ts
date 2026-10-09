@@ -55,7 +55,7 @@ describe('artes do catálogo Protótipo', () => {
     official.art = { mediaId: 'arte-antiga', zoom: 2, x: 90, y: -20, mirror: true };
     await app.replaceAll(seeded.project, seeded.cards);
     const saved = app.cards[official.id];
-    expect(saved.art.asset).toMatch(/^art\/rework\/cards-hd\/.+\.png$/);
+    expect(saved.art.asset).toMatch(/^art\/rework\/cards-hd\/.+\.webp$/);
     expect(saved.art.mediaId).toBeUndefined();
     expect(saved.art.zoom).toBe(1);
     expect(app.hasPending).toBe(false);

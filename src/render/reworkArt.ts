@@ -21,7 +21,8 @@ export function reworkAsset(card: Card): string | undefined {
   if (card.art.mediaId) return paths[builtin[card.art.mediaId]];
   if (card.art.asset) {
     const match = /^art\/proto\/([a-z0-9-]+)\.webp$/.exec(card.art.asset);
-    const current = /^art\/rework\/cards(?:-hd)?\/([a-z0-9-]+)\.png$/.exec(card.art.asset);
+    // (as artes já foram .png em cards/ e em cards-hd/; cartas salvas com o caminho antigo passam para o arquivo atual)
+    const current = /^art\/rework\/cards(?:-hd)?\/([a-z0-9-]+)\.(?:png|webp)$/.exec(card.art.asset);
     return match ? paths[match[1]] : current ? paths[current[1]] : undefined;
   }
   return prototypeAsset(card);

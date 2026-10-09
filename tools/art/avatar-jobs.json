@@ -2113,7 +2113,7 @@
       "description": "Dagger: Light and discreet; fits the other hand too.",
       "material": "metal",
       "gear": "dagger",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-dagger.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-dagger.png",
       "z": 140
     },
     {
@@ -2122,7 +2122,7 @@
       "description": "Shortsword: The weapon of those who fight with a blade in each hand.",
       "material": "metal",
       "gear": "shortsword",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-shortsword.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shortsword.png",
       "z": 140
     },
     {
@@ -2131,7 +2131,7 @@
       "description": "Mace: Blessed in the temples: wards its wielder against magic.",
       "material": "metal",
       "gear": "mace",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-mace.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-mace.png",
       "z": 140
     },
     {
@@ -2140,7 +2140,7 @@
       "description": "Spear: Reaches the foe over an ally's shoulder.",
       "material": "metal",
       "gear": "spear",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-spear.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-spear.png",
       "z": 140
     },
     {
@@ -2149,7 +2149,7 @@
       "description": "Longsword: A balance of reach, weight and edge.",
       "material": "metal",
       "gear": "longsword",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-longsword.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-longsword.png",
       "z": 140
     },
     {
@@ -2158,7 +2158,7 @@
       "description": "Rapier: Precise thrusts: it asks for agility, not strength.",
       "material": "metal",
       "gear": "rapier",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-rapier.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-rapier.png",
       "z": 140
     },
     {
@@ -2167,7 +2167,7 @@
       "description": "Battleaxe: Heavy for one hand, but leaves the other free for a shield.",
       "material": "metal",
       "gear": "battleaxe",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-battleaxe.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-battleaxe.png",
       "z": 140
     },
     {
@@ -2176,7 +2176,7 @@
       "description": "Katana: A curved two-handed blade made for quick cuts.",
       "material": "metal",
       "gear": "katana",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-katana.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-katana.png",
       "z": 140
     },
     {
@@ -2185,7 +2185,7 @@
       "description": "Greatsword: Long enough to parry blows.",
       "material": "metal",
       "gear": "greatsword",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-greatsword.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greatsword.png",
       "z": 140
     },
     {
@@ -2194,7 +2194,7 @@
       "description": "Halberd: An axe on a pole: strikes from the second row.",
       "material": "metal",
       "gear": "halberd",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-halberd.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-halberd.png",
       "z": 140
     },
     {
@@ -2203,7 +2203,7 @@
       "description": "Greataxe: The heaviest blow a warrior can deal.",
       "material": "metal",
       "gear": "greataxe",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-greataxe.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greataxe.png",
       "z": 140
     },
     {
@@ -2212,7 +2212,7 @@
       "description": "Fighting wraps: Hands and feet as weapons; a light body keeps its breath.",
       "material": "metal",
       "gear": "handwraps",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-handwraps.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-handwraps.png",
       "z": 140
     },
     {
@@ -2221,7 +2221,7 @@
       "description": "Sling: Stones from afar, with the other hand free.",
       "material": "metal",
       "gear": "sling",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-sling.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-sling.png",
       "z": 140
     },
     {
@@ -2230,7 +2230,7 @@
       "description": "Hand crossbow: Small enough for a single hand.",
       "material": "metal",
       "gear": "handcrossbow",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-handcrossbow.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-handcrossbow.png",
       "z": 140
     },
     {
@@ -2239,7 +2239,7 @@
       "description": "Shortbow: Easy to draw, for anyone.",
       "material": "metal",
       "gear": "shortbow",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-shortbow.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shortbow.png",
       "z": 140
     },
     {
@@ -2248,7 +2248,7 @@
       "description": "Longbow: It needs a trained arm; hits far and hard.",
       "material": "metal",
       "gear": "longbow",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-longbow.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-longbow.png",
       "z": 140
     },
     {
@@ -2257,7 +2257,7 @@
       "description": "Heavy crossbow: The bolt pierces shields, but reloading is tiring.",
       "material": "metal",
       "gear": "heavycrossbow",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-heavycrossbow.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-heavycrossbow.png",
       "z": 140
     },
     {
@@ -2266,7 +2266,7 @@
       "description": "Wand: Fires magic with one hand and leaves the other for an orb or tome.",
       "material": "metal",
       "gear": "wand",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-wand.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wand.png",
       "z": 140
     },
     {
@@ -2275,7 +2275,7 @@
       "description": "Arcane staff: Stores arcane energy for the next spell.",
       "material": "metal",
       "gear": "staff",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-staff.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-staff.png",
       "z": 140
     },
     {
@@ -2284,7 +2284,7 @@
       "description": "Oak staff: It still sprouts leaves: its sap strengthens the bearer.",
       "material": "metal",
       "gear": "druidstaff",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-druidstaff.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-druidstaff.png",
       "z": 140
     },
     {
@@ -2293,7 +2293,7 @@
       "description": "Skull staff: Lends power in exchange for a bit of your life.",
       "material": "metal",
       "gear": "skullstaff",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-skullstaff.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-skullstaff.png",
       "z": 140
     },
     {
@@ -2302,7 +2302,7 @@
       "description": "Lute: Songs that wound, charm and inspire.",
       "material": "metal",
       "gear": "lute",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-lute.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-lute.png",
       "z": 140
     },
     {
@@ -2311,7 +2311,7 @@
       "description": "Buckler: Small and light; turns the blow aside.",
       "material": "metal",
       "gear": "buckler",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-buckler.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-buckler.png",
       "z": 140
     },
     {
@@ -2320,7 +2320,7 @@
       "description": "Steel shield: The soldier's shield.",
       "material": "metal",
       "gear": "shield",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-shield.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shield.png",
       "z": 140
     },
     {
@@ -2329,7 +2329,7 @@
       "description": "Tower shield: A portable wall; it weighs on every step.",
       "material": "metal",
       "gear": "towershield",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-towershield.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-towershield.png",
       "z": 140
     },
     {
@@ -2338,7 +2338,7 @@
       "description": "Arcane orb: Gathers the mana scattered in the air.",
       "material": "metal",
       "gear": "orb",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-orb.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-orb.png",
       "z": 140
     },
     {
@@ -2347,7 +2347,7 @@
       "description": "Grimoire: Years of study in a leather cover.",
       "material": "metal",
       "gear": "tome",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-tome.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-tome.png",
       "z": 140
     },
     {
@@ -2356,7 +2356,7 @@
       "description": "Holy symbol: Faith raised against evil.",
       "material": "metal",
       "gear": "holysymbol",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-holysymbol.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-holysymbol.png",
       "z": 140
     },
     {
@@ -2365,7 +2365,7 @@
       "description": "Hood: Hides the face and the next step.",
       "material": "metal",
       "gear": "hood",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-hood.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-hood.png",
       "z": 140
     },
     {
@@ -2374,7 +2374,7 @@
       "description": "Iron helm: Simple and reliable.",
       "material": "metal",
       "gear": "ironhelm",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-ironhelm.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-ironhelm.png",
       "z": 140
     },
     {
@@ -2383,7 +2383,7 @@
       "description": "Horned helm: Protects and frightens; the horns hurt too.",
       "material": "metal",
       "gear": "hornedhelm",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-hornedhelm.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-hornedhelm.png",
       "z": 140
     },
     {
@@ -2392,7 +2392,7 @@
       "description": "Great helm: Nothing gets through, not even a caster's focus.",
       "material": "metal",
       "gear": "greathelm",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-greathelm.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greathelm.png",
       "z": 140
     },
     {
@@ -2401,7 +2401,7 @@
       "description": "Wizard hat: Old and patched, it keeps the lore of generations.",
       "material": "metal",
       "gear": "wizardhat",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-wizardhat.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wizardhat.png",
       "z": 140
     },
     {
@@ -2410,7 +2410,7 @@
       "description": "Headband of intellect: Clears the mind and closes it to foreign spells.",
       "material": "metal",
       "gear": "headband",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-headband.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-headband.png",
       "z": 140
     },
     {
@@ -2419,7 +2419,7 @@
       "description": "Circlet of presence: Every eye turns to the one who wears it.",
       "material": "metal",
       "gear": "circlet",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-circlet.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-circlet.png",
       "z": 140
     },
     {
@@ -2428,7 +2428,7 @@
       "description": "Assassin's mask: Whoever wears it forgets caution.",
       "material": "metal",
       "gear": "mask",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-mask.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-mask.png",
       "z": 140
     },
     {
@@ -2437,7 +2437,7 @@
       "description": "Apprentice's robe: Embroidered with simple warding runes.",
       "material": "cloth",
       "gear": "robe",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-robe.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-robe.png",
       "z": 140
     },
     {
@@ -2446,7 +2446,7 @@
       "description": "Archmage's robe: Woven of starthread: only a master bears its weight.",
       "material": "cloth",
       "gear": "archrobe",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-archrobe.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-archrobe.png",
       "z": 140
     },
     {
@@ -2455,7 +2455,7 @@
       "description": "Priestly vestments: Consecrated at the altar, they remind the cleric whom they serve.",
       "material": "cloth",
       "gear": "clericvest",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-clericvest.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-clericvest.png",
       "z": 140
     },
     {
@@ -2464,7 +2464,7 @@
       "description": "Monk's garb: No armor: the wearer defends with the body itself, light as wind.",
       "material": "cloth",
       "gear": "monkgarb",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-monkgarb.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-monkgarb.png",
       "z": 140
     },
     {
@@ -2473,7 +2473,7 @@
       "description": "Shadow cloak: Dark leather that blends with the night.",
       "material": "cloth",
       "gear": "shadowcloak",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-shadowcloak.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-shadowcloak.png",
       "z": 140
     },
     {
@@ -2482,7 +2482,7 @@
       "description": "Leather jerkin: Light armor: protects without hindering.",
       "material": "cloth",
       "gear": "leather",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-leather.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-leather.png",
       "z": 140
     },
     {
@@ -2491,7 +2491,7 @@
       "description": "Studded leather: Light and riveted: protects those who know how to dodge.",
       "material": "cloth",
       "gear": "studded",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-studded.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-studded.png",
       "z": 140
     },
     {
@@ -2500,7 +2500,7 @@
       "description": "Hide armor: Thick hides, no metal: the armor of druids and barbarians.",
       "material": "cloth",
       "gear": "hide",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-hide.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-hide.png",
       "z": 140
     },
     {
@@ -2509,7 +2509,7 @@
       "description": "Chain shirt: Medium armor: the metal rings hinder spell gestures.",
       "material": "metal",
       "gear": "chainshirt",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-chainshirt.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-chainshirt.png",
       "z": 140
     },
     {
@@ -2518,7 +2518,7 @@
       "description": "Breastplate: Reinforced medium armor.",
       "material": "metal",
       "gear": "breastplate",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-breastplate.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-breastplate.png",
       "z": 140
     },
     {
@@ -2527,7 +2527,7 @@
       "description": "Chain mail: Heavy armor: holds well, but nearly stops magic.",
       "material": "metal",
       "gear": "chainmail",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-chainmail.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-chainmail.png",
       "z": 140
     },
     {
@@ -2536,7 +2536,7 @@
       "description": "Plate armor: The best protection there is, at the price of breath and magic.",
       "material": "metal",
       "gear": "plate",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-plate.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-plate.png",
       "z": 140
     },
     {
@@ -2545,7 +2545,7 @@
       "description": "Steel gauntlets: Protect hands and forearms.",
       "material": "metal",
       "gear": "gauntlets",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-gauntlets.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-gauntlets.png",
       "z": 140
     },
     {
@@ -2554,7 +2554,7 @@
       "description": "Gauntlets of ogre power: Whoever wears them grips like an ogre.",
       "material": "metal",
       "gear": "ogregauntlets",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-ogregauntlets.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-ogregauntlets.png",
       "z": 140
     },
     {
@@ -2563,7 +2563,7 @@
       "description": "Runic gloves: Runes that deflect hostile magic.",
       "material": "metal",
       "gear": "runegloves",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-runegloves.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-runegloves.png",
       "z": 140
     },
     {
@@ -2572,7 +2572,7 @@
       "description": "Thief's gloves: Nimble fingers find the gap in the guard.",
       "material": "metal",
       "gear": "thiefgloves",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-thiefgloves.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-thiefgloves.png",
       "z": 140
     },
     {
@@ -2581,7 +2581,7 @@
       "description": "Leather breeches: Tanned leather that endures the road.",
       "material": "cloth",
       "gear": "leatherpants",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-leatherpants.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-leatherpants.png",
       "z": 140
     },
     {
@@ -2590,7 +2590,7 @@
       "description": "Steel greaves: Plates over shins and knees.",
       "material": "cloth",
       "gear": "greaves",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-greaves.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-greaves.png",
       "z": 140
     },
     {
@@ -2599,7 +2599,7 @@
       "description": "Elven leggings: Woven with threads that repel charms.",
       "material": "cloth",
       "gear": "elvenleggings",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-elvenleggings.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-elvenleggings.png",
       "z": 140
     },
     {
@@ -2608,7 +2608,7 @@
       "description": "Traveler boots: Worn from long walks; stamina comes with them.",
       "material": "cloth",
       "gear": "travelboots",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-travelboots.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-travelboots.png",
       "z": 140
     },
     {
@@ -2617,7 +2617,7 @@
       "description": "Iron boots: Heavy and steady.",
       "material": "cloth",
       "gear": "ironboots",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-ironboots.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-ironboots.png",
       "z": 140
     },
     {
@@ -2626,7 +2626,7 @@
       "description": "Elven boots: Silent on stone and dry leaves alike.",
       "material": "cloth",
       "gear": "elvenboots",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-elvenboots.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-elvenboots.png",
       "z": 140
     },
     {
@@ -2635,7 +2635,7 @@
       "description": "Winged boots: Too light: the wearer feels every blow.",
       "material": "cloth",
       "gear": "wingedboots",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-wingedboots.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wingedboots.png",
       "z": 140
     },
     {
@@ -2644,7 +2644,7 @@
       "description": "Amulet of health: A red stone that beats along with the heart.",
       "material": "metal",
       "gear": "healthamulet",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-healthamulet.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-healthamulet.png",
       "z": 140
     },
     {
@@ -2653,7 +2653,7 @@
       "description": "Periapt of wisdom: Brings the calm of one who has seen it all.",
       "material": "metal",
       "gear": "periapt",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-periapt.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-periapt.png",
       "z": 140
     },
     {
@@ -2662,7 +2662,7 @@
       "description": "Arcane medallion: A silver ring of metal that never cools.",
       "material": "metal",
       "gear": "arcanemedallion",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-arcanemedallion.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-arcanemedallion.png",
       "z": 140
     },
     {
@@ -2671,7 +2671,7 @@
       "description": "Fang necklace: Trophies from the first hunt.",
       "material": "metal",
       "gear": "fangnecklace",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-fangnecklace.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-fangnecklace.png",
       "z": 140
     },
     {
@@ -2680,7 +2680,7 @@
       "description": "Amulet of warding: Engraved with the sun: dark magic slides off it.",
       "material": "metal",
       "gear": "wardamulet",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-wardamulet.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-wardamulet.png",
       "z": 140
     },
     {
@@ -2689,7 +2689,7 @@
       "description": "Ring of protection: An unseen field against blades and spells.",
       "material": "metal",
       "gear": "protectionring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-protectionring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-protectionring.png",
       "z": 140
     },
     {
@@ -2698,7 +2698,7 @@
       "description": "Ring of vigor: Pushes the body past fatigue.",
       "material": "metal",
       "gear": "vigorring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-vigorring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-vigorring.png",
       "z": 140
     },
     {
@@ -2707,7 +2707,7 @@
       "description": "Archmage's ring: Burns mana from the wearer's own blood.",
       "material": "metal",
       "gear": "archmagering",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-archmagering.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-archmagering.png",
       "z": 140
     },
     {
@@ -2716,7 +2716,7 @@
       "description": "Blood ring: Each blow takes a little from the one who deals it.",
       "material": "metal",
       "gear": "bloodring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-bloodring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-bloodring.png",
       "z": 140
     },
     {
@@ -2725,7 +2725,7 @@
       "description": "Ring of strength: A thick iron band, warm to the touch.",
       "material": "metal",
       "gear": "strengthring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-strengthring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-strengthring.png",
       "z": 140
     },
     {
@@ -2734,7 +2734,7 @@
       "description": "Ring of agility: Light as a feather: the fingers grow quicker.",
       "material": "metal",
       "gear": "agilityring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-agilityring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-agilityring.png",
       "z": 140
     },
     {
@@ -2743,7 +2743,7 @@
       "description": "Berserker's ring: Rage forgets the guard.",
       "material": "metal",
       "gear": "berserkerring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-berserkerring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-berserkerring.png",
       "z": 140
     },
     {
@@ -2752,7 +2752,7 @@
       "description": "Patron's ring: The pact shows on the skin, along with the power.",
       "material": "metal",
       "gear": "patronring",
-      "reference": "/home/djabo/Downloads/Void Sun/public/art/rework/cards-hd/eq-patronring.png",
+      "reference": "/home/djabo/Downloads/Void Sun/artes-cartas-hd/eq-patronring.png",
       "z": 140
     },
     {

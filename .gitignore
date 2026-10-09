@@ -44,8 +44,8 @@ tools/art/**/*.safetensors
 tools/art/**/*.bin
 # amostra com armas de marcas de terceiros (só teste particular)
 docs/amostras/teste-base-equipada-8-direcoes-2026-10-09.gif
-# artes HD das cartas (715 MB em PNG): fora do repositório até decidir o formato — ver docs/CONTINUIDADE.md
-public/art/rework/cards-hd/
+# originais em PNG das artes HD das cartas (715 MB): ficam só na máquina; o jogo usa as versões WebP em public/art/rework/cards-hd
+artes-cartas-hd/
 # cópias de projetos de terceiros usadas só como ferramenta ou consulta
 tools/art/**/source/
 tools/art/skills/terceiros/

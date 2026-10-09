@@ -36,16 +36,18 @@ it('substitui a arte antiga do Protótipo e reinicia o enquadramento sem alterar
 
 it('as fontes de cada carta têm resolução própria, sem recortes pequenos de atlas', () => {
   for (const asset of Object.values(assets)) {
-    const header = Buffer.alloc(24);
+    // WebP com perda ("VP8 "): largura e altura ficam nos bytes 26–29
+    const header = Buffer.alloc(30);
     const fd = openSync(new URL('../public/' + asset, import.meta.url), 'r');
     try { readSync(fd, header, 0, header.length, 0); } finally { closeSync(fd); }
-    expect(header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), asset).toBe(true);
-    expect(header.readUInt32BE(16), asset).toBeGreaterThanOrEqual(750);
-    expect(header.readUInt32BE(20), asset).toBeGreaterThanOrEqual(1050);
+    expect(header.toString('ascii', 0, 4) + header.toString('ascii', 8, 16), asset).toBe('RIFFWEBPVP8 ');
+    expect(header.readUInt16LE(26) & 0x3fff, asset).toBeGreaterThanOrEqual(750);
+    expect(header.readUInt16LE(28) & 0x3fff, asset).toBeGreaterThanOrEqual(1050);
   }
 });
 it('referências anteriores à arte oficial apontam para a fonte atual', () => {
   const base = protoCollection().cards.find(c => c.game)!;
   const name = base.text['en-US'].name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   expect(reworkAsset({ ...base, art: { ...base.art, asset: 'art/rework/cards/' + name + '.png' } })).toBe(reworkAsset(base));
+  expect(reworkAsset({ ...base, art: { ...base.art, asset: 'art/rework/cards-hd/' + name + '.png' } })).toBe(reworkAsset(base));
 });
